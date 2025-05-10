@@ -11,12 +11,14 @@
 #pragma once
 
 #include <algorithm>
-#include <any>
+#include <cstddef>
 #include <cstdint>
-#include <iostream>
+#include <iterator>
+#include <memory>
 #include <set>
 #include <sstream>
-#include <vector>
+#include <stdexcept>
+#include <string>
 
 namespace syrec {
     /**
@@ -26,42 +28,36 @@ namespace syrec {
         /**
         * @brief Represents a gate type
         */
-        enum class Types { None,
-                           Fredkin,
-                           Toffoli };
+        enum class Type : std::uint8_t { None,
+                                         Fredkin,
+                                         Toffoli };
 
         /**
         * @brief Type for accessing the line (line index)
         */
-        using line = std::size_t;
+        using Line = std::size_t;
 
         /**
         * @brief Container for storing lines
         */
-        using line_container = std::set<line>;
-
-        /**
-        * @brief Default constructor
-        */
-        Gate()  = default;
-        ~Gate() = default;
-
-        using cost_t = std::uint_least64_t;
+        using LinesLookup = std::set<Line>;
+        using cost_t      = std::uint_least64_t;
+        using ptr         = std::shared_ptr<Gate>;
 
         [[nodiscard]] cost_t quantumCost(unsigned lines) const {
             cost_t costs = 0U;
 
-            unsigned    n = lines;
-            std::size_t c = controls.size();
+            const unsigned n = lines;
+            std::size_t    c = controls.size();
 
-            if (type == Gate::Types::Fredkin) {
+            if (type == Gate::Type::Fredkin) {
                 c += 1U;
             }
 
             c += static_cast<std::size_t>(std::max(-1 * static_cast<int>(c), 0));
             c = std::min(static_cast<unsigned>(c), lines - 1U);
 
-            unsigned e = n - static_cast<unsigned>(c) - 1U; // empty lines
+            const unsigned e = n - static_cast<unsigned>(c) - 1U; // empty lines
 
             switch (c) {
                 case 0U:
@@ -132,10 +128,10 @@ namespace syrec {
             std::stringstream ss;
             ss << std::string(controls.size(), 'c');
             switch (type) {
-                case Types::Fredkin:
+                case Type::Fredkin:
                     ss << "swap";
                     break;
-                case Types::Toffoli:
+                case Type::Toffoli:
                     ss << "x";
                     break;
                 // GCOVR_EXCL_START
@@ -146,7 +142,7 @@ namespace syrec {
             for (const auto& control: controls) {
                 ss << " q[" << control << "],";
             }
-            if (type == Types::Toffoli) {
+            if (type == Type::Toffoli) {
                 ss << " q[" << *targets.begin() << "];";
             } else {
                 ss << " q[" << *targets.begin() << "], q[" << *std::next(targets.begin()) << "];";
@@ -154,9 +150,9 @@ namespace syrec {
             return ss.str();
         }
 
-        line_container controls{};
-        line_container targets{};
-        Types          type = Types::None;
+        LinesLookup controls;
+        LinesLookup targets;
+        Type        type = Type::None;
     };
 
 } // namespace syrec

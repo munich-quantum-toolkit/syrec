@@ -18,23 +18,22 @@
 #include <vector>
 
 namespace syrec {
-
-    void CostAwareSynthesis::expAdd(const unsigned& bitwidth, std::vector<unsigned>& rhs, const std::vector<unsigned>& lhs, const std::vector<unsigned>& lines) {
-        getConstantLines(bitwidth, 0U, rhs);
-        bitwiseCnot(rhs, lhs); // duplicate lhs
-        increase(rhs, lines);
+    bool CostAwareSynthesis::expAdd(Circuit& circuit, const unsigned& bitwidth, std::vector<unsigned>& rhs, const std::vector<unsigned>& lhs, const std::vector<unsigned>& lines) {
+        getConstantLines(circuit, bitwidth, 0U, rhs);
+        return bitwiseCnot(circuit, rhs, lhs) // duplicate lhs
+            && increase(circuit, rhs, lines);
     }
 
-    void CostAwareSynthesis::expSubtract(const unsigned& bitwidth, std::vector<unsigned>& rhs, const std::vector<unsigned>& lhs, const std::vector<unsigned>& lines) {
-        getConstantLines(bitwidth, 0U, rhs);
-        bitwiseCnot(rhs, lhs); // duplicate lhs
-        decrease(rhs, lines);
+    bool CostAwareSynthesis::expSubtract(Circuit& circuit, const unsigned& bitwidth, std::vector<unsigned>& rhs, const std::vector<unsigned>& lhs, const std::vector<unsigned>& lines) {
+        getConstantLines(circuit, bitwidth, 0U, rhs);
+        return bitwiseCnot(circuit, rhs, lhs) // duplicate lhs
+            && decrease(circuit, rhs, lines);
     }
 
-    void CostAwareSynthesis::expExor(const unsigned& bitwidth, std::vector<unsigned>& lines, const std::vector<unsigned>& lhs, const std::vector<unsigned>& rhs) {
-        getConstantLines(bitwidth, 0U, lines);
-        bitwiseCnot(lines, lhs); // duplicate lhs
-        bitwiseCnot(lines, rhs);
+    bool CostAwareSynthesis::expExor(Circuit& circuit, const unsigned& bitwidth, std::vector<unsigned>& lines, const std::vector<unsigned>& lhs, const std::vector<unsigned>& rhs) {
+        getConstantLines(circuit, bitwidth, 0U, lines);
+        return bitwiseCnot(circuit, lines, lhs) // duplicate lhs
+            && bitwiseCnot(circuit, lines, rhs);
     }
 
     bool CostAwareSynthesis::synthesize(Circuit& circ, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {

@@ -13,11 +13,12 @@
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "core/circuit.hpp"
 #include "core/gate.hpp"
+#include "core/n_bit_values_container.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <functional>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -29,14 +30,14 @@ PYBIND11_MODULE(pysyrec, m) {
 
     py::class_<Circuit, std::shared_ptr<Circuit>>(m, "circuit")
             .def(py::init<>(), "Constructs circuit object.")
-            .def_property("lines", &syrec::Circuit::getLines, &syrec::Circuit::setLines, "Returns the number of circuit lines.")
-            .def_property_readonly("num_gates", &syrec::Circuit::numGates, "Returns the total number of gates in the circuit.")
+            .def_property("lines", &Circuit::getLines, &Circuit::setLines, "Returns the number of circuit lines.")
+            .def_property_readonly("num_gates", &Circuit::numGates, "Returns the total number of gates in the circuit.")
             .def("__iter__",
                  [](Circuit& circ) { return py::make_iterator(circ.begin(), circ.end()); })
-            .def_property("inputs", &syrec::Circuit::getInputs, &syrec::Circuit::setInputs, "Returns the input names of the lines in a circuit.")
-            .def_property("outputs", &syrec::Circuit::getOutputs, &syrec::Circuit::setOutputs, "Returns the output names of the lines in a circuit.")
-            .def_property("constants", &syrec::Circuit::getConstants, &syrec::Circuit::setConstants, "Returns the constant input line specification.")
-            .def_property("garbage", &syrec::Circuit::getGarbage, &syrec::Circuit::setGarbage, "Returns whether outputs are garbage or not.")
+            .def_property("inputs", &Circuit::getInputs, &Circuit::setInputs, "Returns the input names of the lines in a circuit.")
+            .def_property("outputs", &Circuit::getOutputs, &Circuit::setOutputs, "Returns the output names of the lines in a circuit.")
+            .def_property("constants", &Circuit::getConstants, &Circuit::setConstants, "Returns the constant input line specification.")
+            .def_property("garbage", &Circuit::getGarbage, &Circuit::setGarbage, "Returns whether outputs are garbage or not.")
             .def(
                     "annotations", [](const Circuit& c, const Gate& g) {
                         py::dict   d{};
@@ -49,10 +50,10 @@ PYBIND11_MODULE(pysyrec, m) {
                         return d;
                     },
                     "This method returns all annotations for a given gate.")
-            .def("quantum_cost", &syrec::Circuit::quantumCost, "Returns the quantum cost of the circuit.")
-            .def("transistor_cost", &syrec::Circuit::transistorCost, "Returns the transistor cost of the circuit.")
-            .def("to_qasm_str", &syrec::Circuit::toQasm, "Returns the QASM representation of the circuit.")
-            .def("to_qasm_file", &syrec::Circuit::toQasmFile, "filename"_a, "Writes the QASM representation of the circuit to a file.");
+            .def("quantum_cost", &Circuit::quantumCost, "Returns the quantum cost of the circuit.")
+            .def("transistor_cost", &Circuit::transistorCost, "Returns the transistor cost of the circuit.")
+            .def("to_qasm_str", &Circuit::toQasm, "Returns the QASM representation of the circuit.")
+            .def("to_qasm_file", &Circuit::toQasmFile, "filename"_a, "Writes the QASM representation of the circuit to a file.");
 
     py::class_<Properties, std::shared_ptr<Properties>>(m, "properties")
             .def(py::init<>(), "Constructs property map object.")
@@ -73,23 +74,25 @@ PYBIND11_MODULE(pysyrec, m) {
             .def("add_module", &Program::addModule)
             .def("read", &Program::read, "filename"_a, "settings"_a = ReadProgramSettings{}, "Read a SyReC program from a file.");
 
-    py::class_<boost::dynamic_bitset<>>(m, "bitset")
-            .def(py::init<>(), "Constructs bitset object of size zero.")
-            .def(py::init<int>(), "n"_a, "Constructs bitset object of size n.")
-            .def(py::init<int, uint64_t>(), "n"_a, "val"_a, "Constructs a bitset object of size n from an integer val")
-            .def("set", py::overload_cast<boost::dynamic_bitset<>::size_type, bool>(&boost::dynamic_bitset<>::set), "n"_a, "val"_a, "Sets bit n if val is true, and clears bit n if val is false")
+    py::class_<NBitValuesContainer>(m, "n_bit_values_container")
+            .def(py::init<>(), "Constructs an empty container of size zero.")
+            .def(py::init<std::size_t>(), "n"_a, "Constructs a zero-initialized container of size n.")
+            .def(py::init<std::size_t, uint64_t>(), "n"_a, "initialLineValues"_a, "Constructs a container of size n from an integer initialLineValues")
+            .def("test", &NBitValuesContainer::test, "n"_a, "Determine the value of the bit at position n")
+            .def("set", py::overload_cast<std::size_t>(&NBitValuesContainer::set), "n"_a, "Set the value of the bit at position n to TRUE")
+            .def("set", py::overload_cast<std::size_t, bool>(&NBitValuesContainer::set), "n"_a, "value"_a, "Set the of the bit at position n to a specific value")
+            .def("reset", &NBitValuesContainer::reset, "n"_a, "Set the value of the bit at position n to FALSE")
+            .def("resize", &NBitValuesContainer::resize, "n"_a, "Changes the number of bits stored in the container")
+            .def("flip", &NBitValuesContainer::flip, "n"_a, "Flip the value of the bit at position n")
             .def(
-                    "__str__", [](const boost::dynamic_bitset<>& b) {
-                        std::string str{};
-                        boost::to_string(b, str);
-                        std::reverse(str.begin(), str.end());
-                        return str;
+                    "__str__", [](const NBitValuesContainer& container) {
+                        return container.stringify();
                     },
-                    "Returns the equivalent string of the bitset.");
+                    "Returns a string containing the stringified values of the stored bits.");
 
-    py::enum_<Gate::Types>(m, "gate_type")
-            .value("toffoli", Gate::Types::Toffoli, "Toffoli gate type.")
-            .value("fredkin", Gate::Types::Fredkin, "Fredkin gate type.")
+    py::enum_<Gate::Type>(m, "gate_type")
+            .value("toffoli", Gate::Type::Toffoli, "Toffoli gate type.")
+            .value("fredkin", Gate::Type::Fredkin, "Fredkin gate type.")
             .export_values();
 
     py::class_<Gate, std::shared_ptr<Gate>>(m, "gate")

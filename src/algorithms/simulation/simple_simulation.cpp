@@ -12,18 +12,17 @@
 
 #include "core/circuit.hpp"
 #include "core/gate.hpp"
+#include "core/n_bit_values_container.hpp"
 #include "core/properties.hpp"
 #include "core/utils/timer.hpp"
 
-#include <boost/dynamic_bitset/dynamic_bitset.hpp>
 #include <cstddef>
 #include <iostream>
 
 namespace syrec {
-
-    void coreGateSimulation(const Gate& g, boost::dynamic_bitset<>& input) {
-        if (g.type == Gate::Types::Toffoli) {
-            boost::dynamic_bitset<> cMask(input.size());
+    void coreGateSimulation(const Gate& g, NBitValuesContainer& input) {
+        if (g.type == Gate::Type::Toffoli) {
+            NBitValuesContainer cMask(input.size());
             for (const auto& c: g.controls) {
                 cMask.set(c);
             }
@@ -31,8 +30,8 @@ namespace syrec {
             if (cMask.none() || ((input & cMask) == cMask)) {
                 input.flip(*g.targets.begin());
             }
-        } else if (g.type == Gate::Types::Fredkin) {
-            boost::dynamic_bitset<> cMask(input.size());
+        } else if (g.type == Gate::Type::Fredkin) {
+            NBitValuesContainer cMask(input.size());
             for (const auto& c: g.controls) {
                 cMask.set(c);
             }
@@ -43,8 +42,8 @@ namespace syrec {
                 const std::size_t t1 = *it++;
                 const std::size_t t2 = *it;
 
-                const bool t1v = input.test(t1);
-                const bool t2v = input.test(t2);
+                const bool t1v = input[t1];
+                const bool t2v = input[t2];
 
                 // only swap when different
                 if (t1v != t2v) {
@@ -57,7 +56,7 @@ namespace syrec {
         }
     }
 
-    void simpleSimulation(boost::dynamic_bitset<>& output, const Circuit& circ, const boost::dynamic_bitset<>& input,
+    void simpleSimulation(NBitValuesContainer& output, const Circuit& circ, const NBitValuesContainer& input,
                           const Properties::ptr& statistics) {
         Timer<PropertiesTimer> t;
 

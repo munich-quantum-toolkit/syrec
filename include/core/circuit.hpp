@@ -12,14 +12,17 @@
 
 #include "gate.hpp"
 
-#include <boost/signals2.hpp>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
-#include <variant>
+#include <vector>
 
 namespace syrec {
     /**
@@ -32,13 +35,17 @@ namespace syrec {
    */
     class Circuit {
     public:
+        constexpr static std::string_view GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER = "lno";
+
         /**
          * @brief Default constructor
          *
          * This constructor initializes a standard_circuit with 0 lines, also called an empty circuit.
          * Empty circuits are usually used as parameters for parsing functions, optimization algorithms, etc.
          */
-        Circuit()  = default;
+        Circuit():
+            activeGlobalGateAnnotations({std::make_pair(static_cast<std::string>(GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER), "0")}) {}
+
         ~Circuit() = default;
 
         /**
@@ -120,34 +127,6 @@ namespace syrec {
          */
         [[nodiscard]] auto end() const {
             return gates.end();
-        }
-
-        /**
-     * @brief Inserts a gate at the end of the circuit
-     *
-     * This method inserts a gate at the end of the circuit.
-     *
-     * @return Reference to the newly created empty gate
-     */
-        Gate& appendGate() {
-            gates.emplace_back(std::make_shared<Gate>());
-            gateAdded(*gates.back());
-            return *gates.back();
-        }
-
-        /**
-     * @brief Inserts a gate into the circuit
-     *
-     * This method inserts a gate at an arbitrary position in the circuit
-     *
-     * @param pos  Position where to insert the gate
-     *
-     * @return Reference to the newly created empty gate
-     */
-        Gate& insertGate(unsigned pos) {
-            auto ins = gates.insert(gates.begin() + pos, std::make_shared<Gate>());
-            gateAdded(**ins);
-            return **ins;
         }
 
         /**
@@ -308,6 +287,40 @@ namespace syrec {
         }
 
         /**
+         * Register or update a global gate annotation.
+         * @param key The key of the global gate annotation
+         * @param value The value of the global gate annotation
+         * @return Whether an existing annotation was updated.
+         */
+        [[maybe_unused]] bool setOrUpdateGlobalGateAnnotation(const std::string_view& key, const std::string& value) {
+            auto existingAnnotationForKey = activeGlobalGateAnnotations.find(key);
+            if (existingAnnotationForKey != activeGlobalGateAnnotations.end()) {
+                existingAnnotationForKey->second = value;
+                return true;
+            }
+            activeGlobalGateAnnotations.emplace(static_cast<std::string>(key), value);
+            return false;
+        }
+
+        /**
+         * Remove a global gate annotation.
+         * @param key The key of the global gate annotation to be removed
+         * @return Whether a global gate annotation was removed.
+         */
+        [[maybe_unused]] bool removeGlobalGateAnnotation(const std::string_view& key) {
+            // We utilize the ability to use a std::string_view to erase a matching element
+            // of std::string in a std::map<std::string, ...> without needing to cast the
+            // std::string_view to std::string for the std::map<>::erase() operation
+            // (see further: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p2077r3.html)
+            auto existingAnnotationForKey = activeGlobalGateAnnotations.find(key);
+            if (existingAnnotationForKey != activeGlobalGateAnnotations.end()) {
+                activeGlobalGateAnnotations.erase(existingAnnotationForKey);
+                return true;
+            }
+            return false;
+        }
+
+        /**
        * @brief Add a line to a circuit with specifying all meta-data
        *
        * This function helps adding a line to the circuit.
@@ -331,97 +344,109 @@ namespace syrec {
             return lines - 1;
         }
 
-        ///add circuit
+        [[maybe_unused]] Gate::ptr createAndAddToffoliGate(const Gate::Line controlLineOne, const Gate::Line controlLineTwo, const Gate::Line targetLine) {
+            return createAndAddGate(Gate::Type::Toffoli, Gate::LinesLookup({controlLineOne, controlLineTwo}), Gate::LinesLookup({targetLine}));
+        }
 
-        void insertCircuit(unsigned pos, const Circuit& src, const Gate::line_container& controls) {
-            if (controls.empty()) {
-                for (const auto& g: src) {
-                    Gate& newGate = insertGate(pos++);
-                    newGate       = *g;
-                    auto anno     = src.getAnnotations(*g);
-                    if (anno) {
-                        for (const auto& [first, second]: *anno) {
-                            annotate(newGate, first, second);
-                        }
-                    }
+        [[maybe_unused]] std::optional<Gate::ptr> createAndAddMultiControlToffoliGate(const Gate::LinesLookup& controlLines, const Gate::Line targetLine) {
+            // A multi control toffoli gate must have at least one control line
+            if (controlLines.empty()) {
+                return std::nullopt;
+            }
+            return createAndAddGate(Gate::Type::Toffoli, controlLines, Gate::LinesLookup({targetLine}));
+        }
+
+        [[maybe_unused]] Gate::ptr createAndAddCnotGate(const Gate::Line controlLine, Gate::Line targetLine) {
+            return createAndAddGate(Gate::Type::Toffoli, Gate::LinesLookup({controlLine}), Gate::LinesLookup({targetLine}));
+        }
+
+        [[maybe_unused]] Gate::ptr createAndAddNotGate(Gate::Line targetLine) {
+            return createAndAddGate(Gate::Type::Toffoli, std::nullopt, Gate::LinesLookup({targetLine}));
+        }
+
+        [[maybe_unused]] Gate::ptr createAndAddFredkinGate(const Gate::Line targetLineOne, const Gate::Line targetLineTwo) {
+            return createAndAddGate(Gate::Type::Fredkin, std::nullopt, Gate::LinesLookup({targetLineOne, targetLineTwo}));
+        }
+
+        /**
+         * Activate a new control line scope.
+         *
+         * @remarks The aggregate of all control lines collected from the activate local scopes
+         * is added to each future gate of the circuit. Already added gates will not be modified.
+         */
+        void activateLocalControlLineScope() {
+            localControlLinesScope.emplace_back();
+        }
+
+        /**
+         * Deactivate and destroy the last registered local scope.
+         *
+         * @remarks This will remove all control lines that were NOT registered in the aggregate prior to the activation of the local scope.
+         * Assuming that the aggregate A contains the control lines (1,2,3), a local scope is activated an the control lines (3,4)
+         * registered which will set aggregate to (1,2,3,4). After the local scope is deactivated, only the control line 4 that is
+         * local to the scope is removed from the aggregate while control line 3 will remain in the aggregate.
+         */
+        void deactivateCurrLocalControlLineScope() {
+            if (localControlLinesScope.empty()) {
+                return;
+            }
+
+            const auto& localControlLineScope = localControlLinesScope.back();
+            for (const auto [controlLine, controlLineData]: localControlLineScope) {
+                if (!controlLineData.wasControlLineRegisteredInParentScope) {
+                    aggregateOfLocalControlLineScopes.erase(controlLine);
+                } else {
+                    // Control lines registered prior to the local scope and deactivated by the latter should still be registered in the parent
+                    // scope after the local one was deactivated.
+                    aggregateOfLocalControlLineScopes.emplace(controlLine);
                 }
+            }
+            localControlLinesScope.pop_back();
+        }
+
+        /**
+         * Deregister a control line from the current scope.
+         *
+         * @remarks The control line is only removed from the aggregate if the last activated local scope registered @p controlLine.
+         * @param controlLine The control line to deregister
+         * @return Whether the control line was deregistered from the last activated local scope.
+         */
+        [[maybe_unused]] bool deregisterControlLineInCurrentScope(const Gate::Line controlLine) {
+            if (localControlLinesScope.empty()) {
+                return false;
+            }
+
+            auto& localControlLineScope = localControlLinesScope.back();
+            if (localControlLineScope.count(controlLine) == 0) {
+                return false;
+            }
+
+            localControlLineScope.at(controlLine).isControlLineActive = false;
+            aggregateOfLocalControlLineScopes.erase(controlLine);
+            return true;
+        }
+
+        /**
+         * Register a control line in the last activated local scope.
+         * @param controlLine The control line to register
+         */
+        void registerControlLineInCurrentScope(const Gate::Line controlLine) {
+            if (localControlLinesScope.empty()) {
+                activateLocalControlLineScope();
+            }
+
+            auto& localControlLineScope = localControlLinesScope.back();
+            // If an entry for the to be registered control line already exists in the current scope then the previously determine value of the flag indicating whether the control line existed in the parent scope
+            // should have the same value that it had when the control line was initially added to the current scope
+            if (localControlLineScope.count(controlLine) != 0) {
+                localControlLineScope.at(controlLine).isControlLineActive = true;
             } else {
-                for (const auto& g: src) {
-                    Gate& newGate = insertGate(pos++);
-                    for (const auto& control: controls) {
-                        newGate.controls.emplace(control);
-                    }
-                    for (const auto& c: g->controls) {
-                        newGate.controls.emplace(c);
-                    }
-                    for (const auto& t: g->targets) {
-                        newGate.targets.emplace(t);
-                    }
-                    newGate.type = g->type;
-                    auto anno    = src.getAnnotations(*g);
-                    if (anno) {
-                        for (const auto& [first, second]: *anno) {
-                            annotate(newGate, first, second);
-                        }
-                    }
-                }
+                localControlLineScope.emplace(std::make_pair(controlLine, LocalControlLineScopeEntry(true, aggregateOfLocalControlLineScopes.count(controlLine) != 0)));
             }
-        }
-
-        ///add gates
-        Gate& appendMultiControlToffoli(const Gate::line_container& controls, const Gate::line& target) {
-            Gate& g = appendGate();
-            for (const auto& control: controls) {
-                g.controls.emplace(control);
-            }
-            g.targets.emplace(target);
-            g.type = Gate::Types::Toffoli;
-
-            return g;
-        }
-
-        Gate& appendToffoli(const Gate::line& control1, const Gate::line& control2, const Gate::line& target) {
-            Gate& g = appendGate();
-            g.controls.emplace(control1);
-            g.controls.emplace(control2);
-            g.targets.emplace(target);
-            g.type = Gate::Types::Toffoli;
-            return g;
-        }
-
-        Gate& appendCnot(const Gate::line& control, const Gate::line& target) {
-            Gate& g = appendGate();
-            g.controls.emplace(control);
-            g.targets.emplace(target);
-            g.type = Gate::Types::Toffoli;
-            return g;
-        }
-
-        Gate& appendNot(const Gate::line& target) {
-            Gate& g = appendGate();
-            g.targets.emplace(target);
-            g.type = Gate::Types::Toffoli;
-            return g;
-        }
-
-        Gate& appendFredkin(const Gate::line& target1, const Gate::line& target2) {
-            Gate& g = appendGate();
-            g.targets.emplace(target1);
-            g.targets.emplace(target2);
-            g.type = Gate::Types::Fredkin;
-            return g;
+            aggregateOfLocalControlLineScopes.emplace(controlLine);
         }
 
         // SIGNALS
-        /**
-     * @brief Signal which is emitted after adding a gate
-     *
-     * The gate is always empty, since when adding a gate to the
-     * circuit an empty gate is returned as reference and then
-     * further processed by functions such as append_toffoli.
-     */
-        boost::signals2::signal<void(Gate&)> gateAdded; //NOLINT(cppcoreguidelines-pro-type-member-init)
-
         [[nodiscard]] Gate::cost_t quantumCost() const {
             Gate::cost_t cost = 0U;
             for (const auto& g: gates) {
@@ -466,17 +491,67 @@ namespace syrec {
             return true;
         }
 
-    private:
-        std::vector<std::shared_ptr<Gate>> gates{};
-        unsigned                           lines{};
+    protected:
+        /**
+         * Create and add a gate of type \p gateType to the circuit.
+         *
+         * @remarks Note, the register global gate annotations will be added to the created gate instance.
+         * @param gateType The type of gate to be added
+         * @param controlLines The control lines of the gate to be added. Additionally, the registered control lines of all active local control line scopes will be added as control lines of the gate.
+         * @param targetLines The control lines of the gate to be added.
+         * @return A smart pointer to the created gate instance.
+         */
+        [[maybe_unused]] Gate::ptr createAndAddGate(Gate::Type gateType, const std::optional<Gate::LinesLookup>& controlLines, const Gate::LinesLookup& targetLines) {
+            auto gateInstance  = std::make_shared<Gate>();
+            gateInstance->type = gateType;
 
-        std::vector<std::string> inputs{};
-        std::vector<std::string> outputs{};
-        std::vector<constant>    constants{};
-        std::vector<bool>        garbage{};
-        std::string              name{};
+            if (localControlLinesScope.empty()) {
+                gateInstance->controls.insert(aggregateOfLocalControlLineScopes.cbegin(), aggregateOfLocalControlLineScopes.cend());
+            } else {
+                const auto& lastAddedLocalControlLineScope = localControlLinesScope.back();
+                for (const auto [controlLine, controlLineData]: lastAddedLocalControlLineScope) {
+                    if (controlLineData.isControlLineActive) {
+                        gateInstance->controls.emplace(controlLine);
+                    }
+                }
+            }
+
+            if (controlLines.has_value()) {
+                gateInstance->controls.insert(controlLines->cbegin(), controlLines->cend());
+            }
+            gateInstance->targets = targetLines;
+            gates.emplace_back(gateInstance);
+            for (const auto& [annotationKey, annotationValue]: activeGlobalGateAnnotations) {
+                annotate(*gateInstance, annotationKey, annotationValue);
+            }
+            return gateInstance;
+        }
+
+    private:
+        std::vector<std::shared_ptr<Gate>> gates;
+        unsigned                           lines = 0;
+
+        std::vector<std::string> inputs;
+        std::vector<std::string> outputs;
+        std::vector<constant>    constants;
+        std::vector<bool>        garbage;
+        std::string              name;
+
+        Gate::LinesLookup aggregateOfLocalControlLineScopes;
+        struct LocalControlLineScopeEntry {
+            bool isControlLineActive;
+            bool wasControlLineRegisteredInParentScope;
+
+            LocalControlLineScopeEntry(bool isControlLineActive, bool wasControlLineRegisteredInParentScope):
+                isControlLineActive(isControlLineActive), wasControlLineRegisteredInParentScope(wasControlLineRegisteredInParentScope) {}
+        };
+        std::vector<std::unordered_map<Gate::Line, LocalControlLineScopeEntry>> localControlLinesScope;
 
         std::map<const Gate*, std::map<std::string, std::string>> annotations;
+        // To be able to use a std::string_view key lookup (heterogeneous lookup) in a std::map/std::unordered_set
+        // we need to define the transparent comparator (std::less<>). This feature is only available starting with C++17
+        // For further information, see: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3465.pdf
+        std::map<std::string, std::string, std::less<>> activeGlobalGateAnnotations;
     };
 
 } // namespace syrec

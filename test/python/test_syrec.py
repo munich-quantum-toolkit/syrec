@@ -90,8 +90,8 @@ def test_simulation_no_lines(data_line_aware_simulation: dict[str, Any]) -> None
         assert not error
         assert syrec.line_aware_synthesis(circ, prog)
 
-        my_inp_bitset = syrec.bitset(circ.lines)
-        my_out_bitset = syrec.bitset(circ.lines)
+        my_inp_bitset = syrec.n_bit_values_container(circ.lines)
+        my_out_bitset = syrec.n_bit_values_container(circ.lines)
         set_list = data_line_aware_simulation[file_name]["set_lines"]
 
         for set_index in set_list:
@@ -110,8 +110,8 @@ def test_simulation_add_lines(data_cost_aware_simulation: dict[str, Any]) -> Non
         assert not error
         assert syrec.cost_aware_synthesis(circ, prog)
 
-        my_inp_bitset = syrec.bitset(circ.lines)
-        my_out_bitset = syrec.bitset(circ.lines)
+        my_inp_bitset = syrec.n_bit_values_container(circ.lines)
+        my_out_bitset = syrec.n_bit_values_container(circ.lines)
         set_list = data_cost_aware_simulation[file_name]["set_lines"]
 
         for set_index in set_list:

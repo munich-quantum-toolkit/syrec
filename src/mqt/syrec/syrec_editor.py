@@ -349,8 +349,8 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         settings = syrec.properties()
 
         for i in input_list:
-            my_inp_bitset = syrec.bitset(self.circ.lines, i)
-            my_out_bitset = syrec.bitset(self.circ.lines)
+            my_inp_bitset = syrec.n_bit_values_container(self.circ.lines, i)
+            my_out_bitset = syrec.n_bit_values_container(self.circ.lines)
 
             syrec.simple_simulation(my_out_bitset, self.circ, my_inp_bitset, settings)
             combination_inp.append(str(my_inp_bitset))
