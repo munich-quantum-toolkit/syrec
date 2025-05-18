@@ -11,10 +11,11 @@
 #pragma once
 
 #include "algorithms/synthesis/syrec_synthesis.hpp"
-#include "core/circuit.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
+#include "ir/Definitions.hpp"
+#include "ir/QuantumComputation.hpp"
 
 #include <memory>
 #include <vector>
@@ -24,27 +25,27 @@ namespace syrec {
     public:
         using SyrecSynthesis::SyrecSynthesis;
 
-        static bool synthesize(Circuit& circ, const Program& program, const Properties::ptr& settings = std::make_shared<Properties>(), const Properties::ptr& statistics = std::make_shared<Properties>());
+        static bool synthesize(qc::QuantumComputation& quantumComputation, const Program& program, const Properties::ptr& settings = std::make_shared<Properties>(), const Properties::ptr& statistics = std::make_shared<Properties>());
 
     protected:
-        bool processStatement(Circuit& circuit, const Statement::ptr& statement) override {
-            return SyrecSynthesis::onStatement(circuit, statement);
+        bool processStatement(qc::QuantumComputation& quantumComputation, const Statement::ptr& statement) override {
+            return SyrecSynthesis::onStatement(quantumComputation, statement);
         }
 
-        bool assignAdd(Circuit& circuit, std::vector<unsigned>& rhs, std::vector<unsigned>& lhs, [[maybe_unused]] const unsigned& op) override {
-            return increase(circuit, rhs, lhs);
+        bool assignAdd(qc::QuantumComputation& quantumComputation, std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, [[maybe_unused]] unsigned op) override {
+            return increase(quantumComputation, rhs, lhs);
         }
 
-        bool assignSubtract(Circuit& circuit, std::vector<unsigned>& rhs, std::vector<unsigned>& lhs, [[maybe_unused]] const unsigned& op) override {
-            return decrease(circuit, rhs, lhs);
+        bool assignSubtract(qc::QuantumComputation& quantumComputation, std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, [[maybe_unused]] unsigned op) override {
+            return decrease(quantumComputation, rhs, lhs);
         }
 
-        bool assignExor(Circuit& circuit, std::vector<unsigned>& lhs, std::vector<unsigned>& rhs, [[maybe_unused]] const unsigned& op) override {
-            return bitwiseCnot(circuit, lhs, rhs);
+        bool assignExor(qc::QuantumComputation& quantumComputation, std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] unsigned op) override {
+            return bitwiseCnot(quantumComputation, lhs, rhs);
         }
 
-        bool expAdd(Circuit& circuit, const unsigned& bitwidth, std::vector<unsigned>& rhs, const std::vector<unsigned>& lhs, const std::vector<unsigned>& lines) override;
-        bool expSubtract(Circuit& circuit, const unsigned& bitwidth, std::vector<unsigned>& rhs, const std::vector<unsigned>& lhs, const std::vector<unsigned>& lines) override;
-        bool expExor(Circuit& circuit, const unsigned& bitwidth, std::vector<unsigned>& lines, const std::vector<unsigned>& lhs, const std::vector<unsigned>& rhs) override;
+        bool expAdd(qc::QuantumComputation& quantumComputation, unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) override;
+        bool expSubtract(qc::QuantumComputation& quantumComputation, unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) override;
+        bool expExor(qc::QuantumComputation& quantumComputation, unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) override;
     };
 } // namespace syrec

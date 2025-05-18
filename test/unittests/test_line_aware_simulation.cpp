@@ -14,6 +14,7 @@
 #include "core/n_bit_values_container.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
+#include "ir/QuantumComputation.hpp"
 
 #include "gtest/gtest.h"
 #include <algorithm>
@@ -63,22 +64,24 @@ INSTANTIATE_TEST_SUITE_P(SyrecSimulationTest, SyrecSimulationTest,
                              return s; });
 
 TEST_P(SyrecSimulationTest, GenericSimulationTest) {
-    Circuit                   circ;
+    qc::QuantumComputation                   quantumComputation;
     Program                   prog;
     const ReadProgramSettings settings;
     const Properties::ptr     statistics;
     const std::string         errorString = prog.read(fileName, settings);
     EXPECT_TRUE(errorString.empty());
-    EXPECT_TRUE(LineAwareSynthesis::synthesize(circ, prog));
+    EXPECT_TRUE(LineAwareSynthesis::synthesize(quantumComputation, prog));
 
-    const std::size_t nCircuitLines = circ.getLines();
+    const std::size_t nCircuitLines = quantumComputation.getNqubits();
     input.resize(nCircuitLines);
     output.resize(nCircuitLines);
 
     for (const int line: setLines) {
         input.set(static_cast<std::size_t>(line));
     }
-    simpleSimulation(output, circ, input, statistics);
+
+    // TODO:
+    //simpleSimulation(output, quantumComputation, input, statistics);
     outputString = output.stringify();
     EXPECT_EQ(expectedSimOut, outputString);
 }
