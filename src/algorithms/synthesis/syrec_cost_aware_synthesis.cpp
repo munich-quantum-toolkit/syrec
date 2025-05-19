@@ -19,26 +19,26 @@
 #include <vector>
 
 namespace syrec {
-    bool CostAwareSynthesis::expAdd(qc::QuantumComputation& quantumComputation, const unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) {
-        getConstantLines(quantumComputation, bitwidth, 0U, rhs);
-        return bitwiseCnot(quantumComputation, rhs, lhs) // duplicate lhs
-            && increase(quantumComputation, rhs, lines);
+    bool CostAwareSynthesis::expAdd(const unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) {
+        getConstantLines(bitwidth, 0U, rhs);
+        return bitwiseCnot(rhs, lhs) // duplicate lhs
+            && increase(rhs, lines);
     }
 
-    bool CostAwareSynthesis::expSubtract(qc::QuantumComputation& quantumComputation, const unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) {
-        getConstantLines(quantumComputation, bitwidth, 0U, rhs);
-        return bitwiseCnot(quantumComputation, rhs, lhs) // duplicate lhs
-            && decrease(quantumComputation, rhs, lines);
+    bool CostAwareSynthesis::expSubtract(const unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) {
+        getConstantLines(bitwidth, 0U, rhs);
+        return bitwiseCnot(rhs, lhs) // duplicate lhs
+            && decrease(rhs, lines);
     }
 
-    bool CostAwareSynthesis::expExor(qc::QuantumComputation& quantumComputation, const unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
-        getConstantLines(quantumComputation, bitwidth, 0U, lines);
-        return bitwiseCnot(quantumComputation, lines, lhs) // duplicate lhs
-            && bitwiseCnot(quantumComputation, lines, rhs);
+    bool CostAwareSynthesis::expExor(const unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
+        getConstantLines(bitwidth, 0U, lines);
+        return bitwiseCnot(lines, lhs) // duplicate lhs
+            && bitwiseCnot(lines, rhs);
     }
 
     bool CostAwareSynthesis::synthesize(qc::QuantumComputation& quantumComputation, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
         CostAwareSynthesis synthesizer(quantumComputation);
-        return SyrecSynthesis::synthesize(&synthesizer, quantumComputation, program, settings, statistics);
+        return SyrecSynthesis::synthesize(&synthesizer, program, settings, statistics);
     }
 } // namespace syrec

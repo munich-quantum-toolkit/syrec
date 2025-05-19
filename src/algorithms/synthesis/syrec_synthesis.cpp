@@ -41,11 +41,11 @@ namespace syrec {
         modules.push(mainModule);
     }
 
-    bool SyrecSynthesis::onModule(qc::QuantumComputation& quantumComputation, const Module::ptr& main) {
+    bool SyrecSynthesis::onModule(const Module::ptr& main) {
         bool              synthesisOfModuleStatementOk = true;
         const std::size_t nModuleStatements            = main->statements.size();
         for (std::size_t i = 0; i < nModuleStatements && synthesisOfModuleStatementOk; ++i) {
-            synthesisOfModuleStatementOk = processStatement(quantumComputation, main->statements[i]);
+            synthesisOfModuleStatementOk = processStatement(main->statements[i]);
         }
         return synthesisOfModuleStatementOk;
     }
@@ -85,26 +85,26 @@ namespace syrec {
         return true;
     }
 
-    bool SyrecSynthesis::onStatement(qc::QuantumComputation& quantumComputation, const Statement::ptr& statement) {
+    bool SyrecSynthesis::onStatement(const Statement::ptr& statement) {
         stmts.push(statement);
 
-        setOrUpdateGlobalGateAnnotation(GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER, std::to_string(static_cast<std::size_t>(statement->lineNumber)));
+        setOrUpdateGlobalQuantumOperationAnnotation(GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER, std::to_string(static_cast<std::size_t>(statement->lineNumber)));
 
         bool okay = true;
         if (auto const* swapStat = dynamic_cast<SwapStatement*>(statement.get())) {
-            okay = onStatement(quantumComputation, *swapStat);
+            okay = onStatement(*swapStat);
         } else if (auto const* unaryStat = dynamic_cast<UnaryStatement*>(statement.get())) {
-            okay = onStatement(quantumComputation, *unaryStat);
+            okay = onStatement(*unaryStat);
         } else if (auto const* assignStat = dynamic_cast<AssignStatement*>(statement.get())) {
-            okay = onStatement(quantumComputation, *assignStat);
+            okay = onStatement(*assignStat);
         } else if (auto const* ifStat = dynamic_cast<IfStatement*>(statement.get())) {
-            okay = onStatement(quantumComputation, *ifStat);
+            okay = onStatement(*ifStat);
         } else if (auto const* forStat = dynamic_cast<ForStatement*>(statement.get())) {
-            okay = onStatement(quantumComputation, *forStat);
+            okay = onStatement(*forStat);
         } else if (auto const* callStat = dynamic_cast<CallStatement*>(statement.get())) {
-            okay = onStatement(quantumComputation, *callStat);
+            okay = onStatement(*callStat);
         } else if (auto const* uncallStat = dynamic_cast<UncallStatement*>(statement.get())) {
-            okay = onStatement(quantumComputation, *uncallStat);
+            okay = onStatement(*uncallStat);
         } else if (auto const* skipStat = statement.get()) {
             okay = onStatement(*skipStat);
         } else {
@@ -115,7 +115,7 @@ namespace syrec {
         return okay;
     }
 
-    bool SyrecSynthesis::onStatement(qc::QuantumComputation& quantumComputation, const SwapStatement& statement) {
+    bool SyrecSynthesis::onStatement(const SwapStatement& statement) {
         std::vector<qc::Qubit> lhs;
         std::vector<qc::Qubit> rhs;
 
@@ -124,27 +124,27 @@ namespace syrec {
 
         assert(lhs.size() == rhs.size());
 
-        return swap(quantumComputation, lhs, rhs);
+        return swap(lhs, rhs);
     }
 
-    bool SyrecSynthesis::onStatement(qc::QuantumComputation& quantumComputation, const UnaryStatement& statement) {
+    bool SyrecSynthesis::onStatement(const UnaryStatement& statement) {
         // load variable
         std::vector<qc::Qubit> var;
         getVariables(statement.var, var);
 
         switch (statement.op) {
             case UnaryStatement::Invert:
-                return bitwiseNegation(quantumComputation, var);
+                return bitwiseNegation(var);
             case UnaryStatement::Increment:
-                return increment(quantumComputation, var);
+                return increment(var);
             case UnaryStatement::Decrement:
-                return decrement(quantumComputation, var);
+                return decrement(var);
             default:
                 return false;
         }
     }
 
-    bool SyrecSynthesis::onStatement(qc::QuantumComputation& quantumComputation, const AssignStatement& statement) {
+    bool SyrecSynthesis::onStatement(const AssignStatement& statement) {
         std::vector<qc::Qubit> lhs;
         std::vector<qc::Qubit> rhs;
         std::vector<qc::Qubit> d;
@@ -152,20 +152,20 @@ namespace syrec {
         getVariables(statement.lhs, lhs);
         opRhsLhsExpression(statement.rhs, d);
 
-        bool synthesisOfAssignmentOk = SyrecSynthesis::onExpression(quantumComputation, statement.rhs, rhs, lhs, statement.op);
+        bool synthesisOfAssignmentOk = SyrecSynthesis::onExpression(statement.rhs, rhs, lhs, statement.op);
         opVec.clear();
 
         switch (statement.op) {
             case AssignStatement::Add: {
-                synthesisOfAssignmentOk &= assignAdd(quantumComputation, lhs, rhs, statement.op);
+                synthesisOfAssignmentOk &= assignAdd(lhs, rhs, statement.op);
                 break;
             }
             case AssignStatement::Subtract: {
-                synthesisOfAssignmentOk &= assignSubtract(quantumComputation, lhs, rhs, statement.op);
+                synthesisOfAssignmentOk &= assignSubtract(lhs, rhs, statement.op);
                 break;
             }
             case AssignStatement::Exor: {
-                synthesisOfAssignmentOk &= assignExor(quantumComputation, lhs, rhs, statement.op);
+                synthesisOfAssignmentOk &= assignExor(lhs, rhs, statement.op);
                 break;
             }
             default:
@@ -174,11 +174,11 @@ namespace syrec {
         return synthesisOfAssignmentOk;
     }
 
-    bool SyrecSynthesis::onStatement(qc::QuantumComputation& quantumComputation, const IfStatement& statement) {
+    bool SyrecSynthesis::onStatement(const IfStatement& statement) {
         // calculate expression
         std::vector<qc::Qubit> expressionResult;
 
-        const bool synthesisOfStatementOk = onExpression(quantumComputation, statement.condition, expressionResult, {}, 0U);
+        const bool synthesisOfStatementOk = onExpression(statement.condition, expressionResult, {}, 0U);
         assert(expressionResult.size() == 1U);
         if (!synthesisOfStatementOk) {
             return false;
@@ -186,11 +186,11 @@ namespace syrec {
 
         // add new helper line
         const qc::Qubit helperLine = expressionResult.front();
-        activateControlLinePropagationScope();
-        registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, helperLine);
+        activateControlQubitPropagationScope();
+        registerControlQubitForPropagationInCurrentAndNestedScopes(helperLine);
 
         for (const Statement::ptr& stat: statement.thenStatements) {
-            if (!processStatement(quantumComputation, stat)) {
+            if (!processStatement(stat)) {
                 return false;
             }
         }
@@ -198,25 +198,25 @@ namespace syrec {
         // Toggle helper line.
         // We do not want to use the current helper line controlling the conditional execution of the statements
         // of both branches of the current IfStatement when negating the value of said helper line
-        deregisterControlLineFromPropagationInCurrentScope(quantumComputation, helperLine);
-        createAndAddNotGate(quantumComputation, helperLine);
-        registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, helperLine);
+        deregisterControlQubitFromPropagationInCurrentScope(helperLine);
+        addOperationsImplementingNotGate(helperLine);
+        registerControlQubitForPropagationInCurrentAndNestedScopes(helperLine);
 
         for (const Statement::ptr& stat: statement.elseStatements) {
-            if (!processStatement(quantumComputation, stat)) {
+            if (!processStatement(stat)) {
                 return false;
             }
         }
 
         // We do not want to use the current helper line controlling the conditional execution of the statements
         // of both branches of the current IfStatement when negating the value of said helper line
-        deregisterControlLineFromPropagationInCurrentScope(quantumComputation, helperLine);
-        createAndAddNotGate(quantumComputation, helperLine);
-        deactivateControlLinePropagationScope();
+        deregisterControlQubitFromPropagationInCurrentScope(helperLine);
+        addOperationsImplementingNotGate(helperLine);
+        deactivateControlQubitPropagationScope();
         return true;
     }
 
-    bool SyrecSynthesis::onStatement(qc::QuantumComputation& quantumComputation, const ForStatement& statement) {
+    bool SyrecSynthesis::onStatement(const ForStatement& statement) {
         const auto& [nfrom, nTo] = statement.range;
 
         const qc::Qubit    from         = nfrom ? nfrom->evaluate(loopMap) : 1U; // default value is 1u
@@ -233,7 +233,7 @@ namespace syrec {
                 }
 
                 for (const auto& stat: statement.statements) {
-                    if (!processStatement(quantumComputation, stat)) {
+                    if (!processStatement(stat)) {
                         return false;
                     }
                 }
@@ -249,7 +249,7 @@ namespace syrec {
                 }
 
                 for (const auto& stat: statement.statements) {
-                    if (!processStatement(quantumComputation, stat)) {
+                    if (!processStatement(stat)) {
                         return false;
                     }
                 }
@@ -263,7 +263,7 @@ namespace syrec {
         return true;
     }
 
-    bool SyrecSynthesis::onStatement(qc::QuantumComputation& quantumComputation, const CallStatement& statement) {
+    bool SyrecSynthesis::onStatement(const CallStatement& statement) {
         // 1. Adjust the references module's parameters to the call arguments
         for (qc::Qubit i = 0U; i < statement.parameters.size(); ++i) {
             const std::string&   parameter       = statement.parameters.at(i);
@@ -273,11 +273,11 @@ namespace syrec {
         }
 
         // 2. Create new lines for the module's variables
-        addVariables(quantumComputation, statement.target->variables);
+        addVariables(statement.target->variables);
 
         modules.push(statement.target);
         for (const Statement::ptr& stat: statement.target->statements) {
-            if (!processStatement(quantumComputation, stat)) {
+            if (!processStatement(stat)) {
                 return false;
             }
         }
@@ -286,7 +286,7 @@ namespace syrec {
         return true;
     }
 
-    bool SyrecSynthesis::onStatement(qc::QuantumComputation& quantumComputation, const UncallStatement& statement) {
+    bool SyrecSynthesis::onStatement(const UncallStatement& statement) {
         // 1. Adjust the references module's parameters to the call arguments
         for (qc::Qubit i = 0U; i < statement.parameters.size(); ++i) {
             const std::string& parameter       = statement.parameters.at(i);
@@ -296,14 +296,14 @@ namespace syrec {
         }
 
         // 2. Create new lines for the module's variables
-        addVariables(quantumComputation, statement.target->variables);
+        addVariables(statement.target->variables);
 
         modules.push(statement.target);
 
         const auto statements = statement.target->statements;
         for (auto it = statements.rbegin(); it != statements.rend(); ++it) {
             const auto reverseStatement = (*it)->reverse();
-            if (!processStatement(quantumComputation, reverseStatement)) {
+            if (!processStatement(reverseStatement)) {
                 return false;
             }
         }
@@ -317,43 +317,43 @@ namespace syrec {
         return true;
     }
 
-    bool SyrecSynthesis::onExpression(qc::QuantumComputation& quantumComputation, const Expression::ptr& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, qc::Qubit op) {
+    bool SyrecSynthesis::onExpression(const Expression::ptr& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, qc::Qubit op) {
         if (auto const* numeric = dynamic_cast<NumericExpression*>(expression.get())) {
-            return onExpression(quantumComputation, *numeric, lines);
+            return onExpression(*numeric, lines);
         }
         if (auto const* variable = dynamic_cast<VariableExpression*>(expression.get())) {
             return onExpression(*variable, lines);
         }
         if (auto const* binary = dynamic_cast<BinaryExpression*>(expression.get())) {
-            return onExpression(quantumComputation, *binary, lines, lhsStat, op);
+            return onExpression(*binary, lines, lhsStat, op);
         }
         if (auto const* shift = dynamic_cast<ShiftExpression*>(expression.get())) {
-            return onExpression(quantumComputation, *shift, lines, lhsStat, op);
+            return onExpression(*shift, lines, lhsStat, op);
         }
         return false;
     }
 
-    bool SyrecSynthesis::onExpression(qc::QuantumComputation& quantumComputation, const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, qc::Qubit op) {
+    bool SyrecSynthesis::onExpression(const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, qc::Qubit op) {
         std::vector<qc::Qubit> lhs;
-        if (!onExpression(quantumComputation, expression.lhs, lhs, lhsStat, op)) {
+        if (!onExpression(expression.lhs, lhs, lhsStat, op)) {
             return false;
         }
 
         const qc::Qubit rhs = expression.rhs->evaluate(loopMap);
         switch (expression.op) {
             case ShiftExpression::Left: // <<
-                getConstantLines(quantumComputation, expression.bitwidth(), 0U, lines);
-                return leftShift(quantumComputation, lines, lhs, rhs);
+                getConstantLines(expression.bitwidth(), 0U, lines);
+                return leftShift(lines, lhs, rhs);
             case ShiftExpression::Right: // <<
-                getConstantLines(quantumComputation, expression.bitwidth(), 0U, lines);
-                return rightShift(quantumComputation, lines, lhs, rhs);
+                getConstantLines(expression.bitwidth(), 0U, lines);
+                return rightShift(lines, lhs, rhs);
             default:
                 return false;
         }
     }
 
-    bool SyrecSynthesis::onExpression(qc::QuantumComputation& quantumComputation, const NumericExpression& expression, std::vector<qc::Qubit>& lines) {
-        getConstantLines(quantumComputation, expression.bitwidth(), expression.value->evaluate(loopMap), lines);
+    bool SyrecSynthesis::onExpression(const NumericExpression& expression, std::vector<qc::Qubit>& lines) {
+        getConstantLines(expression.bitwidth(), expression.value->evaluate(loopMap), lines);
         return true;
     }
 
@@ -362,11 +362,11 @@ namespace syrec {
         return true;
     }
 
-    bool SyrecSynthesis::onExpression(qc::QuantumComputation& quantumComputation, const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, qc::Qubit op) {
+    bool SyrecSynthesis::onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, qc::Qubit op) {
         std::vector<qc::Qubit> lhs;
         std::vector<qc::Qubit> rhs;
 
-        if (!onExpression(quantumComputation, expression.lhs, lhs, lhsStat, op) || !onExpression(quantumComputation, expression.rhs, rhs, lhsStat, op)) {
+        if (!onExpression(expression.lhs, lhs, lhsStat, op) || !onExpression(expression.rhs, rhs, lhsStat, op)) {
             return false;
         }
 
@@ -381,69 +381,69 @@ namespace syrec {
         bool synthesisOfExprOk = true;
         switch (expression.op) {
             case BinaryExpression::Add: // +
-                synthesisOfExprOk = expAdd(quantumComputation, expression.bitwidth(), lines, lhs, rhs);
+                synthesisOfExprOk = expAdd(expression.bitwidth(), lines, lhs, rhs);
                 break;
             case BinaryExpression::Subtract: // -
-                synthesisOfExprOk = expSubtract(quantumComputation, expression.bitwidth(), lines, lhs, rhs);
+                synthesisOfExprOk = expSubtract(expression.bitwidth(), lines, lhs, rhs);
                 break;
             case BinaryExpression::Exor: // ^
-                synthesisOfExprOk = expExor(quantumComputation, expression.bitwidth(), lines, lhs, rhs);
+                synthesisOfExprOk = expExor(expression.bitwidth(), lines, lhs, rhs);
                 break;
             case BinaryExpression::Multiply: // *
-                getConstantLines(quantumComputation, expression.bitwidth(), 0U, lines);
-                synthesisOfExprOk = multiplication(quantumComputation, lines, lhs, rhs);
+                getConstantLines(expression.bitwidth(), 0U, lines);
+                synthesisOfExprOk = multiplication(lines, lhs, rhs);
                 break;
             case BinaryExpression::Divide: // /
-                getConstantLines(quantumComputation, expression.bitwidth(), 0U, lines);
-                synthesisOfExprOk = division(quantumComputation, lines, lhs, rhs);
+                getConstantLines(expression.bitwidth(), 0U, lines);
+                synthesisOfExprOk = division(lines, lhs, rhs);
                 break;
             case BinaryExpression::Modulo: { // %
-                getConstantLines(quantumComputation, expression.bitwidth(), 0U, lines);
+                getConstantLines(expression.bitwidth(), 0U, lines);
                 std::vector<qc::Qubit> quot;
-                getConstantLines(quantumComputation, expression.bitwidth(), 0U, quot);
+                getConstantLines(expression.bitwidth(), 0U, quot);
 
-                synthesisOfExprOk = bitwiseCnot(quantumComputation, lines, lhs); // duplicate lhs
-                synthesisOfExprOk &= modulo(quantumComputation, quot, lines, rhs);
+                synthesisOfExprOk = bitwiseCnot(lines, lhs); // duplicate lhs
+                synthesisOfExprOk &= modulo(quot, lines, rhs);
             } break;
             case BinaryExpression::LogicalAnd: // &&
-                lines.emplace_back(getConstantLine(quantumComputation, false));
-                synthesisOfExprOk = conjunction(quantumComputation, lines.front(), lhs.front(), rhs.front());
+                lines.emplace_back(getConstantLine(false));
+                synthesisOfExprOk = conjunction(lines.front(), lhs.front(), rhs.front());
                 break;
             case BinaryExpression::LogicalOr: // ||
-                lines.emplace_back(getConstantLine(quantumComputation, false));
-                synthesisOfExprOk = disjunction(quantumComputation, lines.front(), lhs.front(), rhs.front());
+                lines.emplace_back(getConstantLine(false));
+                synthesisOfExprOk = disjunction(lines.front(), lhs.front(), rhs.front());
                 break;
             case BinaryExpression::BitwiseAnd: // &
-                getConstantLines(quantumComputation, expression.bitwidth(), 0U, lines);
-                synthesisOfExprOk = bitwiseAnd(quantumComputation, lines, lhs, rhs);
+                getConstantLines(expression.bitwidth(), 0U, lines);
+                synthesisOfExprOk = bitwiseAnd(lines, lhs, rhs);
                 break;
             case BinaryExpression::BitwiseOr: // |
-                getConstantLines(quantumComputation, expression.bitwidth(), 0U, lines);
-                synthesisOfExprOk = bitwiseOr(quantumComputation, lines, lhs, rhs);
+                getConstantLines(expression.bitwidth(), 0U, lines);
+                synthesisOfExprOk = bitwiseOr(lines, lhs, rhs);
                 break;
             case BinaryExpression::LessThan: // <
-                lines.emplace_back(getConstantLine(quantumComputation, false));
-                synthesisOfExprOk = lessThan(quantumComputation, lines.front(), lhs, rhs);
+                lines.emplace_back(getConstantLine(false));
+                synthesisOfExprOk = lessThan(lines.front(), lhs, rhs);
                 break;
             case BinaryExpression::GreaterThan: // >
-                lines.emplace_back(getConstantLine(quantumComputation, false));
-                synthesisOfExprOk = greaterThan(quantumComputation, lines.front(), lhs, rhs);
+                lines.emplace_back(getConstantLine(false));
+                synthesisOfExprOk = greaterThan(lines.front(), lhs, rhs);
                 break;
             case BinaryExpression::Equals: // =
-                lines.emplace_back(getConstantLine(quantumComputation, false));
-                synthesisOfExprOk = equals(quantumComputation, lines.front(), lhs, rhs);
+                lines.emplace_back(getConstantLine(false));
+                synthesisOfExprOk = equals(lines.front(), lhs, rhs);
                 break;
             case BinaryExpression::NotEquals: // !=
-                lines.emplace_back(getConstantLine(quantumComputation, false));
-                synthesisOfExprOk = notEquals(quantumComputation, lines.front(), lhs, rhs);
+                lines.emplace_back(getConstantLine(false));
+                synthesisOfExprOk = notEquals(lines.front(), lhs, rhs);
                 break;
             case BinaryExpression::LessEquals: // <=
-                lines.emplace_back(getConstantLine(quantumComputation, false));
-                synthesisOfExprOk = lessEquals(quantumComputation, lines.front(), lhs, rhs);
+                lines.emplace_back(getConstantLine(false));
+                synthesisOfExprOk = lessEquals(lines.front(), lhs, rhs);
                 break;
             case BinaryExpression::GreaterEquals: // >=
-                lines.emplace_back(getConstantLine(quantumComputation, false));
-                synthesisOfExprOk = greaterEquals(quantumComputation, lines.front(), lhs, rhs);
+                lines.emplace_back(getConstantLine(false));
+                synthesisOfExprOk = greaterEquals(lines.front(), lhs, rhs);
                 break;
             default:
                 return false;
@@ -458,34 +458,34 @@ namespace syrec {
     //*****                      Unary Operations                      *****
     //**********************************************************************
 
-    bool SyrecSynthesis::bitwiseNegation(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest) {
+    bool SyrecSynthesis::bitwiseNegation(const std::vector<qc::Qubit>& dest) {
         for (const auto line: dest) {
-            createAndAddNotGate(quantumComputation, line);
+            addOperationsImplementingNotGate(line);
         }
         return true;
     }
 
-    bool SyrecSynthesis::decrement(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest) {
-        activateControlLinePropagationScope();
+    bool SyrecSynthesis::decrement(const std::vector<qc::Qubit>& dest) {
+        activateControlQubitPropagationScope();
         for (const auto line: dest) {
-            createAndAddNotGate(quantumComputation, line);
-            registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, line);
+            addOperationsImplementingNotGate(line);
+            registerControlQubitForPropagationInCurrentAndNestedScopes(line);
         }
-        deactivateControlLinePropagationScope();
+        deactivateControlQubitPropagationScope();
         return true;
     }
 
-    bool SyrecSynthesis::increment(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest) {
-        activateControlLinePropagationScope();
+    bool SyrecSynthesis::increment(const std::vector<qc::Qubit>& dest) {
+        activateControlQubitPropagationScope();
         for (const auto line: dest) {
-            registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, line);
+            registerControlQubitForPropagationInCurrentAndNestedScopes(line);
         }
 
         for (int i = static_cast<int>(dest.size()) - 1; i >= 0; --i) {
-            deregisterControlLineFromPropagationInCurrentScope(quantumComputation, dest[static_cast<std::size_t>(i)]);
-            createAndAddNotGate(quantumComputation, dest[static_cast<std::size_t>(i)]);
+            deregisterControlQubitFromPropagationInCurrentScope(dest[static_cast<std::size_t>(i)]);
+            addOperationsImplementingNotGate(dest[static_cast<std::size_t>(i)]);
         }
-        deactivateControlLinePropagationScope();
+        deactivateControlQubitPropagationScope();
         return true;
     }
 
@@ -493,57 +493,57 @@ namespace syrec {
     //*****                     Binary Operations                      *****
     //**********************************************************************
 
-    bool SyrecSynthesis::bitwiseAnd(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+    bool SyrecSynthesis::bitwiseAnd(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
         bool synthesisOk = src1.size() >= dest.size() && src2.size() >= dest.size();
         for (std::size_t i = 0; i < dest.size() && synthesisOk; ++i) {
-            synthesisOk &= conjunction(quantumComputation, dest[i], src1[i], src2[i]);
+            synthesisOk &= conjunction(dest[i], src1[i], src2[i]);
         }
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::bitwiseCnot(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src) {
+    bool SyrecSynthesis::bitwiseCnot(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src) {
         const bool synthesisOk = dest.size() >= src.size();
         for (std::size_t i = 0; i < src.size() && synthesisOk; ++i) {
-            createAndAddCnotGate(quantumComputation, src[i], dest[i]);
+            addOperationsImplementingCnotGate(src[i], dest[i]);
         }
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::bitwiseOr(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+    bool SyrecSynthesis::bitwiseOr(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
         bool synthesisOk = src1.size() >= dest.size() && src2.size() >= dest.size();
         for (std::size_t i = 0; i < dest.size() && synthesisOk; ++i) {
-            synthesisOk &= disjunction(quantumComputation, dest[i], src1[i], src2[i]);
+            synthesisOk &= disjunction(dest[i], src1[i], src2[i]);
         }
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::conjunction(qc::QuantumComputation& quantumComputation, qc::Qubit dest, qc::Qubit src1, qc::Qubit src2) {
-        createAndAddToffoliGate(quantumComputation, src1, src2, dest);
+    bool SyrecSynthesis::conjunction(qc::Qubit dest, qc::Qubit src1, qc::Qubit src2) {
+        addOperationsImplementingToffoliGate(src1, src2, dest);
         return true;
     }
 
-    bool SyrecSynthesis::decreaseWithCarry(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry) {
+    bool SyrecSynthesis::decreaseWithCarry(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry) {
         bool synthesisOk = dest.size() >= src.size();
         for (std::size_t i = 0; i < src.size() && synthesisOk; ++i) {
-            createAndAddNotGate(quantumComputation, dest[i]);
+            addOperationsImplementingNotGate(dest[i]);
         }
 
-        synthesisOk &= increaseWithCarry(quantumComputation, dest, src, carry);
+        synthesisOk &= increaseWithCarry(dest, src, carry);
         for (std::size_t i = 0; i < src.size() && synthesisOk; ++i) {
-            createAndAddNotGate(quantumComputation, dest[i]);
+            addOperationsImplementingNotGate(dest[i]);
         }
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::disjunction(qc::QuantumComputation& quantumComputation, const qc::Qubit dest, const qc::Qubit src1, const qc::Qubit src2) {
-        createAndAddCnotGate(quantumComputation, src1, dest);
-        createAndAddCnotGate(quantumComputation, src2, dest);
-        createAndAddToffoliGate(quantumComputation, src1, src2, dest);
+    bool SyrecSynthesis::disjunction(const qc::Qubit dest, const qc::Qubit src1, const qc::Qubit src2) {
+        addOperationsImplementingCnotGate(src1, dest);
+        addOperationsImplementingCnotGate(src2, dest);
+        addOperationsImplementingToffoliGate(src1, src2, dest);
         return true;
     }
 
-    bool SyrecSynthesis::division(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
-        if (!modulo(quantumComputation, dest, src1, src2)) {
+    bool SyrecSynthesis::division(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+        if (!modulo(dest, src1, src2)) {
             return false;
         }
 
@@ -555,12 +555,12 @@ namespace syrec {
         }
 
         for (std::size_t i = 1; i < src1.size(); ++i) {
-            createAndAddNotGate(quantumComputation, src2[i]);
+            addOperationsImplementingNotGate(src2[i]);
         }
 
-        activateControlLinePropagationScope();
+        activateControlQubitPropagationScope();
         for (std::size_t i = 1U; i < src1.size(); ++i) {
-            registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, src2[i]);
+            registerControlQubitForPropagationInCurrentAndNestedScopes(src2[i]);
         }
 
         std::size_t helperIndex = 0;
@@ -570,59 +570,59 @@ namespace syrec {
 
             partial.push_back(src2[helperIndex++]);
             sum.insert(sum.begin(), src1[castedIndex]);
-            registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, dest[castedIndex]);
-            synthesisOk = increase(quantumComputation, sum, partial);
-            deregisterControlLineFromPropagationInCurrentScope(quantumComputation, dest[castedIndex]);
+            registerControlQubitForPropagationInCurrentAndNestedScopes(dest[castedIndex]);
+            synthesisOk = increase(sum, partial);
+            deregisterControlQubitFromPropagationInCurrentScope(dest[castedIndex]);
             if (i == 0) {
                 continue;
             }
 
             for (std::size_t j = 1; j < src1.size() && synthesisOk; ++j) {
-                deregisterControlLineFromPropagationInCurrentScope(quantumComputation, src2[j]);
+                deregisterControlQubitFromPropagationInCurrentScope(src2[j]);
             }
-            createAndAddNotGate(quantumComputation, src2[helperIndex]);
+            addOperationsImplementingNotGate(src2[helperIndex]);
 
             for (std::size_t j = 2; j < src1.size() && synthesisOk; ++j) {
-                registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, src2[j]);
+                registerControlQubitForPropagationInCurrentAndNestedScopes(src2[j]);
             }
         }
-        deactivateControlLinePropagationScope();
+        deactivateControlQubitPropagationScope();
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::equals(qc::QuantumComputation& quantumComputation, const qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+    bool SyrecSynthesis::equals(const qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
         if (src2.size() < src1.size()) {
             return false;
         }
 
         for (std::size_t i = 0; i < src1.size(); ++i) {
-            createAndAddCnotGate(quantumComputation, src2[i], src1[i]);
-            createAndAddNotGate(quantumComputation, src1[i]);
+            addOperationsImplementingCnotGate(src2[i], src1[i]);
+            addOperationsImplementingNotGate(src1[i]);
         }
 
-        createAndAddMultiControlToffoliGate(quantumComputation, std::unordered_set<qc::Qubit>(src1.begin(), src1.end()), dest);
+        addOperationsImplementingMultiControlToffoliGate(std::unordered_set<qc::Qubit>(src1.begin(), src1.end()), dest);
 
         for (std::size_t i = 0; i < src1.size(); ++i) {
-            createAndAddCnotGate(quantumComputation, src2[i], src1[i]);
-            createAndAddNotGate(quantumComputation, src1[i]);
+            addOperationsImplementingCnotGate(src2[i], src1[i]);
+            addOperationsImplementingNotGate(src1[i]);
         }
         return true;
     }
 
-    bool SyrecSynthesis::greaterEquals(qc::QuantumComputation& quantumComputation, const qc::Qubit dest, const std::vector<qc::Qubit>& srcTwo, const std::vector<qc::Qubit>& srcOne) {
-        if (!greaterThan(quantumComputation, dest, srcOne, srcTwo)) {
+    bool SyrecSynthesis::greaterEquals(const qc::Qubit dest, const std::vector<qc::Qubit>& srcTwo, const std::vector<qc::Qubit>& srcOne) {
+        if (!greaterThan(dest, srcOne, srcTwo)) {
             return false;
         }
 
-        createAndAddNotGate(quantumComputation, dest);
+        addOperationsImplementingNotGate(dest);
         return true;
     }
 
-    bool SyrecSynthesis::greaterThan(qc::QuantumComputation& quantumComputation, const qc::Qubit dest, const std::vector<qc::Qubit>& src2, const std::vector<qc::Qubit>& src1) {
-        return lessThan(quantumComputation, dest, src1, src2);
+    bool SyrecSynthesis::greaterThan(const qc::Qubit dest, const std::vector<qc::Qubit>& src2, const std::vector<qc::Qubit>& src1) {
+        return lessThan(dest, src1, src2);
     }
 
-    bool SyrecSynthesis::increase(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
+    bool SyrecSynthesis::increase(const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
         if (lhs.size() != rhs.size()) {
             return false;
         }
@@ -632,57 +632,57 @@ namespace syrec {
         }
 
         if (rhs.size() == 1) {
-            createAndAddCnotGate(quantumComputation, lhs.front(), rhs.front());
+            addOperationsImplementingCnotGate(lhs.front(), rhs.front());
             return true;
         }
 
         const std::size_t bitwidth = rhs.size();
         for (std::size_t i = 1; i <= bitwidth - 1; ++i) {
-            createAndAddCnotGate(quantumComputation, lhs[i], rhs[i]);
+            addOperationsImplementingCnotGate(lhs[i], rhs[i]);
         }
 
         for (std::size_t i = bitwidth - 2; i >= 1; --i) {
-            createAndAddCnotGate(quantumComputation, lhs[i], rhs[i]);
+            addOperationsImplementingCnotGate(lhs[i], rhs[i]);
         }
 
         for (std::size_t i = 0; i <= bitwidth - 2; ++i) {
-            createAndAddToffoliGate(quantumComputation, rhs[i], lhs[i], lhs[i + 1]);
+            addOperationsImplementingToffoliGate(rhs[i], lhs[i], lhs[i + 1]);
         }
 
-        createAndAddCnotGate(quantumComputation, lhs[bitwidth - 1], rhs[bitwidth - 1]);
+        addOperationsImplementingCnotGate(lhs[bitwidth - 1], rhs[bitwidth - 1]);
         for (std::size_t i = bitwidth - 2; i >= 1; --i) {
-            createAndAddToffoliGate(quantumComputation, lhs[i], rhs[i], lhs[i + 1]);
-            createAndAddCnotGate(quantumComputation, lhs[i], rhs[i]);
+            addOperationsImplementingToffoliGate(lhs[i], rhs[i], lhs[i + 1]);
+            addOperationsImplementingCnotGate(lhs[i], rhs[i]);
         }
-        createAndAddToffoliGate(quantumComputation, lhs.front(), rhs.front(), lhs[1]);
-        createAndAddCnotGate(quantumComputation, lhs.front(), rhs.front());
+        addOperationsImplementingToffoliGate(lhs.front(), rhs.front(), lhs[1]);
+        addOperationsImplementingCnotGate(lhs.front(), rhs.front());
 
         for (std::size_t i = 1; i <= bitwidth - 2; ++i) {
-            createAndAddCnotGate(quantumComputation, lhs[i], rhs[i + 1]);
+            addOperationsImplementingCnotGate(lhs[i], rhs[i + 1]);
         }
 
         for (std::size_t i = 1; i <= bitwidth - 1; ++i) {
-            createAndAddCnotGate(quantumComputation, lhs[i], rhs[i]);
+            addOperationsImplementingCnotGate(lhs[i], rhs[i]);
         }
         return true;
     }
 
-    bool SyrecSynthesis::decrease(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
+    bool SyrecSynthesis::decrease(const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
         for (const auto rhsOperandLine: rhs) {
-            createAndAddNotGate(quantumComputation, rhsOperandLine);
+            addOperationsImplementingNotGate(rhsOperandLine);
         }
 
-        if (!increase(quantumComputation, rhs, lhs)) {
+        if (!increase(rhs, lhs)) {
             return false;
         }
 
         for (const auto rhsOperandLine: rhs) {
-            createAndAddNotGate(quantumComputation, rhsOperandLine);
+            addOperationsImplementingNotGate(rhsOperandLine);
         }
         return true;
     }
 
-    bool SyrecSynthesis::increaseWithCarry(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry) {
+    bool SyrecSynthesis::increaseWithCarry(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry) {
         auto bitwidth = static_cast<int>(src.size());
         if (bitwidth == 0) {
             return true;
@@ -694,52 +694,52 @@ namespace syrec {
 
         const auto unsignedBitwidth = static_cast<std::size_t>(bitwidth);
         for (std::size_t i = 1U; i < unsignedBitwidth; ++i) {
-            createAndAddCnotGate(quantumComputation, src.at(i), dest.at(i));
+            addOperationsImplementingCnotGate(src.at(i), dest.at(i));
         }
 
         if (bitwidth > 1) {
-            createAndAddCnotGate(quantumComputation, src.at(unsignedBitwidth - 1), carry);
+            addOperationsImplementingCnotGate(src.at(unsignedBitwidth - 1), carry);
         }
 
         for (int i = bitwidth - 2; i > 0; --i) {
             const auto castedIndex = static_cast<std::size_t>(i);
-            createAndAddCnotGate(quantumComputation, src.at(castedIndex), src.at(castedIndex + 1));
+            addOperationsImplementingCnotGate(src.at(castedIndex), src.at(castedIndex + 1));
         }
 
         for (std::size_t i = 0U; i < unsignedBitwidth - 1; ++i) {
-            createAndAddToffoliGate(quantumComputation, src.at(i), dest.at(i), src.at(i + 1));
+            addOperationsImplementingToffoliGate(src.at(i), dest.at(i), src.at(i + 1));
         }
-        createAndAddToffoliGate(quantumComputation, src.at(unsignedBitwidth - 1), dest.at(unsignedBitwidth - 1), carry);
+        addOperationsImplementingToffoliGate(src.at(unsignedBitwidth - 1), dest.at(unsignedBitwidth - 1), carry);
 
         for (int i = bitwidth - 1; i > 0; --i) {
             const auto castedIndex = static_cast<std::size_t>(i);
-            createAndAddCnotGate(quantumComputation, src.at(castedIndex), dest.at(castedIndex));
-            createAndAddToffoliGate(quantumComputation, dest.at(castedIndex - 1), src.at(castedIndex - 1), src.at(castedIndex));
+            addOperationsImplementingCnotGate(src.at(castedIndex), dest.at(castedIndex));
+            addOperationsImplementingToffoliGate(dest.at(castedIndex - 1), src.at(castedIndex - 1), src.at(castedIndex));
         }
 
         for (std::size_t i = 1U; i < unsignedBitwidth - 1; ++i) {
-            createAndAddCnotGate(quantumComputation, src.at(i), src.at(i + 1));
+            addOperationsImplementingCnotGate(src.at(i), src.at(i + 1));
         }
 
         for (std::size_t i = 0U; i < unsignedBitwidth; ++i) {
-            createAndAddCnotGate(quantumComputation, src.at(i), dest.at(i));
+            addOperationsImplementingCnotGate(src.at(i), dest.at(i));
         }
         return true;
     }
 
-    bool SyrecSynthesis::lessEquals(qc::QuantumComputation& quantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& src2, const std::vector<qc::Qubit>& src1) {
-        if (!lessThan(quantumComputation, dest, src1, src2)) {
+    bool SyrecSynthesis::lessEquals(qc::Qubit dest, const std::vector<qc::Qubit>& src2, const std::vector<qc::Qubit>& src1) {
+        if (!lessThan(dest, src1, src2)) {
             return false;
         }
-        createAndAddNotGate(quantumComputation, dest);
+        addOperationsImplementingNotGate(dest);
         return true;
     }
 
-    bool SyrecSynthesis::lessThan(qc::QuantumComputation& quantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
-        return decreaseWithCarry(quantumComputation, src1, src2, dest) && increase(quantumComputation, src1, src2);
+    bool SyrecSynthesis::lessThan(qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+        return decreaseWithCarry(src1, src2, dest) && increase(src1, src2);
     }
 
-    bool SyrecSynthesis::modulo(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+    bool SyrecSynthesis::modulo(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
         std::vector<qc::Qubit> sum;
         std::vector<qc::Qubit> partial;
 
@@ -748,12 +748,12 @@ namespace syrec {
         }
 
         for (std::size_t i = 1; i < src1.size(); ++i) {
-            createAndAddNotGate(quantumComputation, src2[i]);
+            addOperationsImplementingNotGate(src2[i]);
         }
 
-        activateControlLinePropagationScope();
+        activateControlQubitPropagationScope();
         for (std::size_t i = 1; i < src1.size(); ++i) {
-            registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, src2[i]);
+            registerControlQubitForPropagationInCurrentAndNestedScopes(src2[i]);
         }
 
         std::size_t helperIndex = 0;
@@ -763,31 +763,31 @@ namespace syrec {
 
             partial.push_back(src2[helperIndex++]);
             sum.insert(sum.begin(), src1[unsignedLoopVariableValue]);
-            synthesisOk = decreaseWithCarry(quantumComputation, sum, partial, dest[unsignedLoopVariableValue]);
+            synthesisOk = decreaseWithCarry(sum, partial, dest[unsignedLoopVariableValue]);
 
-            registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, dest[unsignedLoopVariableValue]);
-            synthesisOk &= increase(quantumComputation, sum, partial);
-            deregisterControlLineFromPropagationInCurrentScope(quantumComputation, dest[unsignedLoopVariableValue]);
+            registerControlQubitForPropagationInCurrentAndNestedScopes(dest[unsignedLoopVariableValue]);
+            synthesisOk &= increase(sum, partial);
+            deregisterControlQubitFromPropagationInCurrentScope(dest[unsignedLoopVariableValue]);
 
-            createAndAddNotGate(quantumComputation, dest[unsignedLoopVariableValue]);
+            addOperationsImplementingNotGate(dest[unsignedLoopVariableValue]);
             if (i == 0) {
                 continue;
             }
 
             for (std::size_t j = 1; j < src1.size() && synthesisOk; ++j) {
-                deregisterControlLineFromPropagationInCurrentScope(quantumComputation, src2[j]);
+                deregisterControlQubitFromPropagationInCurrentScope(src2[j]);
             }
-            createAndAddNotGate(quantumComputation, src2[helperIndex]);
+            addOperationsImplementingNotGate(src2[helperIndex]);
 
             for (std::size_t j = 2; j < src1.size() && synthesisOk; ++j) {
-                registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, src2[j]);
+                registerControlQubitForPropagationInCurrentAndNestedScopes(src2[j]);
             }
         }
-        deactivateControlLinePropagationScope();
+        deactivateControlQubitPropagationScope();
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::multiplication(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+    bool SyrecSynthesis::multiplication(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
         if (src1.empty() || dest.empty()) {
             return true;
         }
@@ -800,39 +800,39 @@ namespace syrec {
         std::vector<qc::Qubit> partial = src2;
 
         bool synthesisOk = true;
-        activateControlLinePropagationScope();
-        registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, src1.front());
-        synthesisOk = synthesisOk && bitwiseCnot(quantumComputation, sum, partial);
-        deregisterControlLineFromPropagationInCurrentScope(quantumComputation, src1.front());
+        activateControlQubitPropagationScope();
+        registerControlQubitForPropagationInCurrentAndNestedScopes(src1.front());
+        synthesisOk = synthesisOk && bitwiseCnot(sum, partial);
+        deregisterControlQubitFromPropagationInCurrentScope(src1.front());
 
         for (std::size_t i = 1; i < dest.size() && synthesisOk; ++i) {
             sum.erase(sum.begin());
             partial.pop_back();
-            registerControlLineForPropagationInCurrentAndNestedScopes(quantumComputation, src1[i]);
-            synthesisOk &= increase(quantumComputation, sum, partial);
-            deregisterControlLineFromPropagationInCurrentScope(quantumComputation, src1[i]);
+            registerControlQubitForPropagationInCurrentAndNestedScopes(src1[i]);
+            synthesisOk &= increase(sum, partial);
+            deregisterControlQubitFromPropagationInCurrentScope(src1[i]);
         }
-        deactivateControlLinePropagationScope();
+        deactivateControlQubitPropagationScope();
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::notEquals(qc::QuantumComputation& quantumComputation, const qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
-        if (!equals(quantumComputation, dest, src1, src2)) {
+    bool SyrecSynthesis::notEquals(const qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+        if (!equals(dest, src1, src2)) {
             return false;
         }
 
-        createAndAddNotGate(quantumComputation, dest);
+        addOperationsImplementingNotGate(dest);
         return true;
     }
 
     // NOLINTNEXTLINE(cppcoreguidelines-noexcept-swap, performance-noexcept-swap, bugprone-exception-escape)
-    bool SyrecSynthesis::swap(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest1, const std::vector<qc::Qubit>& dest2) {
+    bool SyrecSynthesis::swap(const std::vector<qc::Qubit>& dest1, const std::vector<qc::Qubit>& dest2) {
         if (dest2.size() < dest1.size()) {
             return false;
         }
 
         for (std::size_t i = 0; i < dest1.size(); ++i) {
-            createAndAddFredkinGate(quantumComputation, dest1[i], dest2[i]);
+            addOperationsImplementingFredkinGate(dest1[i], dest2[i]);
         }
         return true;
     }
@@ -841,7 +841,7 @@ namespace syrec {
     //*****                      Shift Operations                      *****
     //**********************************************************************
 
-    bool SyrecSynthesis::leftShift(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2) {
+    bool SyrecSynthesis::leftShift(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2) {
         if (src2 > dest.size()) {
             return false;
         }
@@ -853,12 +853,12 @@ namespace syrec {
 
         const std::size_t targetLineBaseOffset = src2;
         for (std::size_t i = 0; i < nQubitsShifted; ++i) {
-            createAndAddCnotGate(quantumComputation, src1[i], dest[targetLineBaseOffset + i]);
+            addOperationsImplementingCnotGate(src1[i], dest[targetLineBaseOffset + i]);
         }
         return true;
     }
 
-    bool SyrecSynthesis::rightShift(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2) {
+    bool SyrecSynthesis::rightShift(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2) {
         if (dest.size() < src2) {
             return false;
         }
@@ -869,12 +869,12 @@ namespace syrec {
         }
 
         for (std::size_t i = 0; i < nQubitsShifted; ++i) {
-            createAndAddCnotGate(quantumComputation, src1[i], dest[i]);
+            addOperationsImplementingCnotGate(src1[i], dest[i]);
         }
         return true;
     }
 
-    bool SyrecSynthesis::expressionOpInverse([[maybe_unused]] qc::QuantumComputation& quantumComputation, [[maybe_unused]] qc::Qubit op, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs) {
+    bool SyrecSynthesis::expressionOpInverse([[maybe_unused]] unsigned op, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs) {
         return true;
     }
 
@@ -919,7 +919,7 @@ namespace syrec {
         }
     }
 
-    qc::Qubit SyrecSynthesis::getConstantLine(qc::QuantumComputation& quantumComputation, bool value) {
+    qc::Qubit SyrecSynthesis::getConstantLine(bool value) {
         qc::Qubit constLine = 0U;
 
         if (!freeConstLinesMap[value].empty()) {
@@ -928,7 +928,7 @@ namespace syrec {
         } else if (!freeConstLinesMap[!value].empty()) {
             constLine = freeConstLinesMap[!value].back();
             freeConstLinesMap[!value].pop_back();
-            createAndAddNotGate(quantumComputation, constLine);
+            addOperationsImplementingNotGate(constLine);
         } else {
             //constLine = addLine((std::string("const_") + std::to_string(static_cast<int>(value))), "garbage", value, true);
         }
@@ -936,14 +936,14 @@ namespace syrec {
         return constLine;
     }
 
-    void SyrecSynthesis::getConstantLines(qc::QuantumComputation& quantumComputation, qc::Qubit bitwidth, qc::Qubit value, std::vector<qc::Qubit>& lines) {
+    void SyrecSynthesis::getConstantLines(unsigned bitwidth, qc::Qubit value, std::vector<qc::Qubit>& lines) {
         assert(bitwidth <= 32);
         for (qc::Qubit i = 0U; i < bitwidth; ++i) {
-            lines.emplace_back(getConstantLine(quantumComputation, (value & (1 << i)) != 0));
+            lines.emplace_back(getConstantLine((value & (1 << i)) != 0));
         }
     }
 
-    void SyrecSynthesis::addVariable(qc::QuantumComputation& quantumComputation, const std::vector<qc::Qubit>& dimensions, const Variable::ptr& var,
+    void SyrecSynthesis::addVariable(const std::vector<unsigned>& dimensions, const Variable::ptr& var,
                                      bool areVariableLinesConstants, bool areLinesOfVariableGarbageLines, const std::string& arraystr) {
         if (dimensions.empty()) {
             for (qc::Qubit i = 0U; i < var->bitwidth; ++i) {
@@ -956,16 +956,16 @@ namespace syrec {
                 }
             }
         } else {
-            const qc::Qubit              len = dimensions.front();
+            const auto                   len = static_cast<std::size_t>(dimensions.front());
             const std::vector<qc::Qubit> newDimensions(dimensions.begin() + 1U, dimensions.end());
 
             for (qc::Qubit i = 0U; i < len; ++i) {
-                addVariable(quantumComputation, newDimensions, var, areVariableLinesConstants, areLinesOfVariableGarbageLines, arraystr + "[" + std::to_string(i) + "]");
+                addVariable(newDimensions, var, areVariableLinesConstants, areLinesOfVariableGarbageLines, arraystr + "[" + std::to_string(i) + "]");
             }
         }
     }
 
-    void SyrecSynthesis::addVariables(qc::QuantumComputation& quantumComputation, const Variable::vec& variables) {
+    void SyrecSynthesis::addVariables(const Variable::vec& variables) {
         for (const auto& var: variables) {
             // entry in var lines map
             varLines.try_emplace(var, quantumComputation.getNqubits());
@@ -977,11 +977,11 @@ namespace syrec {
             /*const constant constVar = (var->type == Variable::Out || var->type == Variable::Wire) ? constant(false) : constant();
             const bool     garbage  = (var->type == Variable::In || var->type == Variable::Wire);*/
 
-            addVariable(quantumComputation, var->dimensions, var, doVariablesLinesStoreConstantValue, areLinesOfVariableGarbageLines, std::string());
+            addVariable(var->dimensions, var, doVariablesLinesStoreConstantValue, areLinesOfVariableGarbageLines, std::string());
         }
     }
 
-    bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, qc::QuantumComputation& quantumComputation, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
+    bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
         // Settings parsing
         auto mainModule = get<std::string>(settings, "main_module", std::string());
         // Run-time measuring
@@ -1012,18 +1012,18 @@ namespace syrec {
         synthesizer->setMainModule(main);
 
         // create lines for global variables
-        synthesizer->addVariables(quantumComputation, main->parameters);
-        synthesizer->addVariables(quantumComputation, main->variables);
+        synthesizer->addVariables(main->parameters);
+        synthesizer->addVariables(main->variables);
 
         // synthesize the statements
-        const auto synthesisOfMainModuleOk = synthesizer->onModule(quantumComputation, main);
+        const auto synthesisOfMainModuleOk = synthesizer->onModule(main);
         if (statistics) {
             t.stop();
         }
         return synthesisOfMainModuleOk;
     }
 
-    bool SyrecSynthesis::createAndAddNotGate(qc::QuantumComputation& quantumComputation, const qc::Qubit targetQubit) {
+    bool SyrecSynthesis::addOperationsImplementingNotGate(const qc::Qubit targetQubit) {
         if (!isQubitWithinRange(quantumComputation, targetQubit) || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
             return false;
         }
@@ -1036,7 +1036,7 @@ namespace syrec {
         return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations + 1, currNumQuantumOperations, {});
     }
 
-    bool SyrecSynthesis::createAndAddCnotGate(qc::QuantumComputation& quantumComputation, const qc::Qubit controlQubit, const qc::Qubit targetQubit) {
+    bool SyrecSynthesis::addOperationsImplementingCnotGate(const qc::Qubit controlQubit, const qc::Qubit targetQubit) {
         if (!isQubitWithinRange(quantumComputation, controlQubit) || !isQubitWithinRange(quantumComputation, targetQubit) || controlQubit == targetQubit || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
             return false;
         }
@@ -1051,7 +1051,7 @@ namespace syrec {
         return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations + 1, currNumQuantumOperations, {});
     }
 
-    bool SyrecSynthesis::createAndAddToffoliGate(qc::QuantumComputation& quantumComputation, const qc::Qubit controlQubitOne, const qc::Qubit controlQubitTwo, const qc::Qubit targetQubit) {
+    bool SyrecSynthesis::addOperationsImplementingToffoliGate(const qc::Qubit controlQubitOne, const qc::Qubit controlQubitTwo, const qc::Qubit targetQubit) {
         if (!isQubitWithinRange(quantumComputation, controlQubitOne) || !isQubitWithinRange(quantumComputation, controlQubitTwo) || !isQubitWithinRange(quantumComputation, targetQubit) || controlQubitOne == targetQubit || controlQubitTwo == targetQubit || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
             return false;
         }
@@ -1067,8 +1067,8 @@ namespace syrec {
         return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations + 1, currNumQuantumOperations, {});
     }
 
-    bool SyrecSynthesis::createAndAddMultiControlToffoliGate(qc::QuantumComputation& quantumComputation, const std::unordered_set<qc::Qubit>& controlQubits, const qc::Qubit targetQubit) {
-        if (std::any_of(controlQubits.cbegin(), controlQubits.cend(), [&quantumComputation](const qc::Qubit& controlQubit) { return !isQubitWithinRange(quantumComputation, controlQubit); }) || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
+    bool SyrecSynthesis::addOperationsImplementingMultiControlToffoliGate(const std::unordered_set<qc::Qubit>& controlQubits, const qc::Qubit targetQubit) {
+        if (std::any_of(controlQubits.cbegin(), controlQubits.cend(), [&](const qc::Qubit& controlQubit) { return !isQubitWithinRange(quantumComputation, controlQubit); }) || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
             return false;
         }
 
@@ -1082,7 +1082,7 @@ namespace syrec {
         return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations + 1, currNumQuantumOperations, {});
     }
 
-    bool SyrecSynthesis::createAndAddFredkinGate(qc::QuantumComputation& quantumComputation, const qc::Qubit targetQubitOne, const qc::Qubit targetQubitTwo) {
+    bool SyrecSynthesis::addOperationsImplementingFredkinGate(const qc::Qubit targetQubitOne, const qc::Qubit targetQubitTwo) {
         if (targetQubitOne == targetQubitTwo || aggregateOfPropagatedControlQubits.count(targetQubitOne) != 0 || aggregateOfPropagatedControlQubits.count(targetQubitTwo) != 0) {
             return false;
         }
@@ -1103,11 +1103,11 @@ namespace syrec {
         return std::all_of(qubitsToCheck.cbegin(), qubitsToCheck.cend(), [&](const qc::Qubit qubit) { return isQubitWithinRange(quantumComputation, qubit); });
     }
 
-    void SyrecSynthesis::activateControlLinePropagationScope() {
+    void SyrecSynthesis::activateControlQubitPropagationScope() {
         controlQubitPropgationScopes.emplace_back();
     }
 
-    void SyrecSynthesis::deactivateControlLinePropagationScope() {
+    void SyrecSynthesis::deactivateControlQubitPropagationScope() {
         if (controlQubitPropgationScopes.empty()) {
             return;
         }
@@ -1125,7 +1125,7 @@ namespace syrec {
         controlQubitPropgationScopes.pop_back();
     }
 
-    bool SyrecSynthesis::deregisterControlLineFromPropagationInCurrentScope(const qc::QuantumComputation& quantumComputation, const qc::Qubit controlQubit) {
+    bool SyrecSynthesis::deregisterControlQubitFromPropagationInCurrentScope(const qc::Qubit controlQubit) {
         if (controlQubitPropgationScopes.empty() || !isQubitWithinRange(quantumComputation, controlQubit)) {
             return false;
         }
@@ -1139,13 +1139,13 @@ namespace syrec {
         return true;
     }
 
-    bool SyrecSynthesis::registerControlLineForPropagationInCurrentAndNestedScopes(const qc::QuantumComputation& quantumComputation, const qc::Qubit controlQubit) {
+    bool SyrecSynthesis::registerControlQubitForPropagationInCurrentAndNestedScopes(const qc::Qubit controlQubit) {
         if (!isQubitWithinRange(quantumComputation, controlQubit)) {
             return false;
         }
 
         if (controlQubitPropgationScopes.empty()) {
-            activateControlLinePropagationScope();
+            activateControlQubitPropagationScope();
         }
 
         auto& localControlLineScope = controlQubitPropgationScopes.back();
@@ -1159,7 +1159,7 @@ namespace syrec {
         return true;
     }
 
-    bool SyrecSynthesis::setOrUpdateGlobalGateAnnotation(const std::string_view& key, const std::string& value) {
+    bool SyrecSynthesis::setOrUpdateGlobalQuantumOperationAnnotation(const std::string_view& key, const std::string& value) {
         auto existingAnnotationForKey = activateGlobalQuantumOperationAnnotations.find(key);
         if (existingAnnotationForKey != activateGlobalQuantumOperationAnnotations.end()) {
             existingAnnotationForKey->second = value;
@@ -1169,7 +1169,7 @@ namespace syrec {
         return false;
     }
 
-    bool SyrecSynthesis::removeGlobalGateAnnotation(const std::string_view& key) {
+    bool SyrecSynthesis::removeGlobalQuantumOperationAnnotation(const std::string_view& key) {
         // We utilize the ability to use a std::string_view to erase a matching element
         // of std::string in a std::map<std::string, ...> without needing to cast the
         // std::string_view to std::string for the std::map<>::erase() operation
@@ -1190,7 +1190,7 @@ namespace syrec {
 
         GateAnnotationsLookup gateAnnotations = userProvidedAnnotationsPerQuantumOperation;
         for (const auto& [annotationKey, annotationValue]: activateGlobalQuantumOperationAnnotations) {
-            gateAnnotations[annotationKey] = annotationValue;    
+            gateAnnotations[annotationKey] = annotationValue;
         }
 
         for (std::size_t i = fromQuantumOperationIndex; i <= toQuantumOperationIndex; ++i) {
