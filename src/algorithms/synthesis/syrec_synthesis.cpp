@@ -930,9 +930,23 @@ namespace syrec {
             freeConstLinesMap[!value].pop_back();
             addOperationsImplementingNotGate(constLine);
         } else {
-            //constLine = addLine((std::string("const_") + std::to_string(static_cast<int>(value))), "garbage", value, true);
+            const qc::Qubit       qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
+            const std::string     qubitName  = "const_" + std::to_string(static_cast<int>(value)) + "_qubit_" + std::to_string(qubitIndex);
+            constexpr std::size_t qubitSize  = 1;
+            // TODO: C++ exception with description "[addQubitRegister] Cannot add qubit register after ancillary qubits have been added" thrown in the test body.
+            quantumComputation.addQubitRegister(qubitSize, qubitName);
+            if (value) {
+                // Since ancillary qubits are assumed to have an initial value of
+                // zero, we need to add an inversion gate to derive the correct
+                // initial value of 1.
+                // We can either use a simple X quantum operation to initialize the qubit with '1' but we should
+                // probably also consider the active control qubits set in the currently active control qubit propagation scopes.
+                addOperationsImplementingNotGate(qubitIndex);
+            }
+            // TODO: C++ exception with description "[addQubitRegister] Cannot add qubit register after ancillary qubits have been added" thrown in the test body.
+            //quantumComputation.setLogicalQubitAncillary(qubitIndex);
+            constLine = qubitIndex;
         }
-
         return constLine;
     }
 
@@ -947,13 +961,20 @@ namespace syrec {
                                      bool areVariableLinesConstants, bool areLinesOfVariableGarbageLines, const std::string& arraystr) {
         if (dimensions.empty()) {
             for (qc::Qubit i = 0U; i < var->bitwidth; ++i) {
-                const std::string name = var->name + arraystr + "." + std::to_string(i);
-                if (areVariableLinesConstants) {
-                    quantumComputation.setLogicalQubitAncillary(i);
+                const qc::Qubit       qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
+                const std::string     qubitName  = var->name + arraystr + "." + std::to_string(i);
+                constexpr std::size_t qubitSize  = 1;
+                quantumComputation.addQubitRegister(qubitSize, qubitName);
+                //quantumComputation.addClassicalRegister(qubitSize, "c" + qubitName); // TODO: Is this necessary ?
+
+                // TODO: Can both flags be set? Garbage and ancillary qubits initialized to zero should be the same. The value of ancillary qubits in this function cannot be changed (and are assumed to be initialized to zero by default).
+                // TODO: C++ exception with description "[addQubitRegister] Cannot add qubit register after ancillary qubits have been added" thrown in the test body.
+                /*if (areVariableLinesConstants) {
+                    quantumComputation.setLogicalQubitAncillary(qubitIndex);
                 }
                 if (areLinesOfVariableGarbageLines) {
-                    quantumComputation.setLogicalQubitGarbage(i);
-                }
+                    quantumComputation.setLogicalQubitGarbage(qubitIndex);
+                }*/
             }
         } else {
             const auto                   len = static_cast<std::size_t>(dimensions.front());

@@ -19,7 +19,6 @@
 #include "core/syrec/variable.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
-#include "ir/operations/Control.hpp"
 
 #include <map>
 #include <stack>
