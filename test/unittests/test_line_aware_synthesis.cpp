@@ -10,40 +10,40 @@
 
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "core/circuit.hpp"
-#include "core/properties.hpp"
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
+#include "quantum_computation_synthesis_cost_metrics.hpp"
 
-#include "gtest/gtest.h"
+#include <cstddef>
+#include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
-using json = nlohmann::json;
+// .clang-tidy reports a false positive here since we are including the required nlohman json header file
+using json = nlohmann::json; // NOLINT(misc-include-cleaner)
 
 using namespace syrec;
 
 class SyrecSynthesisTest: public testing::TestWithParam<std::string> {
 protected:
-    std::string  testConfigsDir  = "./configs/";
-    std::string  testCircuitsDir = "./circuits/";
-    std::string  fileName;
-    Gate::cost_t qc               = 0;
-    Gate::cost_t tc               = 0;
-    unsigned     expectedNumGates = 0;
-    unsigned     expectedLines    = 0;
-    Gate::cost_t expectedQc       = 0;
-    Gate::cost_t expectedTc       = 0;
+    std::string                                             testConfigsDir  = "./configs/";
+    std::string                                             testCircuitsDir = "./circuits/";
+    std::string                                             fileName;
+    std::size_t                                             expectedNumGates        = 0;
+    std::size_t                                             expectedNumLines        = 0;
+    quantumComputationSynthesisCostMetrics::CostMetricValue expectedQuantumCosts    = 0;
+    quantumComputationSynthesisCostMetrics::CostMetricValue expectedTransistorCosts = 0;
 
     void SetUp() override {
-        std::string synthesisParam = GetParam();
+        const std::string& synthesisParam = GetParam();
         fileName                   = testCircuitsDir + GetParam() + ".src";
         std::ifstream i(testConfigsDir + "circuits_line_aware_synthesis.json");
-        json          j  = json::parse(i);
-        expectedNumGates = j[synthesisParam]["num_gates"];
-        expectedLines    = j[synthesisParam]["lines"];
-        expectedQc       = j[synthesisParam]["quantum_costs"];
-        expectedTc       = j[synthesisParam]["transistor_costs"];
+        json          j         = json::parse(i);
+        expectedNumGates        = j[synthesisParam]["num_gates"];
+        expectedNumLines        = j[synthesisParam]["lines"];
+        expectedQuantumCosts    = j[synthesisParam]["quantum_costs"];
+        expectedTransistorCosts = j[synthesisParam]["transistor_costs"];
     }
 };
 
@@ -81,28 +81,30 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecSynthesisTest,
                              return s; });
 
 TEST_P(SyrecSynthesisTest, GenericSynthesisTest) {
-    qc::QuantumComputation             quantumComputation;
-    Program             prog;
-    ReadProgramSettings settings;
-    const std::string         errorString = prog.read(fileName, settings);
+    qc::QuantumComputation quantumComputation;
+    Program                prog;
+    ReadProgramSettings    settings;
+    const std::string      errorString = prog.read(fileName, settings);
     EXPECT_TRUE(errorString.empty());
 
     EXPECT_TRUE(LineAwareSynthesis::synthesize(quantumComputation, prog));
 
-    // TODO
-    /*qc = quantumComputation.quantumCost();
-    tc = quantumComputation.transistorCost();
+    // The initialization of constant lines with the value '1' might not be considered in the expected tests data
+    const auto& dumpedQasmString = quantumComputation.toQASM();
 
-    EXPECT_EQ(expectedNumGates, quantumComputation.numGates());
-    EXPECT_EQ(expectedLines, quantumComputation.getLines());*/
-    EXPECT_EQ(expectedQc, qc);
-    EXPECT_EQ(expectedTc, tc);
+    EXPECT_EQ(expectedNumGates, quantumComputation.getNops());
+    EXPECT_EQ(expectedNumLines, quantumComputation.getNqubits());
+
+    const quantumComputationSynthesisCostMetrics::CostMetricValue actualQuantumCosts    = quantumComputationSynthesisCostMetrics::quantumCost(quantumComputation);
+    const quantumComputationSynthesisCostMetrics::CostMetricValue actualTransistorCosts = quantumComputationSynthesisCostMetrics::transistorCost(quantumComputation);
+    EXPECT_EQ(expectedQuantumCosts, actualQuantumCosts);
+    EXPECT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }
 
 TEST_P(SyrecSynthesisTest, GenericSynthesisQASMTest) {
-    qc::QuantumComputation             quantumComputation;
-    Program             prog;
-    ReadProgramSettings settings;
+    qc::QuantumComputation quantumComputation;
+    Program                prog;
+    ReadProgramSettings    settings;
 
     const auto errorString = prog.read(fileName, settings);
     EXPECT_TRUE(errorString.empty());

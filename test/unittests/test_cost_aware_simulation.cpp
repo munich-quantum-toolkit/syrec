@@ -16,7 +16,7 @@
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include <algorithm>
 #include <cstddef>
 #include <fstream>

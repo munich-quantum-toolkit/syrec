@@ -16,7 +16,7 @@
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include <algorithm>
 #include <cstddef>
 #include <fstream>
@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-// .clang-tidy reports a false positive here since are including the required nlohman json header file
+// .clang-tidy reports a false positive here since we are including the required nlohman json header file
 using json = nlohmann::json; // NOLINT(misc-include-cleaner)
 
 using namespace syrec;
