@@ -28,7 +28,7 @@ using json = nlohmann::json; // NOLINT(misc-include-cleaner)
 
 using namespace syrec;
 
-class SyrecAddLinesSimulationTest: public testing::TestWithParam<std::string> {
+class SyrecCostAwareSimulationTest: public testing::TestWithParam<std::string> {
 protected:
     std::string      testConfigsDir  = "./configs/";
     std::string      testCircuitsDir = "./circuits/";
@@ -47,7 +47,7 @@ protected:
     }
 };
 
-INSTANTIATE_TEST_SUITE_P(SyrecSimulationTest, SyrecAddLinesSimulationTest,
+INSTANTIATE_TEST_SUITE_P(SyrecSimulationTest, SyrecCostAwareSimulationTest,
                          testing::Values(
                                  "alu_2",
                                  "swap_2",
@@ -55,12 +55,12 @@ INSTANTIATE_TEST_SUITE_P(SyrecSimulationTest, SyrecAddLinesSimulationTest,
                                  "multiply_2",
                                  "modulo_2",
                                  "negate_8"),
-                         [](const testing::TestParamInfo<SyrecAddLinesSimulationTest::ParamType>& info) {
+                         [](const testing::TestParamInfo<SyrecCostAwareSimulationTest::ParamType>& info) {
                              auto s = info.param;
                              std::replace( s.begin(), s.end(), '-', '_');
                              return s; });
 
-TEST_P(SyrecAddLinesSimulationTest, GenericSimulationTest) {
+TEST_P(SyrecCostAwareSimulationTest, GenericSimulationTest) {
     qc::QuantumComputation    quantumComputation;
     Program                   prog;
     const ReadProgramSettings settings;

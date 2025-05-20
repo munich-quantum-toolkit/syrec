@@ -25,7 +25,7 @@ using json = nlohmann::json; // NOLINT(misc-include-cleaner)
 
 using namespace syrec;
 
-class SyrecSynthesisTest: public testing::TestWithParam<std::string> {
+class SyrecLineAwareSynthesisTest: public testing::TestWithParam<std::string> {
 protected:
     std::string                                             testConfigsDir  = "./configs/";
     std::string                                             testCircuitsDir = "./circuits/";
@@ -47,7 +47,7 @@ protected:
     }
 };
 
-INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecSynthesisTest,
+INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecLineAwareSynthesisTest,
                          testing::Values(
                                  "alu_2",
                                  "binary_numeric",
@@ -75,12 +75,12 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecSynthesisTest,
                                  "single_longstatement_4",
                                  "skip",
                                  "swap_2"),
-                         [](const testing::TestParamInfo<SyrecSynthesisTest::ParamType>& info) {
+                         [](const testing::TestParamInfo<SyrecLineAwareSynthesisTest::ParamType>& info) {
                              auto s = info.param;
                              std::replace( s.begin(), s.end(), '-', '_');
                              return s; });
 
-TEST_P(SyrecSynthesisTest, GenericSynthesisTest) {
+TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisTest) {
     qc::QuantumComputation quantumComputation;
     Program                prog;
     ReadProgramSettings    settings;
@@ -97,7 +97,7 @@ TEST_P(SyrecSynthesisTest, GenericSynthesisTest) {
     ASSERT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }
 
-TEST_P(SyrecSynthesisTest, GenericSynthesisQASMTest) {
+TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisQASMTest) {
     qc::QuantumComputation quantumComputation;
     Program                prog;
     ReadProgramSettings    settings;
