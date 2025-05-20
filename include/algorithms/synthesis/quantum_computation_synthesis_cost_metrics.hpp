@@ -13,6 +13,7 @@
 #include "ir/QuantumComputation.hpp"
 #include "ir/operations/OpType.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 
@@ -28,7 +29,7 @@ namespace syrec {
         }
 
         for (const auto& quantumOperation: quantumComputation) {
-            const std::size_t c             = std::min(quantumOperation->getNcontrols() + (quantumOperation->getType() == qc::OpType::SWAP), numQubits - 1);
+            const std::size_t c             = std::min(quantumOperation->getNcontrols() + static_cast<std::size_t>(quantumOperation->getType() == qc::OpType::SWAP), numQubits - 1);
             const std::size_t numEmptyLines = numQubits - c - 1U;
 
             switch (c) {

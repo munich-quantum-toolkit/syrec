@@ -10,7 +10,6 @@
 
 #include "algorithms/synthesis/syrec_synthesis.hpp"
 
-#include "core/gate.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/program.hpp"
@@ -19,6 +18,7 @@
 #include "core/utils/timer.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
+#include "ir/operations/Control.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -26,6 +26,9 @@
 #include <iostream>
 #include <stack>
 #include <string>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace syrec {
@@ -984,7 +987,7 @@ namespace syrec {
             freeConstLinesMap[!value].pop_back();
             addOperationsImplementingNotGate(constLine);
         } else {
-            const qc::Qubit       qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
+            const auto            qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
             const std::string     qubitName  = "const_" + std::to_string(static_cast<int>(value)) + "_qubit_" + std::to_string(qubitIndex);
             constexpr std::size_t qubitSize  = 1;
 
@@ -1014,7 +1017,7 @@ namespace syrec {
     void SyrecSynthesis::addVariable(const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr) {
         if (dimensions.empty()) {
             for (qc::Qubit i = 0U; i < var->bitwidth; ++i) {
-                const qc::Qubit       qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
+                const auto            qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
                 const std::string     qubitName  = var->name + arraystr + "." + std::to_string(i);
                 constexpr std::size_t qubitSize  = 1;
                 quantumComputation.addQubitRegister(qubitSize, qubitName);

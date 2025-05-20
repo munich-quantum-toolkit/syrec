@@ -20,10 +20,15 @@
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
 
+#include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <map>
 #include <stack>
 #include <string>
 #include <string_view>
+#include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 namespace syrec {
