@@ -13,35 +13,17 @@
 #include "core/properties.hpp"
 #include "ir/QuantumComputation.hpp"
 
-#include <memory>
 #include <vector>
 
 namespace syrec {
     /**
-    * TODO
-    * @brief Simple Simulation function for a circuit
-    *
-    * This method calls the \em gate_simulation setting's functor on
-    * all gates of the circuit \p circ. Thereby,
-    * the last calculated output pattern serves as the input pattern
-    * for the next gate. The last calculated output pattern is written
-    * to \p output.
-    *
-    * @param quantumComputation TODO
-    * @param quantumComputationInputQubitValues TODO
-    * @param quantumComputationOutputQubitValues TODO
-    * @param statistics <table border="0" width="100%">
-    *   <tr>
-    *     <td class="indexkey">Information</td>
-    *     <td class="indexkey">Type</td>
-    *     <td class="indexkey">Description</td>
-    *   </tr>
-    *   <tr>
-    *     <td class="indexvalue">runtime</td>
-    *     <td class="indexvalue">double</td>
-    *     <td class="indexvalue">Run-time consumed by the algorithm in CPU seconds.</td>
-    *   </tr>
-    * </table>
-    */
+     * Simulate a series of quantum operations on a given input quantum state using the MQT::Core decision diagram functionality.
+     *
+     * Note that the value of the garbage qubits in the output state can probably be ignored.
+     * @param quantumComputation The quantum computation containing the quantum operations to simulate
+     * @param quantumComputationInputQubitValues The initial values of the non-ancillary input qubits of the \p quantumComputation. Ancillary qubits are initialized to 0. The value of the least significant qubit starts at index 0 while the value of the most significant qubit is defined at the end of the container.
+     * @param quantumComputationOutputQubitValues The output values of the non-ancillary output qubits in the output state of the \p quantumComputation (i.e. after the simulation was completed). The value of the least significant qubit starts at index 0 while the value of the most significant qubit is defined at the end of the container.
+     * @param statistics Container to fetch settings from and store statistics to. Will store the measured allocated CPU time (unit: milliseconds) required for the simulation.
+     */
     void simulateQuantumComputationExecutionForState(const qc::QuantumComputation& quantumComputation, const std::vector<bool>& quantumComputationInputQubitValues, std::vector<bool>& quantumComputationOutputQubitValues, const Properties::ptr& statistics);
 } // namespace syrec

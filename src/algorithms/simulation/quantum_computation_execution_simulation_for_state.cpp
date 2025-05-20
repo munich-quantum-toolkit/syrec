@@ -10,7 +10,6 @@
 
 #include "algorithms/simulation/quantum_computation_execution_simulation_for_state.hpp"
 
-#include "core/circuit.hpp"
 #include "core/properties.hpp"
 #include "core/utils/timer.hpp"
 #include "dd/Package.hpp"
@@ -20,7 +19,10 @@
 #include <algorithm>
 #include <cstddef>
 #include <iostream>
+#include <memory>
 #include <random>
+#include <string>
+#include <vector>
 
 namespace syrec {
     void simulateQuantumComputationExecutionForState(const qc::QuantumComputation& quantumComputation, const std::vector<bool>& quantumComputationInputQubitValues, std::vector<bool>& quantumComputationOutputQubitValues,
@@ -36,7 +38,7 @@ namespace syrec {
         }
 
         Timer<PropertiesTimer> t;
-        if (statistics) {
+        if (statistics != nullptr) {
             const PropertiesTimer rt(statistics);
             t.start(rt);
         }
@@ -51,15 +53,15 @@ namespace syrec {
         // Instead of modifying the quantum computation with additional operations, the initial values of the input qubits are set
         // by modifying the initial state in the decision diagram. This also allows for the reuse of the quantum computation for future
         // simulation runs
-        dd::VectorDD decisionDiagramInitialState = dd->makeBasisState(nQubits, fullInitialState);
-        auto         outputState                 = dd::simulate(quantumComputation, decisionDiagramInitialState, *dd);
+        const dd::VectorDD decisionDiagramInitialState = dd->makeBasisState(nQubits, fullInitialState);
+        auto               outputState                 = dd::simulate(quantumComputation, decisionDiagramInitialState, *dd);
 
         std::mt19937_64 rng{};
 
         // TODO: How should errors during measurements be handled?
         // Instead of measure the whole output state, one could also measure the qubits of interest via dd->measureOneCollapsing(outputState, qubitIndex, rng)
         const std::string& stringifiedMeasurementsOfOutputState = dd->measureAll(outputState, false, rng);
-        if (statistics) {
+        if (statistics != nullptr) {
             t.stop();
         }
 
@@ -68,7 +70,7 @@ namespace syrec {
         // the least significant qubit is the rightmost entry in the output measurement. Note that ancillary and garbage qubits are included in the measured output state, thus the
         // range of qubit indices of interest is equal to [NQubits - 1, NAncillaries] with the index 'NQubits - 1' referring to the least significant qubit in the input state while
         // the most significant qubit in the output state is located at index 'NAncillaries'
-        std::size_t indexOfLeastSignificantQubit = quantumComputation.getNqubits() - 1;
+        const std::size_t indexOfLeastSignificantQubit = quantumComputation.getNqubits() - 1;
         for (std::size_t i = 0; i < quantumComputationOutputQubitValues.size(); ++i) {
             quantumComputationOutputQubitValues[i] = stringifiedMeasurementsOfOutputState[indexOfLeastSignificantQubit - i] == '1';
         }
