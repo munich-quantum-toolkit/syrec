@@ -49,7 +49,7 @@ namespace syrec {
             return SyrecSynthesis::onStatement(statement);
         }
 
-        setOrUpdateGlobalQuantumOperationAnnotation(GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER, std::to_string(static_cast<std::size_t>(statement->lineNumber)));
+        annotatableQuantumComputation.setOrUpdateGlobalQuantumOperationAnnotation(GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER, std::to_string(static_cast<std::size_t>(statement->lineNumber)));
 
         bool synthesisOk = true;
         if (expOpVector.size() == 1) {
@@ -319,22 +319,20 @@ namespace syrec {
     }
 
     bool LineAwareSynthesis::decreaseNewAssign(const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
-        if (lhs.size() != rhs.size()) {
-            return false;
+        const std::size_t nQbitsOfOperation      = lhs.size();
+        bool              synthesisOfOperationOk = lhs.size() == rhs.size();
+        for (std::size_t i = 0; i < nQbitsOfOperation && synthesisOfOperationOk; ++i) {
+            synthesisOfOperationOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(lhs[i]);
         }
-        for (const auto lh: lhs) {
-            addOperationsImplementingNotGate(lh);
+        synthesisOfOperationOk &= increase(rhs, lhs);
+
+        for (std::size_t i = 0; i < nQbitsOfOperation && synthesisOfOperationOk; ++i) {
+            synthesisOfOperationOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(lhs[i]);
         }
-        if (!increase(rhs, lhs)) {
-            return false;
+        for (std::size_t i = 0; i < nQbitsOfOperation && synthesisOfOperationOk; ++i) {
+            synthesisOfOperationOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(rhs[i]);
         }
-        for (const auto lh: lhs) {
-            addOperationsImplementingNotGate(lh);
-        }
-        for (const auto rh: rhs) {
-            addOperationsImplementingNotGate(rh);
-        }
-        return true;
+        return synthesisOfOperationOk;
     }
 
     bool LineAwareSynthesis::expressionSingleOp(const unsigned op, const std::vector<qc::Qubit>& expLhs, const std::vector<qc::Qubit>& expRhs) {

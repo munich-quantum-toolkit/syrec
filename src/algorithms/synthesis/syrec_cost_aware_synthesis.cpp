@@ -20,20 +20,17 @@
 
 namespace syrec {
     bool CostAwareSynthesis::expAdd(const unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) {
-        getConstantLines(bitwidth, 0U, rhs);
-        return bitwiseCnot(rhs, lhs) // duplicate lhs
+        return getConstantLines(bitwidth, 0U, rhs) && bitwiseCnot(rhs, lhs) // duplicate lhs
             && increase(rhs, lines);
     }
 
     bool CostAwareSynthesis::expSubtract(const unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) {
-        getConstantLines(bitwidth, 0U, rhs);
-        return bitwiseCnot(rhs, lhs) // duplicate lhs
+        return getConstantLines(bitwidth, 0U, rhs) && bitwiseCnot(rhs, lhs) // duplicate lhs
             && decrease(rhs, lines);
     }
 
     bool CostAwareSynthesis::expExor(const unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
-        getConstantLines(bitwidth, 0U, lines);
-        return bitwiseCnot(lines, lhs) // duplicate lhs
+        return getConstantLines(bitwidth, 0U, lines) && bitwiseCnot(lines, lhs) // duplicate lhs
             && bitwiseCnot(lines, rhs);
     }
 
