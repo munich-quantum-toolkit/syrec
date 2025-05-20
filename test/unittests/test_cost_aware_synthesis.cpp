@@ -85,18 +85,14 @@ TEST_P(SyrecAddLinesSynthesisTest, GenericSynthesisTest) {
     Program                prog;
     ReadProgramSettings    settings;
     const std::string      errorString = prog.read(fileName, settings);
-    EXPECT_TRUE(errorString.empty());
+    ASSERT_TRUE(errorString.empty());
 
-    EXPECT_TRUE(CostAwareSynthesis::synthesize(quantumComputation, prog));
-
-    // The initialization of constant lines with the value '1' might not be considered in the expected tests data
-    const auto& dumpedQasmString = quantumComputation.toQASM();
-
-    EXPECT_EQ(expectedNumGates, quantumComputation.getNops());
-    EXPECT_EQ(expectedNumLines, quantumComputation.getNqubits());
+    ASSERT_TRUE(CostAwareSynthesis::synthesize(quantumComputation, prog));
+    ASSERT_EQ(expectedNumGates, quantumComputation.getNops());
+    ASSERT_EQ(expectedNumLines, quantumComputation.getNqubits());
 
     const quantumComputationSynthesisCostMetrics::CostMetricValue actualQuantumCosts    = quantumComputationSynthesisCostMetrics::quantumCost(quantumComputation);
     const quantumComputationSynthesisCostMetrics::CostMetricValue actualTransistorCosts = quantumComputationSynthesisCostMetrics::transistorCost(quantumComputation);
-    EXPECT_EQ(expectedQuantumCosts, actualQuantumCosts);
-    EXPECT_EQ(expectedTransistorCosts, actualTransistorCosts);
+    ASSERT_EQ(expectedQuantumCosts, actualQuantumCosts);
+    ASSERT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }

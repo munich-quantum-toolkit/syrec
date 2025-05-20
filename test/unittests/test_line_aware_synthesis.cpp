@@ -37,7 +37,7 @@ protected:
 
     void SetUp() override {
         const std::string& synthesisParam = GetParam();
-        fileName                   = testCircuitsDir + GetParam() + ".src";
+        fileName                          = testCircuitsDir + GetParam() + ".src";
         std::ifstream i(testConfigsDir + "circuits_line_aware_synthesis.json");
         json          j         = json::parse(i);
         expectedNumGates        = j[synthesisParam]["num_gates"];
@@ -85,20 +85,16 @@ TEST_P(SyrecSynthesisTest, GenericSynthesisTest) {
     Program                prog;
     ReadProgramSettings    settings;
     const std::string      errorString = prog.read(fileName, settings);
-    EXPECT_TRUE(errorString.empty());
+    ASSERT_TRUE(errorString.empty());
 
-    EXPECT_TRUE(LineAwareSynthesis::synthesize(quantumComputation, prog));
-
-    // The initialization of constant lines with the value '1' might not be considered in the expected tests data
-    const auto& dumpedQasmString = quantumComputation.toQASM();
-
-    EXPECT_EQ(expectedNumGates, quantumComputation.getNops());
-    EXPECT_EQ(expectedNumLines, quantumComputation.getNqubits());
+    ASSERT_TRUE(LineAwareSynthesis::synthesize(quantumComputation, prog));
+    ASSERT_EQ(expectedNumGates, quantumComputation.getNops());
+    ASSERT_EQ(expectedNumLines, quantumComputation.getNqubits());
 
     const quantumComputationSynthesisCostMetrics::CostMetricValue actualQuantumCosts    = quantumComputationSynthesisCostMetrics::quantumCost(quantumComputation);
     const quantumComputationSynthesisCostMetrics::CostMetricValue actualTransistorCosts = quantumComputationSynthesisCostMetrics::transistorCost(quantumComputation);
-    EXPECT_EQ(expectedQuantumCosts, actualQuantumCosts);
-    EXPECT_EQ(expectedTransistorCosts, actualTransistorCosts);
+    ASSERT_EQ(expectedQuantumCosts, actualQuantumCosts);
+    ASSERT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }
 
 TEST_P(SyrecSynthesisTest, GenericSynthesisQASMTest) {
@@ -107,13 +103,10 @@ TEST_P(SyrecSynthesisTest, GenericSynthesisQASMTest) {
     ReadProgramSettings    settings;
 
     const auto errorString = prog.read(fileName, settings);
-    EXPECT_TRUE(errorString.empty());
-    EXPECT_TRUE(LineAwareSynthesis::synthesize(quantumComputation, prog));
+    ASSERT_TRUE(errorString.empty());
+    ASSERT_TRUE(LineAwareSynthesis::synthesize(quantumComputation, prog));
 
     const auto lastIndex      = fileName.find_last_of('.');
     const auto outputFileName = fileName.substr(0, lastIndex);
-
-    // TODO:
-    const auto& dumpedQasmString = quantumComputation.toQASM();
-    ASSERT_FALSE(dumpedQasmString.empty());
+    ASSERT_NO_FATAL_FAILURE(quantumComputation.dump(outputFileName));
 }
