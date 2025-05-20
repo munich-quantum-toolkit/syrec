@@ -41,6 +41,60 @@ namespace syrec {
         modules.push(mainModule);
     }
 
+    void SyrecSynthesis::addVariables(const Variable::vec& variables) {
+        for (const auto& var: variables) {
+            // entry in var lines map
+            varLines.try_emplace(var, quantumComputation.getNqubits());
+            addVariable(var->dimensions, var, std::string());
+        }
+    }
+
+    bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
+        // Settings parsing
+        auto mainModule = get<std::string>(settings, "main_module", std::string());
+        // Run-time measuring
+        Timer<PropertiesTimer> t;
+
+        if (statistics) {
+            const PropertiesTimer rt(statistics);
+            t.start(rt);
+        }
+
+        // get the main module
+        Module::ptr main;
+
+        if (!mainModule.empty()) {
+            main = program.findModule(mainModule);
+            if (!main) {
+                std::cerr << "Program has no module: " << mainModule << "\n";
+                return false;
+            }
+        } else {
+            main = program.findModule("main");
+            if (!main) {
+                main = program.modules().front();
+            }
+        }
+
+        // declare as top module
+        synthesizer->setMainModule(main);
+
+        // create lines for global variables
+        synthesizer->addVariables(main->parameters);
+        synthesizer->addVariables(main->variables);
+
+        // synthesize the statements
+        const auto synthesisOfMainModuleOk = synthesizer->onModule(main);
+        for (const auto& ancillaryQubit: synthesizer->getCreatedAncillaryQubits()) {
+            synthesizer->quantumComputation.setLogicalQubitAncillary(ancillaryQubit);
+        }
+
+        if (statistics) {
+            t.stop();
+        }
+        return synthesisOfMainModuleOk;
+    }
+
     bool SyrecSynthesis::onModule(const Module::ptr& main) {
         bool              synthesisOfModuleStatementOk = true;
         const std::size_t nModuleStatements            = main->statements.size();
@@ -964,7 +1018,8 @@ namespace syrec {
                 const std::string     qubitName  = var->name + arraystr + "." + std::to_string(i);
                 constexpr std::size_t qubitSize  = 1;
                 quantumComputation.addQubitRegister(qubitSize, qubitName);
-                
+                // TODO: Should we also add classical registers here?
+
                 if (var->type == Variable::In || var->type == Variable::Wire) {
                     quantumComputation.setLogicalQubitGarbage(qubitIndex);
                 }
@@ -977,60 +1032,6 @@ namespace syrec {
                 addVariable(newDimensions, var, arraystr + "[" + std::to_string(i) + "]");
             }
         }
-    }
-
-    void SyrecSynthesis::addVariables(const Variable::vec& variables) {
-        for (const auto& var: variables) {
-            // entry in var lines map
-            varLines.try_emplace(var, quantumComputation.getNqubits());
-            addVariable(var->dimensions, var, std::string());
-        }
-    }
-
-    bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
-        // Settings parsing
-        auto mainModule = get<std::string>(settings, "main_module", std::string());
-        // Run-time measuring
-        Timer<PropertiesTimer> t;
-
-        if (statistics) {
-            const PropertiesTimer rt(statistics);
-            t.start(rt);
-        }
-
-        // get the main module
-        Module::ptr main;
-
-        if (!mainModule.empty()) {
-            main = program.findModule(mainModule);
-            if (!main) {
-                std::cerr << "Program has no module: " << mainModule << "\n";
-                return false;
-            }
-        } else {
-            main = program.findModule("main");
-            if (!main) {
-                main = program.modules().front();
-            }
-        }
-
-        // declare as top module
-        synthesizer->setMainModule(main);
-
-        // create lines for global variables
-        synthesizer->addVariables(main->parameters);
-        synthesizer->addVariables(main->variables);
-
-        // synthesize the statements
-        const auto synthesisOfMainModuleOk = synthesizer->onModule(main);
-        for (const auto& ancillaryQubit: synthesizer->getCreatedAncillaryQubits()) {
-            synthesizer->quantumComputation.setLogicalQubitAncillary(ancillaryQubit); 
-        }
-        
-        if (statistics) {
-            t.stop();
-        }
-        return synthesisOfMainModuleOk;
     }
 
     bool SyrecSynthesis::addOperationsImplementingNotGate(const qc::Qubit targetQubit) {

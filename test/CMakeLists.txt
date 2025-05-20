@@ -11,7 +11,6 @@ file(GLOB_RECURSE TEST_FILES "*.cpp")
 
 # add test executable
 package_add_test(mqt-syrec-test MQT::SyReC ${TEST_FILES})
-target_include_directories(mqt-syrec-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/utils")
 
 add_custom_command(
   TARGET mqt-syrec-test

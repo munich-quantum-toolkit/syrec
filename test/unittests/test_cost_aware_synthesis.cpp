@@ -8,10 +8,10 @@
  * Licensed under the MIT License
  */
 
+#include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
-#include "quantum_computation_synthesis_cost_metrics.hpp"
 
 #include <cstddef>
 #include <fstream>
@@ -27,17 +27,17 @@ using namespace syrec;
 
 class SyrecCostAwareSynthesisTest: public testing::TestWithParam<std::string> {
 protected:
-    std::string                                             testConfigsDir  = "./configs/";
-    std::string                                             testCircuitsDir = "./circuits/";
-    std::string                                             fileName;
-    std::size_t                                             expectedNumGates        = 0;
-    std::size_t                                             expectedNumLines        = 0;
-    quantumComputationSynthesisCostMetrics::CostMetricValue expectedQuantumCosts    = 0;
-    quantumComputationSynthesisCostMetrics::CostMetricValue expectedTransistorCosts = 0;
+    std::string              testConfigsDir  = "./configs/";
+    std::string              testCircuitsDir = "./circuits/";
+    std::string              fileName;
+    std::size_t              expectedNumGates        = 0;
+    std::size_t              expectedNumLines        = 0;
+    SynthesisCostMetricValue expectedQuantumCosts    = 0;
+    SynthesisCostMetricValue expectedTransistorCosts = 0;
 
     void SetUp() override {
         const std::string& synthesisParam = GetParam();
-        fileName                   = testCircuitsDir + GetParam() + ".src";
+        fileName                          = testCircuitsDir + GetParam() + ".src";
         std::ifstream i(testConfigsDir + "circuits_cost_aware_synthesis.json");
         json          j         = json::parse(i);
         expectedNumGates        = j[synthesisParam]["num_gates"];
@@ -91,8 +91,8 @@ TEST_P(SyrecCostAwareSynthesisTest, GenericSynthesisTest) {
     ASSERT_EQ(expectedNumGates, quantumComputation.getNops());
     ASSERT_EQ(expectedNumLines, quantumComputation.getNqubits());
 
-    const quantumComputationSynthesisCostMetrics::CostMetricValue actualQuantumCosts    = quantumComputationSynthesisCostMetrics::quantumCost(quantumComputation);
-    const quantumComputationSynthesisCostMetrics::CostMetricValue actualTransistorCosts = quantumComputationSynthesisCostMetrics::transistorCost(quantumComputation);
+    const SynthesisCostMetricValue actualQuantumCosts    = getQuantumCostsForSynthesis(quantumComputation);
+    const SynthesisCostMetricValue actualTransistorCosts = getTransistorCostForSynthesis(quantumComputation);
     ASSERT_EQ(expectedQuantumCosts, actualQuantumCosts);
     ASSERT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }

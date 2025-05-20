@@ -29,6 +29,8 @@
 namespace syrec {
     class SyrecSynthesis {
     public:
+        using SynthesisCostMetricValue = std::uint64_t;
+
         std::stack<qc::Qubit>              expOpp;
         std::stack<std::vector<unsigned>>  expLhss;
         std::stack<std::vector<unsigned>>  expRhss;
@@ -47,6 +49,8 @@ namespace syrec {
         void addVariables(const Variable::vec& variables);
         void setMainModule(const Module::ptr& mainModule);
         [[nodiscard]] std::unordered_set<qc::Qubit> getCreatedAncillaryQubits() const { return addedAncillaryQubitIndices; }
+
+        [[maybe_unused]] static bool synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics);
 
     protected:
         constexpr static std::string_view GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER = "lno";
@@ -124,7 +128,6 @@ namespace syrec {
         qc::Qubit getConstantLine(bool value);
         void      getConstantLines(unsigned bitwidth, unsigned value, std::vector<qc::Qubit>& lines);
 
-        static bool synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics);
 
         [[maybe_unused]] bool addOperationsImplementingNotGate(qc::Qubit targetQubit);
         [[maybe_unused]] bool addOperationsImplementingCnotGate(qc::Qubit controlQubit, qc::Qubit targetQubit);
@@ -214,7 +217,6 @@ namespace syrec {
         // as the search key in the container storing the annotations per quantum operation.
         std::vector<GateAnnotationsLookup> annotationsPerQuantumOperation;
         std::unordered_set<qc::Qubit>      addedAncillaryQubitIndices;
-
     private:
         VarLinesMap                            varLines;
         std::map<bool, std::vector<qc::Qubit>> freeConstLinesMap;

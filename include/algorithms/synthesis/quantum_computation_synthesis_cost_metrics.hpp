@@ -16,11 +16,11 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace quantumComputationSynthesisCostMetrics {
-    using CostMetricValue = std::uint64_t;
+namespace syrec {
+    using SynthesisCostMetricValue = std::uint64_t;
 
-    [[nodiscard]] inline CostMetricValue quantumCost(const qc::QuantumComputation& quantumComputation) {
-        CostMetricValue cost = 0;
+    [[nodiscard]] inline SynthesisCostMetricValue getQuantumCostsForSynthesis(const qc::QuantumComputation& quantumComputation) {
+        SynthesisCostMetricValue cost = 0;
 
         const auto numQubits = quantumComputation.getNqubits();
         if (numQubits == 0) {
@@ -85,11 +85,11 @@ namespace quantumComputationSynthesisCostMetrics {
         return cost;
     }
 
-    [[nodiscard]] inline CostMetricValue transistorCost(const qc::QuantumComputation& quantumComputation) {
-        CostMetricValue cost = 0;
+    [[nodiscard]] inline SynthesisCostMetricValue getTransistorCostForSynthesis(const qc::QuantumComputation& quantumComputation) {
+        SynthesisCostMetricValue cost = 0;
         for (const auto& quantumOperation: quantumComputation) {
             cost += quantumOperation->getNcontrols() * 8;
         }
         return cost;
     }
-} // namespace quantumComputationSynthesisCostMetrics
+} // namespace syrec

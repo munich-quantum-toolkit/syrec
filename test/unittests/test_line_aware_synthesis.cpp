@@ -8,11 +8,11 @@
  * Licensed under the MIT License
  */
 
+#include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "core/circuit.hpp"
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
-#include "quantum_computation_synthesis_cost_metrics.hpp"
 
 #include <cstddef>
 #include <gtest/gtest.h>
@@ -27,13 +27,13 @@ using namespace syrec;
 
 class SyrecLineAwareSynthesisTest: public testing::TestWithParam<std::string> {
 protected:
-    std::string                                             testConfigsDir  = "./configs/";
-    std::string                                             testCircuitsDir = "./circuits/";
-    std::string                                             fileName;
-    std::size_t                                             expectedNumGates        = 0;
-    std::size_t                                             expectedNumLines        = 0;
-    quantumComputationSynthesisCostMetrics::CostMetricValue expectedQuantumCosts    = 0;
-    quantumComputationSynthesisCostMetrics::CostMetricValue expectedTransistorCosts = 0;
+    std::string              testConfigsDir  = "./configs/";
+    std::string              testCircuitsDir = "./circuits/";
+    std::string              fileName;
+    std::size_t              expectedNumGates        = 0;
+    std::size_t              expectedNumLines        = 0;
+    SynthesisCostMetricValue expectedQuantumCosts    = 0;
+    SynthesisCostMetricValue expectedTransistorCosts = 0;
 
     void SetUp() override {
         const std::string& synthesisParam = GetParam();
@@ -91,8 +91,8 @@ TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisTest) {
     ASSERT_EQ(expectedNumGates, quantumComputation.getNops());
     ASSERT_EQ(expectedNumLines, quantumComputation.getNqubits());
 
-    const quantumComputationSynthesisCostMetrics::CostMetricValue actualQuantumCosts    = quantumComputationSynthesisCostMetrics::quantumCost(quantumComputation);
-    const quantumComputationSynthesisCostMetrics::CostMetricValue actualTransistorCosts = quantumComputationSynthesisCostMetrics::transistorCost(quantumComputation);
+    const SynthesisCostMetricValue actualQuantumCosts    = getQuantumCostsForSynthesis(quantumComputation);
+    const SynthesisCostMetricValue actualTransistorCosts = getTransistorCostForSynthesis(quantumComputation);
     ASSERT_EQ(expectedQuantumCosts, actualQuantumCosts);
     ASSERT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }
