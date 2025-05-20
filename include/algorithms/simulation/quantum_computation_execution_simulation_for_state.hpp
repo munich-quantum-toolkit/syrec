@@ -10,27 +10,15 @@
 
 #pragma once
 
-#include "core/circuit.hpp"
-#include "core/gate.hpp"
-#include "core/n_bit_values_container.hpp"
 #include "core/properties.hpp"
+#include "ir/QuantumComputation.hpp"
+
+#include <memory>
+#include <vector>
 
 namespace syrec {
-
     /**
-    * @brief Simulation for a single gate \p g
-    *
-    * This operator performs simulation for a single gate and is called by
-    * \ref syrec::simple_simulation "simple_simulation".
-    *
-    * \b Important: The operator should modify \p input directly.
-    *
-    * @param g     The gate to be simulated
-    * @param input An input pattern
-    */
-    void coreGateSimulation(const Gate& g, NBitValuesContainer& input);
-
-    /**
+    * TODO
     * @brief Simple Simulation function for a circuit
     *
     * This method calls the \em gate_simulation setting's functor on
@@ -39,11 +27,9 @@ namespace syrec {
     * for the next gate. The last calculated output pattern is written
     * to \p output.
     *
-    * @param output Output pattern. The index of the pattern corresponds to the line index.
-    * @param circ Circuit to be simulated.
-    * @param input Input pattern. The index of the pattern corresponds to the line index.
-    *              The bit-width of the input pattern has to be initialized properly to the
-    *              number of lines.
+    * @param quantumComputation TODO
+    * @param quantumComputationInputQubitValues TODO
+    * @param quantumComputationOutputQubitValues TODO
     * @param statistics <table border="0" width="100%">
     *   <tr>
     *     <td class="indexkey">Information</td>
@@ -57,7 +43,5 @@ namespace syrec {
     *   </tr>
     * </table>
     */
-    void simpleSimulation(NBitValuesContainer& output, const Circuit& circ, const NBitValuesContainer& input,
-                          const Properties::ptr& statistics = Properties::ptr());
-
+    void simulateQuantumComputationExecutionForState(const qc::QuantumComputation& quantumComputation, const std::vector<bool>& quantumComputationInputQubitValues, std::vector<bool>& quantumComputationOutputQubitValues, const Properties::ptr& statistics);
 } // namespace syrec
