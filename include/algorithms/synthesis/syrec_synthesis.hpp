@@ -46,6 +46,7 @@ namespace syrec {
 
         void addVariables(const Variable::vec& variables);
         void setMainModule(const Module::ptr& mainModule);
+        [[nodiscard]] std::unordered_set<qc::Qubit> getCreatedAncillaryQubits() const { return addedAncillaryQubitIndices; }
 
     protected:
         constexpr static std::string_view GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER = "lno";
@@ -117,7 +118,7 @@ namespace syrec {
         bool leftShift(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2);  // <<
         bool rightShift(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2); // >>
 
-        void addVariable(const std::vector<unsigned>& dimensions, const Variable::ptr& var, bool areVariableLinesConstants, bool areLinesOfVariableGarbageLines, const std::string& arraystr);
+        void addVariable(const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr);
         void getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines);
 
         qc::Qubit getConstantLine(bool value);
@@ -212,6 +213,7 @@ namespace syrec {
         // We are assuming that no operations in the qc::QuantumComputation are removed (i.e. by applying qc::CircuitOptimizer) and will thus use the index of the quantum operation
         // as the search key in the container storing the annotations per quantum operation.
         std::vector<GateAnnotationsLookup> annotationsPerQuantumOperation;
+        std::unordered_set<qc::Qubit>      addedAncillaryQubitIndices;
 
     private:
         VarLinesMap                            varLines;

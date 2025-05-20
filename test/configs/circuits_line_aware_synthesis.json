@@ -7,9 +7,9 @@
   },
 
   "binary_numeric": {
-    "num_gates": 30,
+    "num_gates": 40,
     "lines": 60,
-    "quantum_costs": 30,
+    "quantum_costs": 40,
     "transistor_costs": 240
   },
 
@@ -28,9 +28,9 @@
   },
 
   "bn_2": {
-    "num_gates": 296,
+    "num_gates": 307,
     "lines": 48,
-    "quantum_costs": 732,
+    "quantum_costs": 743,
     "transistor_costs": 2544
   },
 
@@ -113,9 +113,9 @@
     "transistor_costs": 896
   },
   "numeric_2": {
-    "num_gates": 34,
+    "num_gates": 47,
     "lines": 68,
-    "quantum_costs": 34,
+    "quantum_costs": 47,
     "transistor_costs": 272
   },
   "operators_repeated_4": {

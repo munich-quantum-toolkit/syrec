@@ -933,8 +933,10 @@ namespace syrec {
             const qc::Qubit       qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
             const std::string     qubitName  = "const_" + std::to_string(static_cast<int>(value)) + "_qubit_" + std::to_string(qubitIndex);
             constexpr std::size_t qubitSize  = 1;
-            // TODO: C++ exception with description "[addQubitRegister] Cannot add qubit register after ancillary qubits have been added" thrown in the test body.
+
             quantumComputation.addQubitRegister(qubitSize, qubitName);
+            addedAncillaryQubitIndices.emplace(qubitIndex);
+
             if (value) {
                 // Since ancillary qubits are assumed to have an initial value of
                 // zero, we need to add an inversion gate to derive the correct
@@ -943,8 +945,6 @@ namespace syrec {
                 // probably also consider the active control qubits set in the currently active control qubit propagation scopes.
                 addOperationsImplementingNotGate(qubitIndex);
             }
-            // TODO: C++ exception with description "[addQubitRegister] Cannot add qubit register after ancillary qubits have been added" thrown in the test body.
-            //quantumComputation.setLogicalQubitAncillary(qubitIndex);
             constLine = qubitIndex;
         }
         return constLine;
@@ -957,31 +957,24 @@ namespace syrec {
         }
     }
 
-    void SyrecSynthesis::addVariable(const std::vector<unsigned>& dimensions, const Variable::ptr& var,
-                                     bool areVariableLinesConstants, bool areLinesOfVariableGarbageLines, const std::string& arraystr) {
+    void SyrecSynthesis::addVariable(const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr) {
         if (dimensions.empty()) {
             for (qc::Qubit i = 0U; i < var->bitwidth; ++i) {
                 const qc::Qubit       qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
                 const std::string     qubitName  = var->name + arraystr + "." + std::to_string(i);
                 constexpr std::size_t qubitSize  = 1;
                 quantumComputation.addQubitRegister(qubitSize, qubitName);
-                //quantumComputation.addClassicalRegister(qubitSize, "c" + qubitName); // TODO: Is this necessary ?
-
-                // TODO: Can both flags be set? Garbage and ancillary qubits initialized to zero should be the same. The value of ancillary qubits in this function cannot be changed (and are assumed to be initialized to zero by default).
-                // TODO: C++ exception with description "[addQubitRegister] Cannot add qubit register after ancillary qubits have been added" thrown in the test body.
-                /*if (areVariableLinesConstants) {
-                    quantumComputation.setLogicalQubitAncillary(qubitIndex);
-                }
-                if (areLinesOfVariableGarbageLines) {
+                
+                if (var->type == Variable::In || var->type == Variable::Wire) {
                     quantumComputation.setLogicalQubitGarbage(qubitIndex);
-                }*/
+                }
             }
         } else {
             const auto                   len = static_cast<std::size_t>(dimensions.front());
             const std::vector<qc::Qubit> newDimensions(dimensions.begin() + 1U, dimensions.end());
 
             for (qc::Qubit i = 0U; i < len; ++i) {
-                addVariable(newDimensions, var, areVariableLinesConstants, areLinesOfVariableGarbageLines, arraystr + "[" + std::to_string(i) + "]");
+                addVariable(newDimensions, var, arraystr + "[" + std::to_string(i) + "]");
             }
         }
     }
@@ -990,15 +983,7 @@ namespace syrec {
         for (const auto& var: variables) {
             // entry in var lines map
             varLines.try_emplace(var, quantumComputation.getNqubits());
-
-            // types of constant and garbage
-            constexpr bool doVariablesLinesStoreConstantValue = false;
-            const bool     areLinesOfVariableGarbageLines     = var->type == Variable::In || var->type == Variable::Wire;
-
-            /*const constant constVar = (var->type == Variable::Out || var->type == Variable::Wire) ? constant(false) : constant();
-            const bool     garbage  = (var->type == Variable::In || var->type == Variable::Wire);*/
-
-            addVariable(var->dimensions, var, doVariablesLinesStoreConstantValue, areLinesOfVariableGarbageLines, std::string());
+            addVariable(var->dimensions, var, std::string());
         }
     }
 
@@ -1038,6 +1023,10 @@ namespace syrec {
 
         // synthesize the statements
         const auto synthesisOfMainModuleOk = synthesizer->onModule(main);
+        for (const auto& ancillaryQubit: synthesizer->getCreatedAncillaryQubits()) {
+            synthesizer->quantumComputation.setLogicalQubitAncillary(ancillaryQubit); 
+        }
+        
         if (statistics) {
             t.stop();
         }
