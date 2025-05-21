@@ -35,22 +35,16 @@
 
 using namespace syrec;
 
+const static std::string DEFAULT_QUBIT_LABEL_PREFIX = "qubit";
+
 class AnnotatedQuantumComputationTestsFixture: public testing::Test {
 protected:
-    struct GeneratedAndExpectedGatePair {
-        Gate::ptr generatedGate;
-        Gate::ptr expectedGate;
-    };
-
     std::unique_ptr<qc::QuantumComputation>        quantumComputation;
     std::unique_ptr<AnnotatableQuantumComputation> annotatedQuantumComputation;
-
-    std::unique_ptr<Circuit> circuit;
 
     void SetUp() override {
         quantumComputation          = std::make_unique<qc::QuantumComputation>();
         annotatedQuantumComputation = std::make_unique<AnnotatableQuantumComputation>(*quantumComputation);
-        circuit                     = std::make_unique<Circuit>();
     }
 
     static void assertThatOperationsOfQuantumComputationAreEqualToSequence(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::vector<std::unique_ptr<qc::Operation>>& expectedQuantumOperations) {
@@ -85,53 +79,10 @@ protected:
         }
     }
 
-    static void assertThatGatesMatch(const Gate& expected, const Gate& actual) {
-        ASSERT_EQ(expected.type, actual.type);
-        ASSERT_THAT(actual.controls, testing::UnorderedElementsAreArray(expected.controls.cbegin(), expected.controls.cend()));
-        ASSERT_THAT(actual.targets, testing::UnorderedElementsAreArray(expected.targets.cbegin(), expected.targets.cend()));
-    }
-
-    static void assertThatGatesOfCircuitAreEqualToSequence(const Circuit& circuit, const std::initializer_list<Gate::ptr>& expectedCircuitGates) {
-        const std::size_t numGatesInCircuit = circuit.numGates();
-        ASSERT_EQ(expectedCircuitGates.size(), numGatesInCircuit) << "Expected that circuit contains " << std::to_string(expectedCircuitGates.size()) << " gates but actually contained " << std::to_string(numGatesInCircuit) << " gates";
-        const std::vector<Gate::ptr> gatesOfCircuit = {circuit.cbegin(), circuit.cend()};
-
-        const auto* expectedCircuitGatesIterator = expectedCircuitGates.begin();
-        auto        actualCircuitGatesIterator   = circuit.cbegin();
-        for (std::size_t i = 0; i < numGatesInCircuit; ++i) {
-            ASSERT_THAT(*expectedCircuitGatesIterator, testing::NotNull());
-            ASSERT_THAT(*actualCircuitGatesIterator, testing::NotNull());
-            assertThatGatesMatch(**expectedCircuitGatesIterator, **actualCircuitGatesIterator);
-            ++expectedCircuitGatesIterator; // NOLINT (cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            ++actualCircuitGatesIterator;
-        }
-    }
-
-    static void assertThatAnnotationsOfGateAreEqualTo(const Circuit& circuit, const Gate& gate, const std::optional<std::unordered_map<std::string, std::string>>& expectedAnnotationsOfGate) {
-        const auto& actualAnnotationsOfGate = circuit.getAnnotations(gate);
-        if (!expectedAnnotationsOfGate.has_value()) {
-            ASSERT_FALSE(actualAnnotationsOfGate.has_value());
-            return;
-        }
-        ASSERT_TRUE(actualAnnotationsOfGate.has_value());
-        for (const auto& [expectedAnnotationKey, expectedAnnotationValue]: *expectedAnnotationsOfGate) {
-            const auto& matchingActualAnnotationForKey = actualAnnotationsOfGate->find(expectedAnnotationKey);
-            ASSERT_NE(matchingActualAnnotationForKey, actualAnnotationsOfGate->cend()) << "Annotation with key " << expectedAnnotationKey << " did not exist for gate";
-            ASSERT_EQ(expectedAnnotationValue, matchingActualAnnotationForKey->second) << "Value of annotation with key " << expectedAnnotationKey << " did not match! Expected: " << expectedAnnotationValue << " Actual: " << matchingActualAnnotationForKey->second;
-        }
-    }
-
-    static void createNotGateWithSingleTargetLine(Circuit& circuit, Gate::Line targetLine, GeneratedAndExpectedGatePair& generatedAndExpectedGatePair) {
-        const auto& generatedNotGate = circuit.createAndAddNotGate(targetLine);
-        ASSERT_THAT(generatedNotGate, testing::NotNull());
-
-        auto expectedNotGate  = std::make_shared<Gate>();
-        expectedNotGate->type = Gate::Type::Toffoli;
-        expectedNotGate->targets.emplace(targetLine);
-        assertThatGatesMatch(*generatedNotGate, *expectedNotGate);
-
-        generatedAndExpectedGatePair.generatedGate = generatedNotGate;
-        generatedAndExpectedGatePair.expectedGate  = expectedNotGate;
+    static void assertAdditionOfNonAncillaryQubitForIndexSucceeds(const AnnotatableQuantumComputation& annotatedQuantumComputation, const qc::Qubit expectedQubitIndex) {
+        const std::optional<qc::Qubit> actualQubitIndex = annotatedQuantumComputation.addNonAncillaryQubit(DEFAULT_QUBIT_LABEL_PREFIX + std::to_string(expectedQubitIndex), false);
+        ASSERT_TRUE(actualQubitIndex.has_value());
+        ASSERT_EQ(expectedQubitIndex, *actualQubitIndex);
     }
 };
 
@@ -172,7 +123,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithEmptyLab
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithDuplicateLabelNotPossible) {
-    const std::string          qubitLabel = "nonAncillary";
+    const std::string              qubitLabel = "nonAncillary";
     const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(qubitLabel, false);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
@@ -194,7 +145,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithDuplicat
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithLabelMatchingAncillaryQubitLabel) {
-    const std::string          qubitLabel = "ancillary";
+    const std::string              qubitLabel = "ancillary";
     const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addAncillaryQubit(qubitLabel, false);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
@@ -294,7 +245,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithEmptyLabelN
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithDuplicateLabelNotPossible) {
-    const std::string          ancillaryQubitLabel = "ancillary";
+    const std::string              ancillaryQubitLabel = "ancillary";
     const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit(ancillaryQubitLabel, false);
     ASSERT_TRUE(ancillaryQubitIndex.has_value());
     ASSERT_EQ(0, *ancillaryQubitIndex);
@@ -320,9 +271,9 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithDuplicateLa
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithLabelMatchingNonAncillaryQubitLabel) {
-    const std::string          ancillaryQubitLabel = "ancillary";
-    const std::string          nonAncillaryQubitLabel = "nonAncillary";
-    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit(ancillaryQubitLabel, false);
+    const std::string              ancillaryQubitLabel    = "ancillary";
+    const std::string              nonAncillaryQubitLabel = "nonAncillary";
+    const std::optional<qc::Qubit> ancillaryQubitIndex    = annotatedQuantumComputation->addAncillaryQubit(ancillaryQubitLabel, false);
     ASSERT_TRUE(ancillaryQubitIndex.has_value());
     ASSERT_EQ(0, *ancillaryQubitIndex);
 
@@ -347,7 +298,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithLabelMatchi
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitAfterAnyQubitWasSetAncillaryNotPossible) {
-    const std::optional<qc::Qubit> ancillaryQubitIndex    = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
     ASSERT_TRUE(ancillaryQubitIndex.has_value());
     ASSERT_EQ(0, *ancillaryQubitIndex);
 
@@ -379,7 +330,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndicesInE
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndicesWithoutAncillaryQubits) {
-    qc::Qubit                expectedAddedQubitIndex = 0;
+    qc::Qubit expectedAddedQubitIndex = 0;
 
     std::optional<qc::Qubit> actualAddedQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary_1", false);
     ASSERT_TRUE(actualAddedQubitIndex.has_value());
@@ -425,7 +376,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndices) {
 TEST_F(AnnotatedQuantumComputationTestsFixture, SetAncillaryQubitAsAncillary) {
     const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
     ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 0);
-    const std::optional<qc::Qubit> ancillaryQubit    = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
     ASSERT_TRUE(ancillaryQubit.has_value() && *ancillaryQubit == 1);
     ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubit));
 
@@ -592,1319 +543,1194 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetQubitLabels) {
 }
 // BEGIN getQubitLabels tests
 
-/*
 // BEGIN AddXGate tests
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGate) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGate) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 1;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 2;
+    constexpr qc::Qubit expectedTargetQubitIndex     = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedControlQubitIndexOne, expectedControlQubitIndexTwo, expectedTargetQubitIndex));
 
-    constexpr Gate::Line controlLineOne     = 1;
-    constexpr Gate::Line controlLineTwo     = 2;
-    constexpr Gate::Line targetLine         = 0;
-    const auto           createdToffoliGate = circuit->createAndAddToffoliGate(controlLineOne, controlLineTwo, targetLine);
-    ASSERT_THAT(createdToffoliGate, testing::NotNull());
-
-    auto expectedToffoliGate      = std::make_shared<Gate>();
-    expectedToffoliGate->type     = Gate::Type::Toffoli;
-    expectedToffoliGate->controls = {controlLineOne, controlLineTwo};
-    expectedToffoliGate->targets.emplace(targetLine);
-    assertThatGatesMatch(*expectedToffoliGate, *createdToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne, expectedControlQubitIndexTwo}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithUnknownControlLine) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithUnknownControlQubit) {
+    constexpr qc::Qubit expectedUnknownControlQubitIndex = 2;
+    constexpr qc::Qubit expectedKnownControlQubitIndex   = 1;
+    constexpr qc::Qubit expectedTargetQubitIndex         = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedKnownControlQubitIndex);
 
-    constexpr Gate::Line unknownControlLine = numCircuitLines + 1;
-    constexpr Gate::Line knownControlLine   = 1;
-    constexpr Gate::Line targetLine         = 2;
-    auto                 createdToffoliGate = circuit->createAndAddToffoliGate(unknownControlLine, knownControlLine, targetLine);
-    ASSERT_THAT(createdToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedUnknownControlQubitIndex, expectedKnownControlQubitIndex, expectedTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 
-    createdToffoliGate = circuit->createAndAddToffoliGate(knownControlLine, unknownControlLine, targetLine);
-    ASSERT_THAT(createdToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedKnownControlQubitIndex, expectedUnknownControlQubitIndex, expectedTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithDuplicateControlLineNotPossible) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithDuplicateControlQubitPossible) {
+    constexpr qc::Qubit expectedControlQubitIndex = 1;
+    constexpr qc::Qubit expectedTargetQubitIndex  = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedControlQubitIndex, expectedControlQubitIndex, expectedTargetQubitIndex));
 
-    constexpr Gate::Line controlLine        = 1;
-    constexpr Gate::Line targetLine         = 0;
-    const auto           createdToffoliGate = circuit->createAndAddToffoliGate(controlLine, controlLine, targetLine);
-    ASSERT_THAT(createdToffoliGate, testing::NotNull());
-
-    auto expectedToffoliGate  = std::make_shared<Gate>();
-    expectedToffoliGate->type = Gate::Type::Toffoli;
-    expectedToffoliGate->controls.emplace(controlLine);
-    expectedToffoliGate->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*expectedToffoliGate, *createdToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndex}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithTargetLineBeingEqualToEitherControlLineNotPossible) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithTargetLineBeingEqualToEitherControlQubitNotPossible) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line controlLineTwo = 1;
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedControlQubitIndexOne, expectedControlQubitIndexTwo, expectedControlQubitIndexOne));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 
-    auto createdToffoliGate = circuit->createAndAddToffoliGate(controlLineOne, controlLineTwo, controlLineOne);
-    ASSERT_THAT(createdToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
-
-    createdToffoliGate = circuit->createAndAddToffoliGate(controlLineOne, controlLineTwo, controlLineTwo);
-    ASSERT_THAT(createdToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedControlQubitIndexOne, expectedControlQubitIndexTwo, expectedControlQubitIndexTwo));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithUnknownTargetLine) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithUnknownTargetLine) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    constexpr qc::Qubit unknownQubitIndex            = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne     = 1;
-    constexpr Gate::Line controlLineTwo     = 2;
-    constexpr Gate::Line unknownCircuitLine = numCircuitLines + 1;
-    const auto           createdToffoliGate = circuit->createAndAddToffoliGate(controlLineOne, controlLineTwo, unknownCircuitLine);
-    ASSERT_THAT(createdToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedControlQubitIndexOne, expectedControlQubitIndexTwo, unknownQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithActiveControlLinesInParentControlLineScopes) {
-    constexpr unsigned numCircuitLines = 6;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithActiveControlQubitsInParentControlQubitScopes) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
-    constexpr Gate::Line controlLineOne   = 0;
-    constexpr Gate::Line controlLineTwo   = 1;
-    constexpr Gate::Line controlLineThree = 2;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineThree);
+    constexpr qc::Qubit expectedGateControlQubitOneIndex = 3;
+    constexpr qc::Qubit expectedGateControlQubitTwoIndex = 4;
+    constexpr qc::Qubit expectedGateTargetQubitIndex     = 5;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedGateControlQubitOneIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedGateControlQubitTwoIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedGateTargetQubitIndex);
 
-    constexpr Gate::Line gateControlLineOne = 3;
-    constexpr Gate::Line gateControlLineTwo = 4;
-    constexpr Gate::Line gateTargetLine     = 5;
-    const auto           createdToffoliGate = circuit->createAndAddToffoliGate(gateControlLineOne, gateControlLineTwo, gateTargetLine);
-    ASSERT_THAT(createdToffoliGate, testing::NotNull());
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex, expectedGateTargetQubitIndex));
 
-    auto expectedToffoliGate      = std::make_shared<Gate>();
-    expectedToffoliGate->type     = Gate::Type::Toffoli;
-    expectedToffoliGate->controls = {controlLineOne, gateControlLineOne, gateControlLineTwo};
-    expectedToffoliGate->targets  = {gateTargetLine};
-
-    assertThatGatesMatch(*expectedToffoliGate, *createdToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne, expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex}), expectedGateTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithTargetLineMatchingActiveControlLineInAnyParentControlLineScope) {
-    constexpr unsigned numCircuitLines = 4;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithTargetLineMatchingActiveControlQubitInAnyParentControlQubitScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line controlLineTwo = 1;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    constexpr qc::Qubit expectedGateControlQubitOneIndex = 2;
+    constexpr qc::Qubit expectedGateControlQubitTwo      = 3;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedGateControlQubitOneIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedGateControlQubitTwo);
 
-    constexpr Gate::Line gateControlLineOne = 2;
-    constexpr Gate::Line gateControlLineTwo = 3;
-    constexpr Gate::Line targetLine         = controlLineTwo;
-    const auto           createdToffoliGate = circuit->createAndAddToffoliGate(gateControlLineOne, gateControlLineTwo, targetLine);
-    ASSERT_THAT(createdToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    constexpr qc::Qubit expectedTargetQubitIndex = expectedControlQubitIndexTwo;
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedGateControlQubitOneIndex, expectedGateControlQubitTwo, expectedTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithControlLinesBeingDisabledInCurrentControlLineScope) {
-    constexpr unsigned numCircuitLines = 4;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithControlQubitsBeingDisabledInCurrentControlQubitScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line controlLineTwo = 1;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineTwo);
+    constexpr qc::Qubit expectedGateControlQubitIndex = 2;
+    constexpr qc::Qubit expectedTargetQubitIndex      = 3;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedGateControlQubitIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    constexpr Gate::Line gateControlLine = 2;
-    constexpr Gate::Line targetLine      = 3;
-    // Both control lines of toffoli gate were deactivated in propagation scope
-    auto createdToffoliGate = circuit->createAndAddToffoliGate(controlLineOne, controlLineTwo, targetLine);
-    ASSERT_THAT(createdToffoliGate, testing::NotNull());
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedControlQubitIndexOne, expectedControlQubitIndexTwo, expectedTargetQubitIndex));
+    auto expectedOperationForToffoliGateWithBothControlQubitsDeregistered = std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne, expectedControlQubitIndexTwo}), expectedTargetQubitIndex, qc::OpType::X);
+    expectedQuantumOperations.emplace_back(std::move(expectedOperationForToffoliGateWithBothControlQubitsDeregistered));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 
-    auto expectedToffoliGateWithBothControlLinesDeregistered      = std::make_shared<Gate>();
-    expectedToffoliGateWithBothControlLinesDeregistered->type     = Gate::Type::Toffoli;
-    expectedToffoliGateWithBothControlLinesDeregistered->controls = {controlLineOne, controlLineTwo};
-    expectedToffoliGateWithBothControlLinesDeregistered->targets.emplace(targetLine);
-    assertThatGatesMatch(*expectedToffoliGateWithBothControlLinesDeregistered, *createdToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGateWithBothControlLinesDeregistered});
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedControlQubitIndexOne, expectedGateControlQubitIndex, expectedTargetQubitIndex));
+    auto expectedOperationForToffoliGateWithFirstControlQubitsDeregistered = std::make_unique<qc::StandardOperation>(qc::Controls({expectedGateControlQubitIndex, expectedControlQubitIndexOne}), expectedTargetQubitIndex, qc::OpType::X);
+    expectedQuantumOperations.emplace_back(std::move(expectedOperationForToffoliGateWithFirstControlQubitsDeregistered));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 
-    createdToffoliGate = circuit->createAndAddToffoliGate(controlLineOne, gateControlLine, targetLine);
-    ASSERT_THAT(createdToffoliGate, testing::NotNull());
-
-    auto secondExpectedToffoliGateWithOneDeregisteredControlLine      = std::make_shared<Gate>();
-    secondExpectedToffoliGateWithOneDeregisteredControlLine->type     = Gate::Type::Toffoli;
-    secondExpectedToffoliGateWithOneDeregisteredControlLine->controls = {controlLineOne, gateControlLine};
-    secondExpectedToffoliGateWithOneDeregisteredControlLine->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*createdToffoliGate, *secondExpectedToffoliGateWithOneDeregisteredControlLine);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGateWithBothControlLinesDeregistered, secondExpectedToffoliGateWithOneDeregisteredControlLine});
-
-    createdToffoliGate = circuit->createAndAddToffoliGate(gateControlLine, controlLineOne, targetLine); // NOLINT(readability-suspicious-call-argument)
-    ASSERT_THAT(createdToffoliGate, testing::NotNull());
-
-    auto thirdExpectedToffoliGateWithOneDeregisteredControlLine      = std::make_shared<Gate>();
-    thirdExpectedToffoliGateWithOneDeregisteredControlLine->type     = Gate::Type::Toffoli;
-    thirdExpectedToffoliGateWithOneDeregisteredControlLine->controls = {gateControlLine, controlLineOne};
-    thirdExpectedToffoliGateWithOneDeregisteredControlLine->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*createdToffoliGate, *thirdExpectedToffoliGateWithOneDeregisteredControlLine);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGateWithBothControlLinesDeregistered, secondExpectedToffoliGateWithOneDeregisteredControlLine, thirdExpectedToffoliGateWithOneDeregisteredControlLine});
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedControlQubitIndexOne, expectedGateControlQubitIndex, expectedTargetQubitIndex));
+    auto expectedOperationForToffoliGateWithSecondControlQubitsDeregistered = std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne, expectedGateControlQubitIndex}), expectedTargetQubitIndex, qc::OpType::X);
+    expectedQuantumOperations.emplace_back(std::move(expectedOperationForToffoliGateWithSecondControlQubitsDeregistered));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithScopeActivatingDeactivatedControlLineOfParentScope) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithScopeActivatingDeactivatedControlQubitOfParentScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line controlLineTwo = 1;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    constexpr qc::Qubit expectedTargetQubitIndex = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    constexpr Gate::Line targetLine         = 2;
-    const auto           createdToffoliGate = circuit->createAndAddToffoliGate(controlLineOne, controlLineTwo, targetLine);
-    ASSERT_THAT(createdToffoliGate, testing::NotNull());
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedControlQubitIndexOne, expectedControlQubitIndexTwo, expectedTargetQubitIndex));
 
-    auto expectedToffoliGate      = std::make_shared<Gate>();
-    expectedToffoliGate->type     = Gate::Type::Toffoli;
-    expectedToffoliGate->controls = {controlLineOne, controlLineTwo};
-    expectedToffoliGate->targets.emplace(targetLine);
-    assertThatGatesMatch(*createdToffoliGate, *expectedToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne, expectedControlQubitIndexTwo}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithDeactivationOfControlLinePropagationScope) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithDeactivationOfControlQubitPropagationScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line controlLineTwo = 1;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->deactivateControlQubitPropagationScope();
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineTwo);
-    circuit->deactivateControlLinePropagationScope();
+    constexpr qc::Qubit expectedTargetQubitIndex = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    constexpr Gate::Line targetLine         = 2;
-    const auto           createdToffoliGate = circuit->createAndAddToffoliGate(controlLineOne, controlLineTwo, targetLine);
-    ASSERT_THAT(createdToffoliGate, testing::NotNull());
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedControlQubitIndexOne, expectedControlQubitIndexTwo, expectedTargetQubitIndex));
 
-    auto expectedToffoliGate      = std::make_shared<Gate>();
-    expectedToffoliGate->type     = Gate::Type::Toffoli;
-    expectedToffoliGate->controls = {controlLineOne, controlLineTwo};
-    expectedToffoliGate->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*expectedToffoliGate, *createdToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne, expectedControlQubitIndexTwo}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithTargetLineMatchingDeactivatedControlLineOfPropagationScope) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithTargetLineMatchingDeactivatedControlQubitOfPropagationScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
-    constexpr Gate::Line controlLineOne   = 0;
-    constexpr Gate::Line controlLineTwo   = 1;
-    constexpr Gate::Line controlLineThree = 2;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
+    constexpr qc::Qubit expectedGateControlQubitOneIndex = expectedControlQubitIndexTwo;
+    constexpr qc::Qubit expectedGateControlQubitTwoIndex = expectedControlQubitIndexThree;
+    constexpr qc::Qubit expectedTargetQubitIndex         = expectedControlQubitIndexOne;
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex, expectedTargetQubitIndex));
 
-    constexpr Gate::Line gateControlLineOne = controlLineTwo;
-    constexpr Gate::Line gateControlLineTwo = controlLineThree;
-    constexpr Gate::Line targetLine         = controlLineOne;
-    const auto           createdToffoliGate = circuit->createAndAddToffoliGate(gateControlLineOne, gateControlLineTwo, targetLine);
-    ASSERT_THAT(createdToffoliGate, testing::NotNull());
-
-    auto expectedToffoliGate      = std::make_shared<Gate>();
-    expectedToffoliGate->type     = Gate::Type::Toffoli;
-    expectedToffoliGate->controls = {gateControlLineOne, gateControlLineTwo};
-    expectedToffoliGate->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*expectedToffoliGate, *createdToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithCallerProvidedControlLinesMatchingDeregisteredControlLinesOfParentScope) {
-    constexpr unsigned numCircuitLines = 5;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithCallerProvidedControlQubitsMatchingDeregisteredControlQubitsOfParentScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    constexpr qc::Qubit expectedControlQubitIndexFour  = 3;
+    constexpr qc::Qubit expectedTargetQubitIndex       = 4;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexFour);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    constexpr Gate::Line controlLineOne   = 0;
-    constexpr Gate::Line controlLineTwo   = 1;
-    constexpr Gate::Line controlLineThree = 2;
-    constexpr Gate::Line controlLineFour  = 3;
-    constexpr Gate::Line targetLine       = 4;
+    constexpr qc::Qubit propagatedControlQubit = expectedControlQubitIndexThree;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexFour);
 
-    constexpr Gate::Line propagatedControlLine = controlLineThree;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubit);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(propagatedControlQubit);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineFour);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(propagatedControlLine);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(propagatedControlLine);
+    constexpr qc::Qubit expectedGateControlQubitOneIndex = expectedControlQubitIndexOne;
+    constexpr qc::Qubit expectedGateControlQubitTwoIndex = expectedControlQubitIndexTwo;
 
-    circuit->activateControlLinePropagationScope();
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex, expectedTargetQubitIndex));
+    auto expectedOperationForFirstToffoliGate = std::make_unique<qc::StandardOperation>(qc::Controls({expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex, expectedControlQubitIndexFour}), expectedTargetQubitIndex, qc::OpType::X);
+    expectedQuantumOperations.emplace_back(std::move(expectedOperationForFirstToffoliGate));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 
-    constexpr Gate::Line gateControlLineOne      = controlLineOne;
-    constexpr Gate::Line gateControlLineTwo      = controlLineTwo;
-    const auto           firstCreatedToffoliGate = circuit->createAndAddToffoliGate(gateControlLineOne, gateControlLineTwo, targetLine);
-    ASSERT_THAT(firstCreatedToffoliGate, testing::NotNull());
-
-    auto expectedFirstToffoliGate      = std::make_shared<Gate>();
-    expectedFirstToffoliGate->type     = Gate::Type::Toffoli;
-    expectedFirstToffoliGate->controls = {gateControlLineOne, gateControlLineTwo, controlLineFour};
-    expectedFirstToffoliGate->targets.emplace(targetLine);
-    assertThatGatesMatch(*expectedFirstToffoliGate, *firstCreatedToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstToffoliGate});
-
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(propagatedControlLine);
-    const auto secondCreatedToffoliGate = circuit->createAndAddToffoliGate(gateControlLineOne, gateControlLineTwo, targetLine);
-
-    auto expectedSecondToffoliGate      = std::make_shared<Gate>();
-    expectedSecondToffoliGate->type     = Gate::Type::Toffoli;
-    expectedSecondToffoliGate->controls = {propagatedControlLine, gateControlLineOne, gateControlLineTwo, controlLineFour};
-    expectedSecondToffoliGate->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*expectedSecondToffoliGate, *secondCreatedToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstToffoliGate, expectedSecondToffoliGate});
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubit);
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex, expectedTargetQubitIndex));
+    auto expectedOperationForSecondToffoliGate = std::make_unique<qc::StandardOperation>(qc::Controls({propagatedControlQubit, expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex, expectedControlQubitIndexFour}), expectedTargetQubitIndex, qc::OpType::X);
+    expectedQuantumOperations.emplace_back(std::move(expectedOperationForSecondToffoliGate));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGate) {
-    constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGate) {
+    constexpr qc::Qubit expectedControlQubitIndex = 0;
+    constexpr qc::Qubit expectedTargetQubitIndex  = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    constexpr Gate::Line controlLine     = 0;
-    constexpr Gate::Line targetLine      = 1;
-    const auto           createdCnotGate = circuit->createAndAddCnotGate(controlLine, targetLine);
-    ASSERT_THAT(createdCnotGate, testing::NotNull());
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedControlQubitIndex, expectedTargetQubitIndex));
 
-    auto expectedCnotGate  = std::make_shared<Gate>();
-    expectedCnotGate->type = Gate::Type::Toffoli;
-    expectedCnotGate->controls.emplace(controlLine);
-    expectedCnotGate->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*expectedCnotGate, *createdCnotGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {createdCnotGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndex}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithUnknownControlLine) {
-    constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGateWithUnknownControlQubit) {
+    constexpr qc::Qubit expectedControlQubitIndex = 1;
+    constexpr qc::Qubit expectedTargetQubitIndex  = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    constexpr Gate::Line controlLine     = numCircuitLines + 1;
-    constexpr Gate::Line targetLine      = 1;
-    const auto           createdCnotGate = circuit->createAndAddCnotGate(controlLine, targetLine);
-    ASSERT_THAT(createdCnotGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedControlQubitIndex, expectedTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithUnknownTargetLine) {
-    constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGateWithUnknownTargetLine) {
+    constexpr qc::Qubit expectedControlQubitIndex = 0;
+    constexpr qc::Qubit expectedTargetQubitIndex  = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndex);
 
-    constexpr Gate::Line controlLine     = 1;
-    constexpr Gate::Line targetLine      = numCircuitLines + 1;
-    const auto           createdCnotGate = circuit->createAndAddCnotGate(controlLine, targetLine);
-    ASSERT_THAT(createdCnotGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedControlQubitIndex, expectedTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithControlAndTargetLineBeingSameLine) {
-    constexpr unsigned numCircuitLines = 1;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGateWithControlAndTargetLineBeingSameLine) {
+    constexpr qc::Qubit expectedControlQubitIndex = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndex);
 
-    constexpr Gate::Line controlLine     = 0;
-    const auto           createdCnotGate = circuit->createAndAddCnotGate(controlLine, controlLine);
-    ASSERT_THAT(createdCnotGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedControlQubitIndex, expectedControlQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithActiveControlLinesInParentControlLineScopes) {
-    constexpr unsigned numCircuitLines = 6;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGateWithActiveControlQubitsInParentControlQubitScopes) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    constexpr qc::Qubit expectedControlQubitIndexFour  = 3;
+    constexpr qc::Qubit expectedTargetQubitIndex       = 4;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexFour);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    constexpr Gate::Line controlLineOne   = 0;
-    constexpr Gate::Line controlLineTwo   = 1;
-    constexpr Gate::Line controlLineThree = 2;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineThree);
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedControlQubitIndexFour, expectedTargetQubitIndex));
 
-    constexpr Gate::Line controlLineFour = 3;
-    constexpr Gate::Line targetLine      = 4;
-    const auto           createdCnotGate = circuit->createAndAddCnotGate(controlLineFour, targetLine);
-    ASSERT_THAT(createdCnotGate, testing::NotNull());
-
-    auto expectedCnotGate      = std::make_shared<Gate>();
-    expectedCnotGate->type     = Gate::Type::Toffoli;
-    expectedCnotGate->controls = {controlLineOne, controlLineFour};
-    expectedCnotGate->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*expectedCnotGate, *createdCnotGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedCnotGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne, expectedControlQubitIndexFour}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithTargetLineMatchingActiveControlLineInAnyParentControlLineScope) {
-    constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGateWithTargetLineMatchingActiveControlQubitInAnyParentControlQubitScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne = 0;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
 
-    circuit->activateControlLinePropagationScope();
-
-    constexpr Gate::Line controlLineTwo  = 1;
-    constexpr Gate::Line targetLine      = controlLineOne;
-    const auto           createdCnotGate = circuit->createAndAddCnotGate(controlLineTwo, targetLine);
-    ASSERT_THAT(createdCnotGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    constexpr qc::Qubit expectedGateControlQubitIndex = expectedControlQubitIndexTwo;
+    constexpr qc::Qubit expectedGateTargetQubitIndex  = expectedControlQubitIndexOne;
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedGateControlQubitIndex, expectedGateTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithControlLineBeingDeactivatedInCurrentControlLineScope) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGateWithControlQubitBeingDeactivatedInCurrentControlQubitScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line controlLineTwo = 1;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
+    constexpr qc::Qubit expectedGateControlQubitIndex = expectedControlQubitIndexTwo;
+    constexpr qc::Qubit expectedGateTargetQubitIndex  = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedGateTargetQubitIndex);
 
-    constexpr Gate::Line gateControlLine = controlLineTwo;
-    constexpr Gate::Line targetLine      = 2;
-    const auto           createdCnotGate = circuit->createAndAddCnotGate(gateControlLine, targetLine);
-    ASSERT_THAT(createdCnotGate, testing::NotNull());
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedGateControlQubitIndex, expectedGateTargetQubitIndex));
 
-    auto expectedCnotGate  = std::make_shared<Gate>();
-    expectedCnotGate->type = Gate::Type::Toffoli;
-    expectedCnotGate->controls.emplace(gateControlLine);
-    expectedCnotGate->targets.emplace(targetLine);
-    assertThatGatesMatch(*expectedCnotGate, *createdCnotGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedCnotGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedGateControlQubitIndex}), expectedGateTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithDeactivationOfControlLinePropagationScope) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGateWithDeactivationOfControlQubitPropagationScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne = 0;
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
-    circuit->deactivateControlLinePropagationScope();
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->deactivateControlQubitPropagationScope();
 
-    constexpr Gate::Line controlLineTwo  = 1;
-    constexpr Gate::Line targetLine      = 2;
-    const auto           createdCnotGate = circuit->createAndAddCnotGate(controlLineTwo, targetLine);
-    ASSERT_THAT(createdCnotGate, testing::NotNull());
+    constexpr qc::Qubit expectedGateControlQubitIndex = expectedControlQubitIndexTwo;
+    constexpr qc::Qubit expectedGateTargetQubitIndex  = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedGateTargetQubitIndex);
 
-    auto expectedCnotGate      = std::make_shared<Gate>();
-    expectedCnotGate->type     = Gate::Type::Toffoli;
-    expectedCnotGate->controls = {controlLineOne, controlLineTwo};
-    expectedCnotGate->targets.emplace(targetLine);
-    assertThatGatesMatch(*expectedCnotGate, *createdCnotGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedCnotGate});
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedGateControlQubitIndex, expectedGateTargetQubitIndex));
+
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedGateControlQubitIndex, expectedControlQubitIndexOne}), expectedGateTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithTargetLineMatchingDeactivatedControlLineOfPropagationScope) {
-    constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGateWithTargetLineMatchingDeactivatedControlQubitOfPropagationScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line controlLineTwo = 1;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
+    constexpr qc::Qubit expectedGateControlQubitIndex = expectedControlQubitIndexTwo;
+    constexpr qc::Qubit expectedGateTargetQubitIndex  = expectedControlQubitIndexOne;
 
-    constexpr Gate::Line gateControlLine = controlLineTwo;
-    constexpr Gate::Line targetLine      = controlLineOne;
-    const auto           createdNotGate  = circuit->createAndAddCnotGate(gateControlLine, targetLine);
-    ASSERT_THAT(createdNotGate, testing::NotNull());
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedGateControlQubitIndex, expectedGateTargetQubitIndex));
 
-    auto expectedNotGate  = std::make_shared<Gate>();
-    expectedNotGate->type = Gate::Type::Toffoli;
-    expectedNotGate->controls.emplace(gateControlLine);
-    expectedNotGate->targets.emplace(targetLine);
-    assertThatGatesMatch(*expectedNotGate, *createdNotGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedGateControlQubitIndex}), expectedGateTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithCallerProvidedControlLinesMatchingDeregisteredControlLinesOfParentScope) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGateWithCallerProvidedControlQubitsMatchingDeregisteredControlQubitsOfParentScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
-    constexpr Gate::Line controlLineOne   = 0;
-    constexpr Gate::Line controlLineTwo   = 1;
-    constexpr Gate::Line controlLineThree = 2;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
 
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
 
-    circuit->activateControlLinePropagationScope();
+    constexpr qc::Qubit expectedGateControlQubitIndex = expectedControlQubitIndexOne;
+    constexpr qc::Qubit expectedGateTargetQubitIndex  = expectedControlQubitIndexThree;
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedGateControlQubitIndex, expectedGateTargetQubitIndex));
 
-    constexpr Gate::Line gateControlLine      = controlLineOne;
-    constexpr Gate::Line targetLine           = controlLineThree;
-    const auto           firstCreatedCnotGate = circuit->createAndAddCnotGate(gateControlLine, targetLine);
-    ASSERT_THAT(firstCreatedCnotGate, testing::NotNull());
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    auto                                        expectedOperationForFirstCnotGate = std::make_unique<qc::StandardOperation>(qc::Controls({expectedGateControlQubitIndex}), expectedGateTargetQubitIndex, qc::OpType::X);
+    expectedQuantumOperations.emplace_back(std::move(expectedOperationForFirstCnotGate));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 
-    auto expectedFirstCnotGate  = std::make_shared<Gate>();
-    expectedFirstCnotGate->type = Gate::Type::Toffoli;
-    expectedFirstCnotGate->controls.emplace(gateControlLine);
-    expectedFirstCnotGate->targets.emplace(targetLine);
-    assertThatGatesMatch(*expectedFirstCnotGate, *firstCreatedCnotGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstCnotGate});
+    constexpr qc::Qubit propagatedControlQubitIndex = expectedControlQubitIndexTwo;
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedGateControlQubitIndex, expectedGateTargetQubitIndex));
 
-    constexpr Gate::Line propagatedControlLine = controlLineTwo;
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(propagatedControlLine);
-    const auto secondCreatedCnotGate = circuit->createAndAddCnotGate(gateControlLine, targetLine);
-
-    auto expectedSecondCnotGate      = std::make_shared<Gate>();
-    expectedSecondCnotGate->type     = Gate::Type::Toffoli;
-    expectedSecondCnotGate->controls = {propagatedControlLine, gateControlLine};
-    expectedSecondCnotGate->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*expectedSecondCnotGate, *secondCreatedCnotGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstCnotGate, expectedSecondCnotGate});
+    auto expectedOperationForSecondCnotGate = std::make_unique<qc::StandardOperation>(qc::Controls({propagatedControlQubitIndex, expectedGateControlQubitIndex}), expectedGateTargetQubitIndex, qc::OpType::X);
+    expectedQuantumOperations.emplace_back(std::move(expectedOperationForSecondCnotGate));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddNotGate) {
-    constexpr unsigned numCircuitLines = 1;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingNotGate) {
+    constexpr qc::Qubit expectedTargetQubitIndex = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    const auto createdNotGate = circuit->createAndAddNotGate(0);
-    ASSERT_THAT(createdNotGate, testing::NotNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {createdNotGate});
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(0));
+
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddNotGateWithUnknownTargetLine) {
-    constexpr unsigned numCircuitLines = 1;
-    circuit->setLines(numCircuitLines);
-
-    constexpr Gate::Line unknownTargetLine = numCircuitLines + 1;
-    const auto           createdNotGate    = circuit->createAndAddNotGate(unknownTargetLine);
-    ASSERT_THAT(createdNotGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingNotGateWithUnknownTargetLine) {
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingNotGate(0));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddNotGateWithActiveControlLinesInParentControlLineScopes) {
-    constexpr unsigned numCircuitLines = 5;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingNotGateWithActiveControlQubitsInParentControlQubitScopes) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    constexpr qc::Qubit expectedControlQubitIndexFour  = 3;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexFour);
 
-    constexpr Gate::Line controlLineOne   = 0;
-    constexpr Gate::Line controlLineTwo   = 1;
-    constexpr Gate::Line controlLineThree = 2;
-    constexpr Gate::Line controlLineFour  = 3;
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineTwo);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineFour);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexFour);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineThree);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree);
 
-    constexpr Gate::Line targetLine     = 4;
-    const auto           createdNotGate = circuit->createAndAddNotGate(targetLine);
-    ASSERT_THAT(createdNotGate, testing::NotNull());
+    constexpr qc::Qubit expectedTargetQubitIndex = 4;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    auto expectedNotGate      = std::make_shared<Gate>();
-    expectedNotGate->type     = Gate::Type::Toffoli;
-    expectedNotGate->controls = {controlLineOne, controlLineFour};
-    expectedNotGate->targets  = {targetLine};
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(expectedTargetQubitIndex));
 
-    assertThatGatesMatch(*expectedNotGate, *createdNotGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne, expectedControlQubitIndexFour}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddNotGateWithTargetLineMatchingActiveControlLineInAnyParentControlLineScope) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingNotGateWithTargetLineMatchingActiveControlQubitInAnyParentControlQubitScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
 
-    constexpr Gate::Line controlLineOne = 0;
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
 
-    constexpr Gate::Line targetLine     = controlLineOne;
-    const auto           createdNotGate = circuit->createAndAddNotGate(targetLine);
-    ASSERT_THAT(createdNotGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    constexpr qc::Qubit expectedTargetQubitIndex = expectedControlQubitIndexOne;
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingNotGate(expectedTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddNotGateWithTargetLineMatchingDeactivatedControlLineOfControlLinePropagationScope) {
-    constexpr unsigned numCircuitLines = 1;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingNotGateWithTargetLineMatchingDeactivatedControlQubitOfControlQubitPropagationScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
 
-    constexpr Gate::Line controlLineOne = 0;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
+    constexpr qc::Qubit expectedTargetQubitIndex = expectedControlQubitIndexOne;
 
-    constexpr Gate::Line targetLine     = controlLineOne;
-    const auto           createdNotGate = circuit->createAndAddNotGate(targetLine);
-    ASSERT_THAT(createdNotGate, testing::NotNull());
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(expectedTargetQubitIndex));
 
-    auto expectedNotGate  = std::make_shared<Gate>();
-    expectedNotGate->type = Gate::Type::Toffoli;
-    expectedNotGate->targets.emplace(targetLine);
-    assertThatGatesMatch(*expectedNotGate, *createdNotGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGate) {
-    constexpr unsigned numCircuitLines = 4;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGate) {
+    constexpr qc::Qubit expectedTargetQubitIndex       = 0;
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 2;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 3;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
-    constexpr Gate::Line    controlLineOne   = 1;
-    constexpr Gate::Line    controlLineTwo   = 3;
-    constexpr Gate::Line    controlLineThree = 2;
-    constexpr Gate::Line    targetLine       = 0;
-    const Gate::LinesLookup gateControlLines = {controlLineOne, controlLineTwo, controlLineThree};
+    const qc::Controls gateControlQubitsIndices({expectedControlQubitIndexOne, expectedControlQubitIndexTwo, expectedControlQubitIndexThree});
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(gateControlQubitsIndices, expectedTargetQubitIndex));
 
-    const auto createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate(gateControlLines, targetLine);
-    ASSERT_THAT(createdMultiControlToffoliGate, testing::NotNull());
-
-    auto expectedMultiControlToffoliGate      = std::make_shared<Gate>();
-    expectedMultiControlToffoliGate->type     = Gate::Type::Toffoli;
-    expectedMultiControlToffoliGate->controls = gateControlLines;
-    expectedMultiControlToffoliGate->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*expectedMultiControlToffoliGate, *createdMultiControlToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {createdMultiControlToffoliGate});
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(gateControlQubitsIndices, expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithUnknownControlLine) {
-    constexpr unsigned numCircuitLines = 4;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGateWithUnknownControlQubit) {
+    constexpr qc::Qubit expectedTargetQubitIndex       = 0;
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 1;
+    constexpr qc::Qubit unknownControlQubit            = 3;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
-    constexpr Gate::Line    controlLineOne     = 1;
-    constexpr Gate::Line    unknownControlLine = numCircuitLines + 1;
-    constexpr Gate::Line    controlLineThree   = 2;
-    constexpr Gate::Line    targetLine         = 0;
-    const Gate::LinesLookup gateControlLines   = {controlLineOne, unknownControlLine, controlLineThree};
-
-    const auto createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate(gateControlLines, targetLine);
-    ASSERT_THAT(createdMultiControlToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    const qc::Controls expectedGateControlQubitIndices({expectedControlQubitIndexOne, unknownControlQubit, expectedControlQubitIndexThree});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(expectedGateControlQubitIndices, expectedTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithUnknownTargetLine) {
-    constexpr unsigned numCircuitLines = 4;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGateWithUnknownTargetLine) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    constexpr qc::Qubit expectedTargetQubitIndex       = 3;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
-    constexpr Gate::Line    controlLineOne   = 1;
-    constexpr Gate::Line    controlLineTwo   = 3;
-    constexpr Gate::Line    controlLineThree = 2;
-    constexpr Gate::Line    targetLine       = numCircuitLines + 1;
-    const Gate::LinesLookup gateControlLines = {controlLineOne, controlLineTwo, controlLineThree};
-
-    const auto createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate(gateControlLines, targetLine);
-    ASSERT_THAT(createdMultiControlToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    const qc::Controls expectedGateControlQubitIndices({expectedControlQubitIndexOne, expectedControlQubitIndexTwo, expectedControlQubitIndexThree});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(expectedGateControlQubitIndices, expectedTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithoutControlLinesAndNoActiveLocalControlLineScopes) {
-    constexpr unsigned numCircuitLines = 1;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGateWithoutControlQubitsAndNoActiveLocalControlQubitScopes) {
+    constexpr qc::Qubit expectedTargetQubitIndex       = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    constexpr Gate::Line targetLine                     = 0;
-    const auto           createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate({}, targetLine);
-    ASSERT_THAT(createdMultiControlToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate({}, expectedTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithActiveControlLinesInParentControlLineScopes) {
-    constexpr unsigned numCircuitLines = 5;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGateWithActiveControlQubitsInParentControlQubitScopes) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
-    constexpr Gate::Line controlLineTwo   = 1;
-    constexpr Gate::Line controlLineThree = 2;
-    constexpr Gate::Line controlLineOne   = 0;
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineThree);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree);
 
-    constexpr Gate::Line gateControlLine                = 3;
-    constexpr Gate::Line targetLine                     = 4;
-    const auto           createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate({gateControlLine}, targetLine);
-    ASSERT_THAT(createdMultiControlToffoliGate, testing::NotNull());
+    constexpr qc::Qubit expectedGateControlQubitIndex               = 3;
+    constexpr qc::Qubit expectedTargetQubitIndex       = 4;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedGateControlQubitIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
-    auto expectedMultiControlToffoliGate      = std::make_shared<Gate>();
-    expectedMultiControlToffoliGate->type     = Gate::Type::Toffoli;
-    expectedMultiControlToffoliGate->controls = {controlLineOne, gateControlLine};
-    expectedMultiControlToffoliGate->targets  = {targetLine};
-
-    assertThatGatesMatch(*expectedMultiControlToffoliGate, *createdMultiControlToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate({expectedGateControlQubitIndex}, expectedTargetQubitIndex));
+    
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne, expectedGateControlQubitIndex}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithTargetLineMatchingActiveControlLinesOfAnyParentControlLineScopes) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGateWithTargetLineMatchingActiveControlQubitsOfAnyParentControlQubitScopes) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line controlLineOne = 0;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-
-    const Gate::LinesLookup gateControlLines              = {1, 2};
-    constexpr Gate::Line    targetLine                    = controlLineOne;
-    const auto              createMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate(gateControlLines, targetLine);
-    ASSERT_THAT(createMultiControlToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    const qc::Controls  expectedGateControlQubitIndices({expectedControlQubitIndexOne, expectedControlQubitIndexTwo});
+    constexpr qc::Qubit targetQubit = expectedControlQubitIndexOne;
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(expectedGateControlQubitIndices, targetQubit));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithTargetLineBeingEqualToUserProvidedControlLine) {
-    constexpr unsigned numCircuitLines = 4;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGateWithTargetLineBeingEqualToUserProvidedControlQubit) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    constexpr qc::Qubit targetQubit                    = expectedControlQubitIndexTwo;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
-    constexpr Gate::Line    controlLineOne   = 1;
-    constexpr Gate::Line    controlLineTwo   = 3;
-    constexpr Gate::Line    controlLineThree = 2;
-    constexpr Gate::Line    targetLine       = controlLineTwo;
-    const Gate::LinesLookup gateControlLines = {controlLineOne, controlLineTwo, controlLineThree};
-
-    const auto createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate(gateControlLines, targetLine);
-    ASSERT_THAT(createdMultiControlToffoliGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
+    const qc::Controls expectedGateControlQubitIndices({expectedControlQubitIndexOne, expectedControlQubitIndexTwo, expectedControlQubitIndexThree});
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(expectedGateControlQubitIndices, targetQubit));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithTargetLineMatchingDeactivatedControlLineOfParentScope) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGateWithTargetLineMatchingDeactivatedControlQubitOfParentScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
-    constexpr Gate::Line controlLineOne   = 0;
-    constexpr Gate::Line controlLineTwo   = 1;
-    constexpr Gate::Line controlLineThree = 2;
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
+    // The multi control toffoli gate should be created due to the target line only overlapping a deactivated control line in the current control line propagation scope
+    constexpr qc::Qubit expectedTargetQubitIndex = expectedControlQubitIndexOne;
+    const qc::Controls  expectedGateControlQubitIndices({expectedControlQubitIndexTwo, expectedControlQubitIndexThree});
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(expectedGateControlQubitIndices, expectedTargetQubitIndex));
+
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(expectedGateControlQubitIndices, expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGateWithCallerProvidedControlQubitsMatchingDeregisteredControlQubitsOfParentScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    constexpr qc::Qubit expectedControlQubitIndexFour  = 3;
+    constexpr qc::Qubit expectedTargetQubitIndex       = 4;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexFour);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
+
+    constexpr qc::Qubit propagatedControlQubitIndex = expectedControlQubitIndexThree;
+    constexpr qc::Qubit notPropagatedControlQubit   = expectedControlQubitIndexFour;
+
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexFour);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubitIndex);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(propagatedControlQubitIndex);
+
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(notPropagatedControlQubit);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(notPropagatedControlQubit);
+
+    constexpr qc::Qubit expectedGateControlQubitOneIndex = propagatedControlQubitIndex;
+    constexpr qc::Qubit expectedGateControlQubitTwoIndex = expectedControlQubitIndexTwo;
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate({expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex}, expectedTargetQubitIndex));
+
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    auto operationForFirstMultiControlToffoliGate = std::make_unique<qc::StandardOperation>(qc::Controls({ expectedControlQubitIndexTwo, expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex}), expectedTargetQubitIndex, qc::OpType::X);
+    expectedQuantumOperations.emplace_back(std::move(operationForFirstMultiControlToffoliGate));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
+
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate({expectedGateControlQubitTwoIndex}, expectedTargetQubitIndex));
+
+    auto operationForSecondMultiControlToffoliGate = std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexTwo, propagatedControlQubitIndex, expectedGateControlQubitTwoIndex}), expectedTargetQubitIndex, qc::OpType::X);
+    expectedQuantumOperations.emplace_back(std::move(operationForSecondMultiControlToffoliGate));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
+}
+
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingFredkinGate) {
+    constexpr qc::Qubit expectedTargetQubitIndexOne = 0;
+    constexpr qc::Qubit expectedTargetQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndexTwo);
+
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingFredkinGate(expectedTargetQubitIndexOne, expectedTargetQubitIndexTwo));
+
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
+    expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), qc::Targets({expectedTargetQubitIndexOne, expectedTargetQubitIndexTwo}), qc::OpType::SWAP));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingFredkinGateWithUnknownTargetLine) {
+    constexpr qc::Qubit knownTargetQubitIndex   = 0;
+    constexpr qc::Qubit unknownTargetQubitIndex = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, knownTargetQubitIndex);
+
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingFredkinGate(knownTargetQubitIndex, unknownTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
+
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingFredkinGate(unknownTargetQubitIndex, knownTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingFredkinGateWithTargetLinesTargetingSameLine) {
+    constexpr qc::Qubit expectedTargetQubitIndex = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
+
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingFredkinGate(expectedTargetQubitIndex, expectedTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingFredkinGateWithTargetLineMatchingActiveControlQubitOfAnyParentScope) {
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+
+    constexpr qc::Qubit notOverlappingTargetQubitIndex = 2;
+    constexpr qc::Qubit overlappingTargetQubitIndex    = expectedControlQubitIndexTwo;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, notOverlappingTargetQubitIndex);
+
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingFredkinGate(notOverlappingTargetQubitIndex, overlappingTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
+
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingFredkinGate(overlappingTargetQubitIndex, notOverlappingTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
+
+    ASSERT_FALSE(annotatedQuantumComputation->addOperationsImplementingFredkinGate(overlappingTargetQubitIndex, overlappingTargetQubitIndex));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, {});
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingFredkinGateWithTargetLineMatchingDeactivatedControlQubitOfParentScope) {
+    
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
+    
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
 
     // The fredkin gate should be created due to the target line only overlapping a deactivated control line in the current control line propagation scope
-    constexpr Gate::Line    targetLine                     = controlLineOne;
-    const Gate::LinesLookup gateControlLines               = {controlLineThree, controlLineTwo};
-    const auto              createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate(gateControlLines, targetLine);
-    ASSERT_THAT(createdMultiControlToffoliGate, testing::NotNull());
+    constexpr qc::Qubit notOverlappingTargetQubitIndex = 2;
+    constexpr qc::Qubit overlappingTargetQubitIndex    = expectedControlQubitIndexOne;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, notOverlappingTargetQubitIndex);
 
-    auto expectedMultiControlToffoliGate      = std::make_shared<Gate>();
-    expectedMultiControlToffoliGate->type     = Gate::Type::Toffoli;
-    expectedMultiControlToffoliGate->controls = gateControlLines;
-    expectedMultiControlToffoliGate->targets.emplace(targetLine);
-    assertThatGatesMatch(*expectedMultiControlToffoliGate, *createdMultiControlToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
-}
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingFredkinGate(notOverlappingTargetQubitIndex, overlappingTargetQubitIndex));
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithCallerProvidedControlLinesMatchingDeregisteredControlLinesOfParentScope) {
-    constexpr unsigned numCircuitLines = 5;
-    circuit->setLines(numCircuitLines);
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+    auto operationImplementingFirstFredkinGate = std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexTwo}), qc::Targets({notOverlappingTargetQubitIndex, overlappingTargetQubitIndex}), qc::OpType::SWAP);
+    expectedQuantumComputations.emplace_back(std::move(operationImplementingFirstFredkinGate));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 
-    constexpr Gate::Line controlLineOne   = 0;
-    constexpr Gate::Line controlLineTwo   = 1;
-    constexpr Gate::Line controlLineThree = 2;
-    constexpr Gate::Line controlLineFour  = 3;
-    constexpr Gate::Line targetLine       = 4;
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingFredkinGate(overlappingTargetQubitIndex, notOverlappingTargetQubitIndex));
 
-    constexpr Gate::Line propagatedControlLine    = controlLineThree;
-    constexpr Gate::Line notPropagatedControlLine = controlLineFour;
-
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineFour);
-
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(propagatedControlLine);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(propagatedControlLine);
-
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(notPropagatedControlLine);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(notPropagatedControlLine);
-
-    constexpr Gate::Line gateControlLineOne                  = propagatedControlLine;
-    constexpr Gate::Line gateControlLineTwo                  = controlLineTwo;
-    const auto           firstCreatedMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate({gateControlLineOne, gateControlLineTwo}, targetLine);
-    ASSERT_THAT(firstCreatedMultiControlToffoliGate, testing::NotNull());
-
-    auto expectedFirstMultiControlToffoliGate      = std::make_shared<Gate>();
-    expectedFirstMultiControlToffoliGate->type     = Gate::Type::Toffoli;
-    expectedFirstMultiControlToffoliGate->controls = {controlLineOne, gateControlLineOne, gateControlLineTwo};
-    expectedFirstMultiControlToffoliGate->targets.emplace(targetLine);
-    assertThatGatesMatch(*expectedFirstMultiControlToffoliGate, *firstCreatedMultiControlToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstMultiControlToffoliGate});
-
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(propagatedControlLine);
-    const auto secondCreatedMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate({gateControlLineTwo}, targetLine);
-
-    auto expectedSecondCreatedToffoliGate      = std::make_shared<Gate>();
-    expectedSecondCreatedToffoliGate->type     = Gate::Type::Toffoli;
-    expectedSecondCreatedToffoliGate->controls = {controlLineOne, propagatedControlLine, gateControlLineTwo};
-    expectedSecondCreatedToffoliGate->targets.emplace(targetLine);
-
-    assertThatGatesMatch(*expectedSecondCreatedToffoliGate, *secondCreatedMultiControlToffoliGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstMultiControlToffoliGate, expectedSecondCreatedToffoliGate});
-}
-
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddFredkinGate) {
-    constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
-
-    constexpr Gate::Line targetLineOne = 0;
-    constexpr Gate::Line targetLineTwo = 1;
-
-    const auto createdFredkinGate = circuit->createAndAddFredkinGate(targetLineOne, targetLineTwo);
-    ASSERT_THAT(createdFredkinGate, testing::NotNull());
-
-    auto expectedFredkinGate     = std::make_shared<Gate>();
-    expectedFredkinGate->type    = Gate::Type::Fredkin;
-    expectedFredkinGate->targets = {targetLineOne, targetLineTwo};
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {createdFredkinGate});
-}
-
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddFredkinGateWithUnknownTargetLine) {
-    constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
-
-    constexpr Gate::Line knownTargetLine   = 1;
-    constexpr Gate::Line unknownTargetLine = numCircuitLines + 1;
-
-    auto createdFredkinGate = circuit->createAndAddFredkinGate(knownTargetLine, unknownTargetLine);
-    ASSERT_THAT(createdFredkinGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
-
-    createdFredkinGate = circuit->createAndAddFredkinGate(unknownTargetLine, knownTargetLine);
-    ASSERT_THAT(createdFredkinGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
-}
-
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddFredkinGateWithTargetLinesTargetingSameLine) {
-    constexpr unsigned numCircuitLines = 1;
-    circuit->setLines(numCircuitLines);
-
-    constexpr Gate::Line targetLine = 0;
-
-    const auto createdFredkinGate = circuit->createAndAddFredkinGate(targetLine, targetLine);
-    ASSERT_THAT(createdFredkinGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
-}
-
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddFredkinGateWithTargetLineMatchingActiveControlLineOfAnyParentScope) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
-
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line controlLineTwo = 1;
-
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
-
-    constexpr Gate::Line notOverlappingTargetLine = 2;
-    constexpr Gate::Line overlappingTargetLine    = controlLineTwo;
-    auto                 createdFredkinGate       = circuit->createAndAddFredkinGate(notOverlappingTargetLine, overlappingTargetLine);
-    ASSERT_THAT(createdFredkinGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
-
-    createdFredkinGate = circuit->createAndAddFredkinGate(overlappingTargetLine, notOverlappingTargetLine);
-    ASSERT_THAT(createdFredkinGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
-
-    createdFredkinGate = circuit->createAndAddFredkinGate(overlappingTargetLine, overlappingTargetLine);
-    ASSERT_THAT(createdFredkinGate, testing::IsNull());
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
-}
-
-TEST_F(AnnotatedQuantumComputationTestsFixture, AddFredkinGateWithTargetLineMatchingDeactivatedControlLineOfParentScope) {
-    constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
-
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line controlLineTwo = 1;
-
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
-
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
-
-    // The fredkin gate should be created due to the target line only overlapping a deactivated control line in the current control line propagation scope
-    constexpr Gate::Line overlappingTargetLine    = controlLineOne;
-    constexpr Gate::Line notOverlappingTargetLine = 2;
-    const auto           firstCreatedFredkinGate  = circuit->createAndAddFredkinGate(notOverlappingTargetLine, overlappingTargetLine);
-    ASSERT_THAT(firstCreatedFredkinGate, testing::NotNull());
-
-    auto expectedFirstFredkinGate  = std::make_shared<Gate>();
-    expectedFirstFredkinGate->type = Gate::Type::Fredkin;
-    expectedFirstFredkinGate->controls.emplace(controlLineTwo);
-    expectedFirstFredkinGate->targets = {notOverlappingTargetLine, overlappingTargetLine};
-    assertThatGatesMatch(*expectedFirstFredkinGate, *firstCreatedFredkinGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstFredkinGate});
-
-    const auto secondCreatedFredkinGate = circuit->createAndAddFredkinGate(overlappingTargetLine, notOverlappingTargetLine);
-    ASSERT_THAT(secondCreatedFredkinGate, testing::NotNull());
-
-    auto expectedSecondFredkinGate  = std::make_shared<Gate>();
-    expectedSecondFredkinGate->type = Gate::Type::Fredkin;
-    expectedSecondFredkinGate->controls.emplace(controlLineTwo);
-    expectedSecondFredkinGate->targets = {overlappingTargetLine, notOverlappingTargetLine};
-    assertThatGatesMatch(*expectedSecondFredkinGate, *secondCreatedFredkinGate);
-    assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstFredkinGate, expectedSecondFredkinGate});
+    auto operationImplementingSecondFredkinGate = std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexTwo}), qc::Targets({overlappingTargetQubitIndex, notOverlappingTargetQubitIndex}), qc::OpType::SWAP);
+    expectedQuantumComputations.emplace_back(std::move(operationImplementingSecondFredkinGate));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 }
 // END AddXGate tests
 
+/*
 // BEGIN Control line propagation scopes tests
-TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterDuplicateControlLineOfParentScopeInLocalControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterDuplicateControlQubitOfParentScopeInLocalControlQubitScope) {
     constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line parentScopeControlLine = 0;
-    constexpr Gate::Line targetLine             = 1;
+    constexpr qc::Qubit parentScopeControlQubit = 0;
+    constexpr qc::Qubit expectedTargetQubitIndex             = 1;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(parentScopeControlLine);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(parentScopeControlQubit);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(parentScopeControlLine);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(parentScopeControlQubit);
 
-    const auto createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate({}, targetLine);
+    const auto createdMultiControlToffoliGate = annotatedQuantumComputation->createAndAddOperationsImplementingMultiControlToffoliGate({}, targetQubit);
     ASSERT_THAT(createdMultiControlToffoliGate, testing::NotNull());
 
     auto expectedMultiControlToffoliGate      = std::make_shared<Gate>();
     expectedMultiControlToffoliGate->type     = Gate::Type::Toffoli;
-    expectedMultiControlToffoliGate->controls = {parentScopeControlLine};
-    expectedMultiControlToffoliGate->targets  = {targetLine};
+    expectedMultiControlToffoliGate->controls = {parentScopeControlQubit};
+    expectedMultiControlToffoliGate->targets  = {targetQubit};
 
     assertThatGatesMatch(*expectedMultiControlToffoliGate, *createdMultiControlToffoliGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterDuplicateControlLineDeactivatedOfParentScopeInLocalScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterDuplicateControlQubitDeactivatedOfParentScopeInLocalScope) {
     constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line targetLine     = 1;
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedTargetQubitIndex     = 1;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
 
-    const auto createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate({}, targetLine);
+    const auto createdMultiControlToffoliGate = annotatedQuantumComputation->createAndAddOperationsImplementingMultiControlToffoliGate({}, targetQubit);
     ASSERT_THAT(createdMultiControlToffoliGate, testing::NotNull());
 
     auto expectedMultiControlToffoliGate      = std::make_shared<Gate>();
     expectedMultiControlToffoliGate->type     = Gate::Type::Toffoli;
-    expectedMultiControlToffoliGate->controls = {controlLineOne};
-    expectedMultiControlToffoliGate->targets  = {targetLine};
+    expectedMultiControlToffoliGate->controls = {expectedControlQubitIndexOne};
+    expectedMultiControlToffoliGate->targets  = {targetQubit};
 
     assertThatGatesMatch(*expectedMultiControlToffoliGate, *createdMultiControlToffoliGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterControlLineNotKnownInCircuit) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterControlQubitNotKnownInCircuit) {
     constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line knownControlLine   = 1;
-    constexpr Gate::Line unknownControlLine = 2;
-    constexpr Gate::Line targetLine         = 0;
+    constexpr qc::Qubit expectedKnownControlQubitIndex   = 1;
+    constexpr qc::Qubit expectedUnknownControlQubitIndex = 2;
+    constexpr qc::Qubit expectedTargetQubitIndex         = 0;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(unknownControlLine);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(unknownControlQubit);
 
-    const Gate::LinesLookup gateControlLines               = {knownControlLine};
-    const auto              createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate(gateControlLines, targetLine);
+    const qc::Controls expectedGateControlQubitIndices               = {knownControlQubit};
+    const auto              createdMultiControlToffoliGate = annotatedQuantumComputation->createAndAddOperationsImplementingMultiControlToffoliGate(expectedGateControlQubitIndices, targetQubit);
     ASSERT_THAT(createdMultiControlToffoliGate, testing::NotNull());
 
     auto expectedMultiControlToffoliGate      = std::make_shared<Gate>();
     expectedMultiControlToffoliGate->type     = Gate::Type::Toffoli;
-    expectedMultiControlToffoliGate->controls = gateControlLines;
-    expectedMultiControlToffoliGate->targets.emplace(targetLine);
+    expectedMultiControlToffoliGate->controls = expectedGateControlQubitIndices;
+    expectedMultiControlToffoliGate->targets.emplace(targetQubit);
 
     assertThatGatesMatch(*expectedMultiControlToffoliGate, *createdMultiControlToffoliGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlLineOfLocalControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlQubitOfLocalControlQubitScope) {
     constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line targetLine             = 0;
-    constexpr Gate::Line activateControlLine    = 1;
-    constexpr Gate::Line deactivatedControlLine = 2;
+    constexpr qc::Qubit expectedTargetQubitIndex             = 0;
+    constexpr qc::Qubit activateControlQubit    = 1;
+    constexpr qc::Qubit deactivatedControlQubit = 2;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(deactivatedControlLine);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(activateControlLine);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(deactivatedControlLine);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(deactivatedControlQubit);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(activateControlQubit);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(deactivatedControlQubit);
 
-    const auto createdNotGate = circuit->createAndAddNotGate(targetLine);
+    const auto createdNotGate = annotatedQuantumComputation->createAndAddOperationsImplementingNotGate(targetQubit);
     ASSERT_THAT(createdNotGate, testing::NotNull());
 
     auto expectedNotGate  = std::make_shared<Gate>();
     expectedNotGate->type = Gate::Type::Toffoli;
-    expectedNotGate->controls.emplace(activateControlLine);
-    expectedNotGate->targets.emplace(targetLine);
+    expectedNotGate->controls.emplace(activateControlQubit);
+    expectedNotGate->targets.emplace(targetQubit);
 
     assertThatGatesMatch(*expectedNotGate, *createdNotGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlLineOfParentScopeInLastActivateControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlQubitOfParentScopeInLastActivateControlQubitScope) {
     constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line activateControlLine    = 1;
-    constexpr Gate::Line deactivatedControlLine = 2;
-    constexpr Gate::Line targetLine             = 0;
+    constexpr qc::Qubit activateControlQubit    = 1;
+    constexpr qc::Qubit deactivatedControlQubit = 2;
+    constexpr qc::Qubit expectedTargetQubitIndex             = 0;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(deactivatedControlLine);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(activateControlLine);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(deactivatedControlQubit);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(activateControlQubit);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(deactivatedControlLine);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(deactivatedControlLine);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(deactivatedControlQubit);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(deactivatedControlQubit);
 
-    const Gate::LinesLookup gateControlLines               = {activateControlLine};
-    const auto              createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate(gateControlLines, targetLine);
+    const qc::Controls expectedGateControlQubitIndices               = {activateControlQubit};
+    const auto              createdMultiControlToffoliGate = annotatedQuantumComputation->createAndAddOperationsImplementingMultiControlToffoliGate(expectedGateControlQubitIndices, targetQubit);
     ASSERT_THAT(createdMultiControlToffoliGate, testing::NotNull());
 
     auto expectedMultiControlToffoliGate      = std::make_shared<Gate>();
     expectedMultiControlToffoliGate->type     = Gate::Type::Toffoli;
-    expectedMultiControlToffoliGate->controls = gateControlLines;
-    expectedMultiControlToffoliGate->targets  = {targetLine};
+    expectedMultiControlToffoliGate->controls = expectedGateControlQubitIndices;
+    expectedMultiControlToffoliGate->targets  = {targetQubit};
 
     assertThatGatesMatch(*expectedMultiControlToffoliGate, *createdMultiControlToffoliGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlLineNotKnownInCircuit) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlQubitNotKnownInCircuit) {
     constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line knownControlLine   = 1;
-    constexpr Gate::Line unknownControlLine = 2;
-    constexpr Gate::Line targetLine         = 0;
+    constexpr qc::Qubit expectedKnownControlQubitIndex   = 1;
+    constexpr qc::Qubit expectedUnknownControlQubitIndex = 2;
+    constexpr qc::Qubit expectedTargetQubitIndex         = 0;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(unknownControlLine);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(unknownControlLine);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(unknownControlQubit);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(unknownControlQubit);
 
-    const Gate::LinesLookup gateControlLines               = {knownControlLine};
-    const auto              createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate(gateControlLines, targetLine);
+    const qc::Controls expectedGateControlQubitIndices               = {knownControlQubit};
+    const auto              createdMultiControlToffoliGate = annotatedQuantumComputation->createAndAddOperationsImplementingMultiControlToffoliGate(expectedGateControlQubitIndices, targetQubit);
     ASSERT_THAT(createdMultiControlToffoliGate, testing::NotNull());
 
     auto expectedMultiControlToffoliGate      = std::make_shared<Gate>();
     expectedMultiControlToffoliGate->type     = Gate::Type::Toffoli;
-    expectedMultiControlToffoliGate->controls = gateControlLines;
-    expectedMultiControlToffoliGate->targets  = {targetLine};
+    expectedMultiControlToffoliGate->controls = expectedGateControlQubitIndices;
+    expectedMultiControlToffoliGate->targets  = {targetQubit};
 
     assertThatGatesMatch(*expectedMultiControlToffoliGate, *createdMultiControlToffoliGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlLineOfParentPropagationScopeNotRegisteredInCurrentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlQubitOfParentPropagationScopeNotRegisteredInCurrentScope) {
     constexpr unsigned numCircuitLines = 3;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line controlLineTwo = 1;
-    constexpr Gate::Line targetLine     = 2;
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo = 1;
+    constexpr qc::Qubit expectedTargetQubitIndex     = 2;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
     // Deregistering a not registered control line should not modify the aggregate of all activate control lines
-    circuit->activateControlLinePropagationScope();
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
 
-    const Gate::LinesLookup gateControlLines               = {controlLineOne};
-    const auto              createdMultiControlToffoliGate = circuit->createAndAddMultiControlToffoliGate(gateControlLines, targetLine);
+    const qc::Controls expectedGateControlQubitIndices               = {expectedControlQubitIndexOne};
+    const auto              createdMultiControlToffoliGate = annotatedQuantumComputation->createAndAddOperationsImplementingMultiControlToffoliGate(expectedGateControlQubitIndices, targetQubit);
     ASSERT_THAT(createdMultiControlToffoliGate, testing::NotNull());
 
     auto expectedMultiControlToffoliGate      = std::make_shared<Gate>();
     expectedMultiControlToffoliGate->type     = Gate::Type::Toffoli;
-    expectedMultiControlToffoliGate->controls = {controlLineOne, controlLineTwo};
-    expectedMultiControlToffoliGate->targets.emplace(targetLine);
+    expectedMultiControlToffoliGate->controls = {expectedControlQubitIndexOne, expectedControlQubitIndexTwo};
+    expectedMultiControlToffoliGate->targets.emplace(targetQubit);
 
     assertThatGatesMatch(*expectedMultiControlToffoliGate, *createdMultiControlToffoliGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, RegisteringLocalControlLineDoesNotAddNewControlLinesToExistingGates) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, RegisteringLocalControlQubitDoesNotAddNewControlQubitsToExistingGates) {
     constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line targetLine     = 1;
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedTargetQubitIndex     = 1;
 
-    circuit->activateControlLinePropagationScope();
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
 
-    const auto createdNotGate = circuit->createAndAddNotGate(targetLine);
+    const auto createdNotGate = annotatedQuantumComputation->createAndAddOperationsImplementingNotGate(targetQubit);
     ASSERT_THAT(createdNotGate, testing::NotNull());
 
     auto expectedNotGate  = std::make_shared<Gate>();
     expectedNotGate->type = Gate::Type::Toffoli;
-    expectedNotGate->targets.emplace(targetLine);
+    expectedNotGate->targets.emplace(targetQubit);
 
     assertThatGatesMatch(*expectedNotGate, *createdNotGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivatingLocalControlLineDoesNotAddNewControlLinesToExistingGates) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivatingLocalControlQubitDoesNotAddNewControlQubitsToExistingGates) {
     constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line targetLine     = 1;
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedTargetQubitIndex     = 1;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
 
-    const auto createdNotGate = circuit->createAndAddNotGate(targetLine);
+    const auto createdNotGate = annotatedQuantumComputation->createAndAddOperationsImplementingNotGate(targetQubit);
     ASSERT_THAT(createdNotGate, testing::NotNull());
 
     auto expectedNotGate  = std::make_shared<Gate>();
     expectedNotGate->type = Gate::Type::Toffoli;
-    expectedNotGate->controls.emplace(controlLineOne);
-    expectedNotGate->targets.emplace(targetLine);
+    expectedNotGate->controls.emplace(expectedControlQubitIndexOne);
+    expectedNotGate->targets.emplace(targetQubit);
 
     assertThatGatesMatch(*expectedNotGate, *createdNotGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, ActivatingControlLinePropagationScopeDoesNotAddNewControlLinesToExistingGates) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, ActivatingControlQubitPropagationScopeDoesNotAddNewControlQubitsToExistingGates) {
     constexpr unsigned numCircuitLines = 2;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line controlLineOne = 0;
-    constexpr Gate::Line targetLine     = 1;
+    constexpr qc::Qubit expectedControlQubitIndexOne = 0;
+    constexpr qc::Qubit expectedTargetQubitIndex     = 1;
 
-    const auto createdNotGate = circuit->createAndAddNotGate(targetLine);
+    const auto createdNotGate = annotatedQuantumComputation->createAndAddOperationsImplementingNotGate(targetQubit);
     ASSERT_THAT(createdNotGate, testing::NotNull());
 
     auto expectedNotGate  = std::make_shared<Gate>();
     expectedNotGate->type = Gate::Type::Toffoli;
-    expectedNotGate->targets.emplace(targetLine);
+    expectedNotGate->targets.emplace(targetQubit);
 
     assertThatGatesMatch(*expectedNotGate, *createdNotGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivatingControlLinePropagationScopeDoesNotAddNewControlLinesToExistingGates) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivatingControlQubitPropagationScopeDoesNotAddNewControlQubitsToExistingGates) {
     constexpr unsigned numCircuitLines = 4;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line controlLineOne   = 0;
-    constexpr Gate::Line controlLineTwo   = 1;
-    constexpr Gate::Line controlLineThree = 2;
-    constexpr Gate::Line targetLine       = 3;
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 0;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 2;
+    constexpr qc::Qubit expectedTargetQubitIndex       = 3;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
-    constexpr Gate::Line gateControlLine = controlLineThree;
-    const auto           createdCnotGate = circuit->createAndAddCnotGate(gateControlLine, targetLine);
+    constexpr qc::Qubit gateControlQubit = expectedControlQubitIndexThree;
+    const auto           createdCnotGate = annotatedQuantumComputation->addOperationsImplementingToffoliGate(gateControlQubit, targetQubit);
     ASSERT_THAT(createdCnotGate, testing::NotNull());
 
     auto expectedCnotGate      = std::make_shared<Gate>();
     expectedCnotGate->type     = Gate::Type::Toffoli;
-    expectedCnotGate->controls = {controlLineOne, controlLineTwo, gateControlLine};
-    expectedCnotGate->targets.emplace(targetLine);
+    expectedCnotGate->controls = {expectedControlQubitIndexOne, expectedControlQubitIndexTwo, gateControlQubit};
+    expectedCnotGate->targets.emplace(targetQubit);
 
     assertThatGatesMatch(*expectedCnotGate, *createdCnotGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedCnotGate});
 
-    circuit->deactivateControlLinePropagationScope();
+    annotatedQuantumComputation->deactivateControlQubitPropagationScope();
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedCnotGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivateControlLinePropagationScopeRegisteringControlLinesOfParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivateControlQubitPropagationScopeRegisteringControlQubitsOfParentScope) {
     constexpr unsigned numCircuitLines = 4;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line controlLineOne   = 1;
-    constexpr Gate::Line controlLineTwo   = 2;
-    constexpr Gate::Line controlLineThree = 3;
-    constexpr Gate::Line targetLine       = 0;
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 2;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 3;
+    constexpr qc::Qubit expectedTargetQubitIndex       = 0;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
-    circuit->deactivateControlLinePropagationScope();
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deactivateControlQubitPropagationScope();
 
-    const auto createdNotGate = circuit->createAndAddNotGate(targetLine);
+    const auto createdNotGate = annotatedQuantumComputation->createAndAddOperationsImplementingNotGate(targetQubit);
     ASSERT_THAT(createdNotGate, testing::NotNull());
 
     auto expectedNotGate      = std::make_shared<Gate>();
     expectedNotGate->type     = Gate::Type::Toffoli;
-    expectedNotGate->controls = {controlLineOne, controlLineTwo};
-    expectedNotGate->targets.emplace(targetLine);
+    expectedNotGate->controls = {expectedControlQubitIndexOne, expectedControlQubitIndexTwo};
+    expectedNotGate->targets.emplace(targetQubit);
 
     assertThatGatesMatch(*expectedNotGate, *createdNotGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivateControlLinePropagationScopeNotRegisteringControlLinesOfParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivateControlQubitPropagationScopeNotRegisteringControlQubitsOfParentScope) {
     constexpr unsigned numCircuitLines = 4;
-    circuit->setLines(numCircuitLines);
+    annotatedQuantumComputation->setLines(numCircuitLines);
 
-    constexpr Gate::Line controlLineOne   = 1;
-    constexpr Gate::Line controlLineTwo   = 2;
-    constexpr Gate::Line controlLineThree = 3;
-    constexpr Gate::Line targetLine       = 0;
+    constexpr qc::Qubit expectedControlQubitIndexOne   = 1;
+    constexpr qc::Qubit expectedControlQubitIndexTwo   = 2;
+    constexpr qc::Qubit expectedControlQubitIndexThree = 3;
+    constexpr qc::Qubit expectedTargetQubitIndex       = 0;
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineOne);
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineTwo);
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
 
-    circuit->activateControlLinePropagationScope();
-    circuit->registerControlLineForPropagationInCurrentAndNestedScopes(controlLineThree);
-    circuit->deregisterControlLineFromPropagationInCurrentScope(controlLineOne);
-    circuit->deactivateControlLinePropagationScope();
+    annotatedQuantumComputation->activateControlQubitPropagationScope();
+    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    annotatedQuantumComputation->deactivateControlQubitPropagationScope();
 
-    const auto createdNotGate = circuit->createAndAddNotGate(targetLine);
+    const auto createdNotGate = annotatedQuantumComputation->createAndAddOperationsImplementingNotGate(targetQubit);
     ASSERT_THAT(createdNotGate, testing::NotNull());
 
     auto expectedNotGate      = std::make_shared<Gate>();
     expectedNotGate->type     = Gate::Type::Toffoli;
-    expectedNotGate->controls = {controlLineOne, controlLineTwo};
-    expectedNotGate->targets.emplace(targetLine);
+    expectedNotGate->controls = {expectedControlQubitIndexOne, expectedControlQubitIndexTwo};
+    expectedNotGate->targets.emplace(targetQubit);
 
     assertThatGatesMatch(*expectedNotGate, *createdNotGate);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
@@ -1912,26 +1738,26 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivateControlLinePropagation
 // BEGIN Control line propagation scopes tests
 
 // BEGIN Annotation tests
-TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationForGate) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationsForQuantumOperation) {
+    annotatedQuantumComputation->setLines(2);
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, std::nullopt);
 
     const std::string annotationKey          = "KEY";
     const std::string initialAnnotationValue = "InitialValue";
-    circuit->annotate(*firstGeneratedNotGate, annotationKey, initialAnnotationValue);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, annotationKey, initialAnnotationValue);
 
     const std::unordered_map<std::string, std::string> expectedAnnotationsOfFirstGate = {{annotationKey, initialAnnotationValue}};
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
@@ -1939,19 +1765,19 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationForGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateAnnotationForGate) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateAnnotationsForQuantumOperation) {
+    annotatedQuantumComputation->setLines(2);
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, std::nullopt);
@@ -1961,8 +1787,8 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateAnnotationForGate) {
 
     const std::string secondAnnotationKey          = "KEY_TWO";
     const std::string initialSecondAnnotationValue = "OtherValue";
-    circuit->annotate(*firstGeneratedNotGate, firstAnnotationKey, initialFirstAnnotationValue);
-    circuit->annotate(*firstGeneratedNotGate, secondAnnotationKey, initialSecondAnnotationValue);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, firstAnnotationKey, initialFirstAnnotationValue);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, secondAnnotationKey, initialSecondAnnotationValue);
 
     std::unordered_map<std::string, std::string> expectedAnnotationsOfFirstGate = {{firstAnnotationKey, initialFirstAnnotationValue}, {secondAnnotationKey, initialSecondAnnotationValue}};
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
@@ -1970,7 +1796,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateAnnotationForGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 
     const std::string updatedAnnotationValue = "UpdatedValue";
-    circuit->annotate(*firstGeneratedNotGate, firstAnnotationKey, updatedAnnotationValue);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, firstAnnotationKey, updatedAnnotationValue);
 
     expectedAnnotationsOfFirstGate[firstAnnotationKey] = updatedAnnotationValue;
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
@@ -1979,18 +1805,18 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateAnnotationForGate) {
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationForUnknownGate) {
-    circuit->setLines(2);
+    annotatedQuantumComputation->setLines(2);
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, std::nullopt);
@@ -2000,32 +1826,32 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationForUnknownGate) {
     const auto        unknownGate     = std::make_shared<Gate>();
     unknownGate->type                 = Gate::Type::Toffoli;
 
-    circuit->annotate(*unknownGate, annotationKey, annotationValue);
+    annotatedQuantumComputation->annotate(*unknownGate, annotationKey, annotationValue);
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, std::nullopt);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateNotExistingAnnotationForGate) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateNotExistingAnnotationsForQuantumOperation) {
+    annotatedQuantumComputation->setLines(2);
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, std::nullopt);
 
     const std::string firstAnnotationKey          = "KEY_ONE";
     const std::string initialFirstAnnotationValue = "InitialValue";
-    circuit->annotate(*firstGeneratedNotGate, firstAnnotationKey, initialFirstAnnotationValue);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, firstAnnotationKey, initialFirstAnnotationValue);
 
     std::unordered_map<std::string, std::string> expectedAnnotationsOfFirstGate = {{firstAnnotationKey, initialFirstAnnotationValue}};
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
@@ -2034,7 +1860,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateNotExistingAnnotationForGa
 
     const std::string secondAnnotationKey          = "KEY_TWO";
     const std::string initialSecondAnnotationValue = "OtherValue";
-    circuit->annotate(*firstGeneratedNotGate, secondAnnotationKey, initialSecondAnnotationValue);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, secondAnnotationKey, initialSecondAnnotationValue);
     expectedAnnotationsOfFirstGate[secondAnnotationKey] = initialSecondAnnotationValue;
 
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
@@ -2042,26 +1868,26 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateNotExistingAnnotationForGa
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationForGateWithEmptyKey) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationsForQuantumOperationWithEmptyKey) {
+    annotatedQuantumComputation->setLines(2);
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, std::nullopt);
 
     const std::string firstAnnotationKey          = "KEY_ONE";
     const std::string initialFirstAnnotationValue = "InitialValue";
-    circuit->annotate(*firstGeneratedNotGate, firstAnnotationKey, initialFirstAnnotationValue);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, firstAnnotationKey, initialFirstAnnotationValue);
 
     std::unordered_map<std::string, std::string> expectedAnnotationsOfFirstGate = {{firstAnnotationKey, initialFirstAnnotationValue}};
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
@@ -2069,31 +1895,31 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationForGateWithEmptyKey
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 
     const std::string valueForAnnotationWithEmptyKey = "OtherValue";
-    circuit->annotate(*firstGeneratedNotGate, "", valueForAnnotationWithEmptyKey);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, "", valueForAnnotationWithEmptyKey);
     expectedAnnotationsOfFirstGate.emplace("", valueForAnnotationWithEmptyKey);
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, std::nullopt);
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalGateAnnotation) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalQuantumOperationAnnotation) {
+    annotatedQuantumComputation->setLines(2);
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
 
     const std::string globalAnnotationKey   = "KEY_ONE";
     const std::string globalAnnotationValue = "InitialValue";
-    ASSERT_FALSE(circuit->setOrUpdateGlobalGateAnnotation(globalAnnotationKey, globalAnnotationValue));
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(globalAnnotationKey, globalAnnotationValue));
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 
@@ -2102,16 +1928,16 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalGateAnnotation) {
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateGlobalGateAnnotation) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateGlobalQuantumOperationAnnotation) {
+    annotatedQuantumComputation->setLines(2);
 
     const std::string globalAnnotationKey          = "KEY_ONE";
     const std::string initialGlobalAnnotationValue = "InitialValue";
-    ASSERT_FALSE(circuit->setOrUpdateGlobalGateAnnotation(globalAnnotationKey, initialGlobalAnnotationValue));
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(globalAnnotationKey, initialGlobalAnnotationValue));
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
 
@@ -2119,11 +1945,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateGlobalGateAnnotation) {
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
 
     const std::string updatedGlobalAnnoatationValue = "UpdatedValue";
-    ASSERT_TRUE(circuit->setOrUpdateGlobalGateAnnotation(globalAnnotationKey, updatedGlobalAnnoatationValue));
+    ASSERT_TRUE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(globalAnnotationKey, updatedGlobalAnnoatationValue));
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 
@@ -2132,16 +1958,16 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateGlobalGateAnnotation) {
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateNotExistingGlobalGateAnnotation) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateNotExistingGlobalQuantumOperationAnnotation) {
+    annotatedQuantumComputation->setLines(2);
 
     const std::string firstGlobalAnnotationKey   = "KEY_ONE";
     const std::string firstGlobalAnnotationValue = "InitialValue";
-    ASSERT_FALSE(circuit->setOrUpdateGlobalGateAnnotation(firstGlobalAnnotationKey, firstGlobalAnnotationValue));
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(firstGlobalAnnotationKey, firstGlobalAnnotationValue));
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
 
@@ -2150,11 +1976,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateNotExistingGlobalGateAnnot
 
     const std::string secondGlobalAnnotationKey   = "KEY_TWO";
     const std::string secondGlobalAnnotationValue = "OtherValue";
-    ASSERT_FALSE(circuit->setOrUpdateGlobalGateAnnotation(secondGlobalAnnotationKey, secondGlobalAnnotationValue));
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(secondGlobalAnnotationKey, secondGlobalAnnotationValue));
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 
@@ -2163,27 +1989,27 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateNotExistingGlobalGateAnnot
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, RemoveGlobalGateAnnotation) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, RemoveGlobalQuantumOperationAnnotation) {
+    annotatedQuantumComputation->setLines(2);
 
     const std::string globalAnnotationKey          = "KEY_ONE";
     const std::string initialGlobalAnnotationValue = "InitialValue";
-    ASSERT_FALSE(circuit->setOrUpdateGlobalGateAnnotation(globalAnnotationKey, initialGlobalAnnotationValue));
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(globalAnnotationKey, initialGlobalAnnotationValue));
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
 
     const std::unordered_map<std::string, std::string> expectedAnnotationsOfFirstGate = {{globalAnnotationKey, initialGlobalAnnotationValue}};
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
 
-    ASSERT_TRUE(circuit->removeGlobalGateAnnotation(globalAnnotationKey));
+    ASSERT_TRUE(annotatedQuantumComputation->removeGlobalQuantumOperationAnnotation(globalAnnotationKey));
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 
@@ -2191,16 +2017,16 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, RemoveGlobalGateAnnotation) {
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, {});
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalGateAnnotationWithEmptyKey) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalQuantumOperationAnnotationWithEmptyKey) {
+    annotatedQuantumComputation->setLines(2);
 
     const std::string globalAnnotationKey          = "KEY_ONE";
     const std::string initialGlobalAnnotationValue = "InitialValue";
-    ASSERT_FALSE(circuit->setOrUpdateGlobalGateAnnotation(globalAnnotationKey, initialGlobalAnnotationValue));
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(globalAnnotationKey, initialGlobalAnnotationValue));
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
 
@@ -2208,11 +2034,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalGateAnnotationWithEmpty
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
 
     const std::string valueOfAnnotationWithEmptyKey = "OtherValue";
-    ASSERT_FALSE(circuit->setOrUpdateGlobalGateAnnotation("", valueOfAnnotationWithEmptyKey));
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation("", valueOfAnnotationWithEmptyKey));
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 
@@ -2221,30 +2047,30 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalGateAnnotationWithEmpty
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalGateAnnotationMatchingExistingAnnotationOfGateDoesNotUpdateTheLatter) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalQuantumOperationAnnotationMatchingExistingAnnotationOfGateDoesNotUpdateTheLatter) {
+    annotatedQuantumComputation->setLines(2);
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
 
     const std::string localAnnotationKey   = "KEY_ONE";
     const std::string localAnnotationValue = "LocalValue";
-    circuit->annotate(*firstGeneratedNotGate, localAnnotationKey, localAnnotationValue);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, localAnnotationKey, localAnnotationValue);
     const std::unordered_map<std::string, std::string> expectedAnnotationsOfFirstGate = {{localAnnotationKey, localAnnotationValue}};
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
 
     const std::string& globalAnnotationKey   = localAnnotationKey;
     const std::string  globalAnnotationValue = "InitialValue";
-    ASSERT_FALSE(circuit->setOrUpdateGlobalGateAnnotation(globalAnnotationKey, globalAnnotationValue));
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(globalAnnotationKey, globalAnnotationValue));
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 
@@ -2253,31 +2079,31 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalGateAnnotationMatchingE
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 }
 
-TEST_F(AnnotatedQuantumComputationTestsFixture, RemovingGlobalGateAnnotationMatchingExistingAnnotationOfGateDoesNotRemoveTheLatter) {
-    circuit->setLines(2);
+TEST_F(AnnotatedQuantumComputationTestsFixture, RemovingGlobalQuantumOperationAnnotationMatchingExistingAnnotationOfGateDoesNotRemoveTheLatter) {
+    annotatedQuantumComputation->setLines(2);
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
 
     const std::string localAnnotationKey   = "KEY_ONE";
     const std::string localAnnotationValue = "LocalValue";
-    circuit->annotate(*firstGeneratedNotGate, localAnnotationKey, localAnnotationValue);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, localAnnotationKey, localAnnotationValue);
     const std::unordered_map<std::string, std::string> expectedAnnotationsOfFirstGate = {{localAnnotationKey, localAnnotationValue}};
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
 
     const std::string& globalAnnotationKey   = localAnnotationKey;
     const std::string  globalAnnotationValue = "InitialValue";
-    ASSERT_FALSE(circuit->setOrUpdateGlobalGateAnnotation(globalAnnotationKey, globalAnnotationValue));
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(globalAnnotationKey, globalAnnotationValue));
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
-    ASSERT_TRUE(circuit->removeGlobalGateAnnotation(globalAnnotationKey));
+    ASSERT_TRUE(annotatedQuantumComputation->removeGlobalQuantumOperationAnnotation(globalAnnotationKey));
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 
@@ -2286,29 +2112,29 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, RemovingGlobalGateAnnotationMatc
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateLocalAnnotationWhoseKeyMatchesGlobalAnnotationDoesOnlyUpdateLocalAnnotation) {
-    circuit->setLines(2);
+    annotatedQuantumComputation->setLines(2);
 
-    constexpr Gate::Line         targetLineOne = 0;
+    constexpr qc::Qubit         targetQubitOne = 0;
     GeneratedAndExpectedGatePair firstGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineOne, firstGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitOne, firstGeneratedNotGatePairData);
     auto [firstGeneratedNotGate, expectedFirstNotGate] = firstGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate});
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, std::nullopt);
 
     const std::string localAnnotationKey   = "KEY_ONE";
     const std::string localAnnotationValue = "LocalValue";
-    circuit->annotate(*firstGeneratedNotGate, localAnnotationKey, localAnnotationValue);
+    annotatedQuantumComputation->annotate(*firstGeneratedNotGate, localAnnotationKey, localAnnotationValue);
     const std::unordered_map<std::string, std::string> expectedAnnotationsOfFirstGate = {{localAnnotationKey, localAnnotationValue}};
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
 
     const std::string& globalAnnotationKey   = localAnnotationKey;
     const std::string  globalAnnotationValue = "InitialValue";
-    ASSERT_FALSE(circuit->setOrUpdateGlobalGateAnnotation(globalAnnotationKey, globalAnnotationValue));
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(globalAnnotationKey, globalAnnotationValue));
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
 
-    constexpr Gate::Line         targetLineTwo = 1;
+    constexpr qc::Qubit         targetQubitTwo = 1;
     GeneratedAndExpectedGatePair secondGeneratedNotGatePairData;
-    createNotGateWithSingleTargetLine(*circuit, targetLineTwo, secondGeneratedNotGatePairData);
+    createNotGateWithSingleTargetLine(*circuit, targetQubitTwo, secondGeneratedNotGatePairData);
     auto [secondGeneratedNotGate, expectedSecondNotGate] = secondGeneratedNotGatePairData;
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 
@@ -2317,7 +2143,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateLocalAnnotationWhoseKeyMat
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 
     const std::string updatedLocalAnnotationValue = "UpdatedValue";
-    circuit->annotate(*secondGeneratedNotGate, localAnnotationKey, updatedLocalAnnotationValue);
+    annotatedQuantumComputation->annotate(*secondGeneratedNotGate, localAnnotationKey, updatedLocalAnnotationValue);
     expectedAnnotationsOfSecondGate[localAnnotationKey] = updatedLocalAnnotationValue;
 
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
