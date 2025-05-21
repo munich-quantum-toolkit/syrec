@@ -97,7 +97,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
 }
 
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit) const {
-    if (qubitLabel.empty() || quantumComputation.getQuantumRegisters().count(qubitLabel) != 0) {
+    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || quantumComputation.getQuantumRegisters().count(qubitLabel) != 0) {
         return std::nullopt;
     }
 
@@ -112,7 +112,7 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(con
 }
 
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit) {
-    if (qubitLabel.empty() || quantumComputation.getQuantumRegisters().count(qubitLabel) != 0) {
+    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || quantumComputation.getQuantumRegisters().count(qubitLabel) != 0) {
         return std::nullopt;
     }
     const auto            qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
@@ -134,10 +134,12 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addAncillaryQubit(const 
     return qubitIndex;
 }
 
-bool AnnotatableQuantumComputation::setQubitAncillary(qc::Qubit qubit) const {
+bool AnnotatableQuantumComputation::setQubitAncillary(qc::Qubit qubit) {
     if (!isQubitWithinRange(qubit)) {
         return false;
     }
+
+    canQubitsBeAddedToQuantumComputation = false;
     quantumComputation.setLogicalQubitAncillary(qubit);
     return true;
 }

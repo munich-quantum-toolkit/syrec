@@ -8,8 +8,13 @@
  * Licensed under the MIT License
  */
 
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/circuit.hpp"
 #include "core/gate.hpp"
+#include "ir/QuantumComputation.hpp"
+#include "ir/operations/NonUnitaryOperation.hpp"
+#include "ir/operations/Operation.hpp"
+#include "ir/operations/StandardOperation.hpp"
 
 #include <cstddef>
 #include <gmock/gmock-matchers.h>
@@ -30,17 +35,54 @@
 
 using namespace syrec;
 
-class CircuitTestsFixture: public testing::Test {
+class AnnotatedQuantumComputationTestsFixture: public testing::Test {
 protected:
     struct GeneratedAndExpectedGatePair {
         Gate::ptr generatedGate;
         Gate::ptr expectedGate;
     };
 
+    std::unique_ptr<qc::QuantumComputation>        quantumComputation;
+    std::unique_ptr<AnnotatableQuantumComputation> annotatedQuantumComputation;
+
     std::unique_ptr<Circuit> circuit;
 
     void SetUp() override {
-        circuit = std::make_unique<Circuit>();
+        quantumComputation          = std::make_unique<qc::QuantumComputation>();
+        annotatedQuantumComputation = std::make_unique<AnnotatableQuantumComputation>(*quantumComputation);
+        circuit                     = std::make_unique<Circuit>();
+    }
+
+    static void assertThatOperationsOfQuantumComputationAreEqualToSequence(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::vector<std::unique_ptr<qc::Operation>>& expectedQuantumOperations) {
+        const std::size_t expectedNumOperations      = expectedQuantumOperations.size();
+        const std::size_t actualNumQuantumOperations = determineNumberOfQuantumOperationsInAnnotatedQuantum(annotatedQuantumComputation);
+        ASSERT_EQ(expectedNumOperations, actualNumQuantumOperations) << "Expected that annotated quantum computation contains " << std::to_string(expectedNumOperations) << " quantum operations but actually contained " << std::to_string(actualNumQuantumOperations) << " quantum operations";
+
+        auto actualQuantumOperationsIterator   = annotatedQuantumComputation.cbegin();
+        auto expectedQuantumOperationsIterator = expectedQuantumOperations.begin();
+        for (std::size_t i = 0; i < expectedNumOperations; ++i) {
+            const auto& actualQuantumOperation = *actualQuantumOperationsIterator;
+            ASSERT_THAT(actualQuantumOperation, testing::NotNull());
+            const auto& expectedQuantumOperation = *expectedQuantumOperationsIterator;
+            ASSERT_THAT(expectedQuantumOperation, testing::NotNull());
+            ASSERT_TRUE(expectedQuantumOperation->equals(*actualQuantumOperation));
+            ++actualQuantumOperationsIterator;
+            ++expectedQuantumOperationsIterator; // NOLINT (cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        }
+    }
+
+    static std::size_t determineNumberOfQuantumOperationsInAnnotatedQuantum(const AnnotatableQuantumComputation& annotatedQuantumComputation) {
+        return static_cast<std::size_t>(std::distance(annotatedQuantumComputation.cbegin(), annotatedQuantumComputation.cend()));
+    }
+
+    static void assertThatAnnotationsOfQuantumOperationAreEqualTo(const AnnotatableQuantumComputation& annotatedQuantumComputation, std::size_t indexOfQuantumOperationInQuantumComputation, const std::unordered_map<std::string, std::string>& expectedAnnotationsOfQuantumComputation) {
+        ASSERT_TRUE(indexOfQuantumOperationInQuantumComputation < determineNumberOfQuantumOperationsInAnnotatedQuantum(annotatedQuantumComputation));
+        const auto& actualAnnotationsOfQuantumOperation = annotatedQuantumComputation.getAnnotationsOfQuantumOperation(indexOfQuantumOperationInQuantumComputation);
+        for (const auto& [expectedAnnotationKey, expectedAnnotationValue]: expectedAnnotationsOfQuantumComputation) {
+            ASSERT_TRUE(actualAnnotationsOfQuantumOperation.count(expectedAnnotationKey) != 0) << "Expected annotation with key '" << expectedAnnotationKey << "' was not found";
+            const auto& actualAnnotationValue = actualAnnotationsOfQuantumOperation.at(expectedAnnotationKey);
+            ASSERT_EQ(expectedAnnotationValue, actualAnnotationValue) << "Value for annotation with key '" << expectedAnnotationKey << "' did not match, expected: " << expectedAnnotationValue << " but was actually " << actualAnnotationValue;
+        }
     }
 
     static void assertThatGatesMatch(const Gate& expected, const Gate& actual) {
@@ -93,8 +135,466 @@ protected:
     }
 };
 
+// BEGIN Adding qubit types
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitThatIsNotGarbage) {
+    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", false);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(0, *qubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitThatIsGarbage) {
+    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(0, *qubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({true}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithEmptyLabelNotPossible) {
+    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("", false);
+    ASSERT_FALSE(qubitIndex.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNqubits());
+    ASSERT_TRUE(quantumComputation->getGarbage().empty());
+    ASSERT_TRUE(quantumComputation->getAncillary().empty());
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithDuplicateLabelNotPossible) {
+    const std::string          qubitLabel = "nonAncillary";
+    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(qubitLabel, false);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(0, *qubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+
+    const std::optional<qc::Qubit> indexOfQubitWithDuplicateLabel = annotatedQuantumComputation->addNonAncillaryQubit(qubitLabel, true);
+    ASSERT_FALSE(indexOfQubitWithDuplicateLabel.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithLabelMatchingAncillaryQubitLabel) {
+    const std::string          qubitLabel = "ancillary";
+    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addAncillaryQubit(qubitLabel, false);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(0, *qubitIndex);
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+
+    const std::optional<qc::Qubit> indexOfQubitWithDuplicateLabel = annotatedQuantumComputation->addNonAncillaryQubit(qubitLabel, true);
+    ASSERT_FALSE(indexOfQubitWithDuplicateLabel.has_value());
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitAfterAnyQubitWasSetAncillaryNotPossible) {
+    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", false);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *nonAncillaryQubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+
+    const std::optional<qc::Qubit> indexOfQubitAfterAnyQubitWasSetAncillary = annotatedQuantumComputation->addNonAncillaryQubit("otherLabel", false);
+    ASSERT_FALSE(indexOfQubitAfterAnyQubitWasSetAncillary.has_value());
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithInitialStateZero) {
+    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(0, *qubitIndex);
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithInitialStateOne) {
+    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addAncillaryQubit("ancillary", true);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(0, *qubitIndex);
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputationOperations;
+    expectedQuantumComputationOperations.emplace_back(std::make_unique<qc::StandardOperation>(*qubitIndex, qc::OpType::X));
+    ASSERT_NO_FATAL_FAILURE(assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputationOperations));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithEmptyLabelNotPossible) {
+    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", false);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *nonAncillaryQubitIndex);
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+
+    const std::optional<qc::Qubit> indexOfAncillaryQubitWithEmptyLabel = annotatedQuantumComputation->addAncillaryQubit("", false);
+    ASSERT_FALSE(indexOfAncillaryQubitWithEmptyLabel.has_value());
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithDuplicateLabelNotPossible) {
+    const std::string          ancillaryQubitLabel = "ancillary";
+    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit(ancillaryQubitLabel, false);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", false);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *nonAncillaryQubitIndex);
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+
+    const std::optional<qc::Qubit> indexOfAncillaryQubitWithDuplicateLabel = annotatedQuantumComputation->addAncillaryQubit(ancillaryQubitLabel, false);
+    ASSERT_FALSE(indexOfAncillaryQubitWithDuplicateLabel.has_value());
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithLabelMatchingNonAncillaryQubitLabel) {
+    const std::string          ancillaryQubitLabel = "ancillary";
+    const std::string          nonAncillaryQubitLabel = "nonAncillary";
+    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit(ancillaryQubitLabel, false);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(nonAncillaryQubitLabel, false);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *nonAncillaryQubitIndex);
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+
+    const std::optional<qc::Qubit> indexOfAncillaryQubitWithDuplicateLabel = annotatedQuantumComputation->addAncillaryQubit(nonAncillaryQubitLabel, true);
+    ASSERT_FALSE(indexOfAncillaryQubitWithDuplicateLabel.has_value());
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitAfterAnyQubitWasSetAncillaryNotPossible) {
+    const std::optional<qc::Qubit> ancillaryQubitIndex    = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", false);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *nonAncillaryQubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+
+    const std::optional<qc::Qubit> indexOfQubitAfterAnyQubitWasSetAncillary = annotatedQuantumComputation->addAncillaryQubit("otherLabel", false);
+    ASSERT_FALSE(indexOfQubitAfterAnyQubitWasSetAncillary.has_value());
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(quantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, determineNumberOfQuantumOperationsInAnnotatedQuantum(*annotatedQuantumComputation));
+}
+// END Adding qubit types
+
+// BEGIN getAddedAncillaryQubitIndices tests
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndicesInEmptyQuantumComputation) {
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndicesWithoutAncillaryQubits) {
+    qc::Qubit                expectedAddedQubitIndex = 0;
+
+    std::optional<qc::Qubit> actualAddedQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary_1", false);
+    ASSERT_TRUE(actualAddedQubitIndex.has_value());
+    ASSERT_EQ(expectedAddedQubitIndex, *actualAddedQubitIndex);
+    ++expectedAddedQubitIndex;
+
+    actualAddedQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary_2", false);
+    ASSERT_TRUE(actualAddedQubitIndex.has_value());
+    ASSERT_EQ(expectedAddedQubitIndex, *actualAddedQubitIndex);
+    ++expectedAddedQubitIndex;
+
+    actualAddedQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary_3", false);
+    ASSERT_TRUE(actualAddedQubitIndex.has_value());
+    ASSERT_EQ(expectedAddedQubitIndex, *actualAddedQubitIndex);
+    ++expectedAddedQubitIndex;
+
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndices) {
+    const std::optional<qc::Qubit> firstNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary_1", false);
+    ASSERT_TRUE(firstNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *firstNonAncillaryQubitIndex);
+
+    const std::optional<qc::Qubit> firstAncillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit("Ancillary_1", false);
+    ASSERT_TRUE(firstAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *firstAncillaryQubitIndex);
+
+    const std::optional<qc::Qubit> secondNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary_2", false);
+    ASSERT_TRUE(secondNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(2, *secondNonAncillaryQubitIndex);
+
+    const std::optional<qc::Qubit> secondAncillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit("Ancillary_2", true);
+    ASSERT_TRUE(secondAncillaryQubitIndex.has_value());
+    ASSERT_EQ(3, *secondAncillaryQubitIndex);
+
+    const auto& ancillaryQubitIndices = annotatedQuantumComputation->getAddedAncillaryQubitIndices();
+    ASSERT_THAT(ancillaryQubitIndices, testing::UnorderedElementsAreArray({*firstAncillaryQubitIndex, *secondAncillaryQubitIndex}));
+}
+// BEGIN getAddedAncillaryQubitIndices tests
+
+// BEGIN setQubitAsAncillary tests
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetAncillaryQubitAsAncillary) {
+    const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
+    ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 0);
+    const std::optional<qc::Qubit> ancillaryQubit    = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    ASSERT_TRUE(ancillaryQubit.has_value() && *ancillaryQubit == 1);
+    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubit));
+
+    const auto& ancillaryQubitIndices = annotatedQuantumComputation->getAddedAncillaryQubitIndices();
+    ASSERT_THAT(ancillaryQubitIndices, testing::UnorderedElementsAreArray({*ancillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, true}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetNonAncillaryQubitAsAncillary) {
+    const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
+    ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 0);
+    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    ASSERT_TRUE(ancillaryQubit.has_value() && *ancillaryQubit == 1);
+    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*nonAncillaryQubit));
+
+    const auto& ancillaryQubitIndices = annotatedQuantumComputation->getAddedAncillaryQubitIndices();
+    ASSERT_THAT(ancillaryQubitIndices, testing::UnorderedElementsAreArray({*ancillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetUnknownQubitAsAncillary) {
+    const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
+    ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 0);
+    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    ASSERT_TRUE(ancillaryQubit.has_value() && *ancillaryQubit == 1);
+
+    constexpr qc::Qubit unknownQubitIndex = 2;
+    ASSERT_FALSE(annotatedQuantumComputation->setQubitAncillary(unknownQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetQubitAlreadySetAsAncillary) {
+    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    ASSERT_TRUE(ancillaryQubit.has_value() && *ancillaryQubit == 0);
+
+    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({true}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+
+    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({true}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetMultipleQubitsAsAncillary) {
+    const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
+    ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 0);
+
+    const std::optional<qc::Qubit> firstAncillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillaryOne", false);
+    ASSERT_TRUE(firstAncillaryQubit.has_value() && *firstAncillaryQubit == 1);
+
+    const std::optional<qc::Qubit> secondAncillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillaryTwo", false);
+    ASSERT_TRUE(secondAncillaryQubit.has_value() && *secondAncillaryQubit == 2);
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, false, false}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+
+    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*firstAncillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, true, false}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+
+    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*secondAncillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, true, true}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddingFurtherQubitsAfterSetQubitToAncillaryDidNotSucceedPossible) {
+    const std::optional<qc::Qubit> firstAncillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillaryOne", false);
+    ASSERT_TRUE(firstAncillaryQubit.has_value() && *firstAncillaryQubit == 0);
+
+    ASSERT_FALSE(annotatedQuantumComputation->setQubitAncillary(static_cast<qc::Qubit>(100)));
+
+    const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
+    ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 1);
+
+    const std::optional<qc::Qubit> secondAncillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillaryTwo", false);
+    ASSERT_TRUE(secondAncillaryQubit.has_value() && *secondAncillaryQubit == 2);
+
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({false, false, false}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+
+    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*firstAncillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({true, false, false}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+
+    const std::optional<qc::Qubit> indexOfNotAddableAncillaryQubit = annotatedQuantumComputation->addAncillaryQubit("otherQubitLabel", false);
+    ASSERT_FALSE(indexOfNotAddableAncillaryQubit.has_value());
+
+    const std::optional<qc::Qubit> indexOfNotAddableNonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("otherQubitLabel", false);
+    ASSERT_FALSE(indexOfNotAddableNonAncillaryQubit.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*secondAncillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(quantumComputation->getAncillary(), testing::ElementsAreArray({true, false, true}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+}
+// BEGIN setQubitAsAncillary tests
+
+// BEGIN getNqubits tests
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetNqubitsInEmptyQuantumComputation) {
+    ASSERT_EQ(0, annotatedQuantumComputation->getNqubits());
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetNqubits) {
+    std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary_1", false);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(0, *qubitIndex);
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+
+    qubitIndex = annotatedQuantumComputation->addAncillaryQubit("Ancillary_1", false);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(1, *qubitIndex);
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+
+    qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary_2", false);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(2, *qubitIndex);
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+
+    qubitIndex = annotatedQuantumComputation->addAncillaryQubit("Ancillary_2", true);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(3, *qubitIndex);
+    ASSERT_EQ(4, annotatedQuantumComputation->getNqubits());
+}
+// END getNqubits tests
+
+// BEGIN getQubitLabels tests
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetQubitLabelsInEmptyQuantumComputation) {
+    ASSERT_TRUE(annotatedQuantumComputation->getQubitLabels().empty());
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetQubitLabels) {
+    const std::vector<std::string> expectedQubitLabels = {"nonAncillary_1", "Ancillary_1", "nonAcillary_2", "Ancillary_2"};
+
+    std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(expectedQubitLabels[0], false);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(0, *qubitIndex);
+
+    qubitIndex = annotatedQuantumComputation->addAncillaryQubit(expectedQubitLabels[1], false);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(1, *qubitIndex);
+
+    qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(expectedQubitLabels[2], false);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(2, *qubitIndex);
+
+    qubitIndex = annotatedQuantumComputation->addAncillaryQubit(expectedQubitLabels[3], true);
+    ASSERT_TRUE(qubitIndex.has_value());
+    ASSERT_EQ(3, *qubitIndex);
+
+    const auto& actualQubitLabels = annotatedQuantumComputation->getQubitLabels();
+    ASSERT_THAT(actualQubitLabels, testing::ElementsAreArray(expectedQubitLabels));
+}
+// BEGIN getQubitLabels tests
+
+/*
 // BEGIN AddXGate tests
-TEST_F(CircuitTestsFixture, AddToffoliGate) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGate) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -112,7 +612,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithUnknownControlLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithUnknownControlLine) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -128,7 +628,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithUnknownControlLine) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithDuplicateControlLineNotPossible) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithDuplicateControlLineNotPossible) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -146,7 +646,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithDuplicateControlLineNotPossible) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithTargetLineBeingEqualToEitherControlLineNotPossible) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithTargetLineBeingEqualToEitherControlLineNotPossible) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -162,7 +662,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithTargetLineBeingEqualToEitherContro
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithUnknownTargetLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithUnknownTargetLine) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -174,7 +674,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithUnknownTargetLine) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithActiveControlLinesInParentControlLineScopes) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithActiveControlLinesInParentControlLineScopes) {
     constexpr unsigned numCircuitLines = 6;
     circuit->setLines(numCircuitLines);
 
@@ -210,7 +710,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithActiveControlLinesInParentControlL
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithTargetLineMatchingActiveControlLineInAnyParentControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithTargetLineMatchingActiveControlLineInAnyParentControlLineScope) {
     constexpr unsigned numCircuitLines = 4;
     circuit->setLines(numCircuitLines);
 
@@ -229,7 +729,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithTargetLineMatchingActiveControlLin
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithControlLinesBeingDisabledInCurrentControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithControlLinesBeingDisabledInCurrentControlLineScope) {
     constexpr unsigned numCircuitLines = 4;
     circuit->setLines(numCircuitLines);
 
@@ -282,7 +782,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithControlLinesBeingDisabledInCurrent
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGateWithBothControlLinesDeregistered, secondExpectedToffoliGateWithOneDeregisteredControlLine, thirdExpectedToffoliGateWithOneDeregisteredControlLine});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithScopeActivatingDeactivatedControlLineOfParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithScopeActivatingDeactivatedControlLineOfParentScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -309,7 +809,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithScopeActivatingDeactivatedControlL
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithDeactivationOfControlLinePropagationScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithDeactivationOfControlLinePropagationScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -340,7 +840,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithDeactivationOfControlLinePropagati
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithTargetLineMatchingDeactivatedControlLineOfPropagationScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithTargetLineMatchingDeactivatedControlLineOfPropagationScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -370,7 +870,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithTargetLineMatchingDeactivatedContr
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddToffoliGateWithCallerProvidedControlLinesMatchingDeregisteredControlLinesOfParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddToffoliGateWithCallerProvidedControlLinesMatchingDeregisteredControlLinesOfParentScope) {
     constexpr unsigned numCircuitLines = 5;
     circuit->setLines(numCircuitLines);
 
@@ -418,7 +918,7 @@ TEST_F(CircuitTestsFixture, AddToffoliGateWithCallerProvidedControlLinesMatching
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstToffoliGate, expectedSecondToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddCnotGate) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGate) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -436,7 +936,7 @@ TEST_F(CircuitTestsFixture, AddCnotGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {createdCnotGate});
 }
 
-TEST_F(CircuitTestsFixture, AddCnotGateWithUnknownControlLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithUnknownControlLine) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -447,7 +947,7 @@ TEST_F(CircuitTestsFixture, AddCnotGateWithUnknownControlLine) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddCnotGateWithUnknownTargetLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithUnknownTargetLine) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -458,7 +958,7 @@ TEST_F(CircuitTestsFixture, AddCnotGateWithUnknownTargetLine) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddCnotGateWithControlAndTargetLineBeingSameLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithControlAndTargetLineBeingSameLine) {
     constexpr unsigned numCircuitLines = 1;
     circuit->setLines(numCircuitLines);
 
@@ -468,7 +968,7 @@ TEST_F(CircuitTestsFixture, AddCnotGateWithControlAndTargetLineBeingSameLine) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddCnotGateWithActiveControlLinesInParentControlLineScopes) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithActiveControlLinesInParentControlLineScopes) {
     constexpr unsigned numCircuitLines = 6;
     circuit->setLines(numCircuitLines);
 
@@ -503,7 +1003,7 @@ TEST_F(CircuitTestsFixture, AddCnotGateWithActiveControlLinesInParentControlLine
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedCnotGate});
 }
 
-TEST_F(CircuitTestsFixture, AddCnotGateWithTargetLineMatchingActiveControlLineInAnyParentControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithTargetLineMatchingActiveControlLineInAnyParentControlLineScope) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -521,7 +1021,7 @@ TEST_F(CircuitTestsFixture, AddCnotGateWithTargetLineMatchingActiveControlLineIn
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddCnotGateWithControlLineBeingDeactivatedInCurrentControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithControlLineBeingDeactivatedInCurrentControlLineScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -548,7 +1048,7 @@ TEST_F(CircuitTestsFixture, AddCnotGateWithControlLineBeingDeactivatedInCurrentC
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedCnotGate});
 }
 
-TEST_F(CircuitTestsFixture, AddCnotGateWithDeactivationOfControlLinePropagationScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithDeactivationOfControlLinePropagationScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -574,7 +1074,7 @@ TEST_F(CircuitTestsFixture, AddCnotGateWithDeactivationOfControlLinePropagationS
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedCnotGate});
 }
 
-TEST_F(CircuitTestsFixture, AddCnotGateWithTargetLineMatchingDeactivatedControlLineOfPropagationScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithTargetLineMatchingDeactivatedControlLineOfPropagationScope) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -601,7 +1101,7 @@ TEST_F(CircuitTestsFixture, AddCnotGateWithTargetLineMatchingDeactivatedControlL
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(CircuitTestsFixture, AddCnotGateWithCallerProvidedControlLinesMatchingDeregisteredControlLinesOfParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddCnotGateWithCallerProvidedControlLinesMatchingDeregisteredControlLinesOfParentScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -647,7 +1147,7 @@ TEST_F(CircuitTestsFixture, AddCnotGateWithCallerProvidedControlLinesMatchingDer
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstCnotGate, expectedSecondCnotGate});
 }
 
-TEST_F(CircuitTestsFixture, AddNotGate) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNotGate) {
     constexpr unsigned numCircuitLines = 1;
     circuit->setLines(numCircuitLines);
 
@@ -656,7 +1156,7 @@ TEST_F(CircuitTestsFixture, AddNotGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {createdNotGate});
 }
 
-TEST_F(CircuitTestsFixture, AddNotGateWithUnknownTargetLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNotGateWithUnknownTargetLine) {
     constexpr unsigned numCircuitLines = 1;
     circuit->setLines(numCircuitLines);
 
@@ -666,7 +1166,7 @@ TEST_F(CircuitTestsFixture, AddNotGateWithUnknownTargetLine) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddNotGateWithActiveControlLinesInParentControlLineScopes) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNotGateWithActiveControlLinesInParentControlLineScopes) {
     constexpr unsigned numCircuitLines = 5;
     circuit->setLines(numCircuitLines);
 
@@ -701,7 +1201,7 @@ TEST_F(CircuitTestsFixture, AddNotGateWithActiveControlLinesInParentControlLineS
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(CircuitTestsFixture, AddNotGateWithTargetLineMatchingActiveControlLineInAnyParentControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNotGateWithTargetLineMatchingActiveControlLineInAnyParentControlLineScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -717,7 +1217,7 @@ TEST_F(CircuitTestsFixture, AddNotGateWithTargetLineMatchingActiveControlLineInA
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddNotGateWithTargetLineMatchingDeactivatedControlLineOfControlLinePropagationScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNotGateWithTargetLineMatchingDeactivatedControlLineOfControlLinePropagationScope) {
     constexpr unsigned numCircuitLines = 1;
     circuit->setLines(numCircuitLines);
 
@@ -741,7 +1241,7 @@ TEST_F(CircuitTestsFixture, AddNotGateWithTargetLineMatchingDeactivatedControlLi
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(CircuitTestsFixture, AddMultiControlToffoliGate) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGate) {
     constexpr unsigned numCircuitLines = 4;
     circuit->setLines(numCircuitLines);
 
@@ -763,7 +1263,7 @@ TEST_F(CircuitTestsFixture, AddMultiControlToffoliGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {createdMultiControlToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithUnknownControlLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithUnknownControlLine) {
     constexpr unsigned numCircuitLines = 4;
     circuit->setLines(numCircuitLines);
 
@@ -778,7 +1278,7 @@ TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithUnknownControlLine) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithUnknownTargetLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithUnknownTargetLine) {
     constexpr unsigned numCircuitLines = 4;
     circuit->setLines(numCircuitLines);
 
@@ -793,7 +1293,7 @@ TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithUnknownTargetLine) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithoutControlLinesAndNoActiveLocalControlLineScopes) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithoutControlLinesAndNoActiveLocalControlLineScopes) {
     constexpr unsigned numCircuitLines = 1;
     circuit->setLines(numCircuitLines);
 
@@ -803,7 +1303,7 @@ TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithoutControlLinesAndNoAc
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithActiveControlLinesInParentControlLineScopes) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithActiveControlLinesInParentControlLineScopes) {
     constexpr unsigned numCircuitLines = 5;
     circuit->setLines(numCircuitLines);
 
@@ -837,7 +1337,7 @@ TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithActiveControlLinesInPa
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithTargetLineMatchingActiveControlLinesOfAnyParentControlLineScopes) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithTargetLineMatchingActiveControlLinesOfAnyParentControlLineScopes) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -857,7 +1357,7 @@ TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithTargetLineMatchingActi
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithTargetLineBeingEqualToUserProvidedControlLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithTargetLineBeingEqualToUserProvidedControlLine) {
     constexpr unsigned numCircuitLines = 4;
     circuit->setLines(numCircuitLines);
 
@@ -872,7 +1372,7 @@ TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithTargetLineBeingEqualTo
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithTargetLineMatchingDeactivatedControlLineOfParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithTargetLineMatchingDeactivatedControlLineOfParentScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -902,7 +1402,7 @@ TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithTargetLineMatchingDeac
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithCallerProvidedControlLinesMatchingDeregisteredControlLinesOfParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddMultiControlToffoliGateWithCallerProvidedControlLinesMatchingDeregisteredControlLinesOfParentScope) {
     constexpr unsigned numCircuitLines = 5;
     circuit->setLines(numCircuitLines);
 
@@ -953,7 +1453,7 @@ TEST_F(CircuitTestsFixture, AddMultiControlToffoliGateWithCallerProvidedControlL
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstMultiControlToffoliGate, expectedSecondCreatedToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, AddFredkinGate) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddFredkinGate) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -969,7 +1469,7 @@ TEST_F(CircuitTestsFixture, AddFredkinGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {createdFredkinGate});
 }
 
-TEST_F(CircuitTestsFixture, AddFredkinGateWithUnknownTargetLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddFredkinGateWithUnknownTargetLine) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -985,7 +1485,7 @@ TEST_F(CircuitTestsFixture, AddFredkinGateWithUnknownTargetLine) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddFredkinGateWithTargetLinesTargetingSameLine) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddFredkinGateWithTargetLinesTargetingSameLine) {
     constexpr unsigned numCircuitLines = 1;
     circuit->setLines(numCircuitLines);
 
@@ -996,7 +1496,7 @@ TEST_F(CircuitTestsFixture, AddFredkinGateWithTargetLinesTargetingSameLine) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddFredkinGateWithTargetLineMatchingActiveControlLineOfAnyParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddFredkinGateWithTargetLineMatchingActiveControlLineOfAnyParentScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -1026,7 +1526,7 @@ TEST_F(CircuitTestsFixture, AddFredkinGateWithTargetLineMatchingActiveControlLin
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {});
 }
 
-TEST_F(CircuitTestsFixture, AddFredkinGateWithTargetLineMatchingDeactivatedControlLineOfParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddFredkinGateWithTargetLineMatchingDeactivatedControlLineOfParentScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -1067,7 +1567,7 @@ TEST_F(CircuitTestsFixture, AddFredkinGateWithTargetLineMatchingDeactivatedContr
 // END AddXGate tests
 
 // BEGIN Control line propagation scopes tests
-TEST_F(CircuitTestsFixture, RegisterDuplicateControlLineOfParentScopeInLocalControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterDuplicateControlLineOfParentScopeInLocalControlLineScope) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -1092,7 +1592,7 @@ TEST_F(CircuitTestsFixture, RegisterDuplicateControlLineOfParentScopeInLocalCont
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, RegisterDuplicateControlLineDeactivatedOfParentScopeInLocalScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterDuplicateControlLineDeactivatedOfParentScopeInLocalScope) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -1118,7 +1618,7 @@ TEST_F(CircuitTestsFixture, RegisterDuplicateControlLineDeactivatedOfParentScope
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, RegisterControlLineNotKnownInCircuit) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterControlLineNotKnownInCircuit) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -1142,7 +1642,7 @@ TEST_F(CircuitTestsFixture, RegisterControlLineNotKnownInCircuit) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, DeregisterControlLineOfLocalControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlLineOfLocalControlLineScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -1167,7 +1667,7 @@ TEST_F(CircuitTestsFixture, DeregisterControlLineOfLocalControlLineScope) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(CircuitTestsFixture, DeregisterControlLineOfParentScopeInLastActivateControlLineScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlLineOfParentScopeInLastActivateControlLineScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -1196,7 +1696,7 @@ TEST_F(CircuitTestsFixture, DeregisterControlLineOfParentScopeInLastActivateCont
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, DeregisterControlLineNotKnownInCircuit) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlLineNotKnownInCircuit) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -1221,7 +1721,7 @@ TEST_F(CircuitTestsFixture, DeregisterControlLineNotKnownInCircuit) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, DeregisterControlLineOfParentPropagationScopeNotRegisteredInCurrentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlLineOfParentPropagationScopeNotRegisteredInCurrentScope) {
     constexpr unsigned numCircuitLines = 3;
     circuit->setLines(numCircuitLines);
 
@@ -1250,7 +1750,7 @@ TEST_F(CircuitTestsFixture, DeregisterControlLineOfParentPropagationScopeNotRegi
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedMultiControlToffoliGate});
 }
 
-TEST_F(CircuitTestsFixture, RegisteringLocalControlLineDoesNotAddNewControlLinesToExistingGates) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, RegisteringLocalControlLineDoesNotAddNewControlLinesToExistingGates) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -1273,7 +1773,7 @@ TEST_F(CircuitTestsFixture, RegisteringLocalControlLineDoesNotAddNewControlLines
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(CircuitTestsFixture, DeactivatingLocalControlLineDoesNotAddNewControlLinesToExistingGates) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivatingLocalControlLineDoesNotAddNewControlLinesToExistingGates) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -1298,7 +1798,7 @@ TEST_F(CircuitTestsFixture, DeactivatingLocalControlLineDoesNotAddNewControlLine
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(CircuitTestsFixture, ActivatingControlLinePropagationScopeDoesNotAddNewControlLinesToExistingGates) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, ActivatingControlLinePropagationScopeDoesNotAddNewControlLinesToExistingGates) {
     constexpr unsigned numCircuitLines = 2;
     circuit->setLines(numCircuitLines);
 
@@ -1320,7 +1820,7 @@ TEST_F(CircuitTestsFixture, ActivatingControlLinePropagationScopeDoesNotAddNewCo
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(CircuitTestsFixture, DeactivatingControlLinePropagationScopeDoesNotAddNewControlLinesToExistingGates) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivatingControlLinePropagationScopeDoesNotAddNewControlLinesToExistingGates) {
     constexpr unsigned numCircuitLines = 4;
     circuit->setLines(numCircuitLines);
 
@@ -1349,7 +1849,7 @@ TEST_F(CircuitTestsFixture, DeactivatingControlLinePropagationScopeDoesNotAddNew
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedCnotGate});
 }
 
-TEST_F(CircuitTestsFixture, DeactivateControlLinePropagationScopeRegisteringControlLinesOfParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivateControlLinePropagationScopeRegisteringControlLinesOfParentScope) {
     constexpr unsigned numCircuitLines = 4;
     circuit->setLines(numCircuitLines);
 
@@ -1380,7 +1880,7 @@ TEST_F(CircuitTestsFixture, DeactivateControlLinePropagationScopeRegisteringCont
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedNotGate});
 }
 
-TEST_F(CircuitTestsFixture, DeactivateControlLinePropagationScopeNotRegisteringControlLinesOfParentScope) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivateControlLinePropagationScopeNotRegisteringControlLinesOfParentScope) {
     constexpr unsigned numCircuitLines = 4;
     circuit->setLines(numCircuitLines);
 
@@ -1412,7 +1912,7 @@ TEST_F(CircuitTestsFixture, DeactivateControlLinePropagationScopeNotRegisteringC
 // BEGIN Control line propagation scopes tests
 
 // BEGIN Annotation tests
-TEST_F(CircuitTestsFixture, SetAnnotationForGate) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationForGate) {
     circuit->setLines(2);
 
     constexpr Gate::Line         targetLineOne = 0;
@@ -1439,7 +1939,7 @@ TEST_F(CircuitTestsFixture, SetAnnotationForGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 }
 
-TEST_F(CircuitTestsFixture, UpdateAnnotationForGate) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateAnnotationForGate) {
     circuit->setLines(2);
 
     constexpr Gate::Line         targetLineOne = 0;
@@ -1478,7 +1978,7 @@ TEST_F(CircuitTestsFixture, UpdateAnnotationForGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 }
 
-TEST_F(CircuitTestsFixture, SetAnnotationForUnknownGate) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationForUnknownGate) {
     circuit->setLines(2);
 
     constexpr Gate::Line         targetLineOne = 0;
@@ -1506,7 +2006,7 @@ TEST_F(CircuitTestsFixture, SetAnnotationForUnknownGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 }
 
-TEST_F(CircuitTestsFixture, UpdateNotExistingAnnotationForGate) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateNotExistingAnnotationForGate) {
     circuit->setLines(2);
 
     constexpr Gate::Line         targetLineOne = 0;
@@ -1542,7 +2042,7 @@ TEST_F(CircuitTestsFixture, UpdateNotExistingAnnotationForGate) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 }
 
-TEST_F(CircuitTestsFixture, SetAnnotationForGateWithEmptyKey) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetAnnotationForGateWithEmptyKey) {
     circuit->setLines(2);
 
     constexpr Gate::Line         targetLineOne = 0;
@@ -1576,7 +2076,7 @@ TEST_F(CircuitTestsFixture, SetAnnotationForGateWithEmptyKey) {
     assertThatGatesOfCircuitAreEqualToSequence(*circuit, {expectedFirstNotGate, expectedSecondNotGate});
 }
 
-TEST_F(CircuitTestsFixture, SetGlobalGateAnnotation) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalGateAnnotation) {
     circuit->setLines(2);
 
     constexpr Gate::Line         targetLineOne = 0;
@@ -1602,7 +2102,7 @@ TEST_F(CircuitTestsFixture, SetGlobalGateAnnotation) {
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 }
 
-TEST_F(CircuitTestsFixture, UpdateGlobalGateAnnotation) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateGlobalGateAnnotation) {
     circuit->setLines(2);
 
     const std::string globalAnnotationKey          = "KEY_ONE";
@@ -1632,7 +2132,7 @@ TEST_F(CircuitTestsFixture, UpdateGlobalGateAnnotation) {
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 }
 
-TEST_F(CircuitTestsFixture, UpdateNotExistingGlobalGateAnnotation) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateNotExistingGlobalGateAnnotation) {
     circuit->setLines(2);
 
     const std::string firstGlobalAnnotationKey   = "KEY_ONE";
@@ -1663,7 +2163,7 @@ TEST_F(CircuitTestsFixture, UpdateNotExistingGlobalGateAnnotation) {
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 }
 
-TEST_F(CircuitTestsFixture, RemoveGlobalGateAnnotation) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, RemoveGlobalGateAnnotation) {
     circuit->setLines(2);
 
     const std::string globalAnnotationKey          = "KEY_ONE";
@@ -1691,7 +2191,7 @@ TEST_F(CircuitTestsFixture, RemoveGlobalGateAnnotation) {
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, {});
 }
 
-TEST_F(CircuitTestsFixture, SetGlobalGateAnnotationWithEmptyKey) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalGateAnnotationWithEmptyKey) {
     circuit->setLines(2);
 
     const std::string globalAnnotationKey          = "KEY_ONE";
@@ -1721,7 +2221,7 @@ TEST_F(CircuitTestsFixture, SetGlobalGateAnnotationWithEmptyKey) {
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 }
 
-TEST_F(CircuitTestsFixture, SetGlobalGateAnnotationMatchingExistingAnnotationOfGateDoesNotUpdateTheLatter) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalGateAnnotationMatchingExistingAnnotationOfGateDoesNotUpdateTheLatter) {
     circuit->setLines(2);
 
     constexpr Gate::Line         targetLineOne = 0;
@@ -1753,7 +2253,7 @@ TEST_F(CircuitTestsFixture, SetGlobalGateAnnotationMatchingExistingAnnotationOfG
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
 }
 
-TEST_F(CircuitTestsFixture, RemovingGlobalGateAnnotationMatchingExistingAnnotationOfGateDoesNotRemoveTheLatter) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, RemovingGlobalGateAnnotationMatchingExistingAnnotationOfGateDoesNotRemoveTheLatter) {
     circuit->setLines(2);
 
     constexpr Gate::Line         targetLineOne = 0;
@@ -1785,7 +2285,7 @@ TEST_F(CircuitTestsFixture, RemovingGlobalGateAnnotationMatchingExistingAnnotati
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, std::nullopt);
 }
 
-TEST_F(CircuitTestsFixture, UpdateLocalAnnotationWhoseKeyMatchesGlobalAnnotationDoesOnlyUpdateLocalAnnotation) {
+TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateLocalAnnotationWhoseKeyMatchesGlobalAnnotationDoesOnlyUpdateLocalAnnotation) {
     circuit->setLines(2);
 
     constexpr Gate::Line         targetLineOne = 0;
@@ -1822,5 +2322,6 @@ TEST_F(CircuitTestsFixture, UpdateLocalAnnotationWhoseKeyMatchesGlobalAnnotation
 
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *firstGeneratedNotGate, expectedAnnotationsOfFirstGate);
     assertThatAnnotationsOfGateAreEqualTo(*circuit, *secondGeneratedNotGate, expectedAnnotationsOfSecondGate);
-}
+} 
 // END Annotation tests
+*/
