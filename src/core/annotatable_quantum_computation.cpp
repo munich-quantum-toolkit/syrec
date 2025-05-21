@@ -68,13 +68,16 @@ bool AnnotatableQuantumComputation::addOperationsImplementingToffoliGate(const q
     return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
 }
 
-bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoliGate(const std::unordered_set<qc::Qubit>& controlQubits, const qc::Qubit targetQubit) {
-    if (std::any_of(controlQubits.cbegin(), controlQubits.cend(), [&](const qc::Qubit& controlQubit) { return !isQubitWithinRange(controlQubit); }) || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
+bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubits, const qc::Qubit targetQubit) {
+    if (!isQubitWithinRange(targetQubit) || std::any_of(controlQubits.cbegin(), controlQubits.cend(), [&](const qc::Control& control) { return !isQubitWithinRange(control.qubit) || control.qubit == targetQubit; }) || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
         return false;
     }
 
     qc::Controls gateControlQubits(aggregateOfPropagatedControlQubits.cbegin(), aggregateOfPropagatedControlQubits.cend());
     gateControlQubits.insert(controlQubits.cbegin(), controlQubits.cend());
+    if (gateControlQubits.empty()) {
+        return false;
+    }
 
     const std::size_t prevNumQuantumOperations = quantumComputation.getNops();
     quantumComputation.mcx(gateControlQubits, targetQubit);
@@ -84,7 +87,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoli
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const qc::Qubit targetQubitOne, const qc::Qubit targetQubitTwo) {
-    if (targetQubitOne == targetQubitTwo || aggregateOfPropagatedControlQubits.count(targetQubitOne) != 0 || aggregateOfPropagatedControlQubits.count(targetQubitTwo) != 0) {
+    if (!isQubitWithinRange(targetQubitOne) || !isQubitWithinRange(targetQubitTwo) || targetQubitOne == targetQubitTwo || aggregateOfPropagatedControlQubits.count(targetQubitOne) != 0 || aggregateOfPropagatedControlQubits.count(targetQubitTwo) != 0) {
         return false;
     }
     const qc::Controls gateControlQubits(aggregateOfPropagatedControlQubits.cbegin(), aggregateOfPropagatedControlQubits.cend());
@@ -155,6 +158,13 @@ std::vector<std::string> AnnotatableQuantumComputation::getQubitLabels() const {
         qubitLabels[qubitIndex]    = quantumRegister.first;
     }
     return qubitLabels;
+}
+
+AnnotatableQuantumComputation::GateAnnotationsLookup AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
+    if (indexOfQuantumOperationInQuantumComputation > annotationsPerQuantumOperation.size()) {
+        return {};
+    }
+    return annotationsPerQuantumOperation[indexOfQuantumOperationInQuantumComputation];
 }
 
 void AnnotatableQuantumComputation::activateControlQubitPropagationScope() {
@@ -241,8 +251,8 @@ bool AnnotatableQuantumComputation::isQubitWithinRange(const qc::Qubit qubit) co
     return qubit < quantumComputation.getNqubits();
 }
 
-bool AnnotatableQuantumComputation::areQubitsWithinRange(const std::unordered_set<qc::Qubit>& qubitsToCheck) const noexcept {
-    return std::all_of(qubitsToCheck.cbegin(), qubitsToCheck.cend(), [&](const qc::Qubit qubit) { return isQubitWithinRange(qubit); });
+bool AnnotatableQuantumComputation::areQubitsWithinRange(const qc::Controls& qubitsToCheck) const noexcept {
+    return std::all_of(qubitsToCheck.cbegin(), qubitsToCheck.cend(), [&](const qc::Control control) { return isQubitWithinRange(control.qubit); });
 }
 
 bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const GateAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation) {

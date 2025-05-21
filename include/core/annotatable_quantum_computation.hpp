@@ -12,6 +12,7 @@
 
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
+#include "ir/operations/Control.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -26,14 +27,16 @@
 namespace syrec {
     class AnnotatableQuantumComputation {
     public:
+        using GateAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
+
         explicit AnnotatableQuantumComputation(qc::QuantumComputation& quantumComputation):
             quantumComputation(quantumComputation) {}
 
-        [[maybe_unused]] bool                       addOperationsImplementingNotGate(qc::Qubit targetQubit);
-        [[maybe_unused]] bool                       addOperationsImplementingCnotGate(qc::Qubit controlQubit, qc::Qubit targetQubit);
-        [[maybe_unused]] bool                       addOperationsImplementingToffoliGate(qc::Qubit controlQubitOne, qc::Qubit controlQubitTwo, qc::Qubit targetQubit);
-        [[maybe_unused]] bool                       addOperationsImplementingMultiControlToffoliGate(const std::unordered_set<qc::Qubit>& controlQubitsSet, qc::Qubit targetQubit);
-        [[maybe_unused]] bool                       addOperationsImplementingFredkinGate(qc::Qubit targetQubitOne, qc::Qubit targetQubitTwo);
+        [[maybe_unused]] bool addOperationsImplementingNotGate(qc::Qubit targetQubit);
+        [[maybe_unused]] bool addOperationsImplementingCnotGate(qc::Qubit controlQubit, qc::Qubit targetQubit);
+        [[maybe_unused]] bool addOperationsImplementingToffoliGate(qc::Qubit controlQubitOne, qc::Qubit controlQubitTwo, qc::Qubit targetQubit);
+        [[maybe_unused]] bool addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubitsSet, qc::Qubit targetQubit);
+        [[maybe_unused]] bool addOperationsImplementingFredkinGate(qc::Qubit targetQubitOne, qc::Qubit targetQubitTwo);
 
         /**
          * Add a non-ancillary qubit to the quantum computation.
@@ -41,7 +44,7 @@ namespace syrec {
          * @param isGarbageQubit Whether the qubit is a garbage qubit.
          * @return The index of the non-ancillary qubit in the quantum computation, std::nullopt if either a qubit with the same label already exists or no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary.
          */
-        [[nodiscard]] std::optional<qc::Qubit>      addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit) const;
+        [[nodiscard]] std::optional<qc::Qubit> addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit) const;
 
         /**
          * Add a preliminary ancillary qubit to the quantum computation. Ancillary qubits added need to be explicitly marked as such via the \see AnnotatableQuantumComputation#setQubitAncillary call.
@@ -49,7 +52,7 @@ namespace syrec {
          * @param initialStateOfQubit The initial state of the ancillary qubits. Is assumed to be 0 by default. The initial state of 1 is achieved by adding an X quantum operation.
          * @return The index of the ancillary qubit in the quantum computation, std::nullopt if a qubit with the same label already exists or no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary.
          */
-        [[nodiscard]] std::optional<qc::Qubit>      addAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit);
+        [[nodiscard]] std::optional<qc::Qubit> addAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit);
 
         /**
          * Return the indices of the ancillary qubits added via \see AnnotatableQuantumComputation#addAncillaryQubit.
@@ -64,7 +67,7 @@ namespace syrec {
          * @param qubit The index of the qubit in the quantum computation.
          * @return Whether the qubit index was known in the quantum computation. If the index is not known, qubits can still be added to the quantum computation.
          */
-        [[nodiscard]] bool                          setQubitAncillary(qc::Qubit qubit);
+        [[nodiscard]] bool setQubitAncillary(qc::Qubit qubit);
 
         [[nodiscard]] std::size_t              getNqubits() const;
         [[nodiscard]] std::vector<std::string> getQubitLabels() const;
@@ -85,9 +88,7 @@ namespace syrec {
             return quantumComputation.end();
         }
 
-        [[nodiscard]] std::unordered_map<std::string, std::string> getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
-            return {};
-        }
+        [[nodiscard]] GateAnnotationsLookup getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
 
         /**
          * Activate a new control qubit propagation scope.
@@ -148,11 +149,9 @@ namespace syrec {
         [[maybe_unused]] bool removeGlobalQuantumOperationAnnotation(const std::string_view& key);
 
     protected:
-        using GateAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
-
         [[maybe_unused]] bool annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const GateAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation);
         [[nodiscard]] bool    isQubitWithinRange(qc::Qubit qubit) const noexcept;
-        [[nodiscard]] bool    areQubitsWithinRange(const std::unordered_set<qc::Qubit>& qubitsToCheck) const noexcept;
+        [[nodiscard]] bool    areQubitsWithinRange(const qc::Controls& qubitsToCheck) const noexcept;
 
         // TODO: Can we find a solution that does not require a pass of a reference but use a smart pointer instead
         qc::QuantumComputation&                          quantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)

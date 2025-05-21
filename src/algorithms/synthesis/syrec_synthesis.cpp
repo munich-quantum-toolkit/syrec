@@ -19,6 +19,7 @@
 #include "core/utils/timer.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
+#include "ir/operations/Control.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -715,7 +716,7 @@ namespace syrec {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src2[i], src1[i]) && annotatableQuantumComputation.addOperationsImplementingNotGate(src1[i]);
         }
 
-        synthesisOk &= annotatableQuantumComputation.addOperationsImplementingMultiControlToffoliGate(std::unordered_set<qc::Qubit>(src1.begin(), src1.end()), dest);
+        synthesisOk &= annotatableQuantumComputation.addOperationsImplementingMultiControlToffoliGate(qc::Controls(src1.begin(), src1.end()), dest);
 
         for (std::size_t i = 0; i < src1.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src2[i], src1[i]) && annotatableQuantumComputation.addOperationsImplementingNotGate(src1[i]);
