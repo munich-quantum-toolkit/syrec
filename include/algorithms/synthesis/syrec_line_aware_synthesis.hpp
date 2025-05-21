@@ -54,28 +54,28 @@ namespace syrec {
         bool flow(const BinaryExpression& expression, const std::vector<qc::Qubit>& v);
 
         bool expAdd([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) override {
-            const bool synthesisOfExprOk = increase(rhs, lhs);
+            const bool synthesisOfExprOk = increase(annotatableQuantumComputation, rhs, lhs);
             lines                        = rhs;
             return synthesisOfExprOk;
         }
 
         bool expSubtract([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) override {
-            const bool synthesisOfExprOk = decreaseNewAssign(rhs, lhs);
+            const bool synthesisOfExprOk = decreaseNewAssign(annotatableQuantumComputation, rhs, lhs);
             lines                        = rhs;
             return synthesisOfExprOk;
         }
 
         bool expExor([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) override {
-            const bool synthesisOfExprOk = bitwiseCnot(rhs, lhs); // duplicate lhs
+            const bool synthesisOfExprOk = bitwiseCnot(annotatableQuantumComputation, rhs, lhs); // duplicate lhs
             lines                        = rhs;
             return synthesisOfExprOk;
         }
 
-        bool expEvaluate(std::vector<qc::Qubit>& lines, unsigned op, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs);
+        bool expEvaluate(AnnotatableQuantumComputation& annotatableQuantumComputation, std::vector<qc::Qubit>& lines, unsigned op, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) const;
 
-        bool expressionSingleOp(unsigned op, const std::vector<qc::Qubit>& expLhs, const std::vector<qc::Qubit>& expRhs);
+        bool expressionSingleOp(AnnotatableQuantumComputation& annotatableQuantumComputation, unsigned op, const std::vector<qc::Qubit>& expLhs, const std::vector<qc::Qubit>& expRhs) const;
 
-        bool decreaseNewAssign(const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs);
+        static bool decreaseNewAssign(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs);
 
         bool expressionOpInverse([[maybe_unused]] unsigned op, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs) override;
     };

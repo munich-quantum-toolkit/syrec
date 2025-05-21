@@ -33,7 +33,6 @@
 
 // TODO: Due to many member functions now returning a boolean, one could use the std::cerr stream to log errors?
 // TODO: Update python bindings
-// TODO: Refactor to use AnnotationQuantumComputation as parameter instead of member variable
 namespace syrec {
     // Helper Functions for the synthesis methods
     SyrecSynthesis::SyrecSynthesis(qc::QuantumComputation& quantumComputation):
@@ -53,7 +52,7 @@ namespace syrec {
             const auto& variable = variables[i];
             // entry in var lines map
             varLines.try_emplace(variable, annotatableQuantumComputation.getNqubits());
-            couldQubitsForVariablesBeAdded &= addVariable(variable->dimensions, variable, std::string());
+            couldQubitsForVariablesBeAdded &= addVariable(annotatableQuantumComputation, variable->dimensions, variable, std::string());
         }
         return couldQubitsForVariablesBeAdded;
     }
@@ -194,7 +193,7 @@ namespace syrec {
         getVariables(statement.lhs, lhs);
         getVariables(statement.rhs, rhs);
         assert(lhs.size() == rhs.size());
-        return swap(lhs, rhs);
+        return swap(annotatableQuantumComputation, lhs, rhs);
     }
 
     bool SyrecSynthesis::onStatement(const UnaryStatement& statement) {
@@ -204,11 +203,11 @@ namespace syrec {
 
         switch (statement.op) {
             case UnaryStatement::Invert:
-                return bitwiseNegation(var);
+                return bitwiseNegation(annotatableQuantumComputation, var);
             case UnaryStatement::Increment:
-                return increment(var);
+                return increment(annotatableQuantumComputation, var);
             case UnaryStatement::Decrement:
-                return decrement(var);
+                return decrement(annotatableQuantumComputation, var);
             default:
                 return false;
         }
@@ -415,10 +414,10 @@ namespace syrec {
         const qc::Qubit rhs = expression.rhs->evaluate(loopMap);
         switch (expression.op) {
             case ShiftExpression::Left: // <<
-                return getConstantLines(expression.bitwidth(), 0U, lines) && leftShift(lines, lhs, rhs);
+                return getConstantLines(expression.bitwidth(), 0U, lines) && leftShift(annotatableQuantumComputation, lines, lhs, rhs);
             case ShiftExpression::Right: // <<
                 return getConstantLines(expression.bitwidth(), 0U, lines) &&
-                       rightShift(lines, lhs, rhs);
+                       rightShift(annotatableQuantumComputation, lines, lhs, rhs);
             default:
                 return false;
         }
@@ -461,21 +460,21 @@ namespace syrec {
                 synthesisOfExprOk = expExor(expression.bitwidth(), lines, lhs, rhs);
                 break;
             case BinaryExpression::Multiply: // *
-                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines) && multiplication(lines, lhs, rhs);
+                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines) && multiplication(annotatableQuantumComputation, lines, lhs, rhs);
                 break;
             case BinaryExpression::Divide: // /
-                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines) && division(lines, lhs, rhs);
+                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines) && division(annotatableQuantumComputation, lines, lhs, rhs);
                 break;
             case BinaryExpression::Modulo: { // %
                 synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines);
                 std::vector<qc::Qubit> quot;
-                synthesisOfExprOk &= getConstantLines(expression.bitwidth(), 0U, quot) && bitwiseCnot(lines, lhs) && modulo(quot, lines, rhs);
+                synthesisOfExprOk &= getConstantLines(expression.bitwidth(), 0U, quot) && bitwiseCnot(annotatableQuantumComputation, lines, lhs) && modulo(annotatableQuantumComputation, quot, lines, rhs);
             } break;
             case BinaryExpression::LogicalAnd: { // &&
                 const std::optional<qc::Qubit> ancillaryQubitForIntermediateResult = getConstantLine(false);
                 if (ancillaryQubitForIntermediateResult.has_value()) {
                     lines.emplace_back(*ancillaryQubitForIntermediateResult);
-                    synthesisOfExprOk = conjunction(lines.front(), lhs.front(), rhs.front());
+                    synthesisOfExprOk = conjunction(annotatableQuantumComputation, lines.front(), lhs.front(), rhs.front());
                 } else {
                     synthesisOfExprOk = false;
                 }
@@ -485,7 +484,7 @@ namespace syrec {
                 const std::optional<qc::Qubit> ancillaryQubitForIntermediateResult = getConstantLine(false);
                 if (ancillaryQubitForIntermediateResult.has_value()) {
                     lines.emplace_back(*ancillaryQubitForIntermediateResult);
-                    synthesisOfExprOk = disjunction(lines.front(), lhs.front(), rhs.front());
+                    synthesisOfExprOk = disjunction(annotatableQuantumComputation, lines.front(), lhs.front(), rhs.front());
                 } else {
                     synthesisOfExprOk = false;
                 }
@@ -493,16 +492,16 @@ namespace syrec {
                 break;
             }
             case BinaryExpression::BitwiseAnd: // &
-                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines) && bitwiseAnd(lines, lhs, rhs);
+                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines) && bitwiseAnd(annotatableQuantumComputation, lines, lhs, rhs);
                 break;
             case BinaryExpression::BitwiseOr: // |
-                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines) && bitwiseOr(lines, lhs, rhs);
+                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines) && bitwiseOr(annotatableQuantumComputation, lines, lhs, rhs);
                 break;
             case BinaryExpression::LessThan: { // <
                 const std::optional<qc::Qubit> ancillaryQubitForIntermediateResult = getConstantLine(false);
                 if (ancillaryQubitForIntermediateResult.has_value()) {
                     lines.emplace_back(*ancillaryQubitForIntermediateResult);
-                    synthesisOfExprOk = lessThan(lines.front(), lhs, rhs);
+                    synthesisOfExprOk = lessThan(annotatableQuantumComputation, lines.front(), lhs, rhs);
                 } else {
                     synthesisOfExprOk = false;
                 }
@@ -513,7 +512,7 @@ namespace syrec {
                 const std::optional<qc::Qubit> ancillaryQubitForIntermediateResult = getConstantLine(false);
                 if (ancillaryQubitForIntermediateResult.has_value()) {
                     lines.emplace_back(*ancillaryQubitForIntermediateResult);
-                    synthesisOfExprOk = greaterThan(lines.front(), lhs, rhs);
+                    synthesisOfExprOk = greaterThan(annotatableQuantumComputation, lines.front(), lhs, rhs);
                 } else {
                     synthesisOfExprOk = false;
                 }
@@ -524,7 +523,7 @@ namespace syrec {
                 const std::optional<qc::Qubit> ancillaryQubitForIntermediateResult = getConstantLine(false);
                 if (ancillaryQubitForIntermediateResult.has_value()) {
                     lines.emplace_back(*ancillaryQubitForIntermediateResult);
-                    synthesisOfExprOk = equals(lines.front(), lhs, rhs);
+                    synthesisOfExprOk = equals(annotatableQuantumComputation, lines.front(), lhs, rhs);
                 } else {
                     synthesisOfExprOk = false;
                 }
@@ -535,7 +534,7 @@ namespace syrec {
                 const std::optional<qc::Qubit> ancillaryQubitForIntermediateResult = getConstantLine(false);
                 if (ancillaryQubitForIntermediateResult.has_value()) {
                     lines.emplace_back(*ancillaryQubitForIntermediateResult);
-                    synthesisOfExprOk = notEquals(lines.front(), lhs, rhs);
+                    synthesisOfExprOk = notEquals(annotatableQuantumComputation, lines.front(), lhs, rhs);
                 } else {
                     synthesisOfExprOk = false;
                 }
@@ -546,7 +545,7 @@ namespace syrec {
                 const std::optional<qc::Qubit> ancillaryQubitForIntermediateResult = getConstantLine(false);
                 if (ancillaryQubitForIntermediateResult.has_value()) {
                     lines.emplace_back(*ancillaryQubitForIntermediateResult);
-                    synthesisOfExprOk = lessEquals(lines.front(), lhs, rhs);
+                    synthesisOfExprOk = lessEquals(annotatableQuantumComputation, lines.front(), lhs, rhs);
                 } else {
                     synthesisOfExprOk = false;
                 }
@@ -557,7 +556,7 @@ namespace syrec {
                 const std::optional<qc::Qubit> ancillaryQubitForIntermediateResult = getConstantLine(false);
                 if (ancillaryQubitForIntermediateResult.has_value()) {
                     lines.emplace_back(*ancillaryQubitForIntermediateResult);
-                    synthesisOfExprOk = greaterEquals(lines.front(), lhs, rhs);
+                    synthesisOfExprOk = greaterEquals(annotatableQuantumComputation, lines.front(), lhs, rhs);
                 } else {
                     synthesisOfExprOk = false;
                 }
@@ -575,7 +574,7 @@ namespace syrec {
     //*****                      Unary Operations                      *****
     //**********************************************************************
 
-    bool SyrecSynthesis::bitwiseNegation(const std::vector<qc::Qubit>& dest) {
+    bool SyrecSynthesis::bitwiseNegation(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest) {
         bool synthesisOk = true;
         for (std::size_t i = 0; i < dest.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(dest[i]);
@@ -583,7 +582,7 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::decrement(const std::vector<qc::Qubit>& dest) {
+    bool SyrecSynthesis::decrement(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest) {
         annotatableQuantumComputation.activateControlQubitPropagationScope();
         bool synthesisOk = true;
         for (std::size_t i = 0; i < dest.size() && synthesisOk; ++i) {
@@ -594,7 +593,7 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::increment(const std::vector<qc::Qubit>& dest) {
+    bool SyrecSynthesis::increment(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest) {
         annotatableQuantumComputation.activateControlQubitPropagationScope();
         for (const auto line: dest) {
             annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(line);
@@ -613,15 +612,15 @@ namespace syrec {
     //*****                     Binary Operations                      *****
     //**********************************************************************
 
-    bool SyrecSynthesis::bitwiseAnd(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+    bool SyrecSynthesis::bitwiseAnd(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
         bool synthesisOk = src1.size() >= dest.size() && src2.size() >= dest.size();
         for (std::size_t i = 0; i < dest.size() && synthesisOk; ++i) {
-            synthesisOk = conjunction(dest[i], src1[i], src2[i]);
+            synthesisOk = conjunction(annotatableQuantumComputation, dest[i], src1[i], src2[i]);
         }
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::bitwiseCnot(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src) {
+    bool SyrecSynthesis::bitwiseCnot(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src) {
         const bool synthesisOk = dest.size() >= src.size();
         for (std::size_t i = 0; i < src.size() && synthesisOk; ++i) {
             annotatableQuantumComputation.addOperationsImplementingCnotGate(src[i], dest[i]);
@@ -629,37 +628,37 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::bitwiseOr(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+    bool SyrecSynthesis::bitwiseOr(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
         bool synthesisOk = src1.size() >= dest.size() && src2.size() >= dest.size();
         for (std::size_t i = 0; i < dest.size() && synthesisOk; ++i) {
-            synthesisOk = disjunction(dest[i], src1[i], src2[i]);
+            synthesisOk = disjunction(annotatableQuantumComputation, dest[i], src1[i], src2[i]);
         }
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::conjunction(qc::Qubit dest, qc::Qubit src1, qc::Qubit src2) {
+    bool SyrecSynthesis::conjunction(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, qc::Qubit src1, qc::Qubit src2) {
         return annotatableQuantumComputation.addOperationsImplementingToffoliGate(src1, src2, dest);
     }
 
-    bool SyrecSynthesis::decreaseWithCarry(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry) {
+    bool SyrecSynthesis::decreaseWithCarry(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry) {
         bool synthesisOk = dest.size() >= src.size();
         for (std::size_t i = 0; i < src.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(dest[i]);
         }
 
-        synthesisOk &= increaseWithCarry(dest, src, carry);
+        synthesisOk &= increaseWithCarry(annotatableQuantumComputation, dest, src, carry);
         for (std::size_t i = 0; i < src.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(dest[i]);
         }
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::disjunction(const qc::Qubit dest, const qc::Qubit src1, const qc::Qubit src2) {
+    bool SyrecSynthesis::disjunction(AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit dest, const qc::Qubit src1, const qc::Qubit src2) {
         return annotatableQuantumComputation.addOperationsImplementingCnotGate(src1, dest) && annotatableQuantumComputation.addOperationsImplementingCnotGate(src2, dest) && annotatableQuantumComputation.addOperationsImplementingToffoliGate(src1, src2, dest);
     }
 
-    bool SyrecSynthesis::division(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
-        if (!modulo(dest, src1, src2)) {
+    bool SyrecSynthesis::division(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+        if (!modulo(annotatableQuantumComputation, dest, src1, src2)) {
             return false;
         }
 
@@ -687,7 +686,7 @@ namespace syrec {
             partial.push_back(src2[helperIndex++]);
             sum.insert(sum.begin(), src1[castedIndex]);
             annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(dest[castedIndex]);
-            synthesisOk = increase(sum, partial);
+            synthesisOk = increase(annotatableQuantumComputation, sum, partial);
             annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(dest[castedIndex]);
             if (i == 0) {
                 continue;
@@ -706,7 +705,7 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::equals(const qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+    bool SyrecSynthesis::equals(AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
         if (src2.size() < src1.size()) {
             return false;
         }
@@ -724,15 +723,15 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::greaterEquals(const qc::Qubit dest, const std::vector<qc::Qubit>& srcTwo, const std::vector<qc::Qubit>& srcOne) {
-        return greaterThan(dest, srcOne, srcTwo) && annotatableQuantumComputation.addOperationsImplementingNotGate(dest);
+    bool SyrecSynthesis::greaterEquals(AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit dest, const std::vector<qc::Qubit>& srcTwo, const std::vector<qc::Qubit>& srcOne) {
+        return greaterThan(annotatableQuantumComputation, dest, srcOne, srcTwo) && annotatableQuantumComputation.addOperationsImplementingNotGate(dest);
     }
 
-    bool SyrecSynthesis::greaterThan(const qc::Qubit dest, const std::vector<qc::Qubit>& src2, const std::vector<qc::Qubit>& src1) {
-        return lessThan(dest, src1, src2);
+    bool SyrecSynthesis::greaterThan(AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit dest, const std::vector<qc::Qubit>& src2, const std::vector<qc::Qubit>& src1) {
+        return lessThan(annotatableQuantumComputation, dest, src1, src2);
     }
 
-    bool SyrecSynthesis::increase(const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
+    bool SyrecSynthesis::increase(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
         if (lhs.size() != rhs.size()) {
             return false;
         }
@@ -776,19 +775,19 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::decrease(const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
+    bool SyrecSynthesis::decrease(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
         bool synthesisOk = true;
         for (std::size_t i = 0; i < rhs.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(rhs[i]);
         }
-        synthesisOk &= increase(rhs, lhs);
+        synthesisOk &= increase(annotatableQuantumComputation, rhs, lhs);
         for (std::size_t i = 0; i < rhs.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(rhs[i]);
         }
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::increaseWithCarry(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry) {
+    bool SyrecSynthesis::increaseWithCarry(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry) {
         auto bitwidth = static_cast<int>(src.size());
         if (bitwidth == 0) {
             return true;
@@ -833,15 +832,15 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::lessEquals(qc::Qubit dest, const std::vector<qc::Qubit>& src2, const std::vector<qc::Qubit>& src1) {
-        return lessThan(dest, src1, src2) && annotatableQuantumComputation.addOperationsImplementingNotGate(dest);
+    bool SyrecSynthesis::lessEquals(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& src2, const std::vector<qc::Qubit>& src1) {
+        return lessThan(annotatableQuantumComputation, dest, src1, src2) && annotatableQuantumComputation.addOperationsImplementingNotGate(dest);
     }
 
-    bool SyrecSynthesis::lessThan(qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
-        return decreaseWithCarry(src1, src2, dest) && increase(src1, src2);
+    bool SyrecSynthesis::lessThan(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+        return decreaseWithCarry(annotatableQuantumComputation, src1, src2, dest) && increase(annotatableQuantumComputation, src1, src2);
     }
 
-    bool SyrecSynthesis::modulo(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+    bool SyrecSynthesis::modulo(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
         std::vector<qc::Qubit> sum;
         std::vector<qc::Qubit> partial;
 
@@ -865,10 +864,10 @@ namespace syrec {
 
             partial.push_back(src2[helperIndex++]);
             sum.insert(sum.begin(), src1[unsignedLoopVariableValue]);
-            synthesisOk = decreaseWithCarry(sum, partial, dest[unsignedLoopVariableValue]);
+            synthesisOk = decreaseWithCarry(annotatableQuantumComputation, sum, partial, dest[unsignedLoopVariableValue]);
 
             annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(dest[unsignedLoopVariableValue]);
-            synthesisOk &= increase(sum, partial);
+            synthesisOk &= increase(annotatableQuantumComputation, sum, partial);
             annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(dest[unsignedLoopVariableValue]);
 
             synthesisOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(dest[unsignedLoopVariableValue]);
@@ -889,7 +888,7 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::multiplication(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+    bool SyrecSynthesis::multiplication(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
         if (src1.empty() || dest.empty()) {
             return true;
         }
@@ -903,26 +902,26 @@ namespace syrec {
 
         annotatableQuantumComputation.activateControlQubitPropagationScope();
         annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src1.front());
-        bool synthesisOk = bitwiseCnot(sum, partial);
+        bool synthesisOk = bitwiseCnot(annotatableQuantumComputation, sum, partial);
         annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(src1.front());
 
         for (std::size_t i = 1; i < dest.size() && synthesisOk; ++i) {
             sum.erase(sum.begin());
             partial.pop_back();
             annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src1[i]);
-            synthesisOk = increase(sum, partial);
+            synthesisOk = increase(annotatableQuantumComputation, sum, partial);
             annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(src1[i]);
         }
         annotatableQuantumComputation.deactivateControlQubitPropagationScope();
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::notEquals(const qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
-        return equals(dest, src1, src2) && annotatableQuantumComputation.addOperationsImplementingNotGate(dest);
+    bool SyrecSynthesis::notEquals(AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
+        return equals(annotatableQuantumComputation, dest, src1, src2) && annotatableQuantumComputation.addOperationsImplementingNotGate(dest);
     }
 
     // NOLINTNEXTLINE(cppcoreguidelines-noexcept-swap, performance-noexcept-swap, bugprone-exception-escape)
-    bool SyrecSynthesis::swap(const std::vector<qc::Qubit>& dest1, const std::vector<qc::Qubit>& dest2) {
+    bool SyrecSynthesis::swap(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest1, const std::vector<qc::Qubit>& dest2) {
         bool synthesisOk = dest2.size() >= dest1.size();
         for (std::size_t i = 0; i < dest1.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingFredkinGate(dest1[i], dest2[i]);
@@ -934,7 +933,7 @@ namespace syrec {
     //*****                      Shift Operations                      *****
     //**********************************************************************
 
-    bool SyrecSynthesis::leftShift(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2) {
+    bool SyrecSynthesis::leftShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2) {
         if (src2 > dest.size()) {
             return false;
         }
@@ -952,7 +951,7 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::rightShift(const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2) {
+    bool SyrecSynthesis::rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2) {
         if (dest.size() < src2) {
             return false;
         }
@@ -1051,7 +1050,7 @@ namespace syrec {
         return couldQubitsForConstantLinesBeFetched;
     }
 
-    bool SyrecSynthesis::addVariable(const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr) {
+    bool SyrecSynthesis::addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr) {
         bool couldQubitsForVariableBeAdded = true;
         if (dimensions.empty()) {
             for (qc::Qubit i = 0U; i < var->bitwidth && couldQubitsForVariableBeAdded; ++i) {
@@ -1064,7 +1063,7 @@ namespace syrec {
             const std::vector<qc::Qubit> newDimensions(dimensions.begin() + 1U, dimensions.end());
 
             for (qc::Qubit i = 0U; i < len && couldQubitsForVariableBeAdded; ++i) {
-                couldQubitsForVariableBeAdded &= addVariable(newDimensions, var, arraystr + "[" + std::to_string(i) + "]");
+                couldQubitsForVariableBeAdded &= addVariable(annotatableQuantumComputation, newDimensions, var, arraystr + "[" + std::to_string(i) + "]");
             }
         }
         return couldQubitsForVariableBeAdded;
