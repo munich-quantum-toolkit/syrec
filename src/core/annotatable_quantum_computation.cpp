@@ -160,8 +160,8 @@ std::vector<std::string> AnnotatableQuantumComputation::getQubitLabels() const {
     return qubitLabels;
 }
 
-AnnotatableQuantumComputation::GateAnnotationsLookup AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
-    if (indexOfQuantumOperationInQuantumComputation > annotationsPerQuantumOperation.size()) {
+AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
+    if (indexOfQuantumOperationInQuantumComputation >= annotationsPerQuantumOperation.size()) {
         return {};
     }
     return annotationsPerQuantumOperation[indexOfQuantumOperationInQuantumComputation];
@@ -246,6 +246,20 @@ bool AnnotatableQuantumComputation::removeGlobalQuantumOperationAnnotation(const
     return false;
 }
 
+bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation, const std::string_view& annotationKey, const std::string& annotationValue) {
+    if (indexOfQuantumOperationInQuantumComputation >= annotationsPerQuantumOperation.size()) {
+        return false;
+    }
+
+    auto& annotationsForQuantumOperation = annotationsPerQuantumOperation[indexOfQuantumOperationInQuantumComputation];
+    if (auto matchingEntryForKey = annotationsForQuantumOperation.find(annotationKey); matchingEntryForKey != annotationsForQuantumOperation.end()) {
+        matchingEntryForKey->second = annotationValue;    
+    } else {
+        annotationsForQuantumOperation.emplace(std::string(annotationKey), annotationValue);
+    }
+    return true;
+}
+
 // BEGIN NON-PUBLIC FUNCTIONALITY
 bool AnnotatableQuantumComputation::isQubitWithinRange(const qc::Qubit qubit) const noexcept {
     return qubit < quantumComputation.getNqubits();
@@ -255,19 +269,19 @@ bool AnnotatableQuantumComputation::areQubitsWithinRange(const qc::Controls& qub
     return std::all_of(qubitsToCheck.cbegin(), qubitsToCheck.cend(), [&](const qc::Control control) { return isQubitWithinRange(control.qubit); });
 }
 
-bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const GateAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation) {
+bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation) {
     if (fromQuantumOperationIndex > annotationsPerQuantumOperation.size() || fromQuantumOperationIndex > toQuantumOperationIndex) {
         return false;
     }
     annotationsPerQuantumOperation.resize(toQuantumOperationIndex);
 
-    GateAnnotationsLookup gateAnnotations = userProvidedAnnotationsPerQuantumOperation;
+    QuantumOperationAnnotationsLookup gateAnnotations = userProvidedAnnotationsPerQuantumOperation;
     for (const auto& [annotationKey, annotationValue]: activateGlobalQuantumOperationAnnotations) {
         gateAnnotations[annotationKey] = annotationValue;
     }
 
     for (std::size_t i = fromQuantumOperationIndex; i < toQuantumOperationIndex; ++i) {
-        annotationsPerQuantumOperation[i] = userProvidedAnnotationsPerQuantumOperation;
+        annotationsPerQuantumOperation[i] = gateAnnotations;
     }
     return true;
 }

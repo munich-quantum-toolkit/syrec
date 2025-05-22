@@ -27,7 +27,7 @@
 namespace syrec {
     class AnnotatableQuantumComputation {
     public:
-        using GateAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
+        using QuantumOperationAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
 
         explicit AnnotatableQuantumComputation(qc::QuantumComputation& quantumComputation):
             quantumComputation(quantumComputation) {}
@@ -88,7 +88,7 @@ namespace syrec {
             return quantumComputation.end();
         }
 
-        [[nodiscard]] GateAnnotationsLookup getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
+        [[nodiscard]] QuantumOperationAnnotationsLookup getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
 
         /**
          * Activate a new control qubit propagation scope.
@@ -137,7 +137,7 @@ namespace syrec {
          * Already existing quantum computations in the qc::QuantumComputation are not modified.
          * @param key The key of the global quantum operation annotation
          * @param value The value of the global quantum operation annotation
-         * @return Whether an existing annotation was updated.
+         * @return Whether an existing global annotation was updated.
          */
         [[maybe_unused]] bool setOrUpdateGlobalQuantumOperationAnnotation(const std::string_view& key, const std::string& value);
 
@@ -148,8 +148,17 @@ namespace syrec {
          */
         [[maybe_unused]] bool removeGlobalQuantumOperationAnnotation(const std::string_view& key);
 
+        /**
+         * Set a key value annotation for a quantum operation
+         * @param indexOfQuantumOperationInQuantumComputation The index of the quantum operation in the quantum computation 
+         * @param annotationKey The key of the quantum operation annotation
+         * @param annotationValue The value fo the quantum operation annotation
+         * @return Whether an operation at the user-provided index existed in the quantum operation
+         */
+        [[maybe_unused]] bool setOrUpdateAnnotationOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation, const std::string_view& annotationKey, const std::string& annotationValue);
+
     protected:
-        [[maybe_unused]] bool annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const GateAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation);
+        [[maybe_unused]] bool annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation);
         [[nodiscard]] bool    isQubitWithinRange(qc::Qubit qubit) const noexcept;
         [[nodiscard]] bool    areQubitsWithinRange(const qc::Controls& qubitsToCheck) const noexcept;
 
@@ -162,11 +171,11 @@ namespace syrec {
         // To be able to use a std::string_view key lookup (heterogeneous lookup) in a std::map/std::unordered_set
         // we need to define the transparent comparator (std::less<>). This feature is only available starting with C++17
         // For further information, see: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3465.pdf
-        GateAnnotationsLookup activateGlobalQuantumOperationAnnotations;
+        QuantumOperationAnnotationsLookup activateGlobalQuantumOperationAnnotations;
 
         // We are assuming that no operations in the qc::QuantumComputation are removed (i.e. by applying qc::CircuitOptimizer) and will thus use the index of the quantum operation
         // as the search key in the container storing the annotations per quantum operation.
-        std::vector<GateAnnotationsLookup> annotationsPerQuantumOperation;
+        std::vector<QuantumOperationAnnotationsLookup> annotationsPerQuantumOperation;
         std::unordered_set<qc::Qubit>      addedAncillaryQubitIndices;
     };
 } // namespace syrec
