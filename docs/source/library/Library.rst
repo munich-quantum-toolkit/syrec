@@ -9,5 +9,3 @@ Library
     Settings
     Simulation
     Synthesis
-    CircuitAndGates
-    NBitValuesContainer
