@@ -81,32 +81,32 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecLineAwareSynthesisTest,
                              return s; });
 
 TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisTest) {
-    qc::QuantumComputation quantumComputation;
-    Program                prog;
-    ReadProgramSettings    settings;
-    const std::string      errorString = prog.read(fileName, settings);
+    AnnotatableQuantumComputation annotatableQuantumComputation;
+    Program                       prog;
+    ReadProgramSettings           settings;
+    const std::string             errorString = prog.read(fileName, settings);
     ASSERT_TRUE(errorString.empty());
 
-    ASSERT_TRUE(LineAwareSynthesis::synthesize(quantumComputation, prog));
-    ASSERT_EQ(expectedNumGates, quantumComputation.getNops());
-    ASSERT_EQ(expectedNumLines, quantumComputation.getNqubits());
+    ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
+    ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNops());
+    ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNqubits());
 
-    const SynthesisCostMetricValue actualQuantumCosts    = getQuantumCostsForSynthesis(quantumComputation);
-    const SynthesisCostMetricValue actualTransistorCosts = getTransistorCostForSynthesis(quantumComputation);
+    const SynthesisCostMetricValue actualQuantumCosts    = getQuantumCostForSynthesis(annotatableQuantumComputation.getNonAnnotatedQuantumComputation());
+    const SynthesisCostMetricValue actualTransistorCosts = getTransistorCostForSynthesis(annotatableQuantumComputation.getNonAnnotatedQuantumComputation());
     ASSERT_EQ(expectedQuantumCosts, actualQuantumCosts);
     ASSERT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }
 
 TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisQASMTest) {
-    qc::QuantumComputation quantumComputation;
-    Program                prog;
-    ReadProgramSettings    settings;
+    AnnotatableQuantumComputation annotatableQuantumComputation;
+    Program                       prog;
+    ReadProgramSettings           settings;
 
     const auto errorString = prog.read(fileName, settings);
     ASSERT_TRUE(errorString.empty());
-    ASSERT_TRUE(LineAwareSynthesis::synthesize(quantumComputation, prog));
+    ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
 
     const auto lastIndex      = fileName.find_last_of('.');
     const auto outputFileName = fileName.substr(0, lastIndex);
-    ASSERT_NO_FATAL_FAILURE(quantumComputation.dump(outputFileName));
+    ASSERT_NO_FATAL_FAILURE(annotatableQuantumComputation.getNonAnnotatedQuantumComputation().dump(outputFileName));
 }

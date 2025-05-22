@@ -8,7 +8,7 @@
  * Licensed under the MIT License
  */
 
-#include "algorithms/simulation/quantum_computation_execution_simulation_for_state.hpp"
+#include "algorithms/simulation/quantum_computation_simulation_for_state.hpp"
 
 #include "core/properties.hpp"
 #include "core/utils/timer.hpp"

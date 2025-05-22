@@ -20,7 +20,7 @@
 namespace syrec {
     using SynthesisCostMetricValue = std::uint64_t;
 
-    [[nodiscard]] inline SynthesisCostMetricValue getQuantumCostsForSynthesis(const qc::QuantumComputation& quantumComputation) {
+    [[nodiscard]] inline SynthesisCostMetricValue getQuantumCostForSynthesis(const qc::QuantumComputation& quantumComputation) {
         SynthesisCostMetricValue cost = 0;
 
         const auto numQubits = quantumComputation.getNqubits();

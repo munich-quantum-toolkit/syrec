@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
 #include "ir/operations/Control.hpp"
@@ -29,9 +30,6 @@ namespace syrec {
     public:
         using QuantumOperationAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
 
-        explicit AnnotatableQuantumComputation(qc::QuantumComputation& quantumComputation):
-            quantumComputation(quantumComputation) {}
-
         [[maybe_unused]] bool addOperationsImplementingNotGate(qc::Qubit targetQubit);
         [[maybe_unused]] bool addOperationsImplementingCnotGate(qc::Qubit controlQubit, qc::Qubit targetQubit);
         [[maybe_unused]] bool addOperationsImplementingToffoliGate(qc::Qubit controlQubitOne, qc::Qubit controlQubitTwo, qc::Qubit targetQubit);
@@ -44,7 +42,7 @@ namespace syrec {
          * @param isGarbageQubit Whether the qubit is a garbage qubit.
          * @return The index of the non-ancillary qubit in the quantum computation, std::nullopt if either a qubit with the same label already exists or no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary.
          */
-        [[nodiscard]] std::optional<qc::Qubit> addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit) const;
+        [[nodiscard]] std::optional<qc::Qubit> addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit);
 
         /**
          * Add a preliminary ancillary qubit to the quantum computation. Ancillary qubits added need to be explicitly marked as such via the \see AnnotatableQuantumComputation#setQubitAncillary call.
@@ -67,27 +65,12 @@ namespace syrec {
          * @param qubit The index of the qubit in the quantum computation.
          * @return Whether the qubit index was known in the quantum computation. If the index is not known, qubits can still be added to the quantum computation.
          */
-        [[nodiscard]] bool setQubitAncillary(qc::Qubit qubit);
-
-        [[nodiscard]] std::size_t              getNqubits() const;
+        [[nodiscard]] bool                     setQubitAncillary(qc::Qubit qubit);
         [[nodiscard]] std::vector<std::string> getQubitLabels() const;
 
-        [[nodiscard]] auto cbegin() const {
-            return quantumComputation.cbegin();
-        }
+        [[nodiscard]] const qc::QuantumComputation& getNonAnnotatedQuantumComputation() const { return quantumComputation; }
 
-        [[nodiscard]] auto begin() const {
-            return quantumComputation.begin();
-        }
-
-        [[nodiscard]] auto cend() const {
-            return quantumComputation.cend();
-        }
-
-        [[nodiscard]] auto end() const {
-            return quantumComputation.end();
-        }
-
+        [[nodiscard]] qc::Operation*                    getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
         [[nodiscard]] QuantumOperationAnnotationsLookup getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
 
         /**
@@ -162,8 +145,7 @@ namespace syrec {
         [[nodiscard]] bool    isQubitWithinRange(qc::Qubit qubit) const noexcept;
         [[nodiscard]] bool    areQubitsWithinRange(const qc::Controls& qubitsToCheck) const noexcept;
 
-        // TODO: Can we find a solution that does not require a pass of a reference but use a smart pointer instead
-        qc::QuantumComputation&                          quantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+        qc::QuantumComputation                           quantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
         std::unordered_set<qc::Qubit>                    aggregateOfPropagatedControlQubits;
         std::vector<std::unordered_map<qc::Qubit, bool>> controlQubitPropgationScopes;
         bool                                             canQubitsBeAddedToQuantumComputation = true;
@@ -176,6 +158,6 @@ namespace syrec {
         // We are assuming that no operations in the qc::QuantumComputation are removed (i.e. by applying qc::CircuitOptimizer) and will thus use the index of the quantum operation
         // as the search key in the container storing the annotations per quantum operation.
         std::vector<QuantumOperationAnnotationsLookup> annotationsPerQuantumOperation;
-        std::unordered_set<qc::Qubit>      addedAncillaryQubitIndices;
+        std::unordered_set<qc::Qubit>                  addedAncillaryQubitIndices;
     };
 } // namespace syrec

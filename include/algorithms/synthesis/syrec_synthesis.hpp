@@ -19,7 +19,6 @@
 #include "core/syrec/statement.hpp"
 #include "core/syrec/variable.hpp"
 #include "ir/Definitions.hpp"
-#include "ir/QuantumComputation.hpp"
 
 #include <map>
 #include <optional>
@@ -43,7 +42,7 @@ namespace syrec {
 
         using VarLinesMap = std::map<Variable::ptr, qc::Qubit>;
 
-        explicit SyrecSynthesis(qc::QuantumComputation& quantumComputation);
+        explicit SyrecSynthesis(AnnotatableQuantumComputation& annotatableQuantumComputation);
         virtual ~SyrecSynthesis() = default;
 
         [[nodiscard]] bool addVariables(const Variable::vec& variables);
@@ -129,7 +128,7 @@ namespace syrec {
         Number::loop_variable_mapping loopMap;
         std::stack<Module::ptr>       modules;
 
-        AnnotatableQuantumComputation annotatableQuantumComputation;
+        AnnotatableQuantumComputation& annotatableQuantumComputation;
 
     private:
         VarLinesMap                            varLines;

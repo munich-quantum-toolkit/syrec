@@ -10,8 +10,8 @@
 
 #include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/syrec/program.hpp"
-#include "ir/QuantumComputation.hpp"
 
 #include <cstddef>
 #include <fstream>
@@ -81,18 +81,18 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecCostAwareSynthesisTest,
                              return s; });
 
 TEST_P(SyrecCostAwareSynthesisTest, GenericSynthesisTest) {
-    qc::QuantumComputation quantumComputation;
-    Program                prog;
-    ReadProgramSettings    settings;
-    const std::string      errorString = prog.read(fileName, settings);
+    AnnotatableQuantumComputation annotatableQuantumComputation;
+    Program                       prog;
+    ReadProgramSettings           settings;
+    const std::string             errorString = prog.read(fileName, settings);
     ASSERT_TRUE(errorString.empty());
 
-    ASSERT_TRUE(CostAwareSynthesis::synthesize(quantumComputation, prog));
-    ASSERT_EQ(expectedNumGates, quantumComputation.getNops());
-    ASSERT_EQ(expectedNumLines, quantumComputation.getNqubits());
+    ASSERT_TRUE(CostAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
+    ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNops());
+    ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNqubits());
 
-    const SynthesisCostMetricValue actualQuantumCosts    = getQuantumCostsForSynthesis(quantumComputation);
-    const SynthesisCostMetricValue actualTransistorCosts = getTransistorCostForSynthesis(quantumComputation);
+    const SynthesisCostMetricValue actualQuantumCosts    = getQuantumCostForSynthesis(annotatableQuantumComputation.getNonAnnotatedQuantumComputation());
+    const SynthesisCostMetricValue actualTransistorCosts = getTransistorCostForSynthesis(annotatableQuantumComputation.getNonAnnotatedQuantumComputation());
     ASSERT_EQ(expectedQuantumCosts, actualQuantumCosts);
     ASSERT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }

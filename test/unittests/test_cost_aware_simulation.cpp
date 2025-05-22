@@ -8,12 +8,10 @@
  * Licensed under the MIT License
  */
 
-#include "algorithms/simulation/quantum_computation_execution_simulation_for_state.hpp"
+#include "algorithms/simulation/quantum_computation_simulation_for_state.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
-#include "ir/Definitions.hpp"
-#include "ir/QuantumComputation.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -62,15 +60,15 @@ INSTANTIATE_TEST_SUITE_P(SyrecSimulationTest, SyrecCostAwareSimulationTest,
                              return s; });
 
 TEST_P(SyrecCostAwareSimulationTest, GenericSimulationTest) {
-    qc::QuantumComputation    quantumComputation;
-    Program                   prog;
-    const ReadProgramSettings settings;
-    const Properties::ptr     statistics;
-    const std::string         errorString = prog.read(fileName, settings);
+    AnnotatableQuantumComputation annotatableQuantumComputation;
+    Program                       prog;
+    const ReadProgramSettings     settings;
+    const Properties::ptr         statistics;
+    const std::string             errorString = prog.read(fileName, settings);
     ASSERT_TRUE(errorString.empty());
-    ASSERT_TRUE(CostAwareSynthesis::synthesize(quantumComputation, prog));
+    ASSERT_TRUE(CostAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
 
-    const std::size_t nInputQubits = quantumComputation.getNqubitsWithoutAncillae();
+    const std::size_t nInputQubits = annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNqubitsWithoutAncillae();
     ASSERT_TRUE(setLines.size() < nInputQubits);
 
     std::vector initialQuantumComputationInputValues(nInputQubits, false);
@@ -80,14 +78,14 @@ TEST_P(SyrecCostAwareSimulationTest, GenericSimulationTest) {
     }
 
     std::vector<bool> quantumComputationOutputQubitValues;
-    ASSERT_NO_FATAL_FAILURE(simulateQuantumComputationExecutionForState(quantumComputation, initialQuantumComputationInputValues, quantumComputationOutputQubitValues, statistics));
+    ASSERT_NO_FATAL_FAILURE(simulateQuantumComputationExecutionForState(annotatableQuantumComputation.getNonAnnotatedQuantumComputation(), initialQuantumComputationInputValues, quantumComputationOutputQubitValues, statistics));
 
     // Sometimes the full expected simulation output is defined in the .json file but we are only interested in the values of the non-ancillary qubits (whos qubit index is assumed to be larger than the one of the input qubits)
     const std::string_view& expectedOutputStateExcludingAncillaryQubits = std::string_view(expectedSimOut).substr(0, nInputQubits); // NOLINT (google-readability-casting)
     ASSERT_EQ(expectedOutputStateExcludingAncillaryQubits.size(), quantumComputationOutputQubitValues.size()) << "Expected output state to contain " << std::to_string(expectedOutputStateExcludingAncillaryQubits.size()) << " qubits but after simulation had " << quantumComputationOutputQubitValues.size() << " qubits";
     for (std::size_t i = 0; i < quantumComputationOutputQubitValues.size(); ++i) {
         // We are not interested in the value of garbage qubits
-        if (quantumComputation.logicalQubitIsGarbage(static_cast<qc::Qubit>(i))) {
+        if (annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getGarbage()[i]) {
             continue;
         }
 

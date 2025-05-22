@@ -14,7 +14,6 @@
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
 #include "ir/Definitions.hpp"
-#include "ir/QuantumComputation.hpp"
 
 #include <vector>
 
@@ -34,8 +33,8 @@ namespace syrec {
             && bitwiseCnot(annotatableQuantumComputation, lines, rhs);
     }
 
-    bool CostAwareSynthesis::synthesize(qc::QuantumComputation& quantumComputation, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
-        CostAwareSynthesis synthesizer(quantumComputation);
+    bool CostAwareSynthesis::synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
+        CostAwareSynthesis synthesizer(annotatableQuantumComputation);
         return SyrecSynthesis::synthesize(&synthesizer, program, settings, statistics);
     }
 } // namespace syrec

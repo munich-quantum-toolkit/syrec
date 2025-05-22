@@ -364,8 +364,8 @@ namespace syrec {
         }
     }
 
-    bool LineAwareSynthesis::synthesize(qc::QuantumComputation& quantumComputation, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
-        LineAwareSynthesis synthesizer(quantumComputation);
+    bool LineAwareSynthesis::synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
+        LineAwareSynthesis synthesizer(annotatableQuantumComputation);
         return SyrecSynthesis::synthesize(&synthesizer, program, settings, statistics);
     }
 } // namespace syrec

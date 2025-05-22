@@ -99,7 +99,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
     return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
 }
 
-std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit) const {
+std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit) {
     if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || quantumComputation.getQuantumRegisters().count(qubitLabel) != 0) {
         return std::nullopt;
     }
@@ -147,17 +147,20 @@ bool AnnotatableQuantumComputation::setQubitAncillary(qc::Qubit qubit) {
     return true;
 }
 
-std::size_t AnnotatableQuantumComputation::getNqubits() const {
-    return quantumComputation.getNqubits();
-}
-
 std::vector<std::string> AnnotatableQuantumComputation::getQubitLabels() const {
-    std::vector<std::string> qubitLabels(getNqubits(), "");
+    std::vector<std::string> qubitLabels(quantumComputation.getNqubits(), "");
     for (const auto& quantumRegister: quantumComputation.getQuantumRegisters()) {
         const qc::Qubit qubitIndex = quantumRegister.second.getStartIndex();
         qubitLabels[qubitIndex]    = quantumRegister.first;
     }
     return qubitLabels;
+}
+
+qc::Operation* AnnotatableQuantumComputation::getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
+    if (indexOfQuantumOperationInQuantumComputation > quantumComputation.getNops()) {
+        return nullptr;
+    }
+    return quantumComputation.at(indexOfQuantumOperationInQuantumComputation).get();
 }
 
 AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
@@ -253,7 +256,7 @@ bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std:
 
     auto& annotationsForQuantumOperation = annotationsPerQuantumOperation[indexOfQuantumOperationInQuantumComputation];
     if (auto matchingEntryForKey = annotationsForQuantumOperation.find(annotationKey); matchingEntryForKey != annotationsForQuantumOperation.end()) {
-        matchingEntryForKey->second = annotationValue;    
+        matchingEntryForKey->second = annotationValue;
     } else {
         annotationsForQuantumOperation.emplace(std::string(annotationKey), annotationValue);
     }
