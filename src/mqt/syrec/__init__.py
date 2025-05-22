@@ -16,28 +16,24 @@ from __future__ import annotations
 
 from ._version import version as __version__
 from .pysyrec import (
-    circuit,
+    annotatable_quantum_computation,
     cost_aware_synthesis,
-    gate,
-    gate_type,
     line_aware_synthesis,
-    n_bit_values_container,
     program,
     properties,
+    quantum_computation_simulation_for_state,
     read_program_settings,
     simple_simulation,
 )
 
 __all__ = [
     "__version__",
-    "circuit",
+    "annotatable_quantum_computation",
     "cost_aware_synthesis",
-    "gate",
-    "gate_type",
     "line_aware_synthesis",
-    "n_bit_values_container",
     "program",
     "properties",
+    "quantum_computation_simulation_for_state",
     "read_program_settings",
     "simple_simulation",
 ]
