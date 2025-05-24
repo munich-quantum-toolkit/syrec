@@ -16,8 +16,7 @@ from typing import TYPE_CHECKING, Any, cast
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
-# TODO: Correct import?
-from mqt.core.ir import QuantumComputation, QuantumComputation.OpType
+from mqt.core.ir import QuantumComputation, OpType
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -101,7 +100,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
         width = 30 * self.annotatable_quantum_computation.n_quantum_operations
 
-        for qubit_index in range(self.annotatable_quantum_computation..num_qubits):
+        for qubit_index in range(self.annotatable_quantum_computation.num_qubits):
             qubit = QubitItem(self.annotatable_quantum_computation, qubit_index)
             self.qubits_qt_items.append(qubit)
             self.scene().addItem(qubit)
