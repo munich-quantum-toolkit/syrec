@@ -28,7 +28,7 @@ PYBIND11_MODULE(pysyrec, m) {
     py::module::import("mqt.core.ir");
     m.doc() = "Python interface for the SyReC programming language for the synthesis of reversible circuits";
 
-    py::class_<AnnotatableQuantumComputation, std::shared_ptr<AnnotatableQuantumComputation>, qc::QuantumComputation>(m, "annotatable_quantum_computation")
+    py::class_<AnnotatableQuantumComputation, qc::QuantumComputation>(m, "annotatable_quantum_computation")
             .def(py::init<>(), "Constructs an annotatable quantum computation")
             .def_property_readonly("qubit_labels", &AnnotatableQuantumComputation::getQubitLabels, "Get the qubit labels of the quantum computation")
             .def(
