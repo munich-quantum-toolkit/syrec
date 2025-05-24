@@ -10,9 +10,9 @@
 
 #include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/circuit.hpp"
 #include "core/syrec/program.hpp"
-#include "ir/QuantumComputation.hpp"
 
 #include <cstddef>
 #include <gtest/gtest.h>
@@ -88,11 +88,11 @@ TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisTest) {
     ASSERT_TRUE(errorString.empty());
 
     ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
-    ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNops());
-    ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNqubits());
+    ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNops());
+    ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNqubits());
 
-    const SynthesisCostMetricValue actualQuantumCosts    = getQuantumCostForSynthesis(annotatableQuantumComputation.getNonAnnotatedQuantumComputation());
-    const SynthesisCostMetricValue actualTransistorCosts = getTransistorCostForSynthesis(annotatableQuantumComputation.getNonAnnotatedQuantumComputation());
+    const SynthesisCostMetricValue actualQuantumCosts    = getQuantumCostForSynthesis(annotatableQuantumComputation);
+    const SynthesisCostMetricValue actualTransistorCosts = getTransistorCostForSynthesis(annotatableQuantumComputation);
     ASSERT_EQ(expectedQuantumCosts, actualQuantumCosts);
     ASSERT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }
@@ -108,5 +108,5 @@ TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisQASMTest) {
 
     const auto lastIndex      = fileName.find_last_of('.');
     const auto outputFileName = fileName.substr(0, lastIndex);
-    ASSERT_NO_FATAL_FAILURE(annotatableQuantumComputation.getNonAnnotatedQuantumComputation().dump(outputFileName));
+    ASSERT_NO_FATAL_FAILURE(annotatableQuantumComputation.dump(outputFileName));
 }

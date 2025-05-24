@@ -9,11 +9,7 @@
  */
 
 #include "core/annotatable_quantum_computation.hpp"
-#include "core/circuit.hpp"
-#include "core/gate.hpp"
 #include "ir/QuantumComputation.hpp"
-#include "ir/operations/NonUnitaryOperation.hpp"
-#include "ir/operations/Operation.hpp"
 #include "ir/operations/StandardOperation.hpp"
 
 #include <cstddef>
@@ -47,7 +43,7 @@ protected:
 
     static void assertThatOperationsOfQuantumComputationAreEqualToSequence(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::vector<std::unique_ptr<qc::Operation>>& expectedQuantumOperations) {
         const std::size_t expectedNumOperations      = expectedQuantumOperations.size();
-        const std::size_t actualNumQuantumOperations = annotatedQuantumComputation.getNonAnnotatedQuantumComputation().getNindividualOps();
+        const std::size_t actualNumQuantumOperations = annotatedQuantumComputation.getNindividualOps();
         ASSERT_EQ(expectedNumOperations, actualNumQuantumOperations) << "Expected that annotated quantum computation contains " << std::to_string(expectedNumOperations) << " quantum operations but actually contained " << std::to_string(actualNumQuantumOperations) << " quantum operations";
 
         auto expectedQuantumOperationsIterator = expectedQuantumOperations.begin();
@@ -62,7 +58,7 @@ protected:
     }
 
     static void assertThatAnnotationsOfQuantumOperationAreEqualTo(const AnnotatableQuantumComputation& annotatedQuantumComputation, std::size_t indexOfQuantumOperationInQuantumComputation, const AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup& expectedAnnotationsOfQuantumComputation) {
-        ASSERT_TRUE(indexOfQuantumOperationInQuantumComputation < annotatedQuantumComputation.getNonAnnotatedQuantumComputation().getNindividualOps());
+        ASSERT_TRUE(indexOfQuantumOperationInQuantumComputation < annotatedQuantumComputation.getNindividualOps());
         const auto& actualAnnotationsOfQuantumOperation = annotatedQuantumComputation.getAnnotationsOfQuantumOperation(indexOfQuantumOperationInQuantumComputation);
         for (const auto& [expectedAnnotationKey, expectedAnnotationValue]: expectedAnnotationsOfQuantumComputation) {
             ASSERT_TRUE(actualAnnotationsOfQuantumOperation.count(expectedAnnotationKey) != 0) << "Expected annotation with key '" << expectedAnnotationKey << "' was not found";
@@ -84,14 +80,14 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitThatIsNotGar
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
 
-    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices().empty());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitThatIsGarbage) {
@@ -99,28 +95,28 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitThatIsGarbag
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
 
-    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices().empty());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({true}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({true}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithEmptyLabelNotPossible) {
     const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("", false);
     ASSERT_FALSE(qubitIndex.has_value());
 
-    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices().empty());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_TRUE(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage().empty());
-    ASSERT_TRUE(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary().empty());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_TRUE(annotatedQuantumComputation->getGarbage().empty());
+    ASSERT_TRUE(annotatedQuantumComputation->getAncillary().empty());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithDuplicateLabelNotPossible) {
@@ -129,55 +125,55 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithDuplicat
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
 
-    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices().empty());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 
     const std::optional<qc::Qubit> indexOfQubitWithDuplicateLabel = annotatedQuantumComputation->addNonAncillaryQubit(qubitLabel, true);
     ASSERT_FALSE(indexOfQubitWithDuplicateLabel.has_value());
 
-    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices().empty());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithLabelMatchingAncillaryQubitLabel) {
     const std::string              qubitLabel = "ancillary";
-    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addAncillaryQubit(qubitLabel, false);
+    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit(qubitLabel, false);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 
     const std::optional<qc::Qubit> indexOfQubitWithDuplicateLabel = annotatedQuantumComputation->addNonAncillaryQubit(qubitLabel, true);
     ASSERT_FALSE(indexOfQubitWithDuplicateLabel.has_value());
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitAfterAnyQubitWasSetAncillaryNotPossible) {
-    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillary", false);
     ASSERT_TRUE(ancillaryQubitIndex.has_value());
     ASSERT_EQ(0, *ancillaryQubitIndex);
 
@@ -185,56 +181,56 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitAfterAnyQubi
     ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
     ASSERT_EQ(1, *nonAncillaryQubitIndex);
 
-    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubitIndex));
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false, false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({true, false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 
     const std::optional<qc::Qubit> indexOfQubitAfterAnyQubitWasSetAncillary = annotatedQuantumComputation->addNonAncillaryQubit("otherLabel", false);
     ASSERT_FALSE(indexOfQubitAfterAnyQubitWasSetAncillary.has_value());
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false, false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({true, false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithInitialStateZero) {
-    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillary", false);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithInitialStateOne) {
-    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addAncillaryQubit("ancillary", true);
+    const std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillary", true);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*qubitIndex}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false}));
 
     std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputationOperations;
     expectedQuantumComputationOperations.emplace_back(std::make_unique<qc::StandardOperation>(*qubitIndex, qc::OpType::X));
@@ -242,7 +238,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithInitialStat
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithEmptyLabelNotPossible) {
-    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillary", false);
     ASSERT_TRUE(ancillaryQubitIndex.has_value());
     ASSERT_EQ(0, *ancillaryQubitIndex);
 
@@ -250,31 +246,31 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithEmptyLabelN
     ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
     ASSERT_EQ(1, *nonAncillaryQubitIndex);
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false, false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 
-    const std::optional<qc::Qubit> indexOfAncillaryQubitWithEmptyLabel = annotatedQuantumComputation->addAncillaryQubit("", false);
+    const std::optional<qc::Qubit> indexOfAncillaryQubitWithEmptyLabel = annotatedQuantumComputation->addPreliminaryAncillaryQubit("", false);
     ASSERT_FALSE(indexOfAncillaryQubitWithEmptyLabel.has_value());
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false, false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithDuplicateLabelNotPossible) {
     const std::string              ancillaryQubitLabel = "ancillary";
-    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit(ancillaryQubitLabel, false);
+    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false);
     ASSERT_TRUE(ancillaryQubitIndex.has_value());
     ASSERT_EQ(0, *ancillaryQubitIndex);
 
@@ -282,32 +278,32 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithDuplicateLa
     ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
     ASSERT_EQ(1, *nonAncillaryQubitIndex);
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false, false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 
-    const std::optional<qc::Qubit> indexOfAncillaryQubitWithDuplicateLabel = annotatedQuantumComputation->addAncillaryQubit(ancillaryQubitLabel, false);
+    const std::optional<qc::Qubit> indexOfAncillaryQubitWithDuplicateLabel = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false);
     ASSERT_FALSE(indexOfAncillaryQubitWithDuplicateLabel.has_value());
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false, false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithLabelMatchingNonAncillaryQubitLabel) {
     const std::string              ancillaryQubitLabel    = "ancillary";
     const std::string              nonAncillaryQubitLabel = "nonAncillary";
-    const std::optional<qc::Qubit> ancillaryQubitIndex    = annotatedQuantumComputation->addAncillaryQubit(ancillaryQubitLabel, false);
+    const std::optional<qc::Qubit> ancillaryQubitIndex    = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false);
     ASSERT_TRUE(ancillaryQubitIndex.has_value());
     ASSERT_EQ(0, *ancillaryQubitIndex);
 
@@ -315,30 +311,30 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithLabelMatchi
     ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
     ASSERT_EQ(1, *nonAncillaryQubitIndex);
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false, false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 
-    const std::optional<qc::Qubit> indexOfAncillaryQubitWithDuplicateLabel = annotatedQuantumComputation->addAncillaryQubit(nonAncillaryQubitLabel, true);
+    const std::optional<qc::Qubit> indexOfAncillaryQubitWithDuplicateLabel = annotatedQuantumComputation->addPreliminaryAncillaryQubit(nonAncillaryQubitLabel, true);
     ASSERT_FALSE(indexOfAncillaryQubitWithDuplicateLabel.has_value());
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false, false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitAfterAnyQubitWasSetAncillaryNotPossible) {
-    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    const std::optional<qc::Qubit> ancillaryQubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillary", false);
     ASSERT_TRUE(ancillaryQubitIndex.has_value());
     ASSERT_EQ(0, *ancillaryQubitIndex);
 
@@ -346,33 +342,33 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitAfterAnyQubitWa
     ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
     ASSERT_EQ(1, *nonAncillaryQubitIndex);
 
-    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubitIndex));
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false, false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({true, false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 
-    const std::optional<qc::Qubit> indexOfQubitAfterAnyQubitWasSetAncillary = annotatedQuantumComputation->addAncillaryQubit("otherLabel", false);
+    const std::optional<qc::Qubit> indexOfQubitAfterAnyQubitWasSetAncillary = annotatedQuantumComputation->addPreliminaryAncillaryQubit("otherLabel", false);
     ASSERT_FALSE(indexOfQubitAfterAnyQubitWasSetAncillary.has_value());
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getGarbage(), testing::ElementsAreArray({false, false}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({true, false}));
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNindividualOps());
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
 }
 // END Adding qubit types
 
 // BEGIN getAddedAncillaryQubitIndices tests
 TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndicesInEmptyQuantumComputation) {
-    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices().empty());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndicesWithoutAncillaryQubits) {
@@ -393,7 +389,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndicesWit
     ASSERT_EQ(expectedAddedQubitIndex, *actualAddedQubitIndex);
     ++expectedAddedQubitIndex;
 
-    ASSERT_TRUE(annotatedQuantumComputation->getAddedAncillaryQubitIndices().empty());
+    ASSERT_TRUE(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices().empty());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndices) {
@@ -401,7 +397,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndices) {
     ASSERT_TRUE(firstNonAncillaryQubitIndex.has_value());
     ASSERT_EQ(0, *firstNonAncillaryQubitIndex);
 
-    const std::optional<qc::Qubit> firstAncillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit("Ancillary_1", false);
+    const std::optional<qc::Qubit> firstAncillaryQubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit("Ancillary_1", false);
     ASSERT_TRUE(firstAncillaryQubitIndex.has_value());
     ASSERT_EQ(1, *firstAncillaryQubitIndex);
 
@@ -409,11 +405,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndices) {
     ASSERT_TRUE(secondNonAncillaryQubitIndex.has_value());
     ASSERT_EQ(2, *secondNonAncillaryQubitIndex);
 
-    const std::optional<qc::Qubit> secondAncillaryQubitIndex = annotatedQuantumComputation->addAncillaryQubit("Ancillary_2", true);
+    const std::optional<qc::Qubit> secondAncillaryQubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit("Ancillary_2", true);
     ASSERT_TRUE(secondAncillaryQubitIndex.has_value());
     ASSERT_EQ(3, *secondAncillaryQubitIndex);
 
-    const auto& ancillaryQubitIndices = annotatedQuantumComputation->getAddedAncillaryQubitIndices();
+    const auto& ancillaryQubitIndices = annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices();
     ASSERT_THAT(ancillaryQubitIndices, testing::UnorderedElementsAreArray({*firstAncillaryQubitIndex, *secondAncillaryQubitIndex}));
 }
 // BEGIN getAddedAncillaryQubitIndices tests
@@ -422,163 +418,163 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetAddedAncillaryQubitIndices) {
 TEST_F(AnnotatedQuantumComputationTestsFixture, SetAncillaryQubitAsAncillary) {
     const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
     ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 0);
-    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillary", false);
     ASSERT_TRUE(ancillaryQubit.has_value() && *ancillaryQubit == 1);
-    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubit));
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubit));
 
-    const auto& ancillaryQubitIndices = annotatedQuantumComputation->getAddedAncillaryQubitIndices();
+    const auto& ancillaryQubitIndices = annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices();
     ASSERT_THAT(ancillaryQubitIndices, testing::UnorderedElementsAreArray({*ancillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, true}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, SetNonAncillaryQubitAsAncillary) {
     const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
     ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 0);
-    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillary", false);
     ASSERT_TRUE(ancillaryQubit.has_value() && *ancillaryQubit == 1);
-    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*nonAncillaryQubit));
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*nonAncillaryQubit));
 
-    const auto& ancillaryQubitIndices = annotatedQuantumComputation->getAddedAncillaryQubitIndices();
+    const auto& ancillaryQubitIndices = annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices();
     ASSERT_THAT(ancillaryQubitIndices, testing::UnorderedElementsAreArray({*ancillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({true, false}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, SetUnknownQubitAsAncillary) {
     const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
     ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 0);
-    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillary", false);
     ASSERT_TRUE(ancillaryQubit.has_value() && *ancillaryQubit == 1);
 
     constexpr qc::Qubit unknownQubitIndex = 2;
-    ASSERT_FALSE(annotatedQuantumComputation->setQubitAncillary(unknownQubitIndex));
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, false}));
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_FALSE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(unknownQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubit}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, false}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, SetQubitAlreadySetAsAncillary) {
-    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillary", false);
+    const std::optional<qc::Qubit> ancillaryQubit = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillary", false);
     ASSERT_TRUE(ancillaryQubit.has_value() && *ancillaryQubit == 0);
 
-    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubit));
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({true}));
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubit}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*ancillaryQubit));
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({true}));
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubit}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true}));
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, SetMultipleQubitsAsAncillary) {
     const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
     ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 0);
 
-    const std::optional<qc::Qubit> firstAncillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillaryOne", false);
+    const std::optional<qc::Qubit> firstAncillaryQubit = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillaryOne", false);
     ASSERT_TRUE(firstAncillaryQubit.has_value() && *firstAncillaryQubit == 1);
 
-    const std::optional<qc::Qubit> secondAncillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillaryTwo", false);
+    const std::optional<qc::Qubit> secondAncillaryQubit = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillaryTwo", false);
     ASSERT_TRUE(secondAncillaryQubit.has_value() && *secondAncillaryQubit == 2);
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, false, false}));
-    ASSERT_EQ(3, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, false, false}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*firstAncillaryQubit));
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, true, false}));
-    ASSERT_EQ(3, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*firstAncillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true, false}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*secondAncillaryQubit));
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, true, true}));
-    ASSERT_EQ(3, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*secondAncillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true, true}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(2, annotatedQuantumComputation->getNancillae());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, AddingFurtherQubitsAfterSetQubitToAncillaryDidNotSucceedPossible) {
-    const std::optional<qc::Qubit> firstAncillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillaryOne", false);
+    const std::optional<qc::Qubit> firstAncillaryQubit = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillaryOne", false);
     ASSERT_TRUE(firstAncillaryQubit.has_value() && *firstAncillaryQubit == 0);
 
-    ASSERT_FALSE(annotatedQuantumComputation->setQubitAncillary(static_cast<qc::Qubit>(100)));
+    ASSERT_FALSE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(static_cast<qc::Qubit>(100)));
 
     const std::optional<qc::Qubit> nonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary", true);
     ASSERT_TRUE(nonAncillaryQubit.has_value() && *nonAncillaryQubit == 1);
 
-    const std::optional<qc::Qubit> secondAncillaryQubit = annotatedQuantumComputation->addAncillaryQubit("ancillaryTwo", false);
+    const std::optional<qc::Qubit> secondAncillaryQubit = annotatedQuantumComputation->addPreliminaryAncillaryQubit("ancillaryTwo", false);
     ASSERT_TRUE(secondAncillaryQubit.has_value() && *secondAncillaryQubit == 2);
 
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({false, false, false}));
-    ASSERT_EQ(3, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, false, false}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNancillae());
 
-    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*firstAncillaryQubit));
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({true, false, false}));
-    ASSERT_EQ(3, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*firstAncillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false, false}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
 
-    const std::optional<qc::Qubit> indexOfNotAddableAncillaryQubit = annotatedQuantumComputation->addAncillaryQubit("otherQubitLabel", false);
+    const std::optional<qc::Qubit> indexOfNotAddableAncillaryQubit = annotatedQuantumComputation->addPreliminaryAncillaryQubit("otherQubitLabel", false);
     ASSERT_FALSE(indexOfNotAddableAncillaryQubit.has_value());
 
     const std::optional<qc::Qubit> indexOfNotAddableNonAncillaryQubit = annotatedQuantumComputation->addNonAncillaryQubit("otherQubitLabel", false);
     ASSERT_FALSE(indexOfNotAddableNonAncillaryQubit.has_value());
 
-    ASSERT_TRUE(annotatedQuantumComputation->setQubitAncillary(*secondAncillaryQubit));
-    ASSERT_THAT(annotatedQuantumComputation->getAddedAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
-    ASSERT_THAT(annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getAncillary(), testing::ElementsAreArray({true, false, true}));
-    ASSERT_EQ(3, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNgarbageQubits());
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNancillae());
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*secondAncillaryQubit));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubit, *secondAncillaryQubit}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false, true}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(2, annotatedQuantumComputation->getNancillae());
 }
 // BEGIN setQubitAsAncillary tests
 
 // BEGIN getNqubits tests
 TEST_F(AnnotatedQuantumComputationTestsFixture, GetNqubitsInEmptyQuantumComputation) {
-    ASSERT_EQ(0, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNqubits());
 }
 
 TEST_F(AnnotatedQuantumComputationTestsFixture, GetNqubits) {
     std::optional<qc::Qubit> qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary_1", false);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
-    ASSERT_EQ(1, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNqubits());
 
-    qubitIndex = annotatedQuantumComputation->addAncillaryQubit("Ancillary_1", false);
+    qubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit("Ancillary_1", false);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(1, *qubitIndex);
-    ASSERT_EQ(2, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
 
     qubitIndex = annotatedQuantumComputation->addNonAncillaryQubit("nonAncillary_2", false);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(2, *qubitIndex);
-    ASSERT_EQ(3, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
 
-    qubitIndex = annotatedQuantumComputation->addAncillaryQubit("Ancillary_2", true);
+    qubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit("Ancillary_2", true);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(3, *qubitIndex);
-    ASSERT_EQ(4, annotatedQuantumComputation->getNonAnnotatedQuantumComputation().getNqubits());
+    ASSERT_EQ(4, annotatedQuantumComputation->getNqubits());
 }
 // END getNqubits tests
 
@@ -594,7 +590,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetQubitLabels) {
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
 
-    qubitIndex = annotatedQuantumComputation->addAncillaryQubit(expectedQubitLabels[1], false);
+    qubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit(expectedQubitLabels[1], false);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(1, *qubitIndex);
 
@@ -602,7 +598,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetQubitLabels) {
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(2, *qubitIndex);
 
-    qubitIndex = annotatedQuantumComputation->addAncillaryQubit(expectedQubitLabels[3], true);
+    qubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit(expectedQubitLabels[3], true);
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(3, *qubitIndex);
 

@@ -32,7 +32,6 @@
 #include <vector>
 
 // TODO: Due to many member functions now returning a boolean, one could use the std::cerr stream to log errors?
-// TODO: Update python bindings
 namespace syrec {
     // Helper Functions for the synthesis methods
     SyrecSynthesis::SyrecSynthesis(AnnotatableQuantumComputation& annotatableQuantumComputation):
@@ -51,7 +50,7 @@ namespace syrec {
         for (std::size_t i = 0; i < variables.size() && couldQubitsForVariablesBeAdded; ++i) {
             const auto& variable = variables[i];
             // entry in var lines map
-            varLines.try_emplace(variable, annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNqubits());
+            varLines.try_emplace(variable, annotatableQuantumComputation.getNqubits());
             couldQubitsForVariablesBeAdded &= addVariable(annotatableQuantumComputation, variable->dimensions, variable, std::string());
         }
         return couldQubitsForVariablesBeAdded;
@@ -99,8 +98,8 @@ namespace syrec {
 
         // synthesize the statements
         const auto synthesisOfMainModuleOk = synthesizer->onModule(main);
-        for (const auto& ancillaryQubit: synthesizer->annotatableQuantumComputation.getAddedAncillaryQubitIndices()) {
-            if (!synthesizer->annotatableQuantumComputation.setQubitAncillary(ancillaryQubit)) {
+        for (const auto& ancillaryQubit: synthesizer->annotatableQuantumComputation.getAddedPreliminaryAncillaryQubitIndices()) {
+            if (!synthesizer->annotatableQuantumComputation.promotePreliminaryAncillaryQubitToDefinitiveAncillary(ancillaryQubit)) {
                 std::cerr << "Failed to mark qubit" << std::to_string(ancillaryQubit) << " as ancillary qubit";
                 return false;
             }
@@ -1024,9 +1023,9 @@ namespace syrec {
             freeConstLinesMap[!value].pop_back();
             annotatableQuantumComputation.addOperationsImplementingNotGate(constLine);
         } else {
-            const auto                     qubitIndex          = static_cast<qc::Qubit>(annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNqubits());
+            const auto                     qubitIndex          = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
             const std::string              qubitLabel          = "const_" + std::to_string(static_cast<int>(value)) + "_qubit_" + std::to_string(qubitIndex);
-            const std::optional<qc::Qubit> generatedQubitIndex = annotatableQuantumComputation.addAncillaryQubit(qubitLabel, value);
+            const std::optional<qc::Qubit> generatedQubitIndex = annotatableQuantumComputation.addPreliminaryAncillaryQubit(qubitLabel, value);
             if (!generatedQubitIndex.has_value() || *generatedQubitIndex != qubitIndex) {
                 return std::nullopt;
             }

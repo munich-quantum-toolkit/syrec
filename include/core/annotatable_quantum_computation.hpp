@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
 #include "ir/operations/Control.hpp"
@@ -26,7 +25,10 @@
 #include <vector>
 
 namespace syrec {
-    class AnnotatableQuantumComputation {
+    /**
+     * A class to build a MQT::Core QuantumComputation and offer functionality to annotate its quantum operations 
+     */
+    class AnnotatableQuantumComputation: public qc::QuantumComputation {
     public:
         using QuantumOperationAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
 
@@ -50,26 +52,23 @@ namespace syrec {
          * @param initialStateOfQubit The initial state of the ancillary qubits. Is assumed to be 0 by default. The initial state of 1 is achieved by adding an X quantum operation.
          * @return The index of the ancillary qubit in the quantum computation, std::nullopt if a qubit with the same label already exists or no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary.
          */
-        [[nodiscard]] std::optional<qc::Qubit> addAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit);
+        [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit);
 
         /**
-         * Return the indices of the ancillary qubits added via \see AnnotatableQuantumComputation#addAncillaryQubit.
+         * Return the indices of the preliminary ancillary qubits added via \see AnnotatableQuantumComputation#addAncillaryQubit.
          *
          * Qubits not added as ancillary ones to the quantum computation will not be considered as such.
          * @return The indices of the ancillary qubits added to the quantum computation via \see AnnotatableQuantumComputation#addAncillaryQubit.
          */
-        [[nodiscard]] std::unordered_set<qc::Qubit> getAddedAncillaryQubitIndices() const { return addedAncillaryQubitIndices; }
+        [[nodiscard]] std::unordered_set<qc::Qubit> getAddedPreliminaryAncillaryQubitIndices() const { return addedAncillaryQubitIndices; }
 
         /**
-         * Mark a specific qubit as an ancillary one. No qubits can be added to the quantum computation after this point.
+         * Promote a previously added preliminary ancillary qubit status to a permanent one. No qubits can be added to the quantum computation after this point.
          * @param qubit The index of the qubit in the quantum computation.
          * @return Whether the qubit index was known in the quantum computation. If the index is not known, qubits can still be added to the quantum computation.
          */
-        [[nodiscard]] bool                     setQubitAncillary(qc::Qubit qubit);
-        [[nodiscard]] std::vector<std::string> getQubitLabels() const;
-
-        [[nodiscard]] const qc::QuantumComputation& getNonAnnotatedQuantumComputation() const { return quantumComputation; }
-
+        [[nodiscard]] bool                              promotePreliminaryAncillaryQubitToDefinitiveAncillary(qc::Qubit qubit);
+        [[nodiscard]] std::vector<std::string>          getQubitLabels() const;
         [[nodiscard]] qc::Operation*                    getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
         [[nodiscard]] QuantumOperationAnnotationsLookup getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
 
@@ -145,7 +144,6 @@ namespace syrec {
         [[nodiscard]] bool    isQubitWithinRange(qc::Qubit qubit) const noexcept;
         [[nodiscard]] bool    areQubitsWithinRange(const qc::Controls& qubitsToCheck) const noexcept;
 
-        qc::QuantumComputation                           quantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
         std::unordered_set<qc::Qubit>                    aggregateOfPropagatedControlQubits;
         std::vector<std::unordered_map<qc::Qubit, bool>> controlQubitPropgationScopes;
         bool                                             canQubitsBeAddedToQuantumComputation = true;

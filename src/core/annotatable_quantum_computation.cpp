@@ -30,10 +30,10 @@ bool AnnotatableQuantumComputation::addOperationsImplementingNotGate(const qc::Q
     }
 
     const qc::Controls gateControlQubits(aggregateOfPropagatedControlQubits.cbegin(), aggregateOfPropagatedControlQubits.cend());
-    const std::size_t  prevNumQuantumOperations = quantumComputation.getNops();
-    quantumComputation.mcx(gateControlQubits, targetQubit);
+    const std::size_t  prevNumQuantumOperations = getNops();
+    mcx(gateControlQubits, targetQubit);
 
-    const std::size_t currNumQuantumOperations = quantumComputation.getNops();
+    const std::size_t currNumQuantumOperations = getNops();
     return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
 }
 
@@ -45,10 +45,10 @@ bool AnnotatableQuantumComputation::addOperationsImplementingCnotGate(const qc::
     qc::Controls gateControlQubits(aggregateOfPropagatedControlQubits.cbegin(), aggregateOfPropagatedControlQubits.cend());
     gateControlQubits.emplace(controlQubit);
 
-    const std::size_t prevNumQuantumOperations = quantumComputation.getNops();
-    quantumComputation.mcx(gateControlQubits, targetQubit);
+    const std::size_t prevNumQuantumOperations = getNops();
+    mcx(gateControlQubits, targetQubit);
 
-    const std::size_t currNumQuantumOperations = quantumComputation.getNops();
+    const std::size_t currNumQuantumOperations = getNops();
     return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
 }
 
@@ -61,10 +61,10 @@ bool AnnotatableQuantumComputation::addOperationsImplementingToffoliGate(const q
     gateControlQubits.emplace(controlQubitOne);
     gateControlQubits.emplace(controlQubitTwo);
 
-    const std::size_t prevNumQuantumOperations = quantumComputation.getNops();
-    quantumComputation.mcx(gateControlQubits, targetQubit);
+    const std::size_t prevNumQuantumOperations = getNops();
+    mcx(gateControlQubits, targetQubit);
 
-    const std::size_t currNumQuantumOperations = quantumComputation.getNops();
+    const std::size_t currNumQuantumOperations = getNops();
     return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
 }
 
@@ -79,10 +79,10 @@ bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoli
         return false;
     }
 
-    const std::size_t prevNumQuantumOperations = quantumComputation.getNops();
-    quantumComputation.mcx(gateControlQubits, targetQubit);
+    const std::size_t prevNumQuantumOperations = getNops();
+    mcx(gateControlQubits, targetQubit);
 
-    const std::size_t currNumQuantumOperations = quantumComputation.getNops();
+    const std::size_t currNumQuantumOperations = getNops();
     return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
 }
 
@@ -92,36 +92,36 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
     }
     const qc::Controls gateControlQubits(aggregateOfPropagatedControlQubits.cbegin(), aggregateOfPropagatedControlQubits.cend());
 
-    const std::size_t prevNumQuantumOperations = quantumComputation.getNops();
-    quantumComputation.mcswap(gateControlQubits, targetQubitOne, targetQubitTwo);
+    const std::size_t prevNumQuantumOperations = getNops();
+    mcswap(gateControlQubits, targetQubitOne, targetQubitTwo);
 
-    const std::size_t currNumQuantumOperations = quantumComputation.getNops();
+    const std::size_t currNumQuantumOperations = getNops();
     return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
 }
 
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit) {
-    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || quantumComputation.getQuantumRegisters().count(qubitLabel) != 0) {
+    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().count(qubitLabel) != 0) {
         return std::nullopt;
     }
 
-    const auto            qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
+    const auto            qubitIndex = static_cast<qc::Qubit>(getNqubits());
     constexpr std::size_t qubitSize  = 1;
     // TODO: Should we also add classical registers here?
-    quantumComputation.addQubitRegister(qubitSize, qubitLabel);
+    addQubitRegister(qubitSize, qubitLabel);
     if (isGarbageQubit) {
-        quantumComputation.setLogicalQubitGarbage(qubitIndex);
+        setLogicalQubitGarbage(qubitIndex);
     }
     return qubitIndex;
 }
 
-std::optional<qc::Qubit> AnnotatableQuantumComputation::addAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit) {
-    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || quantumComputation.getQuantumRegisters().count(qubitLabel) != 0) {
+std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit) {
+    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().count(qubitLabel) != 0) {
         return std::nullopt;
     }
-    const auto            qubitIndex = static_cast<qc::Qubit>(quantumComputation.getNqubits());
+    const auto            qubitIndex = static_cast<qc::Qubit>(getNqubits());
     constexpr std::size_t qubitSize  = 1;
 
-    quantumComputation.addQubitRegister(qubitSize, qubitLabel);
+    addQubitRegister(qubitSize, qubitLabel);
     addedAncillaryQubitIndices.emplace(qubitIndex);
 
     if (initialStateOfQubit) {
@@ -137,19 +137,19 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addAncillaryQubit(const 
     return qubitIndex;
 }
 
-bool AnnotatableQuantumComputation::setQubitAncillary(qc::Qubit qubit) {
+bool AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitToDefinitiveAncillary(qc::Qubit qubit) {
     if (!isQubitWithinRange(qubit)) {
         return false;
     }
 
     canQubitsBeAddedToQuantumComputation = false;
-    quantumComputation.setLogicalQubitAncillary(qubit);
+    setLogicalQubitAncillary(qubit);
     return true;
 }
 
 std::vector<std::string> AnnotatableQuantumComputation::getQubitLabels() const {
-    std::vector<std::string> qubitLabels(quantumComputation.getNqubits(), "");
-    for (const auto& quantumRegister: quantumComputation.getQuantumRegisters()) {
+    std::vector<std::string> qubitLabels(getNqubits(), "");
+    for (const auto& quantumRegister: getQuantumRegisters()) {
         const qc::Qubit qubitIndex = quantumRegister.second.getStartIndex();
         qubitLabels[qubitIndex]    = quantumRegister.first;
     }
@@ -157,10 +157,10 @@ std::vector<std::string> AnnotatableQuantumComputation::getQubitLabels() const {
 }
 
 qc::Operation* AnnotatableQuantumComputation::getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
-    if (indexOfQuantumOperationInQuantumComputation > quantumComputation.getNops()) {
+    if (indexOfQuantumOperationInQuantumComputation > getNops()) {
         return nullptr;
     }
-    return quantumComputation.at(indexOfQuantumOperationInQuantumComputation).get();
+    return at(indexOfQuantumOperationInQuantumComputation).get();
 }
 
 AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
@@ -265,7 +265,7 @@ bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std:
 
 // BEGIN NON-PUBLIC FUNCTIONALITY
 bool AnnotatableQuantumComputation::isQubitWithinRange(const qc::Qubit qubit) const noexcept {
-    return qubit < quantumComputation.getNqubits();
+    return qubit < getNqubits();
 }
 
 bool AnnotatableQuantumComputation::areQubitsWithinRange(const qc::Controls& qubitsToCheck) const noexcept {

@@ -10,6 +10,7 @@
 
 #include "algorithms/simulation/quantum_computation_simulation_for_state.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
 
@@ -68,7 +69,7 @@ TEST_P(SyrecLineAwareSimulationTest, GenericSimulationTest) {
     ASSERT_TRUE(errorString.empty());
     ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
 
-    const std::size_t nInputQubits = annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNqubitsWithoutAncillae();
+    const std::size_t nInputQubits = annotatableQuantumComputation.getNqubitsWithoutAncillae();
     ASSERT_TRUE(setLines.size() < nInputQubits);
 
     std::vector initialQuantumComputationInputValues(nInputQubits, false);
@@ -78,14 +79,14 @@ TEST_P(SyrecLineAwareSimulationTest, GenericSimulationTest) {
     }
 
     std::vector<bool> quantumComputationOutputQubitValues;
-    ASSERT_NO_FATAL_FAILURE(simulateQuantumComputationExecutionForState(annotatableQuantumComputation.getNonAnnotatedQuantumComputation(), initialQuantumComputationInputValues, quantumComputationOutputQubitValues, statistics));
+    ASSERT_NO_FATAL_FAILURE(simulateQuantumComputationExecutionForState(annotatableQuantumComputation, initialQuantumComputationInputValues, quantumComputationOutputQubitValues, statistics));
 
     // Sometimes the full expected simulation output is defined in the .json file but we are only interested in the values of the non-ancillary qubits (whos qubit index is assumed to be larger than the one of the input qubits)
     const std::string_view& expectedOutputStateExcludingAncillaryQubits = std::string_view(expectedSimOut).substr(0, nInputQubits); // NOLINT (google-readability-casting)
     ASSERT_EQ(expectedOutputStateExcludingAncillaryQubits.size(), quantumComputationOutputQubitValues.size()) << "Expected output state to contain " << std::to_string(expectedOutputStateExcludingAncillaryQubits.size()) << " qubits but after simulation had " << quantumComputationOutputQubitValues.size() << " qubits";
     for (std::size_t i = 0; i < quantumComputationOutputQubitValues.size(); ++i) {
         // We are not interested in the value of garbage qubits
-        if (annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getGarbage()[i]) {
+        if (annotatableQuantumComputation.getGarbage()[i]) {
             continue;
         }
 

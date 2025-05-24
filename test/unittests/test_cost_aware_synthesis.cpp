@@ -88,11 +88,11 @@ TEST_P(SyrecCostAwareSynthesisTest, GenericSynthesisTest) {
     ASSERT_TRUE(errorString.empty());
 
     ASSERT_TRUE(CostAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
-    ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNops());
-    ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNonAnnotatedQuantumComputation().getNqubits());
+    ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNops());
+    ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNqubits());
 
-    const SynthesisCostMetricValue actualQuantumCosts    = getQuantumCostForSynthesis(annotatableQuantumComputation.getNonAnnotatedQuantumComputation());
-    const SynthesisCostMetricValue actualTransistorCosts = getTransistorCostForSynthesis(annotatableQuantumComputation.getNonAnnotatedQuantumComputation());
+    const SynthesisCostMetricValue actualQuantumCosts    = getQuantumCostForSynthesis(annotatableQuantumComputation);
+    const SynthesisCostMetricValue actualTransistorCosts = getTransistorCostForSynthesis(annotatableQuantumComputation);
     ASSERT_EQ(expectedQuantumCosts, actualQuantumCosts);
     ASSERT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }
