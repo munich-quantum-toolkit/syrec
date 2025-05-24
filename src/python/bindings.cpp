@@ -14,6 +14,7 @@
 #include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
+#include "ir/QuantumComputation.hpp"
 
 #include <functional>
 #include <pybind11/pybind11.h>
@@ -24,16 +25,16 @@ using namespace pybind11::literals;
 using namespace syrec;
 
 PYBIND11_MODULE(pysyrec, m) {
+    py::module::import("mqt.core.ir");
     m.doc() = "Python interface for the SyReC programming language for the synthesis of reversible circuits";
 
-    py::class_<AnnotatableQuantumComputation, std::shared_ptr<AnnotatableQuantumComputation>>(m, "annotatable_quantum_computation")
+    py::class_<AnnotatableQuantumComputation, std::shared_ptr<AnnotatableQuantumComputation>, qc::QuantumComputation>(m, "annotatable_quantum_computation")
             .def(py::init<>(), "Constructs an annotatable quantum computation")
             .def_property_readonly("qubit_labels", &AnnotatableQuantumComputation::getQubitLabels, "Get the qubit labels of the quantum computation")
-            .def_property_readonly("raw_quantum_computation", &AnnotatableQuantumComputation::getNonAnnotatedQuantumComputation, "Get the raw quantum computation data")
             .def(
-                    "get_quantum_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getQuantumCostForSynthesis(annotatableQuantumComputation.getNonAnnotatedQuantumComputation()); }, "Get the quantum costs of the circuit")
+                    "get_quantum_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getQuantumCostForSynthesis(annotatableQuantumComputation); }, "Get the quantum costs of the circuit")
             .def(
-                    "get_transistor_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getTransistorCostForSynthesis(annotatableQuantumComputation.getNonAnnotatedQuantumComputation()); }, "Get the transistor costs of the circuit")
+                    "get_transistor_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getTransistorCostForSynthesis(annotatableQuantumComputation); }, "Get the transistor costs of the circuit")
             .def("get_annotations_of_quantum_operation", &AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation, "indexOfQuantumOperationInQuantumComputation"_a, "Get the annotations for specific quantum operation in the quantum computation");
 
     py::class_<Properties, std::shared_ptr<Properties>>(m, "properties")

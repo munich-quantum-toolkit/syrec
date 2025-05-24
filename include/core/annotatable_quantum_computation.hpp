@@ -26,7 +26,7 @@
 
 namespace syrec {
     /**
-     * A class to build a MQT::Core QuantumComputation and offer functionality to annotate its quantum operations 
+     * A class to build a MQT::Core QuantumComputation and offer functionality to annotate its quantum operations with string key-value pairs.
      */
     class AnnotatableQuantumComputation: public qc::QuantumComputation {
     public:
