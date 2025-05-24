@@ -13,6 +13,7 @@
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "core/properties.hpp"
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
 
