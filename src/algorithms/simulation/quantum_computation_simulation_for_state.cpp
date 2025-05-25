@@ -25,16 +25,16 @@
 #include <vector>
 
 namespace syrec {
-    void simulateQuantumComputationExecutionForState(const qc::QuantumComputation& quantumComputation, const std::vector<bool>& quantumComputationInputQubitValues, std::vector<bool>& quantumComputationOutputQubitValues,
+    std::optional<std::vector<bool>> simulateQuantumComputationExecutionForState(const qc::QuantumComputation& quantumComputation, const std::vector<bool>& quantumComputationInputQubitValues,
                                                      const Properties::ptr& statistics) {
         if (quantumComputationInputQubitValues.size() != quantumComputation.getNqubitsWithoutAncillae()) {
             std::cerr << "Only " << std::to_string(quantumComputationInputQubitValues.size()) << " out of the " << std::to_string(quantumComputation.getNqubitsWithoutAncillae()) << " input qubit values were specified!";
-            return;
+            return std::nullopt;
         }
 
         if (quantumComputationInputQubitValues.empty()) {
             std::cerr << "Input state must have at least one input qubit";
-            return;
+            return std::nullopt;
         }
 
         Timer<PropertiesTimer> t;
@@ -65,7 +65,7 @@ namespace syrec {
             t.stop();
         }
 
-        quantumComputationOutputQubitValues.resize(quantumComputationInputQubitValues.size(), false);
+        std::vector<bool> quantumComputationOutputQubitValues(quantumComputationInputQubitValues.size(), false);
         // According to the MQT::DD documentation, the most significant qubit (i.e. the one with the highest qubit index) is the left most qubit in the output measurement while
         // the least significant qubit is the rightmost entry in the output measurement. Note that ancillary and garbage qubits are included in the measured output state, thus the
         // range of qubit indices of interest is equal to [NQubits - 1, NAncillaries] with the index 'NQubits - 1' referring to the least significant qubit in the input state while
@@ -74,5 +74,6 @@ namespace syrec {
         for (std::size_t i = 0; i < quantumComputationOutputQubitValues.size(); ++i) {
             quantumComputationOutputQubitValues[i] = stringifiedMeasurementsOfOutputState[indexOfLeastSignificantQubit - i] == '1';
         }
+        return quantumComputationOutputQubitValues;
     }
 } // namespace syrec

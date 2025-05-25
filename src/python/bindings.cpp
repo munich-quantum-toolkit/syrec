@@ -9,11 +9,11 @@
  */
 
 #include "algorithms/simulation/quantum_computation_simulation_for_state.hpp"
+#include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
-#include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
-#include "core/properties.hpp"
 #include "core/annotatable_quantum_computation.hpp"
+#include "core/properties.hpp"
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
 
@@ -59,5 +59,8 @@ PYBIND11_MODULE(pysyrec, m) {
 
     m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, "annotatedQuantumComputation"_a, "program"_a, "settings"_a = Properties::ptr(), "statistics"_a = Properties::ptr(), "Cost-aware synthesis of the SyReC program.");
     m.def("line_aware_synthesis", &LineAwareSynthesis::synthesize, "annotatedQuantumComputation"_a, "program"_a, "settings"_a = Properties::ptr(), "statistics"_a = Properties::ptr(), "Line-aware synthesis of the SyReC program.");
-    m.def("quantum_computation_simulation_for_state", &simulateQuantumComputationExecutionForState, "quantumComputation"_a, "inputState"_a, "outputState"_a, "statistics"_a = Properties::ptr(), "Simulation of a quantum computation for a given input state");
+    // Due to pybind11 no being able to handle pass by reference STL containers as parameter (which will create and use a copy instead) the output state of the simulation is return from the function.
+    // If one were to use opaque types for STL containers, then pass by reference of such containers would be possible but would require the user to use the opaque type for the parameter.
+    // See: https://pybind11.readthedocs.io/en/stable/advanced/cast/stl.html#automatic-conversion
+    m.def("quantum_computation_simulation_for_state", &simulateQuantumComputationExecutionForState, "quantumComputation"_a, "inputState"_a, "statistics"_a = Properties::ptr(), "Simulation of a quantum computation for a given input state");
 }
