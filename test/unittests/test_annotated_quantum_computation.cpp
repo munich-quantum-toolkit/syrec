@@ -9,17 +9,19 @@
  */
 
 #include "core/annotatable_quantum_computation.hpp"
-#include "ir/QuantumComputation.hpp"
+#include "ir/Definitions.hpp"
+#include "ir/operations/Control.hpp"
 #include "ir/operations/StandardOperation.hpp"
+#include "ir/operations/Operation.hpp"
+#include "ir/operations/OpType.hpp"
 
 #include <cstddef>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
-#include <initializer_list>
 #include <memory>
 #include <optional>
 #include <string>
-#include <unordered_map>
+#include <utility>
 #include <vector>
 
 // The current tests do not cover the functionality:
@@ -48,7 +50,7 @@ protected:
 
         auto expectedQuantumOperationsIterator = expectedQuantumOperations.begin();
         for (std::size_t i = 0; i < expectedNumOperations; ++i) {
-            const auto actualQuantumOperation = annotatedQuantumComputation.getQuantumOperation(i);
+            auto const* actualQuantumOperation = annotatedQuantumComputation.getQuantumOperation(i);
             ASSERT_THAT(actualQuantumOperation, testing::NotNull());
             const auto& expectedQuantumOperation = *expectedQuantumOperationsIterator;
             ASSERT_THAT(expectedQuantumOperation, testing::NotNull());

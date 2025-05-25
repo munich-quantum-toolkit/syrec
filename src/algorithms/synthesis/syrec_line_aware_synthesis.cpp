@@ -11,12 +11,12 @@
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 
 #include "algorithms/synthesis/syrec_synthesis.hpp"
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
 #include "ir/Definitions.hpp"
-#include "ir/QuantumComputation.hpp"
 
 #include <algorithm>
 #include <cstddef>

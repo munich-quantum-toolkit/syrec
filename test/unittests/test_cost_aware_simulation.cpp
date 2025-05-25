@@ -10,6 +10,7 @@
 
 #include "algorithms/simulation/quantum_computation_simulation_for_state.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
 

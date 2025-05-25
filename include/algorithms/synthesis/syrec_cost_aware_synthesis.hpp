@@ -11,6 +11,7 @@
 #pragma once
 
 #include "algorithms/synthesis/syrec_synthesis.hpp"
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"

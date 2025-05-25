@@ -128,7 +128,7 @@ namespace syrec {
         Number::loop_variable_mapping loopMap;
         std::stack<Module::ptr>       modules;
 
-        AnnotatableQuantumComputation& annotatableQuantumComputation;
+        AnnotatableQuantumComputation& annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 
     private:
         VarLinesMap                            varLines;

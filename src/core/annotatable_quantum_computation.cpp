@@ -12,6 +12,7 @@
 
 #include "ir/Definitions.hpp"
 #include "ir/operations/Control.hpp"
+#include "ir/operations/Operation.hpp"
 
 #include <algorithm>
 #include <cstddef>

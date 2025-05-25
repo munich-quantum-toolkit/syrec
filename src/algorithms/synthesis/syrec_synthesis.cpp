@@ -27,11 +27,9 @@
 #include <optional>
 #include <stack>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
-// TODO: Due to many member functions now returning a boolean, one could use the std::cerr stream to log errors?
 namespace syrec {
     // Helper Functions for the synthesis methods
     SyrecSynthesis::SyrecSynthesis(AnnotatableQuantumComputation& annotatableQuantumComputation):

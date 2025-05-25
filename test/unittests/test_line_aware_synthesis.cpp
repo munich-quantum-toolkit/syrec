@@ -11,14 +11,14 @@
 #include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
-#include "core/circuit.hpp"
 #include "core/syrec/program.hpp"
 
+#include <algorithm>
 #include <cstddef>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
 #include <string>
-#include <vector>
 
 // .clang-tidy reports a false positive here since we are including the required nlohman json header file
 using json = nlohmann::json; // NOLINT(misc-include-cleaner)
@@ -83,7 +83,7 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecLineAwareSynthesisTest,
 TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisTest) {
     AnnotatableQuantumComputation annotatableQuantumComputation;
     Program                       prog;
-    ReadProgramSettings           settings;
+    const ReadProgramSettings     settings;
     const std::string             errorString = prog.read(fileName, settings);
     ASSERT_TRUE(errorString.empty());
 
@@ -100,7 +100,7 @@ TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisTest) {
 TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisQASMTest) {
     AnnotatableQuantumComputation annotatableQuantumComputation;
     Program                       prog;
-    ReadProgramSettings           settings;
+    const ReadProgramSettings     settings;
 
     const auto errorString = prog.read(fileName, settings);
     ASSERT_TRUE(errorString.empty());
