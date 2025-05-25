@@ -75,7 +75,7 @@ def test_synthesis_add_lines(data_cost_aware_synthesis: dict[str, Any]) -> None:
         error = prog.read(str(circuit_dir / (file_name + ".src")))
 
         assert not error
-        assert syrec.cost_aware_synthesis(circ, prog)
+        assert syrec.cost_aware_synthesis(annotatable_quantum_computation, prog)
         assert data_cost_aware_synthesis[file_name]["num_gates"] == annotatable_quantum_computation.num_ops
         assert data_cost_aware_synthesis[file_name]["lines"] == annotatable_quantum_computation.num_qubits
         assert data_cost_aware_synthesis[file_name]["quantum_costs"] == annotatable_quantum_computation.get_quantum_cost_for_synthesis()
@@ -103,9 +103,12 @@ def test_simulation_no_lines(data_line_aware_simulation: dict[str, Any]) -> None
         assert len(output_qubit_values) == len(input_qubit_values)
 
         for i in range(len(output_qubit_values)):
-            output_qubit_values[i] = '1' if output_qubit_values[i] == True else '0'
-        assert data_line_aware_simulation[file_name]["sim_out"] == str(output_qubit_values)
+            if (annotatable_quantum_computation.is_circuit_qubit_garbage(i))
+                continue
 
+            actual_qubit_value = '1' if output_qubit_values[i] == True else '0'
+            expected_qubit_value = data_line_aware_simulation[filename]["sim_out"]
+            assert expected_qubit_value == actual_qubit_value
 
 def test_simulation_add_lines(data_cost_aware_simulation: dict[str, Any]) -> None:
     for file_name in data_cost_aware_simulation:
@@ -126,10 +129,14 @@ def test_simulation_add_lines(data_cost_aware_simulation: dict[str, Any]) -> Non
         output_qubit_values = syrec.quantum_computation_simulation_for_state(annotatable_quantum_computation, input_qubit_values)
         assert output_qubit_values is not None
         assert len(output_qubit_values) == len(input_qubit_values)
-        for i in range(len(output_qubit_values)):
-            output_qubit_values[i] = '1' if output_qubit_values[i] == True else '0'
-        assert data_cost_aware_simulation[file_name]["sim_out"] == str(output_qubit_values)
 
+        for i in range(len(output_qubit_values)):
+            if (annotatable_quantum_computation.is_circuit_qubit_garbage(i))
+                continue
+
+            actual_qubit_value = '1' if output_qubit_values[i] == True else '0'
+            expected_qubit_value = data_cost_aware_simulation[filename]["sim_out"]
+            assert expected_qubit_value == actual_qubit_value
 
 def test_no_lines_to_qasm(data_line_aware_synthesis: dict[str, Any]) -> None:
     for file_name in data_line_aware_synthesis:
