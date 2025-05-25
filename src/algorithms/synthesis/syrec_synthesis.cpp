@@ -1022,7 +1022,7 @@ namespace syrec {
             annotatableQuantumComputation.addOperationsImplementingNotGate(constLine);
         } else {
             const auto                     qubitIndex          = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
-            const std::string              qubitLabel          = "const_" + std::to_string(static_cast<int>(value)) + "_qubit_" + std::to_string(qubitIndex);
+            const std::string              qubitLabel          = "const_" + std::to_string("q_" + std::to_string(qubitIndex) + "_const_" + static_cast<int>(value));
             const std::optional<qc::Qubit> generatedQubitIndex = annotatableQuantumComputation.addPreliminaryAncillaryQubit(qubitLabel, value);
             if (!generatedQubitIndex.has_value() || *generatedQubitIndex != qubitIndex) {
                 return std::nullopt;

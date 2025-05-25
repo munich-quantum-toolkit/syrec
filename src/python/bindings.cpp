@@ -31,7 +31,7 @@ PYBIND11_MODULE(pysyrec, m) {
 
     py::class_<AnnotatableQuantumComputation, qc::QuantumComputation>(m, "annotatable_quantum_computation")
             .def(py::init<>(), "Constructs an annotatable quantum computation")
-            .def_property_readonly("qubit_labels", &AnnotatableQuantumComputation::getQubitLabels, "Get the labels of qubits in the quantum computation")
+            .def_property_readonly("qubit_labels", &AnnotatableQuantumComputation::getQubitLabels, "Get the label of each qubit in the quantum computation")
             .def(
                     "get_quantum_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getQuantumCostForSynthesis(annotatableQuantumComputation); }, "Get the quantum cost to synthesis the quantum computation")
             .def(
