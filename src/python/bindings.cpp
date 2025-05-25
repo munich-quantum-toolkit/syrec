@@ -31,12 +31,12 @@ PYBIND11_MODULE(pysyrec, m) {
 
     py::class_<AnnotatableQuantumComputation, qc::QuantumComputation>(m, "annotatable_quantum_computation")
             .def(py::init<>(), "Constructs an annotatable quantum computation")
-            .def_property_readonly("qubit_labels", &AnnotatableQuantumComputation::getQubitLabels, "Get the qubit labels of the quantum computation")
+            .def_property_readonly("qubit_labels", &AnnotatableQuantumComputation::getQubitLabels, "Get the labels of qubits in the quantum computation")
             .def(
-                    "get_quantum_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getQuantumCostForSynthesis(annotatableQuantumComputation); }, "Get the quantum costs of the circuit")
+                    "get_quantum_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getQuantumCostForSynthesis(annotatableQuantumComputation); }, "Get the quantum cost to synthesis the quantum computation")
             .def(
-                    "get_transistor_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getTransistorCostForSynthesis(annotatableQuantumComputation); }, "Get the transistor costs of the circuit")
-            .def("get_annotations_of_quantum_operation", &AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation, "indexOfQuantumOperationInQuantumComputation"_a, "Get the annotations for specific quantum operation in the quantum computation");
+                    "get_transistor_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getTransistorCostForSynthesis(annotatableQuantumComputation); }, "Get the transistor cost to synthesis the quantum computation")
+            .def("get_annotations_of_quantum_operation", &AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation, "indexOfQuantumOperationInQuantumComputation"_a, "Get the annotations of a specific quantum operation in the quantum computation");
 
     py::class_<Properties, std::shared_ptr<Properties>>(m, "properties")
             .def(py::init<>(), "Constructs property map object.")
