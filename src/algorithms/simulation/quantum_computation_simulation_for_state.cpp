@@ -59,7 +59,6 @@ namespace syrec {
 
         std::mt19937_64 rng{};
 
-        // TODO: How should errors during measurements be handled?
         // Instead of measure the whole output state, one could also measure the qubits of interest via dd->measureOneCollapsing(outputState, qubitIndex, rng)
         const std::string& stringifiedMeasurementsOfOutputState = dd->measureAll(outputState, false, rng);
         if (statistics != nullptr) {

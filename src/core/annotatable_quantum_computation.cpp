@@ -107,7 +107,6 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(con
 
     const auto            qubitIndex = static_cast<qc::Qubit>(getNqubits());
     constexpr std::size_t qubitSize  = 1;
-    // TODO: Should we also add classical registers here?
     addQubitRegister(qubitSize, qubitLabel);
     if (isGarbageQubit) {
         setLogicalQubitGarbage(qubitIndex);
