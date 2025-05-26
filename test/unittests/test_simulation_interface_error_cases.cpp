@@ -36,7 +36,7 @@ TEST(SimulationInterfaceErrorCasesTests, EmptyInputStateInQuantumComputationWith
     ASSERT_NO_FATAL_FAILURE(quantumComputationOutputQubitValues = simulateQuantumComputationExecutionForState(annotatableQuantumComputation, quantumComputationInputQubitValues, statistics));
     ASSERT_FALSE(quantumComputationOutputQubitValues.has_value());
     // With the current syrec::Properties interface our only option to check that a property does not exist is by using the .get(...) call without providing a fall-back default value.
-    // This assertion will however not catch the expected exception in debug builds since an internal assert fails which is not caught by the gtest assertion. Thus we omit the non-existance
+    // This assertion will however not catch the expected exception in debug builds since an internal assert fails which is not caught by the gtest assertion. Thus we omit the non-existence
     // check of the runtime property
     //ASSERT_ANY_THROW(statistics->get<double>(EXPECTED_SIMULATION_RUNTIME_PROPERTY_KEY));
 }
@@ -87,7 +87,7 @@ TEST(SimulationInterfaceErrorCasesTests, ProvidingLessQubitValuesThanDataQubitsA
     ASSERT_NO_FATAL_FAILURE(quantumComputationOutputQubitValues = simulateQuantumComputationExecutionForState(annotatableQuantumComputation, quantumComputationInputQubitValues, statistics));
     ASSERT_FALSE(quantumComputationOutputQubitValues.has_value());
     // With the current syrec::Properties interface our only option to check that a property does not exist is by using the .get(...) call without providing a fall-back default value.
-    // This assertion will however not catch the expected exception in debug builds since an internal assert fails which is not caught by the gtest assertion. Thus we omit the non-existance
+    // This assertion will however not catch the expected exception in debug builds since an internal assert fails which is not caught by the gtest assertion. Thus we omit the non-existence
     // check of the runtime property
     //ASSERT_ANY_THROW(statistics->get<double>(EXPECTED_SIMULATION_RUNTIME_PROPERTY_KEY));
 }
@@ -121,7 +121,7 @@ TEST(SimulationInterfaceErrorCasesTests, ProvidingMoreQubitValuesThanDataQubitsA
     ASSERT_NO_FATAL_FAILURE(quantumComputationOutputQubitValues = simulateQuantumComputationExecutionForState(annotatableQuantumComputation, quantumComputationInputQubitValues, statistics));
     ASSERT_FALSE(quantumComputationOutputQubitValues.has_value());
     // With the current syrec::Properties interface our only option to check that a property does not exist is by using the .get(...) call without providing a fall-back default value.
-    // This assertion will however not catch the expected exception in debug builds since an internal assert fails which is not caught by the gtest assertion. Thus we omit the non-existance
+    // This assertion will however not catch the expected exception in debug builds since an internal assert fails which is not caught by the gtest assertion. Thus we omit the non-existence
     // check of the runtime property
     //ASSERT_ANY_THROW(statistics->get<double>(EXPECTED_SIMULATION_RUNTIME_PROPERTY_KEY));
 }
@@ -159,7 +159,7 @@ TEST(SimulationInterfaceErrorCasesTests, CheckFetchingRuntimePropertyWhenStatist
     ASSERT_TRUE(quantumComputationOutputQubitValues.has_value());
     ASSERT_EQ(1, quantumComputationOutputQubitValues->size());
     // With the current syrec::Properties interface our only option to check that a property does not exist is by using the .get(...) call without providing a fall-back default value.
-    // This assertion will however not catch the expected exception in debug builds since an internal assert fails which is not caught by the gtest assertion. Thus we omit the non-existance
+    // This assertion will however not catch the expected exception in debug builds since an internal assert fails which is not caught by the gtest assertion. Thus we omit the non-existence
     // check of the runtime property
     //ASSERT_ANY_THROW(statistics->get<double>(EXPECTED_SIMULATION_RUNTIME_PROPERTY_KEY));
 }

@@ -27,7 +27,7 @@
 
 namespace {
     /*
-     * Prefer the usage of std::chrono::steady_clock instead of std::chrono::sytem_clock since the former cannot decrease (due to time zone changes, etc.) and is most suitable for measuring intervals according to (https://en.cppreference.com/w/cpp/chrono/steady_clock)
+     * Prefer the usage of std::chrono::steady_clock instead of std::chrono::system_clock since the former cannot decrease (due to time zone changes, etc.) and is most suitable for measuring intervals according to (https://en.cppreference.com/w/cpp/chrono/steady_clock)
      */
     using TimeStamp = std::chrono::time_point<std::chrono::steady_clock>;
 } // namespace
@@ -47,7 +47,7 @@ namespace syrec {
                 return std::nullopt;
             }
             if (statistics != nullptr) {
-                statistics->set("runtime", static_cast<double>(0));   
+                statistics->set("runtime", static_cast<double>(0));
             }
             return std::nullopt;
         }
