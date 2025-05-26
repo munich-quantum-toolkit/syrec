@@ -2074,6 +2074,43 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, RemoveGlobalQuantumOperationAnno
     assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 1, {});
 }
 
+TEST_F(AnnotatedQuantumComputationTestsFixture, RemoveNotExistingGlobalQuantumOperationAnnotation) {
+    const std::string firstGlobalAnnotationKey   = "KEY_ONE";
+    const std::string firstGlobalAnnotationValue = "InitialValue";
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(firstGlobalAnnotationKey, firstGlobalAnnotationValue));
+
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit targetQubitOneIndex = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, targetQubitOneIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(targetQubitOneIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitOneIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+
+    const AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup expectedAnnotationsOfFirstQuantumComputation = {{firstGlobalAnnotationKey, firstGlobalAnnotationValue}};
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 0, expectedAnnotationsOfFirstQuantumComputation);
+
+    const std::string unknownGlobalAnnotationKey = "KEY_TWO";
+    ASSERT_FALSE(annotatedQuantumComputation->removeGlobalQuantumOperationAnnotation(unknownGlobalAnnotationKey));
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 0, expectedAnnotationsOfFirstQuantumComputation);
+
+    const std::string secondGlobalAnnotationKey   = "KEY_TWO";
+    const std::string secondGlobalAnnotationValue = "OtherValue";
+    ASSERT_FALSE(annotatedQuantumComputation->setOrUpdateGlobalQuantumOperationAnnotation(secondGlobalAnnotationKey, secondGlobalAnnotationValue));
+
+    constexpr qc::Qubit targetQubitTwoIndex = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, targetQubitTwoIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(targetQubitTwoIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitTwoIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+
+    const AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup expectedAnnotationsOfSecondQuantumComputation = {{firstGlobalAnnotationKey, firstGlobalAnnotationValue}, {secondGlobalAnnotationKey, secondGlobalAnnotationValue}};
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 0, expectedAnnotationsOfFirstQuantumComputation);
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 1, expectedAnnotationsOfSecondQuantumComputation);
+}
+
 TEST_F(AnnotatedQuantumComputationTestsFixture, SetGlobalQuantumOperationAnnotationWithEmptyKey) {
     const std::string globalAnnotationKey          = "KEY_ONE";
     const std::string initialGlobalAnnotationValue = "InitialValue";

@@ -16,12 +16,12 @@
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
 #include "core/syrec/variable.hpp"
-#include "core/utils/timer.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/operations/Control.hpp"
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cstddef>
 #include <iostream>
 #include <optional>
@@ -29,6 +29,13 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+namespace {
+    /*
+     * Prefer the usage of std::chrono::steady_clock instead of std::chrono::sytem_clock since the former cannot decrease (due to time zone changes, etc.) and is most suitable for measuring intervals according to (https://en.cppreference.com/w/cpp/chrono/steady_clock)
+     */
+    using TimeStamp = std::chrono::time_point<std::chrono::steady_clock>;
+} // namespace
 
 namespace syrec {
     // Helper Functions for the synthesis methods
@@ -58,12 +65,7 @@ namespace syrec {
         // Settings parsing
         auto mainModule = get<std::string>(settings, "main_module", std::string());
         // Run-time measuring
-        Timer<PropertiesTimer> t;
-
-        if (statistics) {
-            const PropertiesTimer rt(statistics);
-            t.start(rt);
-        }
+        const TimeStamp simulationStartTime = std::chrono::steady_clock::now();
 
         // get the main module
         Module::ptr main;
@@ -103,8 +105,10 @@ namespace syrec {
             }
         }
 
-        if (statistics) {
-            t.stop();
+        if (statistics != nullptr) {
+            const TimeStamp simulationEndTime = std::chrono::steady_clock::now();
+            const auto      simulationRunTime = std::chrono::duration_cast<std::chrono::milliseconds>(simulationEndTime - simulationStartTime);
+            statistics->set("runtime", static_cast<double>(simulationRunTime.count()));
         }
         return synthesisOfMainModuleOk;
     }

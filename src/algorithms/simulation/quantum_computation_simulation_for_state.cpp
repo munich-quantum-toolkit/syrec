@@ -11,12 +11,12 @@
 #include "algorithms/simulation/quantum_computation_simulation_for_state.hpp"
 
 #include "core/properties.hpp"
-#include "core/utils/timer.hpp"
 #include "dd/Package.hpp"
 #include "dd/Simulation.hpp"
 #include "ir/QuantumComputation.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <iostream>
 #include <memory>
@@ -25,7 +25,15 @@
 #include <string>
 #include <vector>
 
+namespace {
+    /*
+     * Prefer the usage of std::chrono::steady_clock instead of std::chrono::sytem_clock since the former cannot decrease (due to time zone changes, etc.) and is most suitable for measuring intervals according to (https://en.cppreference.com/w/cpp/chrono/steady_clock)
+     */
+    using TimeStamp = std::chrono::time_point<std::chrono::steady_clock>;
+} // namespace
+
 namespace syrec {
+
     std::optional<std::vector<bool>> simulateQuantumComputationExecutionForState(const qc::QuantumComputation& quantumComputation, const std::vector<bool>& quantumComputationInputQubitValues,
                                                                                  const Properties::ptr& statistics) {
         if (quantumComputationInputQubitValues.size() != quantumComputation.getNqubitsWithoutAncillae()) {
@@ -34,17 +42,18 @@ namespace syrec {
         }
 
         if (quantumComputationInputQubitValues.empty()) {
-            std::cerr << "Input state must have at least one input qubit";
+            if (quantumComputation.getNqubitsWithoutAncillae() > 0) {
+                std::cerr << "Input state must have at least one input qubit";
+                return std::nullopt;
+            }
+            if (statistics != nullptr) {
+                statistics->set("runtime", static_cast<double>(0));   
+            }
             return std::nullopt;
         }
 
-        Timer<PropertiesTimer> t;
-        if (statistics != nullptr) {
-            const PropertiesTimer rt(statistics);
-            t.start(rt);
-        }
-
-        const std::size_t nQubits = quantumComputation.getNqubits();
+        const TimeStamp   simulationStartTime = std::chrono::steady_clock::now();
+        const std::size_t nQubits             = quantumComputation.getNqubits();
         // The user should only need to provide as many input values as their are input qubits defined in the quantum computation
         // while being able to ignore the initial values of ancillary qubits which are assumed to be initialized to zero.
         std::vector fullInitialState(nQubits, false);
@@ -62,10 +71,12 @@ namespace syrec {
         // Instead of measure the whole output state, one could also measure the qubits of interest via dd->measureOneCollapsing(outputState, qubitIndex, rng)
         const std::string& stringifiedMeasurementsOfOutputState = dd->measureAll(outputState, false, rng);
         if (statistics != nullptr) {
-            t.stop();
+            const TimeStamp simulationEndTime = std::chrono::steady_clock::now();
+            const auto      simulationRunTime = std::chrono::duration_cast<std::chrono::milliseconds>(simulationEndTime - simulationStartTime);
+            statistics->set("runtime", static_cast<double>(simulationRunTime.count()));
         }
 
-        std::vector<bool> quantumComputationOutputQubitValues(quantumComputationInputQubitValues.size(), false);
+        std::vector quantumComputationOutputQubitValues(quantumComputationInputQubitValues.size(), false);
         // According to the MQT::DD documentation, the most significant qubit (i.e. the one with the highest qubit index) is the left most qubit in the output measurement while
         // the least significant qubit is the rightmost entry in the output measurement. Note that ancillary and garbage qubits are included in the measured output state, thus the
         // range of qubit indices of interest is equal to [NQubits - 1, NAncillaries] with the index 'NQubits - 1' referring to the least significant qubit in the input state while
