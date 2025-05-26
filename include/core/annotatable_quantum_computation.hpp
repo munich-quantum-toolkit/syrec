@@ -133,9 +133,9 @@ namespace syrec {
 
         /**
          * Set a key value annotation for a quantum operation
-         * @param indexOfQuantumOperationInQuantumComputation The index of the quantum operation in the quantum computation 
+         * @param indexOfQuantumOperationInQuantumComputation The index of the quantum operation in the quantum computation
          * @param annotationKey The key of the quantum operation annotation
-         * @param annotationValue The value fo the quantum operation annotation
+         * @param annotationValue The value of the quantum operation annotation
          * @return Whether an operation at the user-provided index existed in the quantum operation
          */
         [[maybe_unused]] bool setOrUpdateAnnotationOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation, const std::string_view& annotationKey, const std::string& annotationValue);

@@ -22,7 +22,7 @@ from .pysyrec import (
     program,
     properties,
     quantum_computation_simulation_for_state,
-    read_program_settings
+    read_program_settings,
 )
 
 __all__ = [
@@ -33,5 +33,5 @@ __all__ = [
     "program",
     "properties",
     "quantum_computation_simulation_for_state",
-    "read_program_settings"
+    "read_program_settings",
 ]

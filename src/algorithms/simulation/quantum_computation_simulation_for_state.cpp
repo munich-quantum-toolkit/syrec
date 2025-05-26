@@ -27,7 +27,7 @@
 
 namespace syrec {
     std::optional<std::vector<bool>> simulateQuantumComputationExecutionForState(const qc::QuantumComputation& quantumComputation, const std::vector<bool>& quantumComputationInputQubitValues,
-                                                     const Properties::ptr& statistics) {
+                                                                                 const Properties::ptr& statistics) {
         if (quantumComputationInputQubitValues.size() != quantumComputation.getNqubitsWithoutAncillae()) {
             std::cerr << "Only " << std::to_string(quantumComputationInputQubitValues.size()) << " out of the " << std::to_string(quantumComputation.getNqubitsWithoutAncillae()) << " input qubit values were specified!";
             return std::nullopt;

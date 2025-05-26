@@ -11,9 +11,9 @@
 #include "core/annotatable_quantum_computation.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/operations/Control.hpp"
-#include "ir/operations/StandardOperation.hpp"
-#include "ir/operations/Operation.hpp"
 #include "ir/operations/OpType.hpp"
+#include "ir/operations/Operation.hpp"
+#include "ir/operations/StandardOperation.hpp"
 
 #include <cstddef>
 #include <gmock/gmock-matchers.h>

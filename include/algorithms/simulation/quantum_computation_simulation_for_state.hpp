@@ -16,7 +16,6 @@
 #include <optional>
 #include <vector>
 
-
 namespace syrec {
     /**
      * Simulate a series of quantum operations on a given input quantum state using the MQT::Core decision diagram functionality.

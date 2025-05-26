@@ -84,7 +84,7 @@ TEST_P(SyrecCostAwareSimulationTest, GenericSimulationTest) {
     ASSERT_TRUE(quantumComputationOutputQubitValues.has_value());
     ASSERT_EQ(nInputQubits, quantumComputationOutputQubitValues->size());
 
-    // Sometimes the full expected simulation output is defined in the .json file but we are only interested in the values of the non-ancillary qubits (whos qubit index is assumed to be larger than the one of the input qubits)
+    // Sometimes the full expected simulation output is defined in the .json file but we are only interested in the values of the non-ancillary qubits (whose qubit index is assumed to be larger than the one of the input qubits)
     const std::string_view& expectedOutputStateExcludingAncillaryQubits = std::string_view(expectedSimOut).substr(0, nInputQubits); // NOLINT (google-readability-casting)
     ASSERT_EQ(expectedOutputStateExcludingAncillaryQubits.size(), quantumComputationOutputQubitValues->size()) << "Expected output state to contain " << std::to_string(expectedOutputStateExcludingAncillaryQubits.size()) << " qubits but after simulation had " << quantumComputationOutputQubitValues->size() << " qubits";
     for (std::size_t i = 0; i < quantumComputationOutputQubitValues->size(); ++i) {
@@ -95,6 +95,6 @@ TEST_P(SyrecCostAwareSimulationTest, GenericSimulationTest) {
 
         const char actualStringifiedOutputStateValue   = quantumComputationOutputQubitValues.value()[i] ? '1' : '0';
         const char expectedStringifiedOutputStateValue = expectedOutputStateExcludingAncillaryQubits[i];
-        ASSERT_EQ(expectedStringifiedOutputStateValue, actualStringifiedOutputStateValue) << "Missmatch of output qubit values at qubit " << std::to_string(i) << " | Expected: " << expectedStringifiedOutputStateValue << " Actual: " << actualStringifiedOutputStateValue;
+        ASSERT_EQ(expectedStringifiedOutputStateValue, actualStringifiedOutputStateValue) << "Mismatch of output qubit values at qubit " << std::to_string(i) << " | Expected: " << expectedStringifiedOutputStateValue << " Actual: " << actualStringifiedOutputStateValue;
     }
 }
