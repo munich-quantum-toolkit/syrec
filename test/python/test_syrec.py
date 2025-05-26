@@ -103,7 +103,6 @@ def test_simulation_no_lines(data_line_aware_simulation: dict[str, Any]) -> None
         assert syrec.line_aware_synthesis(annotatable_quantum_computation, prog)
 
         input_qubit_values = [False] * annotatable_quantum_computation.num_data_qubits
-        output_qubit_values = [False] * annotatable_quantum_computation.num_data_qubits
         set_list = data_line_aware_simulation[file_name]["set_lines"]
 
         for set_index in set_list:
@@ -134,7 +133,6 @@ def test_simulation_add_lines(data_cost_aware_simulation: dict[str, Any]) -> Non
         assert syrec.cost_aware_synthesis(annotatable_quantum_computation, prog)
 
         input_qubit_values = [False] * annotatable_quantum_computation.num_data_qubits
-        output_qubit_values = [False] * annotatable_quantum_computation.num_data_qubits
         set_list = data_cost_aware_simulation[file_name]["set_lines"]
 
         for set_index in set_list:
