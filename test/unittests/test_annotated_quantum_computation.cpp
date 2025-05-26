@@ -683,17 +683,17 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoli
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree));
 
     constexpr qc::Qubit expectedGateControlQubitOneIndex = 3;
     constexpr qc::Qubit expectedGateControlQubitTwoIndex = 4;
@@ -716,8 +716,8 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoli
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     constexpr qc::Qubit expectedGateControlQubitOneIndex = 2;
     constexpr qc::Qubit expectedGateControlQubitTwo      = 3;
@@ -736,14 +736,14 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoli
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo));
 
     constexpr qc::Qubit expectedGateControlQubitIndex = 2;
     constexpr qc::Qubit expectedTargetQubitIndex      = 3;
@@ -774,12 +774,12 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoli
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     constexpr qc::Qubit expectedTargetQubitIndex = 2;
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
@@ -798,14 +798,14 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoli
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo));
     annotatedQuantumComputation->deactivateControlQubitPropagationScope();
 
     constexpr qc::Qubit expectedTargetQubitIndex = 2;
@@ -827,11 +827,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoli
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
 
     constexpr qc::Qubit expectedGateControlQubitOneIndex = expectedControlQubitIndexTwo;
     constexpr qc::Qubit expectedGateControlQubitTwoIndex = expectedControlQubitIndexThree;
@@ -857,14 +857,14 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoli
 
     constexpr qc::Qubit propagatedControlQubit = expectedControlQubitIndexThree;
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexFour);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexFour));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubit);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(propagatedControlQubit);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubit));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(propagatedControlQubit));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
 
@@ -877,7 +877,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingToffoli
     expectedQuantumOperations.emplace_back(std::move(expectedOperationForFirstToffoliGate));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubit);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubit));
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingToffoliGate(expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex, expectedTargetQubitIndex));
     auto expectedOperationForSecondToffoliGate = std::make_unique<qc::StandardOperation>(qc::Controls({propagatedControlQubit, expectedGateControlQubitOneIndex, expectedGateControlQubitTwoIndex, expectedControlQubitIndexFour}), expectedTargetQubitIndex, qc::OpType::X);
     expectedQuantumOperations.emplace_back(std::move(expectedOperationForSecondToffoliGate));
@@ -936,17 +936,17 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGat
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree));
 
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedControlQubitIndexFour, expectedTargetQubitIndex));
 
@@ -962,7 +962,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGat
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
 
@@ -979,11 +979,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGat
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
 
     constexpr qc::Qubit expectedGateControlQubitIndex = expectedControlQubitIndexTwo;
     constexpr qc::Qubit expectedGateTargetQubitIndex  = 2;
@@ -1003,11 +1003,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGat
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_FALSE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo));
     annotatedQuantumComputation->deactivateControlQubitPropagationScope();
 
     constexpr qc::Qubit expectedGateControlQubitIndex = expectedControlQubitIndexTwo;
@@ -1028,11 +1028,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGat
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
 
     constexpr qc::Qubit expectedGateControlQubitIndex = expectedControlQubitIndexTwo;
     constexpr qc::Qubit expectedGateTargetQubitIndex  = expectedControlQubitIndexOne;
@@ -1053,15 +1053,15 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGat
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
 
@@ -1075,7 +1075,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingCnotGat
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 
     constexpr qc::Qubit propagatedControlQubitIndex = expectedControlQubitIndexTwo;
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubitIndex));
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedGateControlQubitIndex, expectedGateTargetQubitIndex));
 
     auto expectedOperationForSecondCnotGate = std::make_unique<qc::StandardOperation>(qc::Controls({propagatedControlQubitIndex, expectedGateControlQubitIndex}), expectedGateTargetQubitIndex, qc::OpType::X);
@@ -1110,18 +1110,18 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingNotGate
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexFour);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexFour);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexFour));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree));
 
     constexpr qc::Qubit expectedTargetQubitIndex = 4;
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
@@ -1138,7 +1138,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingNotGate
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
 
@@ -1152,11 +1152,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingNotGate
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexOne);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
 
     constexpr qc::Qubit expectedTargetQubitIndex = expectedControlQubitIndexOne;
 
@@ -1230,17 +1230,17 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiCo
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexThree));
 
     constexpr qc::Qubit expectedGateControlQubitIndex = 3;
     constexpr qc::Qubit expectedTargetQubitIndex      = 4;
@@ -1261,11 +1261,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiCo
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
 
     const qc::Controls  expectedGateControlQubitIndices({expectedControlQubitIndexOne, expectedControlQubitIndexTwo});
     constexpr qc::Qubit targetQubit = expectedControlQubitIndexOne;
@@ -1296,12 +1296,12 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiCo
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
 
     // The multi control toffoli gate should be created due to the target line only overlapping a deactivated control line in the current control line propagation scope
     constexpr qc::Qubit expectedTargetQubitIndex = expectedControlQubitIndexOne;
@@ -1329,19 +1329,19 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiCo
     constexpr qc::Qubit notPropagatedControlQubit   = expectedControlQubitIndexFour;
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexFour);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexFour));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubitIndex);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(propagatedControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubitIndex));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(propagatedControlQubitIndex));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(notPropagatedControlQubit);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(notPropagatedControlQubit);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(notPropagatedControlQubit));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(notPropagatedControlQubit));
 
     constexpr qc::Qubit expectedGateControlQubitOneIndex = propagatedControlQubitIndex;
     constexpr qc::Qubit expectedGateControlQubitTwoIndex = expectedControlQubitIndexTwo;
@@ -1352,7 +1352,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingMultiCo
     expectedQuantumOperations.emplace_back(std::move(operationForFirstMultiControlToffoliGate));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(propagatedControlQubitIndex));
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate({expectedGateControlQubitTwoIndex}, expectedTargetQubitIndex));
 
     auto operationForSecondMultiControlToffoliGate = std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexTwo, propagatedControlQubitIndex, expectedGateControlQubitTwoIndex}), expectedTargetQubitIndex, qc::OpType::X);
@@ -1400,12 +1400,12 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingFredkin
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
 
     constexpr qc::Qubit notOverlappingTargetQubitIndex = 2;
     constexpr qc::Qubit overlappingTargetQubitIndex    = expectedControlQubitIndexTwo;
@@ -1428,12 +1428,12 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddOperationsImplementingFredkin
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexTwo);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
 
     // The fredkin gate should be created due to the target line only overlapping a deactivated control line in the current control line propagation scope
     constexpr qc::Qubit notOverlappingTargetQubitIndex = 2;
@@ -1463,10 +1463,10 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterDuplicateControlQubitOfP
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(parentScopeControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(parentScopeControlQubitIndex));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(parentScopeControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(parentScopeControlQubitIndex));
 
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(qc::Controls(), expectedTargetQubitIndex));
 
@@ -1482,11 +1482,11 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterDuplicateControlQubitDea
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
 
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(qc::Controls(), expectedTargetQubitIndex));
 
@@ -1503,12 +1503,42 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterControlQubitNotKnownInCi
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedKnownControlQubitIndex);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedUnknownControlQubitIndex);
+    ASSERT_FALSE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedUnknownControlQubitIndex));
 
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(qc::Controls({expectedKnownControlQubitIndex}), expectedTargetQubitIndex));
 
     std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
     expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedKnownControlQubitIndex}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, RegisterControlQubitWithNoActivateControlQubitScopeWillCreateNewScope) {
+    constexpr qc::Qubit expectedControlQubitOneIndex = 0;
+    constexpr qc::Qubit expectedControlQubitTwoIndex = 1;
+    constexpr qc::Qubit expectedTargetQubitIndex     = 2;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitOneIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitTwoIndex);
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
+
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(expectedTargetQubitIndex));
+
+    auto expectedOperationForFirstAddedNotGate = std::make_unique<qc::StandardOperation>(qc::Controls(), expectedTargetQubitIndex, qc::OpType::X);
+    expectedQuantumComputations.emplace_back(std::move(expectedOperationForFirstAddedNotGate));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitOneIndex));
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(expectedTargetQubitIndex));
+
+    auto expectedOperationForSecondAddedNotGate = std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitOneIndex}), expectedTargetQubitIndex, qc::OpType::X);
+    expectedQuantumComputations.emplace_back(std::move(expectedOperationForSecondAddedNotGate));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitOneIndex));
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedControlQubitTwoIndex, expectedTargetQubitIndex));
+
+    auto expectedOperationForThirdAddedCnotGate = std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitTwoIndex}), expectedTargetQubitIndex, qc::OpType::X);
+    expectedQuantumComputations.emplace_back(std::move(expectedOperationForThirdAddedCnotGate));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 }
 
@@ -1521,9 +1551,9 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlQubitOfLocalCon
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, deactivatedControlQubitIndex);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(deactivatedControlQubitIndex);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(activateControlQubitIndex);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(deactivatedControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(deactivatedControlQubitIndex));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(activateControlQubitIndex));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(deactivatedControlQubitIndex));
 
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(expectedTargetQubitIndex));
 
@@ -1541,12 +1571,12 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlQubitOfParentSc
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, deactivatedControlQubitIndex);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(deactivatedControlQubitIndex);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(activateControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(deactivatedControlQubitIndex));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(activateControlQubitIndex));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(deactivatedControlQubitIndex);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(deactivatedControlQubitIndex);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(deactivatedControlQubitIndex));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(deactivatedControlQubitIndex));
 
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(qc::Controls({activateControlQubitIndex}), expectedTargetQubitIndex));
 
@@ -1561,11 +1591,10 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlQubitNotKnownIn
     constexpr qc::Qubit expectedUnknownControlQubitIndex = 2;
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedKnownControlQubitIndex);
-    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedUnknownControlQubitIndex);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedUnknownControlQubitIndex);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedUnknownControlQubitIndex);
+    ASSERT_FALSE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedUnknownControlQubitIndex));
+    ASSERT_FALSE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedUnknownControlQubitIndex));
 
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(qc::Controls({expectedKnownControlQubitIndex}), expectedTargetQubitIndex));
 
@@ -1583,12 +1612,12 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, DeregisterControlQubitOfParentPr
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     // Deregistering a not registered control line should not modify the aggregate of all activate control lines
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo);
+    ASSERT_FALSE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexTwo));
 
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingMultiControlToffoliGate(qc::Controls({expectedControlQubitIndexOne}), expectedTargetQubitIndex));
 
@@ -1610,7 +1639,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, RegisteringLocalControlQubitDoes
     expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), expectedTargetQubitIndex, qc::OpType::X));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 }
 
@@ -1621,14 +1650,14 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivatingLocalControlQubitDoe
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
 
     std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(expectedTargetQubitIndex));
     expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne}), expectedTargetQubitIndex, qc::OpType::X));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 }
 
@@ -1644,7 +1673,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, ActivatingControlQubitPropagatio
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 }
 
@@ -1659,8 +1688,8 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivatingControlQubitPropagat
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedTargetQubitIndex);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     constexpr qc::Qubit expectedGateControlQubitIndex = expectedControlQubitIndexThree;
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingCnotGate(expectedGateControlQubitIndex, expectedTargetQubitIndex));
@@ -1684,13 +1713,13 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivateControlQubitPropagatio
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
+    ASSERT_TRUE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
     annotatedQuantumComputation->deactivateControlQubitPropagationScope();
 
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(expectedTargetQubitIndex));
@@ -1711,18 +1740,39 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivateControlQubitPropagatio
     assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, expectedControlQubitIndexThree);
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne);
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexOne));
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexTwo));
 
     annotatedQuantumComputation->activateControlQubitPropagationScope();
-    annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree);
-    annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne);
+    ASSERT_TRUE(annotatedQuantumComputation->registerControlQubitForPropagationInCurrentAndNestedScopes(expectedControlQubitIndexThree));
+    ASSERT_FALSE(annotatedQuantumComputation->deregisterControlQubitFromPropagationInCurrentScope(expectedControlQubitIndexOne));
     annotatedQuantumComputation->deactivateControlQubitPropagationScope();
 
     ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(expectedTargetQubitIndex));
 
     std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
     expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexOne, expectedControlQubitIndexTwo}), expectedTargetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, DeactivatingControlQubitPropagationScopeWithNoActivatePropagationScopesIsEqualToNoOp) {
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit targetQubitOneIndex = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, targetQubitOneIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(targetQubitOneIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitOneIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+
+    constexpr qc::Qubit targetQubitTwoIndex = 1;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, targetQubitTwoIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(targetQubitTwoIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitTwoIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+
+    annotatedQuantumComputation->deactivateControlQubitPropagationScope();
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 }
 // BEGIN Control line propagation scopes tests
@@ -2164,4 +2214,34 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, UpdateLocalAnnotationWhoseKeyMat
     assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 0, expectedAnnotationsOfFirstQuantumOperation);
     assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 1, expectedAnnotationsOfSecondQuantumOperation);
 }
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetAnnotationsOfUnknownQuantumOperationInQuantumComputation) {
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit targetQubitOneIndex = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, targetQubitOneIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(targetQubitOneIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitOneIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 0, {});
+
+    const AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup annotationsForUnknownQuantumOperation = annotatedQuantumComputation->getAnnotationsOfQuantumOperation(2);
+    ASSERT_TRUE(annotationsForUnknownQuantumOperation.empty());
+}
 // END Annotation tests
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetQuantumOperationUsingOutOfRangeIndexNotPossible) {
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit targetQubitOneIndex = 0;
+    assertAdditionOfNonAncillaryQubitForIndexSucceeds(*annotatedQuantumComputation, targetQubitOneIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->addOperationsImplementingNotGate(targetQubitOneIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitOneIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+
+    ASSERT_THAT(annotatedQuantumComputation->getQuantumOperation(2), testing::IsNull());
+    // Since we are using zero-based indices, an index equal to the number of quantum operations in the quantum computation should also not work
+    ASSERT_THAT(annotatedQuantumComputation->getQuantumOperation(1), testing::IsNull());
+}

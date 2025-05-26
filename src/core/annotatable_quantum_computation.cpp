@@ -157,7 +157,7 @@ std::vector<std::string> AnnotatableQuantumComputation::getQubitLabels() const {
 }
 
 qc::Operation* AnnotatableQuantumComputation::getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
-    if (indexOfQuantumOperationInQuantumComputation > getNops()) {
+    if (indexOfQuantumOperationInQuantumComputation >= getNops()) {
         return nullptr;
     }
     return at(indexOfQuantumOperationInQuantumComputation).get();
@@ -266,10 +266,6 @@ bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std:
 // BEGIN NON-PUBLIC FUNCTIONALITY
 bool AnnotatableQuantumComputation::isQubitWithinRange(const qc::Qubit qubit) const noexcept {
     return qubit < getNqubits();
-}
-
-bool AnnotatableQuantumComputation::areQubitsWithinRange(const qc::Controls& qubitsToCheck) const noexcept {
-    return std::all_of(qubitsToCheck.cbegin(), qubitsToCheck.cend(), [&](const qc::Control control) { return isQubitWithinRange(control.qubit); });
 }
 
 bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation) {

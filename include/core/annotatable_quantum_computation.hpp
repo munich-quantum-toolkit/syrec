@@ -143,7 +143,6 @@ namespace syrec {
     protected:
         [[maybe_unused]] bool annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation);
         [[nodiscard]] bool    isQubitWithinRange(qc::Qubit qubit) const noexcept;
-        [[nodiscard]] bool    areQubitsWithinRange(const qc::Controls& qubitsToCheck) const noexcept;
 
         std::unordered_set<qc::Qubit>                    aggregateOfPropagatedControlQubits;
         std::vector<std::unordered_map<qc::Qubit, bool>> controlQubitPropgationScopes;
