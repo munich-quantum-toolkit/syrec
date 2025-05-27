@@ -33,7 +33,6 @@ namespace {
 } // namespace
 
 namespace syrec {
-
     std::optional<std::vector<bool>> simulateQuantumComputationExecutionForState(const qc::QuantumComputation& quantumComputation, const std::vector<bool>& quantumComputationInputQubitValues,
                                                                                  const Properties::ptr& statistics) {
         if (quantumComputationInputQubitValues.size() != quantumComputation.getNqubitsWithoutAncillae()) {
@@ -41,11 +40,7 @@ namespace syrec {
             return std::nullopt;
         }
 
-        if (quantumComputationInputQubitValues.empty()) {
-            if (quantumComputation.getNqubitsWithoutAncillae() > 0) {
-                std::cerr << "Input state must have at least one input qubit";
-                return std::nullopt;
-            }
+        if (quantumComputationInputQubitValues.empty() && quantumComputation.getNqubits() == 0) {
             if (statistics != nullptr) {
                 statistics->set("runtime", static_cast<double>(0));
             }

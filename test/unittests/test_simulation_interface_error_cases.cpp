@@ -54,7 +54,8 @@ TEST(SimulationInterfaceErrorCasesTests, EmptyInputStateInQuantumComputationWith
     const std::vector<bool>          quantumComputationInputQubitValues;
     std::optional<std::vector<bool>> quantumComputationOutputQubitValues;
     ASSERT_NO_FATAL_FAILURE(quantumComputationOutputQubitValues = simulateQuantumComputationExecutionForState(annotatableQuantumComputation, quantumComputationInputQubitValues, statistics));
-    ASSERT_FALSE(quantumComputationOutputQubitValues.has_value());
+    ASSERT_TRUE(quantumComputationOutputQubitValues.has_value());
+    ASSERT_TRUE(quantumComputationOutputQubitValues->empty());
     ASSERT_NO_FATAL_FAILURE(statistics->get<double>(EXPECTED_SIMULATION_RUNTIME_PROPERTY_KEY));
 }
 
@@ -130,16 +131,17 @@ TEST(SimulationInterfaceErrorCasesTests, CheckRuntimePropertyIsSet) {
     AnnotatableQuantumComputation annotatableQuantumComputation;
     const Properties::ptr         statistics = std::make_shared<Properties>();
 
-    const std::optional<qc::Qubit> addedQubitIndex = annotatableQuantumComputation.addPreliminaryAncillaryQubit("q0", false);
+    const std::optional<qc::Qubit> addedQubitIndex = annotatableQuantumComputation.addNonAncillaryQubit("q0", false);
     ASSERT_TRUE(addedQubitIndex.has_value());
     ASSERT_EQ(0, *addedQubitIndex);
 
-    annotatableQuantumComputation.setLogicalQubitAncillary(*addedQubitIndex);
+    annotatableQuantumComputation.x(*addedQubitIndex);
 
-    const std::vector<bool>          quantumComputationInputQubitValues;
+    const std::vector                quantumComputationInputQubitValues = {true};
     std::optional<std::vector<bool>> quantumComputationOutputQubitValues;
     ASSERT_NO_FATAL_FAILURE(quantumComputationOutputQubitValues = simulateQuantumComputationExecutionForState(annotatableQuantumComputation, quantumComputationInputQubitValues, statistics));
-    ASSERT_FALSE(quantumComputationOutputQubitValues.has_value());
+    ASSERT_TRUE(quantumComputationOutputQubitValues.has_value());
+    ASSERT_EQ(1, quantumComputationOutputQubitValues->size());
     ASSERT_NO_FATAL_FAILURE(statistics->get<double>(EXPECTED_SIMULATION_RUNTIME_PROPERTY_KEY));
 }
 
