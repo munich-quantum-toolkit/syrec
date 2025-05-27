@@ -8,9 +8,10 @@
  * Licensed under the MIT License
  */
 
-#include "algorithms/simulation/quantum_computation_simulation_for_state.hpp"
+#include "algorithms/simulation/simple_simulation.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
+#include "core/n_bit_values_container.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
 
@@ -70,31 +71,19 @@ TEST_P(SyrecLineAwareSimulationTest, GenericSimulationTest) {
     ASSERT_TRUE(errorString.empty());
     ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
 
-    const std::size_t nInputQubits = annotatableQuantumComputation.getNqubitsWithoutAncillae();
-    ASSERT_TRUE(setLines.size() < nInputQubits);
+    NBitValuesContainer inputState(annotatableQuantumComputation.getNqubits());
+    NBitValuesContainer outputState;
 
-    std::vector initialQuantumComputationInputValues(nInputQubits, false);
     for (const auto setLine: setLines) {
         ASSERT_TRUE(setLine >= 0);
-        initialQuantumComputationInputValues[static_cast<std::size_t>(setLine)] = true;
+        ASSERT_LT(static_cast<std::size_t>(setLine), inputState.size());
+        inputState.set(static_cast<std::size_t>(setLine));
     }
 
-    std::optional<std::vector<bool>> quantumComputationOutputQubitValues;
-    ASSERT_NO_FATAL_FAILURE(quantumComputationOutputQubitValues = simulateQuantumComputationExecutionForState(annotatableQuantumComputation, initialQuantumComputationInputValues, statistics));
-    ASSERT_TRUE(quantumComputationOutputQubitValues.has_value());
-    ASSERT_EQ(nInputQubits, quantumComputationOutputQubitValues->size());
-
-    // Sometimes the full expected simulation output is defined in the .json file but we are only interested in the values of the non-ancillary qubits (whose qubit index is assumed to be larger than the one of the input qubits)
-    const std::string_view& expectedOutputStateExcludingAncillaryQubits = std::string_view(expectedSimOut).substr(0, nInputQubits); // NOLINT (google-readability-casting)
-    ASSERT_EQ(expectedOutputStateExcludingAncillaryQubits.size(), quantumComputationOutputQubitValues->size()) << "Expected output state to contain " << std::to_string(expectedOutputStateExcludingAncillaryQubits.size()) << " qubits but after simulation had " << quantumComputationOutputQubitValues->size() << " qubits";
-    for (std::size_t i = 0; i < quantumComputationOutputQubitValues->size(); ++i) {
-        // We are not interested in the value of garbage qubits
-        if (annotatableQuantumComputation.getGarbage()[i]) {
-            continue;
-        }
-
-        const char actualStringifiedOutputStateValue   = quantumComputationOutputQubitValues.value()[i] ? '1' : '0';
-        const char expectedStringifiedOutputStateValue = expectedOutputStateExcludingAncillaryQubits[i];
+    ASSERT_NO_FATAL_FAILURE(syrec::simpleSimulation(outputState, annotatableQuantumComputation, inputState));
+    for (std::size_t i = 0; i < inputState.size(); ++i) {
+        const char actualStringifiedOutputStateValue   = outputState[i] ? '1' : '0';
+        const char expectedStringifiedOutputStateValue = expectedSimOut[i];
         ASSERT_EQ(expectedStringifiedOutputStateValue, actualStringifiedOutputStateValue) << "Mismatch of output qubit values at qubit " << std::to_string(i) << " | Expected: " << expectedStringifiedOutputStateValue << " Actual: " << actualStringifiedOutputStateValue;
     }
 }
