@@ -1,7 +1,7 @@
 NBitValuesContainer
 ===================
 
-Simplfied reimplementation of boost::dynamic_bitset<>.
+Simplified reimplementation of boost::dynamic_bitset<>.
 
     .. autoclass:: mqt.syrec.n_bit_values_container
         :undoc-members:
