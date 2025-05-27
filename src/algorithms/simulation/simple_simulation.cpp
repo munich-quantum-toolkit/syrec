@@ -14,6 +14,7 @@
 #include "core/properties.hpp"
 #include "ir/QuantumComputation.hpp"
 #include "ir/operations/Control.hpp"
+#include "ir/Definitions.hpp"
 #include "ir/operations/OpType.hpp"
 #include "ir/operations/Operation.hpp"
 
@@ -22,6 +23,7 @@
 #include <cstddef>
 #include <iostream>
 #include <optional>
+#include <string>
 
 using namespace syrec;
 
@@ -37,14 +39,12 @@ namespace {
 bool syrec::coreOperationSimulation(const qc::Operation& op, NBitValuesContainer& input) {
     const auto gateType = op.getType();
     if (gateType == qc::OpType::X) {
-        // TODO: Handle control or target qubits being out of range, targets being empty
         if (areAllControlQubitsSetInState(op.getControls(), input)) {
             input.flip(op.getTargets().front());
         }
         return true;
     }
     if (gateType == qc::OpType::SWAP) {
-        // TODO: Handle control or target qubits being out of range, targets being empty
         if (areAllControlQubitsSetInState(op.getControls(), input)) {
             const qc::Qubit targetQubitOne = op.getTargets()[0];
             const qc::Qubit targetQubitTwo = op.getTargets()[1];

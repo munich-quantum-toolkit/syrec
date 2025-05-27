@@ -20,9 +20,7 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
-#include <optional>
 #include <string>
-#include <string_view>
 #include <vector>
 
 // .clang-tidy reports a false positive here since are including the required nlohman json header file
