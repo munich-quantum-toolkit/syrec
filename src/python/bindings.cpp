@@ -42,11 +42,13 @@ PYBIND11_MODULE(pysyrec, m) {
             .def(py::init<>(), "Constructs an empty container of size zero.")
             .def(py::init<std::size_t>(), "n"_a, "Constructs a zero-initialized container of size n.")
             .def(py::init<std::size_t, uint64_t>(), "n"_a, "initialLineValues"_a, "Constructs a container of size n from an integer initialLineValues")
+            .def("__getitem__", [](const NBitValuesContainer& nBitValuesContainer, std::size_t bitIndex) { return nBitValuesContainer[bitIndex]; })
             .def("test", &NBitValuesContainer::test, "n"_a, "Determine the value of the bit at position n")
             .def("set", py::overload_cast<std::size_t>(&NBitValuesContainer::set), "n"_a, "Set the value of the bit at position n to TRUE")
             .def("set", py::overload_cast<std::size_t, bool>(&NBitValuesContainer::set), "n"_a, "value"_a, "Set the bit at position n to a specific value")
             .def("reset", &NBitValuesContainer::reset, "n"_a, "Set the value of the bit at position n to FALSE")
             .def("resize", &NBitValuesContainer::resize, "n"_a, "Changes the number of bits stored in the container")
+            .def("size", &NBitValuesContainer::size, "Get the number of values stored in the container")
             .def("flip", &NBitValuesContainer::flip, "n"_a, "Flip the value of the bit at position n")
             .def(
                     "__str__", [](const NBitValuesContainer& container) {
