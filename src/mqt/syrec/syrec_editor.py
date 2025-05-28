@@ -427,6 +427,8 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
 
         # Initiate table
         self.table.clear()
+        self.table.setRowCount(0)
+        self.table.setColumnCount(0)
         self.table.setRowCount(input_list_len + 2)
         self.table.setColumnCount(2 * no_of_bits)
 
