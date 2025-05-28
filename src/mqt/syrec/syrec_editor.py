@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 
-import itertools
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -22,7 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-class QubitItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
+class CircuitLineItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
     def __init__(self, index: int, width: int, parent: QtWidgets.QWidget | None = None) -> None:
         QtWidgets.QGraphicsItemGroup.__init__(self, parent)
 
@@ -37,7 +36,7 @@ class QubitItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
             x += e_width
 
 
-class QuantumComputationItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
+class GateItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
     def __init__(
         self,
         annotatable_quantum_computation: syrec.annotatable_quantum_computation,
@@ -55,41 +54,35 @@ class QuantumComputationItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc
         quantum_operation_annotations = annotatable_quantum_computation.get_annotations_of_quantum_operation(
             quantum_operation_index
         ).items()
+
         self.setToolTip(
             "\n".join([f'<b><font color="#606060">{k}:</font></b> {v}' for (k, v) in quantum_operation_annotations])
         )
 
         if len(qubits_of_operation) > 1:
-            qubit_line = QtWidgets.QGraphicsLineItem(
+            circuit_line = QtWidgets.QGraphicsLineItem(
                 0, qubits_of_operation[0] * 30, 0, qubits_of_operation[-1] * 30, self
             )
-            self.addToGroup(qubit_line)
+            self.addToGroup(circuit_line)
 
-        for target_qubit in quantum_operation.targets:
+        for t in quantum_operation.targets:
             if quantum_operation.type_ == OpType.x:
-                control_qubit_one_qt_item = QtWidgets.QGraphicsEllipseItem(-10, target_qubit * 30 - 10, 20, 20, self)
-                control_qubit_two_qt_item = QtWidgets.QGraphicsLineItem(
-                    0, target_qubit * 30 - 10, 0, target_qubit * 30 + 10, self
-                )
-                target_qubit_qt_item = QtWidgets.QGraphicsLineItem(-10, target_qubit * 30, 10, target_qubit * 30, self)
-                self.addToGroup(control_qubit_one_qt_item)
-                self.addToGroup(control_qubit_two_qt_item)
-                self.addToGroup(target_qubit_qt_item)
-
+                target = QtWidgets.QGraphicsEllipseItem(-10, t * 30 - 10, 20, 20, self)
+                target_line = QtWidgets.QGraphicsLineItem(0, t * 30 - 10, 0, t * 30 + 10, self)
+                target_line2 = QtWidgets.QGraphicsLineItem(-10, t * 30, 10, t * 30, self)
+                self.addToGroup(target)
+                self.addToGroup(target_line)
+                self.addToGroup(target_line2)
             if quantum_operation.type_ == OpType.swap:
-                cross_top_left_bottom_right = QtWidgets.QGraphicsLineItem(
-                    -5, target_qubit * 30 - 5, 5, target_qubit * 30 + 5, self
-                )
-                cross_top_right_bottom_left = QtWidgets.QGraphicsLineItem(
-                    5, target_qubit * 30 - 5, -5, target_qubit * 30 + 5, self
-                )
-                self.addToGroup(cross_top_left_bottom_right)
-                self.addToGroup(cross_top_right_bottom_left)
+                cross_tl_br = QtWidgets.QGraphicsLineItem(-5, t * 30 - 5, 5, t * 30 + 5, self)
+                cross_tr_bl = QtWidgets.QGraphicsLineItem(5, t * 30 - 5, -5, t * 30 + 5, self)
+                self.addToGroup(cross_tl_br)
+                self.addToGroup(cross_tr_bl)
 
-        for control_qubit in quantum_operation.controls:
-            control_qubit_qt_item = QtWidgets.QGraphicsEllipseItem(-5, control_qubit.qubit * 30 - 5, 10, 10, self)
-            control_qubit_qt_item.setBrush(QtGui.QColorConstants.Black)
-            self.addToGroup(control_qubit_qt_item)
+        for c in quantum_operation.controls:
+            control = QtWidgets.QGraphicsEllipseItem(-5, c.qubit * 30 - 5, 10, 10, self)
+            control.setBrush(QtGui.QColorConstants.Black)
+            self.addToGroup(control)
 
 
 class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
@@ -106,52 +99,50 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
         # Load circuit
         self.annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
-        self.qubits_qt_items: list[QubitItem] = []
-        self.input_qubit_labels: list[QtWidgets.QGraphicsTextItem | None] = []
-        self.output_qubit_labels: list[QtWidgets.QGraphicsTextItem | None] = []
+        self.lines: list[CircuitLineItem] = []
+        self.inputs: list[QtWidgets.QGraphicsTextItem | None] = []
+        self.outputs: list[QtWidgets.QGraphicsTextItem | None] = []
         if annotatable_quantum_computation is not None:
             self.load(annotatable_quantum_computation)
 
     def load(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
         self.scene().clear()
+
         self.annotatable_quantum_computation = annotatable_quantum_computation
-
-        self.qubits_qt_items = []
-        self.input_qubit_labels = []
-        self.output_qubit_labels = []
-
-        width = 30 * self.annotatable_quantum_computation.num_ops
+        self.lines = []
+        self.inputs = []
+        self.outputs = []
 
         n_quantum_ops = self.annotatable_quantum_computation.num_ops
-        for qubit_index in range(self.annotatable_quantum_computation.num_qubits):
-            qubit = QubitItem(qubit_index, n_quantum_ops)
-            self.qubits_qt_items.append(qubit)
-            self.scene().addItem(qubit)
-            self.input_qubit_labels.append(
+        width = 30 * n_quantum_ops
+
+        for i in range(self.annotatable_quantum_computation.num_qubits):
+            line = CircuitLineItem(i, n_quantum_ops)
+            self.lines.append(line)
+            self.scene().addItem(line)
+            self.inputs.append(
                 self.add_line_label(
                     0,
-                    qubit_index * 30,
-                    self.annotatable_quantum_computation.qubit_labels[qubit_index],
+                    i * 30,
+                    self.annotatable_quantum_computation.qubit_labels[i],
                     QtCore.Qt.AlignmentFlag.AlignRight,
-                    self.annotatable_quantum_computation.is_circuit_qubit_ancillary(qubit_index),
+                    self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i),
                 )
             )
-            self.output_qubit_labels.append(
+            self.outputs.append(
                 self.add_line_label(
                     width,
-                    qubit_index * 30,
-                    self.annotatable_quantum_computation.qubit_labels[qubit_index],
+                    i * 30,
+                    self.annotatable_quantum_computation.qubit_labels[i],
                     QtCore.Qt.AlignmentFlag.AlignLeft,
-                    self.annotatable_quantum_computation.is_circuit_qubit_garbage(qubit_index),
+                    self.annotatable_quantum_computation.is_circuit_qubit_garbage(i),
                 )
             )
 
-        for quantum_operation_index in range(n_quantum_ops):
-            quantum_operation_item = QuantumComputationItem(
-                self.annotatable_quantum_computation, quantum_operation_index
-            )
-            quantum_operation_item.setPos(quantum_operation_index * 30 + 15, 0)
-            self.scene().addItem(quantum_operation_item)
+        for i in range(n_quantum_ops):
+            gate = GateItem(self.annotatable_quantum_computation, i)
+            gate.setPos(i * 30 + 15, 0)
+            self.scene().addItem(gate)
 
     def add_line_label(
         self, x: int, y: int, text: str, align: QtCore.Qt.AlignmentFlag, color: bool
@@ -360,18 +351,23 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
         msg.exec()
 
-    # Instead of simulating all potential input states one might only be interested in a specific one but for now the user does not have the option to opt for the latter.
-    # The simulation is automatically started with a future version potentially offering an explicit start button instead.
-    # A general overhaul of the simulation table would be nice in the future
     def sim(self) -> None:
-        n_total_qubits = self.annotatable_quantum_computation.num_qubits
-        n_data_qubits = self.annotatable_quantum_computation.num_data_qubits
-        n_ancilla_qubits = self.annotatable_quantum_computation.num_ancilla_qubits
+        bit_mask = 0
+        bit1_mask = 0
 
+        no_of_bits = self.annotatable_quantum_computation.num_qubits
+        for i in range(no_of_bits):
+            if self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i) is False:
+                bit_mask += 2**i
+
+        input_list = [x & bit_mask for x in range(2**no_of_bits)]
+
+        n_ancilla_qubits = self.annotatable_quantum_computation.num_ancilla_qubits
+        n_data_qubits = self.annotatable_quantum_computation.num_data_qubits
         ancilla_qubit_values = [False] * n_ancilla_qubits
 
         # Ancilla qubits are assumed to be defined immediately after the data qubits in the quantum computation thus the first ancillary qubit has the index n_data_qubits + 1
-        ancillary_qubit_index = n_data_qubits
+        ancillary_qubit_index = self.annotatable_quantum_computation.num_data_qubits
         ancilla_qubit_indices = set()
         ancilla_qubit_indices.update([ancillary_qubit_index + i for i in range(n_ancilla_qubits)])
 
@@ -394,97 +390,77 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
                     quantum_operation.targets[0] - ancillary_qubit_index
                 ]
 
-        n_input_state_combinations = 2**n_data_qubits
-        input_state_combinations = [
-            [False for col in range(n_total_qubits)] for row in range(n_input_state_combinations)
-        ]
-        output_state_combinations = [
-            [False for col in range(n_total_qubits)] for row in range(n_input_state_combinations)
-        ]
+            for i in range(no_of_bits):
+                if (
+                    self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i) is True
+                    and ancilla_qubit_values[i - n_data_qubits]
+                ):
+                    bit1_mask += 2**i
+
+        input_list = [i + bit1_mask for i in input_list]
+
+        input_list = list(set(input_list))
+
+        input_list_len = len(input_list)
+
+        combination_inp = []
+        combination_out = []
+
+        final_inp = []
+        final_out = []
 
         settings = syrec.properties()
-        # Generate sorted list of permutations of possible input qubit binary states
-        for index, input_state in enumerate(itertools.product([False, True], repeat=n_data_qubits)):
-            # For a 4 data qubit input state the generated input state sequence would be: 0000, 0001, 0010, ....
-            # but since the least significant qubit starts in our input state combination at index 0 while the most significant qubit is at index (4 - 1)
-            # we need to reverse the generated input state to match our index schema.
-            reversed_input_state = list(reversed(input_state))
-            # Record values for data qubits
-            input_state_combinations[index][:n_data_qubits] = reversed_input_state
-            output_state_combinations[index][:n_data_qubits] = reversed_input_state
 
-            # Set values of ancillary qubits
-            input_state_combinations[index][n_data_qubits:] = ancilla_qubit_values
-            output_state_combinations[index][n_data_qubits:] = ancilla_qubit_values
+        for i in input_list:
+            my_inp_bitset = syrec.n_bit_values_container(no_of_bits, i)
+            my_out_bitset = syrec.n_bit_values_container(no_of_bits)
 
-            # Large input states or quantum computations with a large number of operations may take longer to simulate and thus it would be nice to display some kind of progress indication for
-            # the current state and the overall progress either with a spinner or progress bar element. An option to cancel the whole simulation would surely be nice.
-            output_state_of_data_qubits: list[bool] | None = syrec.quantum_computation_simulation_for_state(
-                self.annotatable_quantum_computation, reversed_input_state, settings
-            )
-            if output_state_of_data_qubits is None:
-                msg = QtWidgets.QMessageBox()
-                msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-                msg.setText(
-                    "An error occurred during the simulation of the execution of the quantum computation for the given input state:\n "
-                    + str(reversed_input_state)
-                    + "\nLeast significant qubit value is defined at index 0 while most significant qubit is at index N - 1"
-                )
-                msg.setWindowTitle("Error during simulation of input state!")
-                msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                msg.exec()
-                return
-            output_state_combinations[index][:n_data_qubits] = output_state_of_data_qubits
+            syrec.simple_simulation(my_out_bitset, self.annotatable_quantum_computation, my_inp_bitset, settings)
+            combination_inp.append(str(my_inp_bitset))
+            combination_out.append(str(my_out_bitset))
+
+        sorted_ind = sorted(range(len(combination_inp)), key=lambda k: int(combination_inp[k], 2))
+
+        for i in sorted_ind:
+            final_inp.append(combination_inp[i])
+            final_out.append(combination_out[i])
 
         # Initiate table
-
         self.table.clear()
-        self.table.setRowCount(n_input_state_combinations + 2)
-        self.table.setColumnCount(2 * n_total_qubits)
+        self.table.setRowCount(input_list_len + 2)
+        self.table.setColumnCount(2 * no_of_bits)
 
-        self.table.setSpan(0, 0, 1, n_total_qubits)
+        self.table.setSpan(0, 0, 1, no_of_bits)
         header1 = QtWidgets.QTableWidgetItem("INPUTS")
         header1.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.table.setItem(0, 0, header1)
 
-        self.table.setSpan(0, n_total_qubits, 1, n_total_qubits)
+        self.table.setSpan(0, no_of_bits, 1, no_of_bits)
         header2 = QtWidgets.QTableWidgetItem("OUTPUTS")
         header2.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.table.setItem(0, n_total_qubits, header2)
+        self.table.setItem(0, no_of_bits, header2)
 
         self.table.horizontalHeader().setVisible(False)
         self.table.verticalHeader().setVisible(False)
 
-        # Set labels for qubit columns in input and output state table header
-        input_qubit_labels = self.annotatable_quantum_computation.qubit_labels
-        for i in range(n_total_qubits):
-            input_qubit_label_qt_item = QtWidgets.QTableWidgetItem(input_qubit_labels[i])
-            input_qubit_label_qt_item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            self.table.setItem(1, i, QtWidgets.QTableWidgetItem(input_qubit_label_qt_item))
+        for i in range(no_of_bits):
+            input_signal = QtWidgets.QTableWidgetItem(self.annotatable_quantum_computation.qubit_labels[i])
+            input_signal.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(1, i, QtWidgets.QTableWidgetItem(input_signal))
 
-            output_qubit_label_qt_item = QtWidgets.QTableWidgetItem(
-                input_qubit_labels[i]
-                if not self.annotatable_quantum_computation.is_circuit_qubit_garbage(i)
-                else "garbage"
-            )
-            output_qubit_label_qt_item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            self.table.setItem(1, n_total_qubits + i, QtWidgets.QTableWidgetItem(output_qubit_label_qt_item))
+            output_signal = QtWidgets.QTableWidgetItem(self.annotatable_quantum_computation.qubit_labels[i])
+            output_signal.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(1, i + no_of_bits, QtWidgets.QTableWidgetItem(output_signal))
 
-        # Fill in values of qubits in input and output state per input state combination in the table
-        for i in range(n_input_state_combinations):
-            for input_qubit_index in range(n_total_qubits):
-                stringified_input_qubit_value = "1" if input_state_combinations[i][input_qubit_index] is True else "0"
-                input_qubit_value_qt_item = QtWidgets.QTableWidgetItem(stringified_input_qubit_value)
-                input_qubit_label_qt_item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                self.table.setItem(2 + i, input_qubit_index, QtWidgets.QTableWidgetItem(input_qubit_value_qt_item))
+        for i in range(input_list_len):
+            for j in range(no_of_bits):
+                input_cell = QtWidgets.QTableWidgetItem(final_inp[i][j])
+                input_cell.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                self.table.setItem(i + 2, j, QtWidgets.QTableWidgetItem(input_cell))
 
-                stringified_output_qubit_value = "1" if output_state_combinations[i][input_qubit_index] is True else "0"
-                output_qubit_value_qt_item = QtWidgets.QTableWidgetItem(stringified_output_qubit_value)
-                output_qubit_label_qt_item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                # Can we reuse the input_qubit_value_qt_item since the value of the input qubit should be the same in the output state (atleast for all non-garbage data qubits)?
-                self.table.setItem(
-                    2 + i, n_total_qubits + input_qubit_index, QtWidgets.QTableWidgetItem(output_qubit_value_qt_item)
-                )
+                output_cell = QtWidgets.QTableWidgetItem(final_out[i][j])
+                output_cell.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                self.table.setItem(i + 2, j + no_of_bits, QtWidgets.QTableWidgetItem(output_cell))
 
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
