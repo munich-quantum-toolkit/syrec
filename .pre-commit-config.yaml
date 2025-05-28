@@ -110,6 +110,7 @@ repos:
         additional_dependencies:
           - nox
           - pytest
+          - mqt.core
 
   # Check for spelling
   - repo: https://github.com/crate-ci/typos
