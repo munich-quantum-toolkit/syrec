@@ -38,6 +38,22 @@ PYBIND11_MODULE(pysyrec, m) {
                     "get_transistor_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getTransistorCostForSynthesis(annotatableQuantumComputation); }, "Get the transistor cost to synthesis the quantum computation")
             .def("get_annotations_of_quantum_operation", &AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation, "quantum_operation_index_in_quantum_operation"_a, "Get the annotations of a specific quantum operation in the quantum computation");
 
+    py::class_<NBitValuesContainer>(m, "n_bit_values_container")
+            .def(py::init<>(), "Constructs an empty container of size zero.")
+            .def(py::init<std::size_t>(), "n"_a, "Constructs a zero-initialized container of size n.")
+            .def(py::init<std::size_t, uint64_t>(), "n"_a, "initialLineValues"_a, "Constructs a container of size n from an integer initialLineValues")
+            .def("test", &NBitValuesContainer::test, "n"_a, "Determine the value of the bit at position n")
+            .def("set", py::overload_cast<std::size_t>(&NBitValuesContainer::set), "n"_a, "Set the value of the bit at position n to TRUE")
+            .def("set", py::overload_cast<std::size_t, bool>(&NBitValuesContainer::set), "n"_a, "value"_a, "Set the bit at position n to a specific value")
+            .def("reset", &NBitValuesContainer::reset, "n"_a, "Set the value of the bit at position n to FALSE")
+            .def("resize", &NBitValuesContainer::resize, "n"_a, "Changes the number of bits stored in the container")
+            .def("flip", &NBitValuesContainer::flip, "n"_a, "Flip the value of the bit at position n")
+            .def(
+                    "__str__", [](const NBitValuesContainer& container) {
+                        return container.stringify();
+                    },
+                    "Returns a string containing the stringified values of the stored bits.");
+
     py::class_<Properties, std::shared_ptr<Properties>>(m, "properties")
             .def(py::init<>(), "Constructs property map object.")
             .def("set_string", &Properties::set<std::string>)

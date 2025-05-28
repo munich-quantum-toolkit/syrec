@@ -19,10 +19,11 @@ from .pysyrec import (
     annotatable_quantum_computation,
     cost_aware_synthesis,
     line_aware_synthesis,
+    n_bit_values_container,
     program,
     properties,
-    quantum_computation_simulation_for_state,
     read_program_settings,
+    simple_simulation
 )
 
 __all__ = [
@@ -30,8 +31,9 @@ __all__ = [
     "annotatable_quantum_computation",
     "cost_aware_synthesis",
     "line_aware_synthesis",
+    "n_bit_values_container",
     "program",
     "properties",
-    "quantum_computation_simulation_for_state",
     "read_program_settings",
+    "simple_simulation"
 ]
