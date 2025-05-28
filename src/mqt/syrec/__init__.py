@@ -23,7 +23,7 @@ from .pysyrec import (
     program,
     properties,
     read_program_settings,
-    simple_simulation
+    simple_simulation,
 )
 
 __all__ = [
@@ -35,5 +35,5 @@ __all__ = [
     "program",
     "properties",
     "read_program_settings",
-    "simple_simulation"
+    "simple_simulation",
 ]
