@@ -14,8 +14,11 @@ See README.md or go to https://github.com/cda-tum/syrec for more information.
 
 from __future__ import annotations
 
+import sys
+
 # under Windows, make sure to add the appropriate DLL directory to the PATH
 if sys.platform == "win32":
+
     def _dll_patch() -> None:
         """Add the DLL directory to the PATH."""
         import os
