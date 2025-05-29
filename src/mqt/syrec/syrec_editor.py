@@ -352,15 +352,11 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         msg.exec()
 
     def sim(self) -> None:
-        bit_mask = 0
         bit1_mask = 0
 
         no_of_bits = self.annotatable_quantum_computation.num_qubits
-        for i in range(no_of_bits):
-            if self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i) is False:
-                bit_mask += 2**i
-
-        input_list = [x & bit_mask for x in range(2**no_of_bits)]
+        all_inputs_bit_mask = 2**self.annotatable_quantum_computation.num_data_qubits - 1
+        input_list = [all_inputs_bit_mask & x for x in range(2**self.annotatable_quantum_computation.num_data_qubits)]
 
         n_ancilla_qubits = self.annotatable_quantum_computation.num_ancilla_qubits
         n_data_qubits = self.annotatable_quantum_computation.num_data_qubits
@@ -397,10 +393,6 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
                 ):
                     bit1_mask += 2**i
 
-        input_list = [i + bit1_mask for i in input_list]
-
-        input_list = list(set(input_list))
-
         input_list_len = len(input_list)
 
         combination_inp = []
@@ -414,9 +406,10 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         for i in input_list:
             my_inp_bitset = syrec.n_bit_values_container(no_of_bits, i)
             my_out_bitset = syrec.n_bit_values_container(no_of_bits)
-
             syrec.simple_simulation(my_out_bitset, self.annotatable_quantum_computation, my_inp_bitset, settings)
-            combination_inp.append(str(my_inp_bitset))
+
+            inp_bitset_with_ancillaes_set = syrec.n_bit_values_container(no_of_bits, i + bit1_mask)
+            combination_inp.append(str(inp_bitset_with_ancillaes_set))
             combination_out.append(str(my_out_bitset))
 
         sorted_ind = sorted(range(len(combination_inp)), key=lambda k: int(combination_inp[k], 2))
