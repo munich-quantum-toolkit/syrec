@@ -16,6 +16,7 @@
 #include "ir/operations/Operation.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <optional>
@@ -32,6 +33,7 @@ namespace syrec {
     class AnnotatableQuantumComputation: public qc::QuantumComputation {
     public:
         using QuantumOperationAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
+        using SynthesisCostMetricValue          = std::uint64_t;
 
         [[maybe_unused]] bool addOperationsImplementingNotGate(qc::Qubit targetQubit);
         [[maybe_unused]] bool addOperationsImplementingCnotGate(qc::Qubit controlQubit, qc::Qubit targetQubit);
@@ -72,6 +74,8 @@ namespace syrec {
         [[nodiscard]] std::vector<std::string>          getQubitLabels() const;
         [[nodiscard]] qc::Operation*                    getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
         [[nodiscard]] QuantumOperationAnnotationsLookup getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
+        [[nodiscard]] SynthesisCostMetricValue          getQuantumCostForSynthesis() const;
+        [[nodiscard]] SynthesisCostMetricValue          getTransistorCostForSynthesis() const;
 
         /**
          * Activate a new control qubit propagation scope.

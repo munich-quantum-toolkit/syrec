@@ -9,7 +9,6 @@
  */
 
 #include "algorithms/simulation/simple_simulation.hpp"
-#include "algorithms/synthesis/quantum_computation_synthesis_cost_metrics.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
@@ -32,10 +31,8 @@ PYBIND11_MODULE(pysyrec, m) {
     py::class_<AnnotatableQuantumComputation, qc::QuantumComputation>(m, "annotatable_quantum_computation")
             .def(py::init<>(), "Constructs an annotatable quantum computation")
             .def_property_readonly("qubit_labels", &AnnotatableQuantumComputation::getQubitLabels, "Get the label of each qubit in the quantum computation")
-            .def(
-                    "get_quantum_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getQuantumCostForSynthesis(annotatableQuantumComputation); }, "Get the quantum cost to synthesis the quantum computation")
-            .def(
-                    "get_transistor_cost_for_synthesis", [](const AnnotatableQuantumComputation& annotatableQuantumComputation) { return getTransistorCostForSynthesis(annotatableQuantumComputation); }, "Get the transistor cost to synthesis the quantum computation")
+            .def("get_quantum_cost_for_synthesis", &AnnotatableQuantumComputation::getQuantumCostForSynthesis, "Get the quantum cost to synthesis the quantum computation")
+            .def("get_transistor_cost_for_synthesis", &AnnotatableQuantumComputation::getTransistorCostForSynthesis, "Get the transistor cost to synthesis the quantum computation")
             .def("get_annotations_of_quantum_operation", &AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation, "quantum_operation_index_in_quantum_operation"_a, "Get the annotations of a specific quantum operation in the quantum computation");
 
     py::class_<NBitValuesContainer>(m, "n_bit_values_container")
