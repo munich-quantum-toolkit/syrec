@@ -51,4 +51,4 @@ build:
 #            - cp docs/_build/latex/$READTHEDOCS_PROJECT.pdf $READTHEDOCS_OUTPUT/pdf/$READTHEDOCS_PROJECT.pdf
 
 sphinx:
-    configuration: docs/source/conf.py
+  configuration: docs/source/conf.py
