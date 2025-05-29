@@ -1,7 +1,7 @@
 version: 2
 
 formats:
-#  - pdf
+  #  - pdf
   - htmlzip
 
 build:
@@ -12,40 +12,43 @@ build:
     - inkscape
   jobs:
     post_checkout:
-        # Skip docs build if the commit message contains "skip ci"
-        - (git --no-pager log --pretty="tformat:%s -- %b" -1 | grep -viq "skip ci") || exit 183
-        # Skip docs build if there are no changes related to docs
-        - |
-          if [ "$READTHEDOCS_VERSION_TYPE" = "external" ] && git diff --quiet origin/main -- docs/ .readthedocs.yaml src/mqt/ src/python include/*/python .github/contributing* .github/support*;
-          then
-            exit 183;
-          fi
-         # Unshallow the git clone and fetch tags to get proper version information
-        - git fetch --unshallow --tags
+      # Skip docs build if the commit message contains "skip ci"
+      - (git --no-pager log --pretty="tformat:%s -- %b" -1 | grep -viq "skip ci") || exit 183
+      # Skip docs build if there are no changes related to docs
+      - |
+        if [ "$READTHEDOCS_VERSION_TYPE" = "external" ] && git diff --quiet origin/main -- docs/ .readthedocs.yaml src/mqt/ src/python include/*/python .github/contributing* .github/support*;
+        then
+          exit 183;
+        fi
+        # Unshallow the git clone and fetch tags to get proper version information
+      - git fetch --unshallow --tags
     pre_build:
-        # Set up uv and a virtual environment
-        - asdf plugin add uv
-        - asdf install uv latest
-        - asdf global uv latest
-        # Set up build time dependencies including a source distribution of mqt-core.
-        - uv sync --only-group build --only-group docs --no-binary-package mqt-core
-        # The default version of CMake on Ubunut 24.04 is too old, so we need to install a newer version
-        - uv pip install cmake
-        # Download boost
-        - curl -L -O https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz
-        # Untar boost to ~/
-        - tar -xzf boost_1_87_0.tar.gz -C ~/
-        # Install boost
-        - cd ~/boost_1_87_0 && ./bootstrap.sh --prefix=${HOME}/boost && ./b2 install --with-system --prefix=${HOME}/boost
+      # Set up uv and a virtual environment
+      - asdf plugin add uv
+      - asdf install uv latest
+      - asdf global uv latest
+      # Set up build time dependencies including a source distribution of mqt-core.
+      - uv sync --only-group build --only-group docs --no-binary-package mqt-core
+      # The default version of CMake on Ubuntu 24.04 is too old, so we need to install a newer version
+      - uv pip install cmake
+      # Download boost
+      - curl -L -O https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz
+      # Untar boost to ~/
+      - tar -xzf boost_1_87_0.tar.gz -C ~/
+      # Install boost
+      - cd ~/boost_1_87_0 && ./bootstrap.sh --prefix=${HOME}/boost && ./b2 install --with-system --prefix=${HOME}/boost
     build:
-        html:
-            - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b html -d docs/_build/doctrees -D language=en docs $READTHEDOCS_OUTPUT/html
-        htmlzip:
-            - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b dirhtml -d docs/_build/doctrees -D language=en docs/_build/dirhtml
-            - mkdir -p $READTHEDOCS_OUTPUT/htmlzip
-            - zip -r $READTHEDOCS_OUTPUT/htmlzip/html.zip docs/_build/dirhtml/*
+      html:
+        - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b html -d docs/_build/doctrees -D language=en docs/source $READTHEDOCS_OUTPUT/html
+      htmlzip:
+        - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b dirhtml -d docs/_build/doctrees -D language=en docs/source docs/_build/dirhtml
+        - mkdir -p $READTHEDOCS_OUTPUT/htmlzip
+        - zip -r $READTHEDOCS_OUTPUT/htmlzip/html.zip docs/_build/dirhtml/*
 #        pdf:
-#            - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b latex -d docs/_build/doctrees -D language=en docs docs/_build/latex
+#            - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b latex -d docs/_build/doctrees -D language=en docs/source docs/_build/latex
 #            - cd docs/_build/latex && latexmk -pdf -f -dvi- -ps- -interaction=nonstopmode -jobname=$READTHEDOCS_PROJECT
 #            - mkdir -p $READTHEDOCS_OUTPUT/pdf
 #            - cp docs/_build/latex/$READTHEDOCS_PROJECT.pdf $READTHEDOCS_OUTPUT/pdf/$READTHEDOCS_PROJECT.pdf
+
+sphinx:
+    configuration: docs/source/conf.py
