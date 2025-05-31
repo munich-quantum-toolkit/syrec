@@ -28,6 +28,7 @@
 #include <stack>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace {
