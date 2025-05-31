@@ -9,44 +9,44 @@
  */
 
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
-#include "core/circuit.hpp"
-#include "core/properties.hpp"
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/syrec/program.hpp"
 
-#include "gtest/gtest.h"
+#include <algorithm>
+#include <cstddef>
+#include <fstream>
+#include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
 #include <string>
-#include <vector>
 
-using json = nlohmann::json;
+// .clang-tidy reports a false positive here since we are including the required nlohman json header file
+using json = nlohmann::json; // NOLINT(misc-include-cleaner)
 
 using namespace syrec;
 
-class SyrecAddLinesSynthesisTest: public testing::TestWithParam<std::string> {
+class SyrecCostAwareSynthesisTest: public testing::TestWithParam<std::string> {
 protected:
-    std::string  testConfigsDir  = "./configs/";
-    std::string  testCircuitsDir = "./circuits/";
-    std::string  fileName;
-    Gate::cost_t qc               = 0;
-    Gate::cost_t tc               = 0;
-    unsigned     expectedNumGates = 0;
-    unsigned     expectedLines    = 0;
-    Gate::cost_t expectedQc       = 0;
-    Gate::cost_t expectedTc       = 0;
+    std::string                                             testConfigsDir  = "./configs/";
+    std::string                                             testCircuitsDir = "./circuits/";
+    std::string                                             fileName;
+    std::size_t                                             expectedNumGates        = 0;
+    std::size_t                                             expectedNumLines        = 0;
+    AnnotatableQuantumComputation::SynthesisCostMetricValue expectedQuantumCosts    = 0;
+    AnnotatableQuantumComputation::SynthesisCostMetricValue expectedTransistorCosts = 0;
 
     void SetUp() override {
-        std::string synthesisParam = GetParam();
-        fileName                   = testCircuitsDir + GetParam() + ".src";
+        const std::string& synthesisParam = GetParam();
+        fileName                          = testCircuitsDir + GetParam() + ".src";
         std::ifstream i(testConfigsDir + "circuits_cost_aware_synthesis.json");
-        json          j  = json::parse(i);
-        expectedNumGates = j[synthesisParam]["num_gates"];
-        expectedLines    = j[synthesisParam]["lines"];
-        expectedQc       = j[synthesisParam]["quantum_costs"];
-        expectedTc       = j[synthesisParam]["transistor_costs"];
+        json          j         = json::parse(i);
+        expectedNumGates        = j[synthesisParam]["num_gates"];
+        expectedNumLines        = j[synthesisParam]["lines"];
+        expectedQuantumCosts    = j[synthesisParam]["quantum_costs"];
+        expectedTransistorCosts = j[synthesisParam]["transistor_costs"];
     }
 };
 
-INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecAddLinesSynthesisTest,
+INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecCostAwareSynthesisTest,
                          testing::Values(
                                  "alu_2",
                                  "binary_numeric",
@@ -74,27 +74,24 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecAddLinesSynthesisTest,
                                  "single_longstatement_4",
                                  "skip",
                                  "swap_2"),
-                         [](const testing::TestParamInfo<SyrecAddLinesSynthesisTest::ParamType>& info) {
+                         [](const testing::TestParamInfo<SyrecCostAwareSynthesisTest::ParamType>& info) {
                              auto s = info.param;
                              std::replace( s.begin(), s.end(), '-', '_');
                              return s; });
 
-TEST_P(SyrecAddLinesSynthesisTest, GenericSynthesisTest) {
-    Circuit             circ;
-    Program             prog;
-    ReadProgramSettings settings;
-    std::string         errorString;
+TEST_P(SyrecCostAwareSynthesisTest, GenericSynthesisTest) {
+    AnnotatableQuantumComputation annotatableQuantumComputation;
+    Program                       prog;
+    const ReadProgramSettings     settings;
+    const std::string             errorString = prog.read(fileName, settings);
+    ASSERT_TRUE(errorString.empty());
 
-    errorString = prog.read(fileName, settings);
-    EXPECT_TRUE(errorString.empty());
+    ASSERT_TRUE(CostAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
+    ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNops());
+    ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNqubits());
 
-    EXPECT_TRUE(CostAwareSynthesis::synthesize(circ, prog));
-
-    qc = circ.quantumCost();
-    tc = circ.transistorCost();
-
-    EXPECT_EQ(expectedNumGates, circ.numGates());
-    EXPECT_EQ(expectedLines, circ.getLines());
-    EXPECT_EQ(expectedQc, qc);
-    EXPECT_EQ(expectedTc, tc);
+    const AnnotatableQuantumComputation::SynthesisCostMetricValue actualQuantumCosts    = annotatableQuantumComputation.getQuantumCostForSynthesis();
+    const AnnotatableQuantumComputation::SynthesisCostMetricValue actualTransistorCosts = annotatableQuantumComputation.getTransistorCostForSynthesis();
+    ASSERT_EQ(expectedQuantumCosts, actualQuantumCosts);
+    ASSERT_EQ(expectedTransistorCosts, actualTransistorCosts);
 }

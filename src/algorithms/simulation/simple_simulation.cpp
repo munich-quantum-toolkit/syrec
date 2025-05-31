@@ -10,68 +10,80 @@
 
 #include "algorithms/simulation/simple_simulation.hpp"
 
-#include "core/circuit.hpp"
-#include "core/gate.hpp"
 #include "core/n_bit_values_container.hpp"
 #include "core/properties.hpp"
-#include "core/utils/timer.hpp"
+#include "ir/Definitions.hpp"
+#include "ir/QuantumComputation.hpp"
+#include "ir/operations/Control.hpp"
+#include "ir/operations/OpType.hpp"
+#include "ir/operations/Operation.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <iostream>
+#include <optional>
+#include <string>
 
-namespace syrec {
-    void coreGateSimulation(const Gate& g, NBitValuesContainer& input) {
-        if (g.type == Gate::Type::Toffoli) {
-            NBitValuesContainer cMask(input.size());
-            for (const auto& c: g.controls) {
-                cMask.set(c);
+using namespace syrec;
+
+namespace {
+    //Prefer the usage of std::chrono::steady_clock instead of std::chrono::system_clock since the former cannot decrease (due to time zone changes, etc.) and is most suitable for measuring intervals according to (https://en.cppreference.com/w/cpp/chrono/steady_clock)
+    using TimeStamp = std::chrono::time_point<std::chrono::steady_clock>;
+
+    bool areAllControlQubitsSetInState(const qc::Controls& controlQubits, const NBitValuesContainer& state) {
+        return controlQubits.empty() || std::all_of(controlQubits.cbegin(), controlQubits.cend(), [&state](const qc::Control& controlQubit) { return state.test(controlQubit.qubit).value_or(false); });
+    }
+} // namespace
+
+bool syrec::coreOperationSimulation(const qc::Operation& op, NBitValuesContainer& input) {
+    const auto gateType = op.getType();
+    if (gateType == qc::OpType::X) {
+        if (areAllControlQubitsSetInState(op.getControls(), input)) {
+            input.flip(op.getTargets().front());
+        }
+        return true;
+    }
+    if (gateType == qc::OpType::SWAP) {
+        if (areAllControlQubitsSetInState(op.getControls(), input)) {
+            const qc::Qubit targetQubitOne = op.getTargets()[0];
+            const qc::Qubit targetQubitTwo = op.getTargets()[1];
+
+            const bool valueOfTargetQubitOne = input[targetQubitOne];
+            if (input[targetQubitOne] != input[targetQubitTwo]) {
+                input.set(targetQubitOne, input[targetQubitTwo]);
+                input.set(targetQubitTwo, valueOfTargetQubitOne);
             }
+        }
+        return true;
+    }
+    std::cerr << "Cannot simulate gate of type " << std::to_string(gateType) << "\n";
+    return false;
+}
 
-            if (cMask.none() || ((input & cMask) == cMask)) {
-                input.flip(*g.targets.begin());
-            }
-        } else if (g.type == Gate::Type::Fredkin) {
-            NBitValuesContainer cMask(input.size());
-            for (const auto& c: g.controls) {
-                cMask.set(c);
-            }
+void syrec::simpleSimulation(NBitValuesContainer& output, const qc::QuantumComputation& quantumComputation, const NBitValuesContainer& input, const Properties::ptr& statistics) {
+    if (input.size() != quantumComputation.getNqubits()) {
+        std::cerr << "Input state size (" << input.size() << ") must match number of qubits in the quantum computation (" << quantumComputation.getNqubits() << ")\n";
+        return;
+    }
 
-            if (cMask.none() || ((input & cMask) == cMask)) {
-                // get both positions and values
-                auto              it = g.targets.begin();
-                const std::size_t t1 = *it++;
-                const std::size_t t2 = *it;
+    const TimeStamp simulationStartTime = std::chrono::steady_clock::now();
 
-                const bool t1v = input[t1];
-                const bool t2v = input[t2];
-
-                // only swap when different
-                if (t1v != t2v) {
-                    input.set(t1, t2v);
-                    input.set(t2, t1v);
-                }
+    output = input;
+    for (std::size_t i = 0; i < quantumComputation.getNops(); ++i) {
+        if (const auto& op = quantumComputation.at(i); op != nullptr) {
+            if (!coreOperationSimulation(*quantumComputation.at(i), output)) {
+                return;
             }
         } else {
-            std::cerr << "Unknown gate: Simulation error\n";
+            std::cerr << "Operation " << std::to_string(i) + " in quantum computation was NULL!\n";
+            return;
         }
     }
 
-    void simpleSimulation(NBitValuesContainer& output, const Circuit& circ, const NBitValuesContainer& input,
-                          const Properties::ptr& statistics) {
-        Timer<PropertiesTimer> t;
-
-        if (statistics) {
-            const PropertiesTimer rt(statistics);
-            t.start(rt);
-        }
-
-        output = input;
-        for (const auto& g: circ) {
-            coreGateSimulation(*g, output);
-        }
-
-        if (statistics) {
-            t.stop();
-        }
+    const TimeStamp simulationEndTime = std::chrono::steady_clock::now();
+    const auto      simulationRunTime = std::chrono::duration_cast<std::chrono::milliseconds>(simulationEndTime - simulationStartTime);
+    if (statistics != nullptr) {
+        statistics->set("runtime", static_cast<double>(simulationRunTime.count()));
     }
-} // namespace syrec
+}

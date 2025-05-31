@@ -10,13 +10,12 @@
 
 #pragma once
 
-#include "core/circuit.hpp"
-#include "core/gate.hpp"
 #include "core/n_bit_values_container.hpp"
 #include "core/properties.hpp"
+#include "ir/QuantumComputation.hpp"
+#include "ir/operations/Operation.hpp"
 
 namespace syrec {
-
     /**
     * @brief Simulation for a single gate \p g
     *
@@ -25,10 +24,11 @@ namespace syrec {
     *
     * \b Important: The operator should modify \p input directly.
     *
-    * @param g     The gate to be simulated
+    * @param op     The quantum operation to simulate
     * @param input An input pattern
+    * @returns Whether the operation could be applied.
     */
-    void coreGateSimulation(const Gate& g, NBitValuesContainer& input);
+    [[nodiscard]] bool coreOperationSimulation(const qc::Operation& op, NBitValuesContainer& input);
 
     /**
     * @brief Simple Simulation function for a circuit
@@ -40,7 +40,7 @@ namespace syrec {
     * to \p output.
     *
     * @param output Output pattern. The index of the pattern corresponds to the line index.
-    * @param circ Circuit to be simulated.
+    * @param quantumComputation Quantum computation to be simulated.
     * @param input Input pattern. The index of the pattern corresponds to the line index.
     *              The bit-width of the input pattern has to be initialized properly to the
     *              number of lines.
@@ -57,7 +57,6 @@ namespace syrec {
     *   </tr>
     * </table>
     */
-    void simpleSimulation(NBitValuesContainer& output, const Circuit& circ, const NBitValuesContainer& input,
+    void simpleSimulation(NBitValuesContainer& output, const qc::QuantumComputation& quantumComputation, const NBitValuesContainer& input,
                           const Properties::ptr& statistics = Properties::ptr());
-
 } // namespace syrec
