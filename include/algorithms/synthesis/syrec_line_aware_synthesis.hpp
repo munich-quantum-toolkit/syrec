@@ -11,11 +11,12 @@
 #pragma once
 
 #include "algorithms/synthesis/syrec_synthesis.hpp"
-#include "core/circuit.hpp"
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
+#include "ir/Definitions.hpp"
 
 #include <memory>
 #include <vector>
@@ -25,57 +26,57 @@ namespace syrec {
     public:
         using SyrecSynthesis::SyrecSynthesis;
 
-        static bool synthesize(Circuit& circ, const Program& program, const Properties::ptr& settings = std::make_shared<Properties>(), const Properties::ptr& statistics = std::make_shared<Properties>());
+        static bool synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const Properties::ptr& settings = std::make_shared<Properties>(), const Properties::ptr& statistics = std::make_shared<Properties>());
 
     protected:
-        bool processStatement(Circuit& circuit, const Statement::ptr& statement) override;
+        bool processStatement(const Statement::ptr& statement) override;
 
-        bool opRhsLhsExpression(const Expression::ptr& expression, std::vector<unsigned>& v) override;
+        bool opRhsLhsExpression(const Expression::ptr& expression, std::vector<qc::Qubit>& v) override;
 
-        bool opRhsLhsExpression(const VariableExpression& expression, std::vector<unsigned>& v) override;
+        bool opRhsLhsExpression(const VariableExpression& expression, std::vector<qc::Qubit>& v) override;
 
-        bool opRhsLhsExpression(const BinaryExpression& expression, std::vector<unsigned>& v) override;
+        bool opRhsLhsExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& v) override;
 
         void popExp();
 
-        bool inverse(Circuit& circuit);
+        bool inverse();
 
-        bool assignAdd(Circuit& circuit, std::vector<unsigned>& rhs, std::vector<unsigned>& lhs, AssignStatement::AssignOperation assignOperation) override;
+        bool assignAdd(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
 
-        bool assignSubtract(Circuit& circuit, std::vector<unsigned>& rhs, std::vector<unsigned>& lhs, AssignStatement::AssignOperation assignOperation) override;
+        bool assignSubtract(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
 
-        bool assignExor(Circuit& circuit, std::vector<unsigned>& lhs, std::vector<unsigned>& rhs, AssignStatement::AssignOperation assignOperation) override;
+        bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
 
-        bool solver(Circuit& circuit, const std::vector<unsigned>& expRhs, AssignStatement::AssignOperation assignOperation, const std::vector<unsigned>& expLhs, BinaryExpression::BinaryOperation binaryOperation, const std::vector<unsigned>& statLhs);
+        bool solver(const std::vector<qc::Qubit>& expRhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation, const std::vector<qc::Qubit>& expLhs, BinaryExpression::BinaryOperation binaryOperation, const std::vector<qc::Qubit>& statLhs);
 
-        bool flow(const Expression::ptr& expression, std::vector<unsigned>& v);
-        bool flow(const VariableExpression& expression, std::vector<unsigned>& v);
-        bool flow(const BinaryExpression& expression, const std::vector<unsigned>& v);
+        bool flow(const Expression::ptr& expression, std::vector<qc::Qubit>& v);
+        bool flow(const VariableExpression& expression, std::vector<qc::Qubit>& v);
+        bool flow(const BinaryExpression& expression, const std::vector<qc::Qubit>& v);
 
-        bool expAdd(Circuit& circuit, [[maybe_unused]] const unsigned& bitwidth, std::vector<unsigned>& lines, const std::vector<unsigned>& lhs, const std::vector<unsigned>& rhs) override {
-            const bool synthesisOfExprOk = increase(circuit, rhs, lhs);
+        bool expAdd([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) override {
+            const bool synthesisOfExprOk = increase(annotatableQuantumComputation, rhs, lhs);
             lines                        = rhs;
             return synthesisOfExprOk;
         }
 
-        bool expSubtract(Circuit& circuit, [[maybe_unused]] const unsigned& bitwidth, std::vector<unsigned>& lines, const std::vector<unsigned>& lhs, const std::vector<unsigned>& rhs) override {
-            const bool synthesisOfExprOk = decreaseNewAssign(circuit, rhs, lhs);
+        bool expSubtract([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) override {
+            const bool synthesisOfExprOk = decreaseNewAssign(annotatableQuantumComputation, rhs, lhs);
             lines                        = rhs;
             return synthesisOfExprOk;
         }
 
-        bool expExor(Circuit& circuit, [[maybe_unused]] const unsigned& bitwidth, std::vector<unsigned>& lines, const std::vector<unsigned>& lhs, const std::vector<unsigned>& rhs) override {
-            const bool synthesisOfExprOk = bitwiseCnot(circuit, rhs, lhs); // duplicate lhs
+        bool expExor([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) override {
+            const bool synthesisOfExprOk = bitwiseCnot(annotatableQuantumComputation, rhs, lhs); // duplicate lhs
             lines                        = rhs;
             return synthesisOfExprOk;
         }
 
-        bool expEvaluate(Circuit& circuit, std::vector<unsigned>& lines, BinaryExpression::BinaryOperation binaryOperation, const std::vector<unsigned>& lhs, const std::vector<unsigned>& rhs) const;
+        bool expEvaluate(std::vector<qc::Qubit>& lines, BinaryExpression::BinaryOperation binaryOperation, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) const;
 
-        bool expressionSingleOp(Circuit& circuit, BinaryExpression::BinaryOperation binaryOperation, const std::vector<unsigned>& expLhs, const std::vector<unsigned>& expRhs) const;
+        bool expressionSingleOp(BinaryExpression::BinaryOperation binaryOperation, const std::vector<qc::Qubit>& expLhs, const std::vector<qc::Qubit>& expRhs) const;
 
-        static bool decreaseNewAssign(Circuit& circuit, const std::vector<unsigned>& rhs, const std::vector<unsigned>& lhs);
+        static bool decreaseNewAssign(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs);
 
-        bool expressionOpInverse(Circuit& circuit, [[maybe_unused]] BinaryExpression::BinaryOperation binaryOperation, [[maybe_unused]] const std::vector<unsigned>& expLhs, [[maybe_unused]] const std::vector<unsigned>& expRhs) const override;
+        bool expressionOpInverse([[maybe_unused]] BinaryExpression::BinaryOperation binaryOperation, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs) override;
     };
 } // namespace syrec

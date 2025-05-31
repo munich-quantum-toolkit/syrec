@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "core/circuit.hpp"
+#include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/module.hpp"
@@ -18,8 +18,10 @@
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
 #include "core/syrec/variable.hpp"
+#include "ir/Definitions.hpp"
 
 #include <map>
+#include <optional>
 #include <stack>
 #include <string>
 #include <string_view>
@@ -39,103 +41,103 @@ namespace syrec {
         std::vector<std::vector<unsigned>>             expLhsVector;
         std::vector<std::vector<unsigned>>             expRhsVector;
 
-        using VarLinesMap = std::map<Variable::ptr, unsigned int>;
+        using VarLinesMap = std::map<Variable::ptr, qc::Qubit>;
 
-        explicit SyrecSynthesis(Circuit& circ);
+        explicit SyrecSynthesis(AnnotatableQuantumComputation& annotatableQuantumComputation);
         virtual ~SyrecSynthesis() = default;
 
-        void addVariables(Circuit& circ, const Variable::vec& variables);
-        void setMainModule(const Module::ptr& mainModule);
+        [[nodiscard]] bool addVariables(const Variable::vec& variables);
+        void               setMainModule(const Module::ptr& mainModule);
+
+        [[maybe_unused]] static bool synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics);
 
     protected:
         constexpr static std::string_view GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER = "lno";
         using OperationVariant                                                                 = std::variant<AssignStatement::AssignOperation, BinaryExpression::BinaryOperation, ShiftExpression::ShiftOperation>;
 
-        virtual bool processStatement(Circuit& circuit, const Statement::ptr& statement) = 0;
+        virtual bool processStatement(const Statement::ptr& statement) = 0;
+        virtual bool onModule(const Module::ptr&);
 
-        virtual bool onModule(Circuit& circuit, const Module::ptr&);
+        virtual bool opRhsLhsExpression([[maybe_unused]] const Expression::ptr& expression, [[maybe_unused]] std::vector<qc::Qubit>& v);
+        virtual bool opRhsLhsExpression([[maybe_unused]] const VariableExpression& expression, [[maybe_unused]] std::vector<qc::Qubit>& v);
+        virtual bool opRhsLhsExpression([[maybe_unused]] const BinaryExpression& expression, [[maybe_unused]] std::vector<qc::Qubit>& v);
 
-        virtual bool opRhsLhsExpression([[maybe_unused]] const Expression::ptr& expression, [[maybe_unused]] std::vector<unsigned>& v);
-        virtual bool opRhsLhsExpression([[maybe_unused]] const VariableExpression& expression, [[maybe_unused]] std::vector<unsigned>& v);
-        virtual bool opRhsLhsExpression([[maybe_unused]] const BinaryExpression& expression, [[maybe_unused]] std::vector<unsigned>& v);
-
-        virtual bool              onStatement(Circuit& circuit, const Statement::ptr& statement);
-        virtual bool              onStatement(Circuit& circuit, const AssignStatement& statement);
-        virtual bool              onStatement(Circuit& circuit, const IfStatement& statement);
-        virtual bool              onStatement(Circuit& circuit, const ForStatement& statement);
-        virtual bool              onStatement(Circuit& circuit, const CallStatement& statement);
-        virtual bool              onStatement(Circuit& circuit, const UncallStatement& statement);
-        bool                      onStatement(Circuit& circuit, const SwapStatement& statement);
-        bool                      onStatement(Circuit& circuit, const UnaryStatement& statement);
+        virtual bool              onStatement(const Statement::ptr& statement);
+        virtual bool              onStatement(const AssignStatement& statement);
+        virtual bool              onStatement(const IfStatement& statement);
+        virtual bool              onStatement(const ForStatement& statement);
+        virtual bool              onStatement(const CallStatement& statement);
+        virtual bool              onStatement(const UncallStatement& statement);
+        bool                      onStatement(const SwapStatement& statement);
+        bool                      onStatement(const UnaryStatement& statement);
         [[nodiscard]] static bool onStatement(const SkipStatement& statement);
 
-        virtual bool assignAdd(Circuit& circuit, std::vector<unsigned>& lhs, std::vector<unsigned>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation)      = 0;
-        virtual bool assignSubtract(Circuit& circuit, std::vector<unsigned>& lhs, std::vector<unsigned>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) = 0;
-        virtual bool assignExor(Circuit& circuit, std::vector<unsigned>& lhs, std::vector<unsigned>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation)     = 0;
+        virtual bool assignAdd(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation)      = 0;
+        virtual bool assignSubtract(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) = 0;
+        virtual bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation)     = 0;
 
-        virtual bool onExpression(Circuit& circuit, const Expression::ptr& expression, std::vector<unsigned>& lines, std::vector<unsigned> const& lhsStat, OperationVariant operationVariant);
-        virtual bool onExpression(Circuit& circuit, const BinaryExpression& expression, std::vector<unsigned>& lines, std::vector<unsigned> const& lhsStat, OperationVariant operationVariant);
-        virtual bool onExpression(Circuit& circuit, const ShiftExpression& expression, std::vector<unsigned>& lines, std::vector<unsigned> const& lhsStat, OperationVariant operationVariant);
-        virtual bool onExpression(Circuit& circuit, const NumericExpression& expression, std::vector<unsigned>& lines);
-        virtual bool onExpression(const VariableExpression& expression, std::vector<unsigned>& lines);
+        virtual bool onExpression(const Expression::ptr& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
+        virtual bool onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
+        virtual bool onExpression(const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
+        virtual bool onExpression(const NumericExpression& expression, std::vector<qc::Qubit>& lines);
+        virtual bool onExpression(const VariableExpression& expression, std::vector<qc::Qubit>& lines);
 
-        virtual bool expAdd(Circuit& circuit, [[maybe_unused]] const unsigned& bitwidth, std::vector<unsigned>& lines, const std::vector<unsigned>& lhs, const std::vector<unsigned>& rhs)      = 0;
-        virtual bool expSubtract(Circuit& circuit, [[maybe_unused]] const unsigned& bitwidth, std::vector<unsigned>& lines, const std::vector<unsigned>& lhs, const std::vector<unsigned>& rhs) = 0;
-        virtual bool expExor(Circuit& circuit, [[maybe_unused]] const unsigned& bitwidth, std::vector<unsigned>& lines, const std::vector<unsigned>& lhs, const std::vector<unsigned>& rhs)     = 0;
+        virtual bool expAdd([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs)      = 0;
+        virtual bool expSubtract([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) = 0;
+        virtual bool expExor([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs)     = 0;
 
         // BEGIN: Add circuit parameter to functions
 
         // unary operations
-        static bool bitwiseNegation(Circuit& circuit, const std::vector<unsigned>& dest); // ~
-        static bool decrement(Circuit& circuit, const std::vector<unsigned>& dest);       // --
-        static bool increment(Circuit& circuit, const std::vector<unsigned>& dest);       // ++
+        static bool bitwiseNegation(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest); // ~
+        static bool decrement(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest);       // --
+        static bool increment(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest);       // ++
 
         // binary operations
-        static bool  bitwiseAnd(Circuit& circuit, const std::vector<unsigned>& dest, const std::vector<unsigned>& src1, const std::vector<unsigned>& src2); // &
-        static bool  bitwiseCnot(Circuit& circuit, const std::vector<unsigned>& dest, const std::vector<unsigned>& src);                                    // ^=
-        static bool  bitwiseOr(Circuit& circuit, const std::vector<unsigned>& dest, const std::vector<unsigned>& src1, const std::vector<unsigned>& src2);  // &
-        static bool  conjunction(Circuit& circuit, unsigned dest, unsigned src1, unsigned src2);                                                            // &&// -=
-        static bool  decreaseWithCarry(Circuit& circuit, const std::vector<unsigned>& dest, const std::vector<unsigned>& src, unsigned carry);
-        static bool  disjunction(Circuit& circuit, unsigned dest, unsigned src1, unsigned src2);                                                          // ||
-        static bool  division(Circuit& circuit, const std::vector<unsigned>& dest, const std::vector<unsigned>& src1, const std::vector<unsigned>& src2); // /
-        static bool  equals(Circuit& circuit, unsigned dest, const std::vector<unsigned>& src1, const std::vector<unsigned>& src2);                       // =
-        static bool  greaterEquals(Circuit& circuit, unsigned dest, const std::vector<unsigned>& srcTwo, const std::vector<unsigned>& srcOne);            // >
-        static bool  greaterThan(Circuit& circuit, unsigned dest, const std::vector<unsigned>& src2, const std::vector<unsigned>& src1);                  // >// +=
-        static bool  increaseWithCarry(Circuit& circuit, const std::vector<unsigned>& dest, const std::vector<unsigned>& src, unsigned carry);
-        static bool  lessEquals(Circuit& circuit, unsigned dest, const std::vector<unsigned>& src2, const std::vector<unsigned>& src1);                         // <=
-        static bool  lessThan(Circuit& circuit, unsigned dest, const std::vector<unsigned>& src1, const std::vector<unsigned>& src2);                           // <
-        static bool  modulo(Circuit& circuit, const std::vector<unsigned>& dest, const std::vector<unsigned>& src1, const std::vector<unsigned>& src2);         // %
-        static bool  multiplication(Circuit& circuit, const std::vector<unsigned>& dest, const std::vector<unsigned>& src1, const std::vector<unsigned>& src2); // *
-        static bool  notEquals(Circuit& circuit, unsigned dest, const std::vector<unsigned>& src1, const std::vector<unsigned>& src2);                          // !=
-        static bool  swap(Circuit& circuit, const std::vector<unsigned>& dest1, const std::vector<unsigned>& dest2);                                            // NOLINT(cppcoreguidelines-noexcept-swap, performance-noexcept-swap) <=>
-        static bool  decrease(Circuit& circuit, const std::vector<unsigned>& rhs, const std::vector<unsigned>& lhs);
-        static bool  increase(Circuit& circuit, const std::vector<unsigned>& rhs, const std::vector<unsigned>& lhs);
-        virtual bool expressionOpInverse([[maybe_unused]] Circuit& circuit, [[maybe_unused]] BinaryExpression::BinaryOperation binaryOperation, [[maybe_unused]] const std::vector<unsigned>& expLhs, [[maybe_unused]] const std::vector<unsigned>& expRhs) const;
+        static bool  bitwiseAnd(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2); // &
+        static bool  bitwiseCnot(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src);                                     // ^=
+        static bool  bitwiseOr(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2);  // &
+        static bool  conjunction(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, qc::Qubit src1, qc::Qubit src2);                                                            // &&// -=
+        static bool  decreaseWithCarry(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry);
+        static bool  disjunction(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, qc::Qubit src1, qc::Qubit src2);                                                          // ||
+        static bool  division(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2); // /
+        static bool  equals(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2);                       // =
+        static bool  greaterEquals(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& srcTwo, const std::vector<qc::Qubit>& srcOne);            // >
+        static bool  greaterThan(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& src2, const std::vector<qc::Qubit>& src1);                  // >// +=
+        static bool  increaseWithCarry(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry);
+        static bool  lessEquals(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& src2, const std::vector<qc::Qubit>& src1);                         // <=
+        static bool  lessThan(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2);                           // <
+        static bool  modulo(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2);         // %
+        static bool  multiplication(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2); // *
+        static bool  notEquals(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2);                          // !=
+        static bool  swap(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest1, const std::vector<qc::Qubit>& dest2);                                             // NOLINT(cppcoreguidelines-noexcept-swap, performance-noexcept-swap) <=>
+        static bool  decrease(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs);
+        static bool  increase(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs);
+        virtual bool expressionOpInverse([[maybe_unused]] BinaryExpression::BinaryOperation binaryOperation, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs);
         bool         checkRepeats();
 
         // shift operations
-        static bool leftShift(Circuit& circuit, const std::vector<unsigned>& dest, const std::vector<unsigned>& src1, unsigned src2);  // <<
-        static bool rightShift(Circuit& circuit, const std::vector<unsigned>& dest, const std::vector<unsigned>& src1, unsigned src2); // >>
+        static bool leftShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2);  // <<
+        static bool rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2); // >>
 
-        static void addVariable(Circuit& circ, const std::vector<unsigned>& dimensions, const Variable::ptr& var, constant constant, bool garbage, const std::string& arraystr);
-        void        getVariables(const VariableAccess::ptr& var, std::vector<unsigned>& lines);
+        [[nodiscard]] static bool addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr);
+        void                      getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines);
 
-        unsigned getConstantLine(Circuit& circuit, bool value);
-        void     getConstantLines(Circuit& circuit, unsigned bitwidth, unsigned value, std::vector<unsigned>& lines);
-
-        static bool synthesize(SyrecSynthesis* synthesizer, Circuit& circ, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics);
+        [[nodiscard]] std::optional<qc::Qubit> getConstantLine(bool value);
+        [[nodiscard]] bool                     getConstantLines(unsigned bitwidth, unsigned value, std::vector<qc::Qubit>& lines);
 
         [[nodiscard]] static std::optional<AssignStatement::AssignOperation>  tryMapBinaryToAssignmentOperation(BinaryExpression::BinaryOperation binaryOperation) noexcept;
         [[nodiscard]] static std::optional<BinaryExpression::BinaryOperation> tryMapAssignmentToBinaryOperation(AssignStatement::AssignOperation assignOperation) noexcept;
 
         std::stack<Statement::ptr>  stmts;
-        Circuit&                    circ; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
         Number::LoopVariableMapping loopMap;
         std::stack<Module::ptr>     modules;
 
+        AnnotatableQuantumComputation& annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+
     private:
-        VarLinesMap                           varLines;
-        std::map<bool, std::vector<unsigned>> freeConstLinesMap;
+        VarLinesMap                            varLines;
+        std::map<bool, std::vector<qc::Qubit>> freeConstLinesMap;
     };
 
 } // namespace syrec

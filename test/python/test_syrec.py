@@ -55,75 +55,103 @@ def test_parser(data_line_aware_synthesis: dict[str, Any]) -> None:
 
 def test_synthesis_no_lines(data_line_aware_synthesis: dict[str, Any]) -> None:
     for file_name in data_line_aware_synthesis:
-        circ = syrec.circuit()
+        annotatable_quantum_computation = syrec.annotatable_quantum_computation()
         prog = syrec.program()
         error = prog.read(str(circuit_dir / (file_name + ".src")))
 
         assert not error
-        assert syrec.line_aware_synthesis(circ, prog)
-        assert data_line_aware_synthesis[file_name]["num_gates"] == circ.num_gates
-        assert data_line_aware_synthesis[file_name]["lines"] == circ.lines
-        assert data_line_aware_synthesis[file_name]["quantum_costs"] == circ.quantum_cost()
-        assert data_line_aware_synthesis[file_name]["transistor_costs"] == circ.transistor_cost()
+        assert syrec.line_aware_synthesis(annotatable_quantum_computation, prog)
+        assert data_line_aware_synthesis[file_name]["num_gates"] == annotatable_quantum_computation.num_ops
+        assert data_line_aware_synthesis[file_name]["lines"] == annotatable_quantum_computation.num_qubits
+        assert (
+            data_line_aware_synthesis[file_name]["quantum_costs"]
+            == annotatable_quantum_computation.get_quantum_cost_for_synthesis()
+        )
+        assert (
+            data_line_aware_synthesis[file_name]["transistor_costs"]
+            == annotatable_quantum_computation.get_transistor_cost_for_synthesis()
+        )
 
 
 def test_synthesis_add_lines(data_cost_aware_synthesis: dict[str, Any]) -> None:
     for file_name in data_cost_aware_synthesis:
-        circ = syrec.circuit()
+        annotatable_quantum_computation = syrec.annotatable_quantum_computation()
         prog = syrec.program()
         error = prog.read(str(circuit_dir / (file_name + ".src")))
 
         assert not error
-        assert syrec.cost_aware_synthesis(circ, prog)
-        assert data_cost_aware_synthesis[file_name]["num_gates"] == circ.num_gates
-        assert data_cost_aware_synthesis[file_name]["lines"] == circ.lines
-        assert data_cost_aware_synthesis[file_name]["quantum_costs"] == circ.quantum_cost()
-        assert data_cost_aware_synthesis[file_name]["transistor_costs"] == circ.transistor_cost()
+        assert syrec.cost_aware_synthesis(annotatable_quantum_computation, prog)
+        assert data_cost_aware_synthesis[file_name]["num_gates"] == annotatable_quantum_computation.num_ops
+        assert data_cost_aware_synthesis[file_name]["lines"] == annotatable_quantum_computation.num_qubits
+        assert (
+            data_cost_aware_synthesis[file_name]["quantum_costs"]
+            == annotatable_quantum_computation.get_quantum_cost_for_synthesis()
+        )
+        assert (
+            data_cost_aware_synthesis[file_name]["transistor_costs"]
+            == annotatable_quantum_computation.get_transistor_cost_for_synthesis()
+        )
 
 
 def test_simulation_no_lines(data_line_aware_simulation: dict[str, Any]) -> None:
     for file_name in data_line_aware_simulation:
-        circ = syrec.circuit()
+        annotatable_quantum_computation = syrec.annotatable_quantum_computation()
         prog = syrec.program()
         error = prog.read(str(circuit_dir / (file_name + ".src")))
 
         assert not error
-        assert syrec.line_aware_synthesis(circ, prog)
+        assert syrec.line_aware_synthesis(annotatable_quantum_computation, prog)
 
-        my_inp_bitset = syrec.n_bit_values_container(circ.lines)
-        my_out_bitset = syrec.n_bit_values_container(circ.lines)
+        input_qubit_values = syrec.n_bit_values_container(annotatable_quantum_computation.num_qubits)
         set_list = data_line_aware_simulation[file_name]["set_lines"]
 
         for set_index in set_list:
-            my_inp_bitset.set(set_index, True)
+            input_qubit_values.set(set_index)
 
-        syrec.simple_simulation(my_out_bitset, circ, my_inp_bitset)
-        assert data_line_aware_simulation[file_name]["sim_out"] == str(my_out_bitset)
+        output_qubit_values = syrec.n_bit_values_container()
+        syrec.simple_simulation(output_qubit_values, annotatable_quantum_computation, input_qubit_values)
+        assert input_qubit_values.size() == output_qubit_values.size()
+
+        for i in range(output_qubit_values.size()):
+            actual_qubit_value = "1" if output_qubit_values[i] is True else "0"
+            expected_qubit_value = data_line_aware_simulation[file_name]["sim_out"][i]
+            assert expected_qubit_value == actual_qubit_value
 
 
 def test_simulation_add_lines(data_cost_aware_simulation: dict[str, Any]) -> None:
     for file_name in data_cost_aware_simulation:
-        circ = syrec.circuit()
+        annotatable_quantum_computation = syrec.annotatable_quantum_computation()
         prog = syrec.program()
         error = prog.read(str(circuit_dir / (file_name + ".src")))
 
         assert not error
-        assert syrec.cost_aware_synthesis(circ, prog)
+        assert syrec.cost_aware_synthesis(annotatable_quantum_computation, prog)
 
-        my_inp_bitset = syrec.n_bit_values_container(circ.lines)
-        my_out_bitset = syrec.n_bit_values_container(circ.lines)
+        input_qubit_values = syrec.n_bit_values_container(annotatable_quantum_computation.num_qubits)
         set_list = data_cost_aware_simulation[file_name]["set_lines"]
 
         for set_index in set_list:
-            my_inp_bitset.set(set_index, True)
+            input_qubit_values.set(set_index)
 
-        syrec.simple_simulation(my_out_bitset, circ, my_inp_bitset)
-        assert data_cost_aware_simulation[file_name]["sim_out"] == str(my_out_bitset)
+        output_qubit_values = syrec.n_bit_values_container()
+        syrec.simple_simulation(output_qubit_values, annotatable_quantum_computation, input_qubit_values)
+        assert input_qubit_values.size() == output_qubit_values.size()
+
+        for i in range(output_qubit_values.size()):
+            actual_qubit_value = "1" if output_qubit_values[i] is True else "0"
+            expected_qubit_value = data_cost_aware_simulation[file_name]["sim_out"][i]
+            assert expected_qubit_value == actual_qubit_value
 
 
 def test_no_lines_to_qasm(data_line_aware_synthesis: dict[str, Any]) -> None:
     for file_name in data_line_aware_synthesis:
-        circ = syrec.circuit()
+        expected_qasm_file_path = Path(str(circuit_dir / (file_name + ".qasm")))
+        # Remove .qasm file generated by a previous test run while ignoring file not found exceptions
+        expected_qasm_file_path.unlink(missing_ok=True)
+
+        annotatable_quantum_computation = syrec.annotatable_quantum_computation()
         prog = syrec.program()
         prog.read(str(circuit_dir / (file_name + ".src")))
-        assert circ.to_qasm_file(str(circuit_dir / (file_name + ".qasm")))
+
+        annotatable_quantum_computation.qasm3(str(expected_qasm_file_path))
+        assert Path.is_file(expected_qasm_file_path)

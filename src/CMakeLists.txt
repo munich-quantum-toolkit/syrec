@@ -90,14 +90,17 @@ if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-synthesis)
   list(
     APPEND
     SYREC_SYNTHESIS_HEADERS
-    ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/circuit.hpp
-    ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/gate.hpp
+    ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/annotatable_quantum_computation.hpp
+    ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/n_bit_values_container.hpp
     ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/properties.hpp
-    ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/truthTable/truth_table.hpp
-    ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/utils/timer.hpp)
+    ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/truthTable/truth_table.hpp)
 
   file(GLOB_RECURSE SYREC_SYNTHESIS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/algorithms/*.cpp)
-  list(APPEND SYREC_SYNTHESIS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/core/truthTable/truth_table.cpp)
+  list(
+      APPEND 
+      SYREC_SYNTHESIS_SOURCES 
+      ${CMAKE_CURRENT_SOURCE_DIR}/core/annotatable_quantum_computation.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/core/truthTable/truth_table.cpp)
 
   add_library(${MQT_SYREC_TARGET_NAME}-synthesis)
   target_sources(
