@@ -1,5 +1,5 @@
-module alu( out x0(1),inout x1(2), inout x2(2) , out x3(1), out x4(1), out x5(1))
-x0 ^ = ( x1 || x2 )
-x3 ^ = ( x1 > x2 )
-x4 ^ = ( x1 >= x2 )
-x5 ^ = (x1 = x2)
+module alu(out x0(1),inout x1(2), inout x2(2) , out x3(1), out x4(1), out x5(1))
+x0 ^= (x1.0 || x2.0);
+x3 ^= (x1 > x2);
+x4 ^= (x1 >= x2);
+x5 ^= (x1 = x2)

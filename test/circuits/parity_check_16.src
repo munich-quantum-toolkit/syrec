@@ -1,11 +1,11 @@
 // op : 1 - Even Parity  0 - Odd Parity
 // e : 1 - error   0 - No error
 
-module parity_check( in op( 1 ),inout p(1), inout x1(16),out e(1))
+module parity_check(in op( 1 ),inout p(1), inout x1(16),out e(1))
   if op
     then //even parity
-      e ^ = (((((((((x1.0 ^ x1.1) ^(x1.2 ^x1.3)) ^(x1.4^x1.5))^(x1.6^ x1.7 ))^( x1.8 ^x1.9 )) ^ (x1.10 ^ x1.11)) ^(x1.12 ^x1.13)) ^(x1.14^x1.15))^p)
+      e ^= (((((((((x1.0 ^ x1.1) ^(x1.2 ^x1.3)) ^(x1.4^x1.5))^(x1.6^ x1.7 ))^( x1.8 ^x1.9 )) ^ (x1.10 ^ x1.11)) ^(x1.12 ^x1.13)) ^(x1.14^x1.15))^p)
     else
-      e ^ =(((((((((x1.0 ^ x1.1) ^(x1.2 ^x1.3)) ^(x1.4^x1.5))^(x1.6^ x1.7 ))^( x1.8 ^x1.9 )) ^ (x1.10 ^ x1.11)) ^(x1.12 ^x1.13)) ^(x1.14^x1.15))^p)
+      e ^=(((((((((x1.0 ^ x1.1) ^(x1.2 ^x1.3)) ^(x1.4^x1.5))^(x1.6^ x1.7 ))^( x1.8 ^x1.9 )) ^ (x1.10 ^ x1.11)) ^(x1.12 ^x1.13)) ^(x1.14^x1.15))^p);
       ~=e  //odd parity
 fi op

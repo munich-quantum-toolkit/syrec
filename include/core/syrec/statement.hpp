@@ -11,10 +11,12 @@
 #pragma once
 
 #include "core/syrec/expression.hpp"
+#include "core/syrec/number.hpp"
 #include "core/syrec/variable.hpp"
 
-#include <iostream>
+#include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -78,8 +80,8 @@ namespace syrec {
             lhs(std::move(lhs)),
             rhs(std::move(rhs)) {}
 
-        VariableAccess::ptr lhs;
-        VariableAccess::ptr rhs;
+        VariableAccess::ptr lhs{};
+        VariableAccess::ptr rhs{};
     };
 
     /**
@@ -92,7 +94,7 @@ namespace syrec {
         /**
        * @brief Type of the statement
        */
-        enum {
+        enum class UnaryOperation : std::uint8_t {
             /**
          * @brief Inversion of the variable
          */
@@ -112,29 +114,27 @@ namespace syrec {
         /**
        * @brief Constructor
        *
-       * @param op Operation
+       * @param unaryOperation Operation
        * @param var Variable access to be transformed
        */
-        UnaryStatement(unsigned            op,
-                       VariableAccess::ptr var):
-            op(op),
+        UnaryStatement(const UnaryOperation unaryOperation,
+                       VariableAccess::ptr  var):
+            unaryOperation(unaryOperation),
             var(std::move(var)) {}
 
         Statement::ptr reverse() override {
-            switch (op) {
-                case UnaryStatement::Increment:
-                    return std::make_shared<UnaryStatement>(Decrement, var);
-
-                case UnaryStatement::Decrement:
-                    return std::make_shared<UnaryStatement>(Increment, var);
-
-                case UnaryStatement::Invert:
+            switch (unaryOperation) {
+                case UnaryOperation::Increment: // NOLINT(bugprone-branch-clone)
+                    return std::make_shared<UnaryStatement>(UnaryOperation::Decrement, var);
+                case UnaryOperation::Decrement:
+                    return std::make_shared<UnaryStatement>(UnaryOperation::Increment, var);
+                // TODO: Handling all other cases via the default branch might not be correct when further unary operations are added
                 default:
                     return std::make_shared<UnaryStatement>(*this);
             }
         }
 
-        unsigned            op{};
+        UnaryOperation      unaryOperation{};
         VariableAccess::ptr var{};
     };
 
@@ -148,7 +148,7 @@ namespace syrec {
         /**
        * @brief Type of assignment
        */
-        enum {
+        enum class AssignOperation : std::uint8_t {
             /**
          * @brief Addition to itself
          */
@@ -169,31 +169,29 @@ namespace syrec {
        * @brief Constructor
        *
        * @param lhs Variable access to which the operation is applied
-       * @param op Operation to be applied
+       * @param assignOperation Operation to be applied
        * @param rhs Expression to be evaluated
        */
-        AssignStatement(VariableAccess::ptr lhs,
-                        unsigned            op,
-                        Expression::ptr     rhs):
+        AssignStatement(VariableAccess::ptr   lhs,
+                        const AssignOperation assignOperation,
+                        Expression::ptr       rhs):
             lhs(std::move(lhs)),
-            op(op), rhs(std::move(rhs)) {}
+            assignOperation(assignOperation), rhs(std::move(rhs)) {}
 
         Statement::ptr reverse() override {
-            switch (op) {
-                case AssignStatement::Add:
-                    return std::make_shared<AssignStatement>(lhs, Subtract, rhs);
-
-                case AssignStatement::Subtract:
-                    return std::make_shared<AssignStatement>(lhs, Add, rhs);
-
-                case AssignStatement::Exor:
+            switch (assignOperation) {
+                case AssignOperation::Add: // NOLINT(bugprone-branch-clone)
+                    return std::make_shared<AssignStatement>(lhs, AssignOperation::Subtract, rhs);
+                case AssignOperation::Subtract:
+                    return std::make_shared<AssignStatement>(lhs, AssignOperation::Add, rhs);
+                // TODO: Handling all other cases via the default branch might not be correct when further assignment operations are added
                 default:
                     return std::make_shared<AssignStatement>(*this);
             }
         }
 
         VariableAccess::ptr lhs{};
-        unsigned            op{};
+        AssignOperation     assignOperation{};
         Expression::ptr     rhs{};
     };
 

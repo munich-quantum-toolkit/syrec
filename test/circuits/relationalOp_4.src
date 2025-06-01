@@ -1,0 +1,9 @@
+module main(in lOperand(4), in op(3), in rOperand(4), out res(1))
+	res ^= ((op = 0) & (lOperand = rOperand));
+	res ^= ((op = 1) & (lOperand != rOperand));
+	res ^= ((op = 2) & (lOperand > rOperand));
+	res ^= ((op = 3) & (lOperand >= rOperand));
+	res ^= ((op = 4) & (lOperand < rOperand));
+	res ^= ((op = 5) & (lOperand <= rOperand));
+	res ^= ((op = 6) & (lOperand.0 && rOperand.0));
+	res ^= ((op = 7) & (lOperand.0 || rOperand.0))

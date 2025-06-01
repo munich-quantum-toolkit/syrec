@@ -1,8 +1,8 @@
 module statements(inout x(8))
-~=x
-++=x
---=x
+~= x;
+++= x;
+--= x
 
-module main(inout s(8) )
-  call statements(s)
+module main(inout s(8))
+  call statements(s);
   uncall statements(s)

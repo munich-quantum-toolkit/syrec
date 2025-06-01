@@ -1,9 +1,15 @@
 Settings
 ========
 
-Class representing the settings of a SyReC program (used to set the default bit-width).
+Class representing the settings of a SyReC program (mainly used to configure options for the SyReC parser).
 
     .. autoclass:: mqt.syrec.read_program_settings
+        :undoc-members:
+        :members:
+
+The following enum defines the integer constant truncation operations supported by the SyReC parser.
+
+    .. autoclass:: mqt.syrec.pysyrec.integer_constant_truncation_operation
         :undoc-members:
         :members:
 

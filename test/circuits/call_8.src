@@ -7,5 +7,5 @@ module call_func( in x(1), inout y(8), inout z(8), inout t(8))
   fi x
 
 module main( in a(1), inout x(8), inout y(8),inout s(8) )
-  call call_func( a, x, y,s )
-  uncall call_func( a, x, y,s )
+  call call_func(a, x, y,s);
+  uncall call_func(a, x, y,s)

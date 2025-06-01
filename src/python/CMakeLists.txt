@@ -33,7 +33,8 @@ pybind11_add_module(
   OPT_SIZE
   # Source code goes here
   bindings.cpp)
-target_link_libraries(pysyrec PRIVATE MQT::SyReC MQT::ProjectOptions MQT::ProjectWarnings)
+target_link_libraries(pysyrec PRIVATE MQT::SyReC-Antlr MQT::SyReC-Synthesis MQT::ProjectOptions
+                                      MQT::ProjectWarnings)
 
 # Install directive for scikit-build-core
 install(

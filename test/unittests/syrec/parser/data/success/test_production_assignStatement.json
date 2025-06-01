@@ -1,0 +1,1021 @@
+{
+  "usageOfPlusAssignmentOperation": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a += b",
+    "expectedCircuit": "module main(inout a(4), in b(4)) a[0] += b[0]"
+  },
+  "usageOfMinusAssignmentOperation": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a -= b",
+    "expectedCircuit": "module main(inout a(4), in b(4)) a[0] -= b[0]"
+  },
+  "usageOfXorAssignmentOperation": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a ^= b",
+    "expectedCircuit": "module main(inout a(4), in b(4)) a[0] ^= b[0]"
+  },
+  "usageOfIntegerConstantOnRhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a += 2",
+    "expectedCircuit": "module main(inout a(4)) a[0] += 2"
+  },
+  "usageOfExpressionEvaluatingToConstantOnRhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a += (2 + #a)",
+    "expectedCircuit": "module main(inout a(4)) a[0] += 6"
+  },
+  "usageOfLoopVariableOnRhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a += $i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0] += $i rof"
+  },
+  "usageOfBinaryExpressionOnRhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a += (b / (2 + b))",
+    "expectedCircuit": "module main(inout a(4), in b(4)) a[0] += (b[0] / (2 + b[0]))"
+  },
+  "usageOfShiftExpressionOnRhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a += (b << (1 + (#b - 2)))",
+    "expectedCircuit": "module main(inout a(4), in b(4)) a[0] += (b[0] << 3)"
+  },
+  "assignmentToVariableOfTypeInout": {
+    "inputCircuit": "module main(inout a(4)) a += 1",
+    "expectedCircuit": "module main(inout a(4)) a[0] += 1"
+  },
+  "assignmentToVariableOfTypeOut": {
+    "inputCircuit": "module main(out a(4)) a += 1",
+    "expectedCircuit": "module main(out a(4)) a[0] += 1"
+  },
+  "assignmentToVariableOfTypeWire": {
+    "inputCircuit": "module main() wire a(4) a += 1",
+    "expectedCircuit": "module main() wire a(4) a[0] += 1"
+  },
+  "assignmentTo1DSignalWithSingleValueUsingExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4)) a[0] += 1"
+  },
+  "assignmentToANDSignalsWholeBitwidth": {
+    "inputCircuit": "module main(inout a[2][3](4)) a[0][2] += 1"
+  },
+  "assignmentToBitOfSignal": {
+    "inputCircuit": "module main(inout a(4)) a.0 += 1",
+    "expectedCircuit": "module main(inout a(4)) a[0].0 += 1"
+  },
+  "assignmentToBitrangeOfSignalWithStartLargerThanEnd": {
+    "inputCircuit": "module main(inout a(4)) a[0].3:1 += 2",
+    "expectedCircuit": "module main(inout a(4)) a[0].3:1 += 2"
+  },
+  "assignmentToBitrangeOfSignalWithStartSmallerThanEnd": {
+    "inputCircuit": "module main(inout a(4)) a.1:3 += 2",
+    "expectedCircuit": "module main(inout a(4)) a[0].1:3 += 2"
+  },
+  "assignmentToBitOfSignalWithConstantExpressionValueForIndex": {
+    "inputCircuit": "module main(inout a(4)) a.(#a - 2) += 2",
+    "expectedCircuit": "module main(inout a(4)) a[0].2 += 0"
+  },
+  "assignmentToBitOfSignalWithConstantExpressionWithUnknownValueForIndex": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to (#a - 1) step 1 do a.$i += 1 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].$i += 1 rof"
+  },
+  "assignmentToBitrangeOfSignalWithConstantValueForStartIndexAndConstantExpressionForEndIndex": {
+    "inputCircuit": "module main(inout a(4)) a.0:(#a - 2) += 1",
+    "expectedCircuit": "module main(inout a(4)) a[0].0:2 += 1"
+  },
+  "assignmentToBitrangeOfSignalWithConstantValueForStartIndexAndConstantExpressionWithUnknownValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 do a.0:$i += 1 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].0:$i += 1 rof"
+  },
+  "assignmentToBitrangeOfSignalWithConstantExpressionForStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4)) a[0].((#a - 2) + 1):1 += 1",
+    "expectedCircuit": "module main(inout a(4)) a[0].3:1 += 1"
+  },
+  "assignmentToBitrangeOfSignalWithConstantExpressionForStartIndexAndConstantExpressionForEndIndex": {
+    "inputCircuit": "module main(inout a(4)) a[0].((#a - 2) + 1):(#a - 3) += 1",
+    "expectedCircuit": "module main(inout a(4)) a[0].3:1 += 1"
+  },
+  "assignmentToBitrangeOfSignalWithConstantExpressionForStartIndexAndConstantExpressionWithUnknownValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].((#a - 2) + 1):$i += 1 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].3:$i += 1 rof"
+  },
+  "assignmentToBitrangeOfSignalWithConstantExpressionWithUnknownValueForStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].$i:2 += 1 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].$i:2 += 1 rof"
+  },
+  "assignmentToBitrangeOfSignalWithConstantExpressionWithUnknownValueForStartIndexAndConstantExpressionForEndIndex": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].$i:((#a - 2) + 1) += 1 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].$i:3 += 1 rof"
+  },
+  "assignmentToBitrangeOfSignalWithConstantExpressionWithUnknownValueForStartIndexAndConstantExpressionWithUnknownValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a.$i:(($i - 2) + 1) += 1 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].$i:(($i - 2) + 1) += 1 rof"
+  },
+  "assignmentToValueOfDimensionWithIndexSpecifiedAsConstantExpression": {
+    "inputCircuit": "module main(inout a[2](4)) a[(#a - 3)] += 1",
+    "expectedCircuit": "module main(inout a[2](4)) a[1] += 1"
+  },
+  "assignmentToValueOfDimensionWithIndexSpecifiedAsBinaryExpression": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[(b * 2)] += 1",
+    "expectedCircuit": "module main(inout a(4), in b(2)) a[(b[0] * 2)] += 1"
+  },
+  "assignmentToValueOfDimensionWithIndexSpecifiedAsShiftExpression": {
+    "inputCircuit": "module main(inout a(4), in b(3)) a[(b << 2)] += 1",
+    "expectedCircuit": "module main(inout a(4), in b(3)) a[(b[0] << 2)] += 1"
+  },
+
+  "assignmentWithLhsOperandBeing1DSignalWithImplicitDimensionAccessAndRhsOperandBeing1DSignalWithExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a += b[0]",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0] += b[0]"
+  },
+  "assignmentWithLhsOperandBeing1DSignalWithImplicitDimensionAccessAndRhsOperandBeing1DSignalWithImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a += b",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0] += b[0]"
+  },
+  "assignmentWithLhsOperandBeing1DSignalWithImplicitDimensionAccessAndRhsOperandBeingValueOfDimensionOfNDSignal": {
+    "inputCircuit": "module main(inout a(4), out b[2][3](4)) a += b[1][2]",
+    "expectedCircuit": "module main(inout a(4), out b[2][3](4)) a[0] += b[1][2]"
+  },
+  "assignmentWithLhsOperandBeingANDSignalAndRhsOperandBeing1DSignalWithExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a[2][3](4), out b(4)) a[0][2] += b[0]",
+    "expectedCircuit": "module main(inout a[2][3](4), out b(4)) a[0][2] += b[0]"
+  },
+  "assignmentWithLhsOperandBeingANDSignalAndRhsOperandBeing1DSignalWithImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a[2][3](4), out b(4)) a[0][2] += b",
+    "expectedCircuit": "module main(inout a[2][3](4), out b(4)) a[0][2] += b[0]"
+  },
+  "assignmentWithLhsOperandBeingANDSignalAndRhsOperandBeingValueOfDimensionOfANDSignal": {
+    "inputCircuit": "module main(inout a[2][3](4), out b[2][3](4)) a[0][2] += b[1][2]"
+  },
+
+  "assignmentOfDifferentValuesOfDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[4](6)) a[0] ^= a[1]",
+    "expectedCircuit": "module main(inout a[4](6)) a[0] ^= a[1]"
+  },
+  "assignmentOfDifferentBitsFromSameValueOfDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a(4)) a[0].2 += a.1",
+    "expectedCircuit": "module main(inout a(4)) a[0].2 += a[0].1"
+  },
+  "assignmentOfDifferentBitrangesFromSameValueOfDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](4)) a[0].0:1 += a[0].3:2",
+    "expectedCircuit": "module main(inout a[2](4)) a[0].0:1 += a[0].3:2"
+  },
+  "assignmentOfSameBitFromDifferentValueOfDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](4)) a[0].1 += a[1].1",
+    "expectedCircuit": "module main(inout a[2](4)) a[0].1 += a[1].1"
+  },
+  "assignmentOfOverlappingBitrangeFromDifferentValueOfDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](4)) a[0].1:2 += a[1].3:2"
+  },
+  "assignmentOfEqualBitrangeFromDifferentValueOfDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](4)) a[0].1:3 += a[1].1:3"
+  },
+  "assignmentOfSameBitFromSameValueOfDimensionOfDifferentVariables": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a.0 += b.0",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0].0 += b[0].0"
+  },
+  "assignmentOfOverlappingBitrangeFromSameValueOfDimensionOfDifferentVariables": {
+    "inputCircuit": "module main(inout a(4), out b[2](4)) a[0].0:1 += b[0].1:2"
+  },
+  "assignmentOfEqualBitrangeFromSameValueOfDimensionOfDifferentVariables": {
+    "inputCircuit": "module main(inout a(4), out b[2](4)) a[0].0:1 += b[0].0:1"
+  },
+  "assignmentWithLhsOperandAccessingBitUsingConstantIndexWithRhsOperandAccessingBitrangeWithStartIndexDefinedAsConstantExpressionWithUnknownValueOfSameVariable": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a.0 += a.$i:1 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].0 += a[0].$i:1 rof"
+  },
+  "assignmentWithLhsOperandAccessingBitUsingConstantIndexWithRhsOperandAccessingBitWithEndIndexDefinedAsConstantExpressionWithUnknownValueOfSameVariable": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a.0 += a.1:$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].0 += a[0].1:$i rof"
+  },
+  "assignmentWithLhsOperandAccessingWholeBitwidthWithRhsOperandAccessingBitWithStartAndEndIndexDefinedAsConstantExpressionWithUnknownValueOfSameVariable": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0] += a.($i + 1):$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0] += a[0].($i + 1):$i rof"
+  },
+  "assignmentWithLhsOperandAccessingBitUsingConstantIndexWithRhsOperandAccessingBitWithIndexDefinedAsConstantExpressionWithUnknownValueOfSameVariable": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a.0 += a.$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[0].0 += a[0].$i rof"
+  },
+
+  "assignmentWithLhsOperandAccessingValueOfDimensionWithValueOfIndexUnknownAndRhsOperandAccessingWholeBitwidthOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](4)) for $i = 0 to 1 step 1 do a[$i] += a[0] rof"
+  },
+  "assignmentWithLhsOperandAccessingValueOfDimensionWithValueOfIndexUnknownAndRhsOperandAccessingOverlappingBitOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](4)) for $i = 0 to 1 step 1 do a[$i].0 += a[0].0 rof"
+  },
+  "assignmentWithLhsOperandAccessingValueOfDimensionWithValueOfIndexUnknownAndRhsOperandAccessingOverlappingBitrangeOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](4)) for $i = 0 to 1 step 1 do a[$i].0:2 += a[0].1:3 rof"
+  },
+  "unknownAssignedToBitrangeLengthDoesNotSetOperandBitwidthSizeRestrictionOnAssignmentRhs": {
+    "inputCircuit": "module main(inout a[2](4)) for $i = 0 to 3 step 1 do a[0].0:$i += a[1] rof"
+  },
+  "OperandBitwidthRestrictionFromDimensionAccessOnLhsOfAssignmentDoesNotPropagateIfEnclosingVariableAccessOfLhsDoesNotSetRestriction": {
+    "inputCircuit": "module main(inout a[2](4), in b(2)) for $i = 0 to 1 do a[(b + 2)].0:$i += b rof",
+    "expectedCircuit": "module main(inout a[2](4), in b(2)) for $i = 0 to 1 step 1 do a[(b[0] + 2)].0:$i += b[0] rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalUsingFullBitwidthOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].0] += 2"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingFullBitwidthOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 1 step 1 do a[a[0].0].$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 1 step 1 do a[a[0].0].$i += 0 rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingFullBitwidthOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].0:2] += 2"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingFullBitwidthOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].0:($i + 1)] += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingFullBitwidthOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].($i + 1):3] += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingFullBitwidthOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(#a + $i):($i + 1)] += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(4 + $i):($i + 1)] += 2 rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingFullBitwidthOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0]] += 2"
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingFullBitwidthOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a] += 2",
+    "expectedCircuit": "module main(inout a(4)) a[a[0]] += 2"
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingFullBitwidthOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[$i]] += 2 rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalUsingBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].0].1 += 2",
+    "expectedCircuit": "module main(inout a(4)) a[a[0].0].1 += 0"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingFullBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[a[0].$j].$i += 2 rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[a[0].$j].$i += 0 rof rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingBitAccessWithConstantValueAndBitEnclosedByBitrangeOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].0:2].1 += 2",
+    "expectedCircuit": "module main(inout a(4)) a[a[0].0:2].1 += 0"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingBitAccessWithConstantValueAndBitEqualToBitrangeBoundsOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].0:2].0 += 2; a[a[0].0:2].2 += 2",
+    "expectedCircuit": "module main(inout a(4)) a[a[0].0:2].0 += 0; a[a[0].0:2].2 += 0"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingBitAccessWithConstantValueAndBitOutsideOfBitrangeOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].0:2].3 += 2",
+    "expectedCircuit": "module main(inout a(4)) a[a[0].0:2].3 += 0"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].0:($i + 1)].1 += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].0:($i + 1)].1 += 0 rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].($i + 1):3].1 += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].($i + 1):3].1 += 0 rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(#a + $i):($i + 1)].1 += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(4 + $i):($i + 1)].1 += 0 rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0]].1 += 2",
+    "expectedCircuit": "module main(inout a(4)) a[a[0]].1 += 0"
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a].1 += 2",
+    "expectedCircuit": "module main(inout a(4)) a[a[0]].1 += 0"
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[$i]].1 += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[$i]].1 += 0 rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalThatPerformedsAssignmentToBitUsingUnknownIndexValue": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 0 step 1 do a[a[0].0].$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 3 to 0 step 1 do a[a[0].0].$i += 0 rof"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[a[0].$i].$j += 2 rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[a[0].$i].$j += 0 rof rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 0 step 1 do a[a[0].0:2].$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 3 to 0 step 1 do a[a[0].0:2].$i += 0 rof"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].0:($i + 1)].$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].0:($i + 1)].$i += 0 rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].($i + 1):3].$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].($i + 1):3].$i += 0 rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(#a + $i):($i + 1)].$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(4 + $i):($i + 1)].$i += 0 rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0]].$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0]].$i += 0 rof"
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a].$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0]].$i += 0 rof"
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[$i]].$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[$i]].$i += 0 rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesWithBitEnclosedByBitrangeOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].1].0:3 += 2"
+  },
+  "accessOnBitInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesWithBitOutsideOfBitrangeOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].0].1:2 += 2"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 1 step 1 do a[a[0].$i].1:2 += 2 rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesWithBitrangesBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].0:2].0:2 += 2"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesWithBitrangesOverlappingOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].0:2].1:2 += 2"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesWithBitrangesNotOverlappingOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0].0:1].2:3 += 2"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].0:($i + 1)].1:2 += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].($i + 1):3].1:2 += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(#a + $i):($i + 1)].1:2 += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(4 + $i):($i + 1)].1:2 += 2 rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a[0]].1:2 += 2"
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) a[a].1:2 += 2",
+    "expectedCircuit": "module main(inout a(4)) a[a[0]].1:2 += 2"
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[$i]].1:2 += 2 rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 0 step 1 do a[a[0].0].$i:2 += 2 rof"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[a[0].$i].$j:2 += 2 rof rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 0 step 1 do a[a[0].0:2].$i:2 += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueAndConstantIndicesNotBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].0:($i + 1)].$i:2 += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueAndConstantIndicesBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].0:($i + 1)].$i:0 += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueAndConstantIndicesNotBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].($i + 1):3].$i:2 += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueAndConstantIndicesBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].($i + 1):3].$i:3 += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(#a + $i):($i + 1)].$i:2 += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(4 + $i):($i + 1)].$i:2 += 2 rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0]].$i:2 += 2 rof"
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a].$i:2 += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0]].$i:2 += 2 rof"
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[$i]].$i:2 += 2 rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 0 step 1 do a[a[0].0].2:($i + 2) += 2 rof"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[a[0].$i].2:($j + 2) += 2 rof rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 0 step 1 do a[a[0].0:2].2:($i + 2) += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueAndConstantIndicesNotBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].0:($i + 1)].2:($i - 2) += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueAndConstantIndicesBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].0:($i + 1)].0:($i - 2) += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueAndConstantIndicesNotBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].($i + 1):3].2:$i += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueAndConstantIndicesBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].($i + 1):3].3:($i - 1) += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(#a + $i):($i + 1)].2:$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(4 + $i):($i + 1)].2:$i += 2 rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0]].2:$i += 2 rof"
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a].2:$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0]].2:$i += 2 rof"
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[$i]].2:($i + 1) += 2 rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 0 step 1 do a[a[0].0].$i:($i + 2) += 2 rof"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[a[0].$i].$i:($j + 2) += 2 rof rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 0 step 1 do a[a[0].0:2].($i - 1):($i + 2) += 2 rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(#a + $i):($i + 1)].($i - 1):$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0].(4 + $i):($i + 1)].($i - 1):$i += 2 rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0]].($i - 1):$i += 2 rof"
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a].($i / 2):$i += 2 rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[0]].($i / 2):$i += 2 rof"
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalUsingBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do a[a[$i]].($i * 2):($i + 1) += 2 rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithFullBitwidthAccessOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a[0] += b[a[0].0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithFullBitwidthAccessOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(1)) for $i = 0 to 1 step 1 do a[0].$i += b[a[0].0] rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithFullBitwidthAccessOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a[0] += b[a[0].0:2]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithFullBitwidthAccessOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do a[0] += b[a[0].0:($i + 1)] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithFullBitwidthAccessOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do a[0] += b[a[0].($i + 1):3] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithFullBitwidthAccessOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do a[0] += b[a[0].(#a + $i):($i + 1)] rof",
+    "expectedCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do a[0] += b[a[0].(4 + $i):($i + 1)] rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithFullBitwidthAccessOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a[0] += b[a[0]]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithFullBitwidthAccessOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a += b[a]",
+    "expectedCircuit": "module main(inout a(4), in b(4)) a[0] += b[a[0]]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithFullBitwidthAccessOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do a[0] += b[a[$i]] rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].1 += b[a[0].0].0"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do a[0].$i += b[a[0].1].0 rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueAndBitEnclosedByBitrangeOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].1 += b[a[0].0:2].0",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueAndBitEqualToBitrangeBoundsOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].0 += b[a[0].0:2].0; a[0].2 += b[a[0].0:2].0",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueAndBitOutsideOfBitrangeOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].3 += b[a[0].0:2].0"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].1 += b[a[0].0:($i + 1)].0 rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].1 += b[a[0].($i + 1):3].0 rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].1 += b[a[0].(#a + $i):($i + 1)].0 rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].1 += b[a[0].(4 + $i):($i + 1)].0 rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].1 += b[a[0]].0",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].1 += b[a].0",
+    "expectedCircuit": "module main(inout a(4), in b(2)) a[0].1 += b[a[0]].0",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithConstantValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].1 += b[a[$i]].0 rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalUsingBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 3 to 0 step 1 do a[0].$i += b[a[0].0].0 rof"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[0].$j += b[a[0].$i].0 rof rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 3 to 0 step 1 do a[0].$i += b[a[0].0:2].0 rof"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i += b[a[0].0:($i + 1)].0 rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i += a[a[0].($i + 1):3].0 rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i += b[a[0].(#a + $i):($i + 1)].0 rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i += b[a[0].(4 + $i):($i + 1)].0 rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i += b[a[0].$i].0 rof"
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i += b[a.$i].0 rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i += b[a[0].$i].0 rof"
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitAccessWithUnknownValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i += b[a[$i]].0 rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesWithBitEnclosedByBitrangeOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a[0].0:3 += b[a[0].1]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesWithBitOutsideOfBitrangeOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].1:2 += b[a[0].0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do a[0].$i += b[a[0].1:2].1 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesWithBitrangesBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(3)) a[0].0:2 += b[a[0].0:2]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesWithBitrangesOverlappingOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(3)) a[0].0:2 += b[a[0].1:2]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesWithBitrangesNotOverlappingOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].0:1 += b[a[0].2:3]"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].1:2 += b[a[0].0:($i + 1)] rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].1:2 += b[a[0].($i + 1):3] rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].1:2 += b[a[0].(#a + $i):($i + 1)] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].1:2 += b[a[0].(4 + $i):($i + 1)] rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].1:2 += b[a[0]]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].1:2 += b[a]",
+    "expectedCircuit": "module main(inout a(4), in b(2)) a[0].1:2 += b[a[0]]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithConstantIndicesOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].1:2 += b[a[$i]] rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 3 to 0 step 1 do a[0].$i:2 += b[a[0].0] rof"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[0].$j:2 += b[a[0].$i] rof rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 3 to 0 step 1 do a[0].$i:2 += b[a[0].0:2] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueAndConstantIndicesNotBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i:2 += b[a[0].0:($i + 1)] rof"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueAndConstantIndicesBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i:0 += b[a[0].0:($i + 1)] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueAndConstantIndicesNotBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i:2 += b[a[0].($i + 1):3] rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueAndConstantIndicesBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i:3 += b[a[0].($i + 1):3] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i:2 += b[a[0].(#a + $i):($i + 1)] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i:2 += b[a[0].(4 + $i):($i + 1)] rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i:2 += b[a[0]] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do a[0].$i:2 += b[a] rof",
+    "expectedCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do a[0].$i:2 += b[a[0]] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownStartValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].$i:2 += b[a[$i]] rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 3 to 0 step 1 do a[0].2:($i + 2) += b[a[0].0] rof"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[0].2:($j + 2) += b[a[0].$i] rof rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 3 to 0 step 1 do a[0].2:($i + 2) += b[a[0].0:2] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueAndConstantIndicesNotBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].2:($i - 2) += b[a[0].0:($i + 1)] rof"
+  },
+  "accessOnBitrangeWithBitrangeEndHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueAndConstantIndicesBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].0:($i - 2) += b[a[0].0:($i + 1)] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueAndConstantIndicesNotBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].2:$i += b[a[0].($i + 1):3] rof"
+  },
+  "accessOnBitrangeWithBitrangeStartHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueAndConstantIndicesBeingEqualOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].3:($i - 1) += b[a[0].($i + 1):3] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].2:$i += b[a[0].(#a + $i):($i + 1)] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].2:$i += b[a[0].(4 + $i):($i + 1)] rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].2:$i += b[a[0]] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].2:$i += b[a] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].2:$i += b[a[0]] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownEndValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].2:($i + 1) += b[a[$i]] rof"
+  },
+
+  "accessOnBitInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 3 to 0 step 1 do a[0].$i:($i + 2) += b[a[0].0] rof"
+  },
+  "accessOnBitUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $j = 3 to 0 step 1 do for $i = 0 to 1 step 1 do a[0].$i:($j + 2) += b[a[0].$i] rof rof"
+  },
+  "accessOnBitrangeWithConstantIndicesInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 3 to 0 step 1 do a[0].($i - 1):($i + 2) += b[a[0].0:2] rof"
+  },
+  "accessOnBitrangeWithBitrangeIndicesHavingUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].($i - 1):$i += b[a[0].(#a + $i):($i + 1)] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].($i - 1):$i += b[a[0].(4 + $i):($i + 1)] rof"
+  },
+  "accessOnFullBitwidthWithExplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].($i - 1):$i += b[a[0]] rof"
+  },
+  "accessOnFullBitwidthWithImplicitAccessOnValueOfDimensionInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].($i / 2):$i += b[a] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].($i / 2):$i += b[a[0]] rof"
+  },
+  "accessOnValueOfDimensionUsingIndexWithUnknownValueInDimensionAccessOfAssignedToSignalOnRhsOfAssignmentWithBitrangeAccessWithUnknownBitrangeBoundsValueOnLhsOfAssignment": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do a[0].($i * 2):($i + 1) += b[a[$i]] rof"
+  },
+
+  "accessOnOverlappingPartsOfAssignedToSignalPartsInBinaryExpressionOfDimensionAccessOfRhsOfAssignment": {
+    "inputCircuit": "module main(inout a[2](4), in b(2)) a[0].1:2 += b[(a[0].1 + a[1].2)]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnNotOverlappingPartsOfAssignedToSignalPartsInBinaryExpressionOfDimensionAccessOfRhsOfAssignment": {
+    "inputCircuit": "module main(inout a[2](4), in b(2)) a[0].0:1 += b[(a[0].2 + a[1].3)]"
+  },
+  "accessOnOverlappingPartsOfAssignedToSignalPartsInShiftExpressionOfDimensionAccessOfRhsOfAssignment": {
+    "inputCircuit": "module main(inout a[2](4), in b(2)) a[0].1:2 += b[((a[0].0:1 + a[1].3:2) << 1)]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnNotOverlappingPartsOfAssignedToSignalPartsInShiftExpressionOfDimensionAccessOfRhsOfAssignment": {
+    "inputCircuit": "module main(inout a[2](4), in b(2)) a[0].0:1 += b[((a[0].2:3 + a[1].3:2) << 1)]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) a[0][2][1] += b[a[0][2][1]]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitaccessWithConstantValueAndLhsAccessingFullbitwidthWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) a[0][2][1] += b[a[0][2][1].0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitaccessWithUnknownValueAndLhsAccessingFullbitwidthWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) for $i = 0 to 3 step 2 do a[0][2][1] += b[a[0][2][1].$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithConstantIndicesAndLhsAccessingFullbitwidthWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) a[0][2][1] += b[a[0][2][1].1:2]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithStartIndexHavingConstantValueAndLhsAccessingFullbitwidthWithAcessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) for $i = 0 to 3 step 2 do a[0][2][1] += b[a[0][2][1].1:$i] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithUnknownIndicesValuesAndLhsAccessingFullbitwidthWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) for $i = 0 to 3 step 2 do a[0][2][1] += b[a[0][2][1].($i - 1):$i] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsOverlappingWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].0 += b[a[0][2][1].0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsNotOverlappingWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].0 += b[a[0][2][1].2]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitEnclosedInBitrangeWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].1 += b[a[0][2][1].2:0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitNotInBitrangeWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].3 += b[a[0][2][1].2:0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitEnclosedByBitrangeWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) a[0][2][1].2:0 += b[a[0][2][1].1]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitOutsideOfBitrangeWithAcessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) a[0][2][1].2:0 += b[a[0][2][1].3]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) a[0][2][1].2:0 += b[a[0][2][1]]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) a[0][2][1] += b[a[1][2][1]]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitaccessWithConstantValueAndLhsAccessingFullbitwidthWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) a[0][2][1] += b[a[1][2][1].0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitaccessWithUnknownValueAndLhsAccessingFullbitwidthWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) for $i = 0 to 3 step 2 do a[0][2][1] += b[a[1][2][1].$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithConstantIndicesAndLhsAccessingFullbitwidthWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) a[0][2][1] += b[a[1][2][1].1:2]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithStartIndexHavingConstantValueAndLhsAccessingFullbitwidthWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) for $i = 0 to 3 step 2 do a[0][2][1] += b[a[1][2][1].1:$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithUnknownIndicesValuesAndLhsAccessingFullbitwidthWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) for $i = 0 to 3 step 2 do a[0][2][1] += b[a[1][2][1].($i - 1):$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsOverlappingWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].0 += b[a[1][2][1].0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsNotOverlappingWithAcessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].0 += b[a[1][2][1].2]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitEnclosedInBitrangeWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].1 += b[a[1][2][1].2:0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitNotInBitrangeWithAcessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].3 += b[a[1][2][1].2:0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitEnclosedByBitrangeWithAcessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) a[0][2][1].2:0 += b[a[1][2][1].1]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitOutsideOfBitrangeWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) a[0][2][1].2:0 += b[a[1][2][1].3]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAcessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) a[0][2][1].2:0 += b[a[1][2][1]]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAccessOnSomeOverlappingValuesOfDimensionsWithRhsOperandAccessingUnknownValueOfDimension": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) for $i = 0 to 3 step 1 do a[0][2][1].2:0 += b[a[1][($i + 1)][1]] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAccessOnSomeOverlappingValuesOfDimensionsWithLhsOperandAccessingUnknownValueOfDimension": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) for $i = 0 to 3 step 1 do a[0][($i + 1)][1].2:0 += b[a[1][2][1]] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAcessOnSomeOverlappingValuesOfDimensionsWithBothOperandsAccessingUnknownValueOfDimension": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) for $i = 0 to 3 step 1 do a[0][($i + 1)][1].2:0 += b[a[(1 - $i)][2][1]] rof"
+  },
+
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) a[0][2][1] += b[a[1][1][1]]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitaccessWithConstantValueAndLhsAccessingFullbitwidthWithAcessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) a[0][2][1] += b[a[1][1][1].0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitaccessWithUnknownValueAndLhsAccessingFullbitwidthWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) for $i = 0 to 3 step 2 do a[0][2][1] += b[a[1][1][1].$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithConstantIndicesAndLhsAccessingFullbitwidthWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) a[0][2][1] += b[a[1][1][1].1:2]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithStartIndexHavingConstantValueAndLhsAccessingFullbitwidthWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) for $i = 0 to 3 step 2 do a[0][2][1] += b[a[1][1][1].1:$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithUnknownIndicesValuesAndLhsAccessingFullbitwidthWithAcessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(6)) for $i = 0 to 3 step 2 do a[0][2][1] += b[a[1][1][1].($i - 1):$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsOverlappingWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].0 += b[a[1][1][1].0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsNotOverlappingWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].0 += b[a[1][1][1].2]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitEnclosedInBitrangeWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].1 += b[a[1][1][1].2:0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitNotInBitrangeWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(1)) a[0][2][1].3 += b[a[1][1][1].2:0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitEnclosedByBitrangeWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) a[0][2][1].2:0 += b[a[1][1][1].1]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitOutsideOfBitrangeWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) a[0][2][1].2:0 += b[a[1][1][1].3]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfAssignmentUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), in b(3)) a[0][2][1].2:0 += b[a[1][1][1]]"
+  },
+  "usageOfDifferentOperandBitwidthsInNestedBinaryExpressionsOkIfParentExpressionHasBitwidthOfAssignedToSignalParts": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].0 += ((b[0] + 2) > (a[0].1:2 + a[0].3:2))"
+  },
+  "usageOfDifferentOperandBitwidthInNestedShiftExpressionsOkIfParentExpressionHasBitwidthOfAssignedToSignalParts": {
+    "inputCircuit": "module main(inout a[2](4), in b(3)) a[0].1 += (((((b[0] + a[1].0:2) + 5) << 2) < b) || 2)",
+    "expectedCircuit": "module main(inout a[2](4), in b(3)) a[0].1 += ((((b[0] + a[1].0:2) + 5) << 2) < b[0])"
+  },
+  "startAndEndIndicesOfAccessedBitrangeOnLhsBeingEqualRecognizedAsAccessedBitwidthOfLengthOne": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].1:1 += (b.1 + 2)",
+    "expectedCircuit": "module main(inout a(4), in b(2)) a[0].1:1 += b[0].1"
+  },
+  "startAndEndIndicesOfAccessedBitrangeOnRhsBeingEqualRecognizedAsAccessedBitwidthOfLengthOne": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a[0].1 += (b.1:1 + 2)",
+    "expectedCircuit": "module main(inout a(4), in b(2)) a[0].1 += b[0].1:1"
+  },
+  "expectedOperandBitwidthOfTopmostRightHandSideExpressionUsingLogicalOperationResetIfBothOperandsEvaluatedToConstants": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a += ((b * 0) || 2)",
+    "expectedCircuit": "module main(inout a(4), in b(2)) a[0] += 1"
+  },
+  "expectedOperandBitwidthOfTopmostRightHandSideExpressionUsingRelationalOperationResetIfBothOperandsEvaluatedToConstants": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a += ((b * 0) > 2)",
+    "expectedCircuit": "module main(inout a(4), in b(2)) a[0] += 0"
+  },
+
+  "integerTruncationPerformedForRhsExpressionEvaluatingToConstantUsingModuloOperationWithLhsAssignmentToFullVariableBitwidth": {
+    "inputCircuit": "module main(inout a(2), in b(2)) a += (((b + 2) * (#b - 2)) + 5)",
+    "expectedCircuit": "module main(inout a(2), in b(1)) a[0] += 2",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "integerTruncationPerformedForRhsExpressionEvaluatingToConstantUsingModuloOperationWithLhsAssignmentToBitUsingConstantIndex": {
+    "inputCircuit": "module main(inout a(2), in b(1)) a.1 += (((b.0 + 2) * (#b - 1)) + 5)",
+    "expectedCircuit": "module main(inout a(2), in b(1)) a[0].1 += 0",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "integerTruncationPerformedForRhsExpressionEvaluatingToConstantUsingModuloOperationWithLhsAssignmentToBitUsingNonConstantIndex": {
+    "inputCircuit": "module main(inout a(2), in b(1)) for $i = 0 to 1 do a.1 += (((b.0 + 2) * (#b - 1)) + 5) rof",
+    "expectedCircuit": "module main(inout a(2), in b(1)) for $i = 0 to 1 step 1 do a[0].1 += 0 rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "integerTruncationPerformedForRhsExpressionEvaluatingToConstantUsingModuloOperationWithLhsAssignmentToBitrangeUsingConstantIndices": {
+    "inputCircuit": "module main(inout a(5), in b(3)) a.1:3 += (((b + 2) * (#b - 3)) + 11)",
+    "expectedCircuit": "module main(inout a(5), in b(3)) a[0].1:3 += 4",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "integerTruncationPerformedForRhsExpressionEvaluatingToConstantUsingBitwiseAndOperationWithLhsAssignmentToFullVariableBitwidth": {
+    "inputCircuit": "module main(inout a(2), in b(2)) a += (((b.1 + 2) * (#b - 2)) + 5)",
+    "expectedCircuit": "module main(inout a(2), in b(2)) a[0] += 1",
+    "parserConfig": {
+      "constValTruncationOp": "bitwiseAnd"
+    }
+  },
+  "integerTruncationPerformedForRhsExpressionEvaluatingToConstantUsingBitwiseAndOperationWithLhsAssignmentToBitUsingConstantIndex": {
+    "inputCircuit": "module main(inout a(2), in b(1)) a.1 += (((b.0 + 2) * (#b - 1)) + 5)",
+    "expectedCircuit": "module main(inout a(2), in b(1)) a[0].1 += 1",
+    "parserConfig": {
+      "constValTruncationOp": "bitwiseAnd"
+    }
+  },
+  "integerTruncationPerformedForRhsExpressionEvaluatingToConstantUsingBitwiseAndOperationWithLhsAssignmentToBitUsingNonConstantIndex": {
+    "inputCircuit": "module main(inout a(2), in b(1)) for $i = 0 to 1 do a.1 += (((b.0 + 2) * (#b - 1)) + 5) rof",
+    "expectedCircuit": "module main(inout a(2), in b(1)) for $i = 0 to 1 step 1 do a[0].1 += 1 rof",
+    "parserConfig": {
+      "constValTruncationOp": "bitwiseAnd"
+    }
+  },
+  "integerTruncationPerformedForRhsExpressionEvaluatingToConstantUsingBitwiseAndOperationWithLhsAssignmentToBitrangeUsingConstantIndices": {
+    "inputCircuit": "module main(inout a(5), in b(3)) a.1:3 += (((b + 2) * (#b - 3)) + 11)",
+    "expectedCircuit": "module main(inout a(5), in b(3)) a[0].1:3 += 3",
+    "parserConfig": {
+      "constValTruncationOp": "bitwiseAnd"
+    }
+  }
+}

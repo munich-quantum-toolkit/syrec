@@ -41,13 +41,13 @@ namespace syrec {
 
         bool inverse();
 
-        bool assignAdd(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, unsigned op) override;
+        bool assignAdd(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
 
-        bool assignSubtract(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, unsigned op) override;
+        bool assignSubtract(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
 
-        bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, unsigned op) override;
+        bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
 
-        bool solver(const std::vector<qc::Qubit>& expRhs, unsigned statOp, const std::vector<qc::Qubit>& expLhs, unsigned expOp, const std::vector<qc::Qubit>& statLhs);
+        bool solver(const std::vector<qc::Qubit>& expRhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation, const std::vector<qc::Qubit>& expLhs, BinaryExpression::BinaryOperation binaryOperation, const std::vector<qc::Qubit>& statLhs);
 
         bool flow(const Expression::ptr& expression, std::vector<qc::Qubit>& v);
         bool flow(const VariableExpression& expression, std::vector<qc::Qubit>& v);
@@ -71,12 +71,12 @@ namespace syrec {
             return synthesisOfExprOk;
         }
 
-        bool expEvaluate(AnnotatableQuantumComputation& annotatableQuantumComputation, std::vector<qc::Qubit>& lines, unsigned op, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) const;
+        bool expEvaluate(std::vector<qc::Qubit>& lines, BinaryExpression::BinaryOperation binaryOperation, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) const;
 
-        bool expressionSingleOp(AnnotatableQuantumComputation& annotatableQuantumComputation, unsigned op, const std::vector<qc::Qubit>& expLhs, const std::vector<qc::Qubit>& expRhs) const;
+        [[nodiscard]] bool expressionSingleOp(BinaryExpression::BinaryOperation binaryOperation, const std::vector<qc::Qubit>& expLhs, const std::vector<qc::Qubit>& expRhs) const;
 
         static bool decreaseNewAssign(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs);
 
-        bool expressionOpInverse([[maybe_unused]] unsigned op, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs) override;
+        bool expressionOpInverse([[maybe_unused]] BinaryExpression::BinaryOperation binaryOperation, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs) override;
     };
 } // namespace syrec

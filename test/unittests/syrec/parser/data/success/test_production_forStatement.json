@@ -1,0 +1,146 @@
+{
+  "usageOfLoopWithOnlyEndValueDefined": {
+    "inputCircuit": "module main(inout a(4)) for 3 do ++= a rof",
+    "expectedCircuit": "module main(inout a(4)) for 0 to 3 step 1 do ++= a[0] rof"
+  },
+  "usageOfLoopWithEndValueAndStepsizeDefined": {
+    "inputCircuit": "module main(inout a(4)) for 3 step 2 do ++= a rof",
+    "expectedCircuit": "module main(inout a(4)) for 0 to 3 step 2 do ++= a[0] rof"
+  },
+  "usageOfLoopWithoutLoopVariableButStartAndEndValueDefined": {
+    "inputCircuit": "module main(inout a(4)) for 1 to 3 step 2 do ++= a rof",
+    "expectedCircuit": "module main(inout a(4)) for 1 to 3 step 2 do ++= a[0] rof"
+  },
+  "usageOfLoopWithoutLoopVariableAndEndValueDefined": {
+    "inputCircuit": "module main(inout a(4)) for 1 to 3 do ++= a rof",
+    "expectedCircuit": "module main(inout a(4)) for 1 to 3 step 1 do ++= a[0] rof"
+  },
+  "usageOfLoopWithLoopVariableAndEndValueDefined": {
+    "inputCircuit": "module main(inout a(4)) for $i = 1 to 3 do ++= a.$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 1 to 3 step 1 do ++= a[0].$i rof"
+  },
+  "usageOfLoopWithLoopVariableAndFullyDefinedIterationRangeBounds": {
+    "inputCircuit": "module main(inout a(4)) for $i = 1 to 3 step 2 do ++= a.$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 1 to 3 step 2 do ++= a[0].$i rof"
+  },
+  "usageOfLoopVariableOfOwnLoopInEndValueDefinition": {
+    "inputCircuit": "module main(inout a(4)) for $i = 1 to ($i + 1) do ++= a.$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 1 to 2 step 1 do ++= a[0].$i rof"
+  },
+  "usageOfLoopVariableOfOwnLoopInValueOfStepsizeDefinition": {
+    "inputCircuit": "module main(inout a(4)) for $i = 1 to 3 step ($i + 1) do ++= a.$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 1 to 3 step 2 do ++= a[0].$i rof"
+  },
+  "usageOfNegativeStepsize": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 1 step -1 do ++= a.$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 3 to 1 step 4294967295 do ++= a[0].$i rof"
+  },
+  "usageOfNegativeStepsizeDefinedAsEvaluableConstantExpression": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 1 step (1 - 2) do ++= a.$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 3 to 1 step 4294967295 do ++= a[0].$i rof"
+  },
+  "usageOfNegativeStepsizeDefinedAsEvaluableConstantExpressionEvaluatingToNegativeNumber": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 1 step -(1 - 2) do ++= a.$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 3 to 1 step 1 do ++= a[0].$i rof"
+  },
+  "usageOfNegativeStepsizeDefinedAsNoneEvaluableConstantExpression": {
+    "inputCircuit": "module main(inout a(4)) for $i = 3 to 1 step -($i - 2) do ++= a.$i rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 3 to 1 step 4294967295 do ++= a[0].$i rof"
+  },
+  "usageOfLoopVariableOfParentLoopInStartValueDefinition": {
+    "inputCircuit": "module main(inout a(4)) for $j = 0 to 3 do for ($j + 1) to 1 step 1 do ++= a.$j rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 0 to 3 step 1 do for ($j + 1) to 1 step 1 do ++= a[0].$j rof rof"
+  },
+  "usageOfLoopVariableOfParentLoopInLoopVariableStartValueDefinition": {
+    "inputCircuit": "module main(inout a(4)) for $j = 0 to 3 do for $i = ($j + 1) to 1 step 1 do ++= a.$i rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 0 to 3 step 1 do for $i = ($j + 1) to 1 step 1 do ++= a[0].$i rof rof"
+  },
+  "usageOfLoopVariableOfParentLoopInEndValueDefinition": {
+    "inputCircuit": "module main(inout a(4)) for $j = 0 to 3 do for ($j + 1) do ++= a.$j rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 0 to 3 step 1 do for 0 to ($j + 1) step 1 do ++= a[0].$j rof rof"
+  },
+  "usageOfLoopVariableOfParentLoopInStepsizeValueDefinition": {
+    "inputCircuit": "module main(inout a(4)) for $j = 0 to 3 do for 3 to 1 step ($j - 1) do ++= a.$j rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 0 to 3 step 1 do for 3 to 1 step ($j - 1) do ++= a[0].$j rof rof"
+  },
+  "usageOfLoopVariableOfParentLoopInStepsizeValueDefinitionUsingMinusPrefix": {
+    "inputCircuit": "module main(inout a(4)) for $j = 0 to 3 do for 3 to 1 step -($j - 1) do ++= a.$j rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 0 to 3 step 1 do for 3 to 1 step (0 - ($j - 1)) do ++= a[0].$j rof rof"
+  },
+  "evaluationOfConstantExpressionInStartValueDefinition": {
+    "inputCircuit": "module main(inout a(4)) for (#a - 2) to 3 do ++= a rof",
+    "expectedCircuit": "module main(inout a(4)) for 2 to 3 step 1 do ++= a[0] rof"
+  },
+  "evaluationOfConstantExpressionInLoopVariableStartValueDefinition": {
+    "inputCircuit": "module main(inout a(4)) for $i = (#a - 2) to 3 do ++= a rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 2 to 3 step 1 do ++= a[0] rof"
+  },
+  "evaluationOfConstantExpressionInEndValueDefinition": {
+    "inputCircuit": "module main(inout a(4)) for (#a - 2) do ++= a rof",
+    "expectedCircuit": "module main(inout a(4)) for 0 to 2 step 1 do ++= a[0] rof"
+  },
+  "evaluationOfConstantExpressionInStepsizeValueDefinition": {
+    "inputCircuit": "module main(inout a(4)) for 2 step (#a - 2) do ++= a rof",
+    "expectedCircuit": "module main(inout a(4)) for 0 to 2 step 2 do ++= a[0] rof"
+  },
+  "usageOfMultipleStatementsInLoopBody": {
+    "inputCircuit": "module main(inout a(4)) for 2 do ++= a; if (a.1 > 1) then --= a else ++= a fi (a.1 > 1); --= a rof",
+    "expectedCircuit": "module main(inout a(4)) for 0 to 2 step 1 do ++= a[0]; if (a[0].1 > 1) then --= a[0] else ++= a[0] fi (a[0].1 > 1); --= a[0] rof"
+  },
+  "usageOfStepsizeOfZeroAllowedIfOnlyEndValueWithNotEvaluableValueIsDefined": {
+    "inputCircuit": "module main(inout a(4)) for $j = 0 to 3 do for ($j + 1) step 0 do ++= a rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 0 to 3 step 1 do for 0 to ($j + 1) step 0 do ++= a[0] rof rof"
+  },
+  "usageOfStepsizeOfZeroAllowedIfStartValueWithConstantAndEndValueWithNotEvaluableValueIsDefined": {
+    "inputCircuit": "module main(inout a(4)) for $j = 0 to 3 do for 1 to ($j + 1) step 0 do ++= a rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 0 to 3 step 1 do for 1 to ($j + 1) step 0 do ++= a[0] rof rof"
+  },
+  "usageOfStepsizeOfZeroAllowedIfStartValueAndEndValueWithNotEvaluableValueIsDefined": {
+    "inputCircuit": "module main(inout a(4)) for $j = 0 to 3 do for ($j * 2) to ($j + 1) step 0 do ++= a rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 0 to 3 step 1 do for ($j * 2) to ($j + 1) step 0 do ++= a[0] rof rof"
+  },
+  "usageOfStepsizeOfZeroAllowedIfLoopVariableStartValueWithConstantAndEndValueWithNotEvaluableValueIsDefined": {
+    "inputCircuit": "module main(inout a(4)) for $j = 0 to 3 do for $i = ($j * 2) to ($j + 1) step 0 do ++= a rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 0 to 3 step 1 do for $i = ($j * 2) to ($j + 1) step 0 do ++= a[0] rof rof"
+  },
+  "usageOfStepsizeOfZeroAllowedIfLoopVariableStartValueAndEndValueWithNotEvaluableValueIsDefined": {
+    "inputCircuit": "module main(inout a(4)) for $j = 0 to 3 do for $i = ($j * 2) to ($j + 1) step 0 do ++= a rof rof",
+    "expectedCircuit": "module main(inout a(4)) for $j = 0 to 3 step 1 do for $i = ($j * 2) to ($j + 1) step 0 do ++= a[0] rof rof"
+  },
+  "usageOfLoopVariableWithSameIdentifierAsModuleVariableOk": {
+    "inputCircuit": "module main(inout i(4), out d(4)) for $i = 0 to 3 do i += $i; d -= (i << $i) rof",
+    "expectedCircuit": "module main(inout i(4), out d(4)) for $i = 0 to 3 step 1 do i[0] += $i; d[0] -= (i[0] << $i) rof"
+  },
+  "valueOfLoopVariableInLoopPerformingASingleIterationCorrectlyPropagatedToDimensionAccessesComponentOfVariableAccessesInLoopBody": {
+    "inputCircuit": "module main(inout a[4](2), in b(2)) for $i = 2 to 4 step 3 do ++= a[$i]; a[1] += b[($i - #b)] rof",
+    "expectedCircuit": "module main(inout a[4](2), in b(2)) for $i = 2 to 4 step 3 do ++= a[2]; a[1] += b[0] rof"
+  },
+  "valueOfLoopVariableInLoopPerformingASingleIterationCorrectlyPropagatedToBitRangeComponentOfVariableAccessesInLoopBody": {
+    "inputCircuit": "module main(inout a[2](4), in b(8)) for $i = 2 to 4 step 3 do ++= a[0].$i; a[0].0:($i + 1) += b.($i - 1):(1 + ($i + 1)) rof",
+    "expectedCircuit": "module main(inout a[2](4), in b(8)) for $i = 2 to 4 step 3 do ++= a[0].2; a[0].0:3 += b[0].1:4 rof"
+  },
+  "valueOfLoopVariableInLoopPerformingASingleIterationCorrectlyPropagatedToBinaryExpressionComponentsInLoopBody": {
+    "inputCircuit": "module main(inout a[4](6), in b(2)) for $i = 2 to 4 step 3 do a[0].($i + 1) += (a[$i].0 + b.($i - 1)) rof",
+    "expectedCircuit": "module main(inout a[4](6), in b(2)) for $i = 2 to 4 step 3 do a[0].3 += (a[2].0 + b[0].1) rof"
+  },
+  "valueOfLoopVariableInLoopPerformingASingleIterationCorrectlyPropagatedToShiftExpressionComponentsInLoopBody": {
+    "inputCircuit": "module main(inout a[4](4), in b(2)) for $i = 2 to 4 step 3 do a[0].1:2 += ((a[$i].0:1 + $i) << ($i - 1)) rof",
+    "expectedCircuit": "module main(inout a[4](4), in b(2)) for $i = 2 to 4 step 3 do a[0].1:2 += ((a[2].0:1 + 2) << 1) rof"
+  },
+  "valueOfLoopVariableInLoopPerformingASingleIterationnCorrectlyPropagatedToNestedLoops": {
+    "inputCircuit": "module main(inout a[2](6), in b(2)) for $i = 2 to 4 step 3 do for 0 to ($i + 1) do for $j = ($i + 1) to 4 step 2 do a[0].$i:4 += ($j + 2) rof rof rof",
+    "expectedCircuit": "module main(inout a[2](6), in b(2)) for $i = 2 to 4 step 3 do for 0 to 3 step 1 do for $j = 3 to 4 step 2 do a[0].2:4 += 5 rof rof rof"
+  },
+  "valueOfLoopVariablePropagatedInPreviousLoopPerformingSingleIterationNotPropagatedIfNonChildLoopReusesLoopVariableIdentifierAndPerformingMoreThanOneIteration": {
+    "inputCircuit": "module main(inout a[2](4), in b(2)) for $i = 2 to 4 step 3 do ++= a[0].$i rof; for $i = 0 to 3 do ~= a[0].$i rof",
+    "expectedCircuit": "module main(inout a[2](4), in b(2)) for $i = 2 to 4 step 3 do ++= a[0].2 rof; for $i = 0 to 3 step 1 do ~= a[0].$i rof"
+  },
+  "valueOfLoopVariablePropagatedInPreviousLoopPerformingSingleIterationNotPropagatedIfNonChildLoopReusesLoopVariableIdentifierAndPerformingOneIteration": {
+    "inputCircuit": "module main(inout a[2](4), in b(2)) for $i = 2 to 4 step 3 do ++= a[0].$i rof; for $i = 1 to 3 step 5 do ~= a[0].$i rof",
+    "expectedCircuit": "module main(inout a[2](4), in b(2)) for $i = 2 to 4 step 3 do ++= a[0].2 rof; for $i = 1 to 3 step 5 do ~= a[0].1 rof"
+  },
+  "valueOfLoopVariableInLoopPerformingASingleIterationWithStartLargerThanEndCorrectlyPropagated": {
+    "inputCircuit": "module main(inout a[5](4), in b[4](4)) for $i = 4 to 2 step 3 do ++= a[$i]; a[1] += b[($i - #b)] rof",
+    "expectedCircuit": "module main(inout a[5](4), in b[4](4)) for $i = 4 to 2 step 3 do ++= a[4]; a[1] += b[2] rof"
+  }
+}

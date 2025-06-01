@@ -54,10 +54,12 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecCostAwareSynthesisTest,
                                  "bitwise_or_2",
                                  "bn_2",
                                  "call_8",
+                                 "constExpr_8",
                                  "divide_2",
                                  "for_4",
                                  "for_32",
                                  "gray_binary_conversion_16",
+                                 "ifCondVariants_4",
                                  "input_repeated_2",
                                  "input_repeated_4",
                                  "logical_and_1",
@@ -69,6 +71,7 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecCostAwareSynthesisTest,
                                  "operators_repeated_4",
                                  "parity_4",
                                  "parity_check_16",
+                                 "relationalOp_4",
                                  "shift_4",
                                  "simple_add_2",
                                  "single_longstatement_4",
@@ -83,8 +86,9 @@ TEST_P(SyrecCostAwareSynthesisTest, GenericSynthesisTest) {
     AnnotatableQuantumComputation annotatableQuantumComputation;
     Program                       prog;
     const ReadProgramSettings     settings;
-    const std::string             errorString = prog.read(fileName, settings);
-    ASSERT_TRUE(errorString.empty());
+    std::string                   errorString;
+    ASSERT_NO_FATAL_FAILURE(errorString = prog.read(fileName, settings)) << "Unexpected crash during processing of SyReC program";
+    ASSERT_TRUE(errorString.empty()) << "Found errors during processing of SyReC program: " << errorString;
 
     ASSERT_TRUE(CostAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
     ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNops());

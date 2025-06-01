@@ -1,2 +1,2 @@
-module alu( out x0(2), inout x1(2), inout x2(2))
-x0 ^ = ( x1 * x2 )
+module alu(out x0(2), inout x1(2), inout x2(2))
+x0 ^= (x1 * x2)

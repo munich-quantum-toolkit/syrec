@@ -28,10 +28,10 @@
   },
 
   "bn_2": {
-    "num_gates": 199,
-    "lines": 74,
-    "quantum_costs": 531,
-    "transistor_costs": 1920
+    "num_gates": 194,
+    "lines": 68,
+    "quantum_costs": 510,
+    "transistor_costs": 1776
   },
 
   "call_8": {
@@ -40,7 +40,12 @@
     "quantum_costs": 1492,
     "transistor_costs": 3776
   },
-
+  "constExpr_8": {
+    "num_gates": 8,
+    "lines": 16,
+    "quantum_costs": 8,
+    "transistor_costs": 64
+  },
   "divide_2": {
     "num_gates": 252,
     "lines": 22,
@@ -67,6 +72,13 @@
     "lines": 63,
     "quantum_costs": 462,
     "transistor_costs": 1472
+  },
+
+  "ifCondVariants_4": {
+    "num_gates": 184,
+    "lines": 35,
+    "quantum_costs": 866,
+    "transistor_costs": 2432
   },
 
   "input_repeated_2": {
@@ -152,7 +164,12 @@
     "quantum_costs": 333,
     "transistor_costs": 1064
   },
-
+  "relationalOp_4": {
+    "num_gates": 373,
+    "lines": 60,
+    "quantum_costs": 767,
+    "transistor_costs": 2768
+  },
   "shift_4": {
     "num_gates": 11,
     "lines": 20,

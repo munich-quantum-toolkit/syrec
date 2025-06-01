@@ -1,10 +1,10 @@
 module main( in op(1),out c[4](32),inout a[4](32), inout b[4](32))
 if op then
  for $i = 0 to 3 do
-    c[$i] ^= (a[$i] + b[$i]);
-  rof;
+    c[$i] ^= (a[$i] + b[$i])
+  rof
 else
  for $i = 0 to 3 do
-    c[$i] ^= (a[$i] - b[$i]);
- rof;
+    c[$i] ^= (a[$i] - b[$i])
+ rof
 fi op

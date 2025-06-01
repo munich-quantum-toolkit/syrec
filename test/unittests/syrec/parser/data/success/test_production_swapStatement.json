@@ -1,0 +1,1058 @@
+{
+  "swapOf1DSignalWithSingleValueWithLhsOperandUsingImplicitDimensionAccessAndRhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a <=> b",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0] <=> b[0]"
+  },
+  "swapOf1DSignalWithSingleValueWithLhsOperandUsingExplicitDimensionAccessAndRhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a[0] <=> b",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0] <=> b[0]"
+  },
+  "swapOf1DSignalWithSingleValueWithLhsOperandUsingExplicitDimensionAccessAndRhsOperandUsingExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a[0] <=> b[0]"
+  },
+  "swapOf1DSignalWithSingleValueWithLhsOperandUsingImplicitDimensionAccessAndRhsOperandUsingExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a <=> b[0]",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0] <=> b[0]"
+  },
+  "swapOf1DSignalWithSingleValueWithLhsOperandUsingImplicitDimensionAccessWithRhsOperandUsingValueOfDimensionOfNDSignal": {
+    "inputCircuit": "module main(inout a(4), out b[2][3](4)) a <=> b[0][1]",
+    "expectedCircuit": "module main(inout a(4), out b[2][3](4)) a[0] <=> b[0][1]"
+  },
+  "swapOf1DSignalWithSingleValueWithLhsOperandUsingExplicitDimensionAccessWithRhsOperandUsingValueOfDimensionOfNDSignal": {
+    "inputCircuit": "module main(inout a(4), out b[2][3](4)) a[0] <=> b[0][1]",
+    "expectedCircuit": "module main(inout a(4), out b[2][3](4)) a[0] <=> b[0][1]"
+  },
+  "swapOf1DSignalWithExplicitlyDeclaredSingleValueWithLhsOperandUsingImplicitDimensionAccessWithRhsOperandUsingValueOfDimensionOfANDSignal": {
+    "inputCircuit": "module main(inout a[1](4), out b[2][3](4)) a <=> b[0][1]",
+    "expectedCircuit": "module main(inout a(4), out b[2][3](4)) a[0] <=> b[0][1]"
+  },
+  "swapOf1DSignalWithExplicitlyDeclaredSingleValueWithLhsOperandUsingExplicitDimensionAccessWithRhsOperandUsingValueOfDimensionOfANDSignal": {
+    "inputCircuit": "module main(inout a[1](4), out b[2][3](4)) a[0] <=> b[0][1]",
+    "expectedCircuit": "module main(inout a(4), out b[2][3](4)) a[0] <=> b[0][1]"
+  },
+  "swapOf1DSignalWithExplicitlyDeclaredSingleValueWithLhsOperandUsingImplicitDimensionAccessWithRhsOperandWith1DSignalWithImplicitlyDeclaredSingleValueUsingExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a[1](4), out b(4)) b <=> a[0]",
+    "expectedCircuit": "module main(inout a(4), out b(4)) b[0] <=> a[0]"
+  },
+  "swapOf1DSignalWithExplicitlyDeclaredSingleValueWithLhsOperandUsingImplicitDimensionAccessWithRhsOperandWith1DSignalWithImplicitlyDeclaredSingleValueUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a[1](4), out b(4)) b <=> a",
+    "expectedCircuit": "module main(inout a(4), out b(4)) b[0] <=> a[0]"
+  },
+  "swapOf1DSignalWithExplicitlyDeclaredSingleValuesWithLhsOperandUsingImplicitDimensionAccessWithRhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a[1](4), out b[1](4)) a <=> b",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0] <=> b[0]"
+  },
+  "swapOf1DSignalWithExplicitlyDeclaredSingleValuesWithLhsOperandUsingImplicitDimensionAccessWithRhsOperandUsingExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a[1](4), out b[1](4)) a <=> b[0]",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0] <=> b[0]"
+  },
+  "swapOf1DSignalWithExplicitlyDeclaredSingleValuesWithLhsOperandUsingExplicitDimensionAccessWithRhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a[1](4), out b[1](4)) a[0] <=> b",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0] <=> b[0]"
+  },
+  "swapOf1DSignalWithExplicitlyDeclaredSingleValuesWithLhsOperandUsingExplicitDimensionAccessWithRhsOperandUsingExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a[1](4), out b[1](4)) a[0] <=> b[0]",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0] <=> b[0]"
+  },
+
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeingBitAddressedWithConstantIndexOf1DSignalUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a.0 <=> b.0",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0].0 <=> b[0].0"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeingBitAddressedWithConstantExpressionEvaluatingToConstantIndexOf1DSignalUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a.0 <=> b.(#a - 2)",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0].0 <=> b[0].2"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeingBitAddressedWithConstantExpressionNotEvaluatingToConstantIndexOf1DSignalUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) for $i = 0 to 3 step 1 do a[0].$i <=> b[0].($i - 1) rof",
+    "expectedCircuit": "module main(inout a(4), out b(4)) for $i = 0 to 3 step 1 do a[0].$i <=> b[0].($i - 1) rof"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeingBitrangeWithConstantIndicesAccessingSameIndexOf1DSignalUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a.0 <=> b.1:1",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0].0 <=> b[0].1:1"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeingBitrangeWithConstantIndexForStartAndConstantExpressionForEndAddressingSameIndexOf1DSignalUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a.0 <=> b.1:((#a - 4) + 1)",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0].0 <=> b[0].1:1"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeingBitrangeWithConstantExpressionForStartAndConstantExpressionForEndAddressingSameIndexOf1DSignalUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) a.0 <=> b.((#b / 2) - 1):((#a - 4) + 1)",
+    "expectedCircuit": "module main(inout a(4), out b(4)) a[0].0 <=> b[0].1:1"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeingBitrangeWithConstantExpressionWithUnknownValueForStartAndConstantIndexForEndOf1DSignalUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) for $i = 0 to 3 do a.0 <=> b.($i + 1):((#a - 4) + 1) rof",
+    "expectedCircuit": "module main(inout a(4), out b(4)) for $i = 0 to 3 step 1 do a[0].0 <=> b[0].($i + 1):1 rof"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeingBitrangeWithConstantExpressionWithUnknownValueForStartAndConstantExpressionForEndOf1DSignalUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) for $i = 0 to 3 do a.0 <=> b[0].($i + 1):((#a - 4) + 1) rof",
+    "expectedCircuit": "module main(inout a(4), out b(4)) for $i = 0 to 3 step 1 do a[0].0 <=> b[0].($i + 1):1 rof"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeingBitrangeWithConstantExpressionWithUnknownValueForStartAndConstantExpressionWithUnknownValueForEndOf1DSignalUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) for $i = 0 to 3 do a.0 <=> b.($i + 1):(($i - 4) + 1) rof",
+    "expectedCircuit": "module main(inout a(4), out b(4)) for $i = 0 to 3 step 1 do a[0].0 <=> b[0].($i + 1):(($i - 4) + 1) rof"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeingBitrangeWithConstantExpressionWithUnknownValueForStartAndConstantExpressionWithUnknownValueForEndOf1DSignalUsingExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(4)) for $i = 0 to 3 do a.0 <=> b[0].($i + 1):(($i - 4) + 1) rof",
+    "expectedCircuit": "module main(inout a(4), out b(4)) for $i = 0 to 3 step 1 do a[0].0 <=> b[0].($i + 1):(($i - 4) + 1) rof"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeing1DSignalWithSingleBitlengthUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(1)) a.0 <=> b",
+    "expectedCircuit": "module main(inout a(4), out b(1)) a[0].0 <=> b[0]"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeing1DSignalWithSingleBitlengthUsingExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), out b(1)) a.0 <=> b[0]",
+    "expectedCircuit": "module main(inout a(4), out b(1)) a[0].0 <=> b[0]"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeing1DSignalWithSingleBitlengthUsingImplicitDimensionAccessAndBitAccess": {
+    "inputCircuit": "module main(inout a(4), out b(1)) a.0 <=> b.0",
+    "expectedCircuit": "module main(inout a(4), out b(1)) a[0].0 <=> b[0].0"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeing1DSignalWithSingleBitlengthUsingExplicitDimensionAccessAndBitAccess": {
+    "inputCircuit": "module main(inout a(4), out b(1)) a.0 <=> b[0].0",
+    "expectedCircuit": "module main(inout a(4), out b(1)) a[0].0 <=> b[0].0"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeing1DSignalWithSingleBitlengthUsingImplicitDimensionAccessAndBitrangeAccessAddressingSameValue": {
+    "inputCircuit": "module main(inout a(4), out b(1)) a.0 <=> b.0:0",
+    "expectedCircuit": "module main(inout a(4), out b(1)) a[0].0 <=> b[0].0:0"
+  },
+  "swapWithLhsOperandBeingBitAddressedWithConstantIndexOf1DSignalAndRhsOperandBeing1DSignalWithSingleBitlengthUsingExplicitDimensionAccessAndBitrangeAccessAddressingSameValue": {
+    "inputCircuit": "module main(inout a(4), out b(1)) a.0 <=> b[0].0:0",
+    "expectedCircuit": "module main(inout a(4), out b(1)) a[0].0 <=> b[0].0:0"
+  },
+
+  "swapWithLhsBeing1DSignalWithSingleBitlengthAndRhsOperandBeing1DSignalWithSingleBitlengthUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(1), out b(1)) a <=> b",
+    "expectedCircuit": "module main(inout a(1), out b(1)) a[0] <=> b[0]"
+  },
+  "swapWithLhsBeing1DSignalWithSingleBitlengthAndRhsOperandBeing1DSignalWithSingleBitlengthUsingExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(1), out b(1)) a <=> b[0]",
+    "expectedCircuit": "module main(inout a(1), out b(1)) a[0] <=> b[0]"
+  },
+  "swapWithLhsBeing1DSignalWithSingleBitlengthAndRhsOperandBeing1DSignalWithSingleBitlengthUsingImplicitDimensionAccessAndBitAccess": {
+    "inputCircuit": "module main(inout a(1), out b(1)) a <=> b.0",
+    "expectedCircuit": "module main(inout a(1), out b(1)) a[0] <=> b[0].0"
+  },
+  "swapWithLhsBeing1DSignalWithSingleBitlengthAndRhsOperandBeing1DSignalWithSingleBitlengthUsingExplicitDimensionAccessAndBitAccess": {
+    "inputCircuit": "module main(inout a(1), out b(1)) a <=> b[0].0",
+    "expectedCircuit": "module main(inout a(1), out b(1)) a[0] <=> b[0].0"
+  },
+  "swapWithLhsBeing1DSignalWithSingleBitlengthAndRhsOperandBeing1DSignalWithSingleBitlengthUsingImplicitDimensionAccessAndBitrangeAccessAddressingSameValue": {
+    "inputCircuit": "module main(inout a(1), out b(1)) a <=> b.0:0",
+    "expectedCircuit": "module main(inout a(1), out b(1)) a[0] <=> b[0].0:0"
+  },
+  "swapWithLhsBeing1DSignalWithSingleBitlengthAndRhsOperandBeing1DSignalWithSingleBitlengthUsingExplicitDimensionAccessAndBitrangeAccessAddressingSameValue": {
+    "inputCircuit": "module main(inout a(1), out b(1)) a <=> b[0].0:0",
+    "expectedCircuit": "module main(inout a(1), out b(1)) a[0] <=> b[0].0:0"
+  },
+  "swapWithLhsBeing1DSignalWithSingleBitlengthUsingBitAccessUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(1), out b(1)) a.0 <=> b[0].0",
+    "expectedCircuit": "module main(inout a(1), out b(1)) a[0].0 <=> b[0].0"
+  },
+  "swapWithLhsBeing1DSignalWithSingleBitlengthUsingBitAccessUsingExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(1), out b(4)) a[0].0 <=> b[0].0",
+    "expectedCircuit": "module main(inout a(1), out b(4)) a[0].0 <=> b[0].0"
+  },
+
+  "swapWithBothOperandsAccessingSameSignalWithWholeSignalOfDifferentValueOfDimension": {
+    "inputCircuit": "module main(inout a[2][3](4)) a[0][1] <=> a[0][2]"
+  },
+  "swapWithBothOperandsAccessingSameSignalWithDifferentBitOfSameValueOfDimension": {
+    "inputCircuit": "module main(inout a[2][3](4)) a[0][1].0 <=> a[0][1].1"
+  },
+  "swapWithBothOperandsAccessingSameSignalWithDifferentBitrangeOfSameValueOfDimension": {
+    "inputCircuit": "module main(inout a[2][3](4)) a[0][1].0:1 <=> a[0][1].2:3"
+  },
+  "swapWithBothOperandsAccessingSameSignalWithSameBitrangeOfDifferentValueOfDimension": {
+    "inputCircuit": "module main(inout a[2][3](4)) a[0][2].0:1 <=> a[1][2].0:1"
+  },
+  "swapWithBothOperandsAccessingSameSignalWithSameBitrangeOfSameValueOfDimensionWithLhsOperandUsingConstantExpressionForBitrangeBounds": {
+    "inputCircuit": "module main(inout a[2][3](4)) for $i = 0 to 3 step 1 do a[0][2].(($i / 2) + 1):($i + 1) <=> a[0][2].0:1 rof"
+  },
+  "swapWithLhsOperandBeingANDSignalWithRhsOperandBeing1DSignalWithImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a[2][3](4), out b(4)) a[0][1] <=> b",
+    "expectedCircuit": "module main(inout a[2][3](4), out b(4)) a[0][1] <=> b[0]"
+  },
+  "swapWithLhsOperandBeingANDSignalWithRhsOperandBeing1DSignalWithExplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a[2][3](4), out b(4)) a[0][1] <=> b",
+    "expectedCircuit": "module main(inout a[2][3](4), out b(4)) a[0][1] <=> b[0]"
+  },
+  "swapWithLhsOperandBeingANDSignalWithRhsOperandBeing1DSignalWithBothOperandsAccessingBit": {
+    "inputCircuit": "module main(inout a[2][3](4), out b(4)) a[0][1].2 <=> b.1",
+    "expectedCircuit": "module main(inout a[2][3](4), out b(4)) a[0][1].2 <=> b[0].1"
+  },
+  "swapWithLhsOperandBeingANDSignalWithRhsOperandBeing1DSignalWithBothOperandsAccessingBitrange": {
+    "inputCircuit": "module main(inout a[2][3](4), out b(4)) a[0][1].2:3 <=> b.1:0",
+    "expectedCircuit": "module main(inout a[2][3](4), out b(4)) a[0][1].2:3 <=> b[0].1:0"
+  },
+
+  "swapWithLhsOperandBeingANDSignalWithLhsOperandAccessingValueOfDimensionUsingConstantExpressionWithUnknownValueAndRhsOperandAddressingOtherSignal": {
+    "inputCircuit": "module main(inout a[2](4), out b(2)) for $i = 0 to 3 step 1 do a[($i + 1)].1:2 <=> b rof",
+    "expectedCircuit": "module main(inout a[2](4), out b(2)) for $i = 0 to 3 step 1 do a[($i + 1)].1:2 <=> b[0] rof"
+  },
+  "swapWithLhsOperandBeingModuleParameterOfTypeOut": {
+    "inputCircuit": "module main(out a(4), inout b[2](4)) a <=> b[0]",
+    "expectedCircuit": "module main(out a(4), inout b[2](4)) a[0] <=> b[0]"
+  },
+  "swapWithLhsOperandBeingModuleParameterOfTypeInout": {
+    "inputCircuit": "module main(out a(4), inout b[2](4)) b[1] <=> a[0]",
+    "expectedCircuit": "module main(out a(4), inout b[2](4)) b[1] <=> a[0]"
+  },
+  "swapWithLhsOperandBeingLocalVariableOfTypeWire": {
+    "inputCircuit": "module main(out a(4)) wire b[2](4) b[1] <=> a[0]",
+    "expectedCircuit": "module main(out a(4)) wire b[2](4) b[1] <=> a[0]"
+  },
+  "swapWithRhsOperandBeingModuleParameterOfTypeOut": {
+    "inputCircuit": "module main(inout a(4), out b[2](4)) a <=> b[0]",
+    "expectedCircuit": "module main(inout a(4), out b[2](4)) a[0] <=> b[0]"
+  },
+  "swapWithRhsOperandBeingLocalVariableOfTypeWire": {
+    "inputCircuit": "module main(inout a(4)) wire b[2](4) a <=> b[1]",
+    "expectedCircuit": "module main(inout a(4)) wire b[2](4) a[0] <=> b[1]"
+  },
+  "swapWithBothOperandsOfVariableTypeInout": {
+    "inputCircuit": "module main(inout a(4), inout b[2](4)) a <=> b[1]",
+    "expectedCircuit": "module main(inout a(4), inout b[2](4)) a[0] <=> b[1]"
+  },
+  "swapWithBothOperandsOfVariableTypeOut": {
+    "inputCircuit": "module main(out a(4), out b[2](4)) a <=> b[1]",
+    "expectedCircuit": "module main(out a(4), out b[2](4)) a[0] <=> b[1]"
+  },
+  "swapWithBothOperandsOfVariableTypeWire": {
+    "inputCircuit": "module main() wire a(4), b[2](4) a <=> b[1]",
+    "expectedCircuit": "module main() wire a(4), b[2](4) a[0] <=> b[1]"
+  },
+
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingFullBitwidth": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) b[a] <=> a[0]",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) b[a[0]] <=> a[0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingBitAccessWithConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a] <=> a.1",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) b[a[0]] <=> a[0].1",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingBitAccessWithNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 do b[a] <=> a.$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0]] <=> a[0].$i rof"
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingBitrangeWithConstantIndices": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) b[a] <=> a.1:2",
+    "expectedCircuit": "module main(inout a(4), inout b(2)) b[a[0]] <=> a[0].1:2",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 do b[a] <=> a.$i:2 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0]] <=> a[0].$i:2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 do b[a] <=> a.2:$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0]] <=> a[0].2:$i rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 do b[a[0]] <=> a.($i + 1):$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0]] <=> a[0].($i + 1):$i rof"
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) b[a] <=> a",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) b[a[0]] <=> a[0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingDimensionAccessWithNonConstantValueForIndex": {
+    "inputCircuit": "module main(inout a[2][3](4), inout b(1)) for $i = 0 to 3 do b[a[1][0]] <=> a[1][0].$i rof",
+    "expectedCircuit": "module main(inout a[2][3](4), inout b(1)) for $i = 0 to 3 step 1 do b[a[1][0]] <=> a[1][0].$i rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a[0]] <=> a.1",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) b[a[0]] <=> a[0].1",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 2 step 1 do b[a[0]] <=> a[0].$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 2 step 1 do b[a[0]] <=> a[0].$i rof"
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 2 step 1 do b[a] <=> a[0].$i:2 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 2 step 1 do b[a[0]] <=> a[0].$i:2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingImplicitDimensionAccessBitrangeWithConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 2 step 1 do b[a] <=> a[0].2:$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 2 step 1 do b[a[0]] <=> a[0].2:$i rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingFullBitwidthInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $j = 3 to 0 do for $i = 0 to 2 step 1 do b[a] <=> a[0].($j - 1):$i rof rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $j = 3 to 0 step 1 do for $i = 0 to 2 step 1 do b[a[0]] <=> a[0].($j - 1):$i rof rof"
+  },
+
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingFullBitwidth": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) b[a[0].2] <=> a",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) b[a[0].2] <=> a[0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitAccessWithConstantValueAndIndicesNotMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a[0].2] <=> a[0].1"
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitAccessWithConstantValueAndIndicesMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a[0].2] <=> a[0].2",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitAccessWithNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 2 do b[a[0].2] <=> a[0].$i rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitrangeWithConstantIndicesAndBitOutsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) b[a[0].2] <=> a[0].0:1"
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitrangeWithConstantIndicesAndBitInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) b[a[0].2] <=> a[0].0:3",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitrangeWithConstantIndicesAndStartIndexLargerThanEndAndBitInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) b[a[0].2] <=> a[0].3:0",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitrangeWithConstantIndicesAndBitEqualToBitrangeBounds": {
+    "inputCircuit": "module main(inout a(4), inout b(3)) b[a[0].2] <=> a[0].2:0; b[a[0].0] <=> a[0].2:0",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndexWithConstantIndicesMismatching": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 1 do b[a[0].1] <=> a.$i:3 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 1 do b[a[0].1] <=> a[0].$i:3 rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndexWithConstantIndicesMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 do b[a[0].1] <=> a.$i:1 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 1 do b[a[0].1] <=> a[0].$i:1 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexWithConstantIndicesMismatching": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 1 do b[a[0].1] <=> a.3:$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 1 do b[a[0].1] <=> a[0].3:$i rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexWithConstantIndicesMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 do b[a[0].1] <=> a.1:$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 1 do b[a[0].1] <=> a[0].1:$i rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $j = 2 to 0 do for $i = 0 to 3 step 1 do b[a[0].1] <=> a.($j - 1):$i rof rof",
+    "expectedCircuit": "module main(inout a(4), inout b(2)) for $j = 2 to 0 step 1 do for $i = 0 to 3 step 1 do b[a[0].1] <=> a[0].($j - 1):$i rof rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) b[a[0].2] <=> a",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) b[a[0].2] <=> a[0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingDimensionAccessWithNonConstantValueForIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2] <=> a[$i] rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingMatchingConstantValues": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a[0].1] <=> a.1",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) b[a[0].1] <=> a[0].1",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingNotMatchingConstantValues": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a[0].2] <=> a.1",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) b[a[0].2] <=> a[0].1"
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0].2] <=> a.$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0].2] <=> a[0].$i rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 2 do b[a[0].2] <=> a.$i:2 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 2 do b[a[0].2] <=> a[0].$i:2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingImplicitDimensionAccessBitrangeWithConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 2 do b[a[0].2] <=> a.3:$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 2 do b[a[0].2] <=> a[0].3:$i rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithConstantValueInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 2 do b[a[0].2] <=> a.($i + 2):$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 2 do b[a[0].2] <=> a[0].($i + 2):$i rof"
+  },
+
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingFullBitwidth": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0] rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingBitAccessWithConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].2 rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingBitAccessWithNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].$i rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingBitrangeWithConstantIndices": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].1:2 rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].$i:2 rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].2:($i + 1) rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].(1 - $i):(($i * 2) + 1) rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a rof",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0] rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingDimensionAccessWithNonConstantValueForIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[($i + 1)] rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a.2 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].2 rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].($i + 1) rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].(1 - $i):2 rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingImplicitDimensionAccessBitrangeWithConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].1:($i + 1) rof"
+  },
+  "accessingRhsOperandUsingBitAccessWithNonConstantValueInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 0 to 3 step 1 do b[a[0].$i] <=> a[0].(1 - $i):((3 + $i) - 1) rof"
+  },
+
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingFullBitwidth": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) b[a[0].1:2] <=> a[0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitAccessWithConstantValueAndBitOutsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a[0].1:2] <=> a[0].3"
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitAccessWithConstantValueAndBitInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a[0].1:3] <=> a[0].2",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitAccessWithConstantValueAndBitEqualToBitrangeBounds": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a[0].1:2] <=> a[0].1; b[a[0].1:2] <=> a[0].2",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitAccessWithNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].1:2] <=> a[0].$i rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithConstantIndicesAndBitrangesBeingEqual": {
+    "inputCircuit": "module main(inout a(4), inout b(3)) b[a[0].1:3] <=> a[0].1:3",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithConstantIndicesAndBitrangesOverlapping": {
+    "inputCircuit": "module main(inout a(4), inout b(3)) b[a[0].1:3] <=> a[0].0:2",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithConstantIndicesAndBitrangesNotOverlapping": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) b[a[0].2:3] <=> a[0].0:1",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithConstantIndicesAndBitrangesOverlappingWithStartIndexLargerThanEndInRhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) b[a[0].1:3] <=> a[0].1:0",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithConstantIndicesAndBitrangesOverlappingWithStartIndexLargerThanEndInLhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) b[a[0].3:1] <=> a[0].0:1",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndexWithEndIndexOutsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 1 step 1 do b[a[0].1:2] <=> a[0].($i + 1):0 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndexWithEndIndexInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 1 step 1 do b[a[0].1:3] <=> a[0].($i + 1):2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndexWithEndIndexEqualToBitrangeBounds": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 1 step 1 do b[a[0].1:3] <=> a[0].($i + 1):1; b[a[0].1:3] <=> a[0].($i + 1):3 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexWithStartIndexOutsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 1 step 1 do b[a[0].1:2] <=> a[0].0:($i + 1) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexWithStartIndexInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 1 step 1 do b[a[0].1:3] <=> a[0].2:($i + 1) rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexWithStartIndexEqualToBitrangeBounds": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $i = 0 to 1 step 1 do b[a[0].1:3] <=> a[0].1:($i + 1); b[a[0].1:3] <=> a[0].3:($i + 1) rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(2)) for $j = 3 to 0 step 2 do for $i = 0 to 2 step 1 do b[a[0].1:3] <=> a[0].$i:($j - 1) rof rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) b[a[0].1:3] <=> a",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) b[a[0].1:3] <=> a[0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingDimensionAccessWithNonConstantValueForIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].1:3] <=> a[$i] rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a[0].1:3] <=> a.0",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) b[a[0].1:3] <=> a[0].0"
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].1:3] <=> a.$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].1:3] <=> a[0].$i rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].1:3] <=> a.$i:2 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].1:3] <=> a[0].$i:2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingImplicitDimensionAccessBitrangeWithConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].1:3] <=> a.2:$i rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].1:3] <=> a[0].2:$i rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithConstantValuesInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].1:3] <=> a.$i:(1 - $i) rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].1:3] <=> a[0].$i:(1 - $i) rof"
+  },
+
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingFullBitwidth": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitAccessWithBitMatchingStartIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitAccessWithBitNotMatchingStartIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].0 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitAccessWithNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].($i + 1) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitrangeWithConstantIndicesAndStartIndexOutsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].3 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitrangeWithConstantIndicesAndStartIndexInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].1 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitrangeWithConstantIndicesAndStartIndexLargerThanEndOfLhsOperandAndRhsStartIndexInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].0:3 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitrangeWithStartIndexOfRhsOperandEqualEqualToBitrangeBounds": {
+    "inputCircuit": "module main(inout a(4), inout b(3)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].0:2; b[a[0].$i:2] <=> a[0].2:0 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueIndicesMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].($i + 1):2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueIndicesMismatching": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].($i + 1):3 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexAndConstantValueIndicesMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].2:(1 - $i) rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexAndConstantValueIndicesNotMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].3:(1 - $i) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].(1 - $i):($i * 2) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a rof",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingDimensionAccessWithNonConstantValueForIndex": {
+    "inputCircuit": "module main(inout a[2](4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[($i + 1)] rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a.1 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].1 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].($i + 1) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].(1 - $i):2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingImplicitDimensionAccessBitrangeWithConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].2:(1 - $i) rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantStartIndexInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].$i:2] <=> a[0].(2 * ($i / 2)):(1 - $i) rof"
+  },
+
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingFullBitwidth": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitAccessWithBitMatchingStartIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitAccessWithBitNotMatchingStartIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].0 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitAccessWithNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].($i + 1) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitrangeWithConstantIndicesAndStartIndexOutsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].3 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitrangeWithConstantIndicesAndStartIndexInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].1 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitrangeWithConstantIndicesAndStartIndexLargerThanEndOfLhsOperandAndRhsStartIndexInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].0:3 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitrangeWithStartIndexOfRhsOperandEqualEqualToBitrangeBounds": {
+    "inputCircuit": "module main(inout a(4), inout b(3)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].0:2; b[a[0].$i:2] <=> a[0].2:0 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueIndicesMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].($i + 1):2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueIndicesMissmatching": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].($i + 1):3 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexAndConstantValueIndicesMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].2:(1 - $i) rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexAndConstantValueIndicesNotMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].3:(1 - $i) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].(1 - $i):($i * 2) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a rof",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingDimensionAccessWithNonConstantValueForIndex": {
+    "inputCircuit": "module main(inout a[2](4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[($i + 1)] rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a.1 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].1 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].($i + 1) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].(1 - $i):2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingImplicitDimensionAccessBitrangeWithConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].2:(1 - $i) rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantEndIndexInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].2:$i] <=> a[0].(2 * ($i / 2)):(1 - $i) rof"
+  },
+
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingFullBitwidth": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0] rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitAccessWithBitMatchingStartIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].2 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitAccessWithBitNotMatchingStartIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].0 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitAccessWithNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].($i + 1) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitrangeWithConstantIndicesAndStartIndexOutsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].3 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitrangeWithConstantIndicesAndStartIndexInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].1 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitrangeWithConstantIndicesAndStartIndexLargerThanEndOfLhsOperandAndRhsStartIndexInsideOfBitrange": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].0:3 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueIndicesMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].($i + 1):2 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitrangeWithNonConstantStartIndexAndConstantValueIndicesMismatching": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].($i + 1):3 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexAndConstantValueIndicesMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].2:(1 - $i) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitrangeWithConstantStartIndexAndNonConstantValueForEndIndexAndConstantValueIndicesNotMatching": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].3:(1 - $i) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].(1 - $i):($i * 2) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingImplicitDimensionAccess": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a rof",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0] rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingDimensionAccessWithNonConstantValueForIndex": {
+    "inputCircuit": "module main(inout a[2](4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[($i + 1)] rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a.1 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].1 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingImplicitDimensionAccessWithBitAccessUsingNonConstantValue": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].($i + 1) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].(1 - $i):2 rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingImplicitDimensionAccessBitrangeWithConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].2:(1 - $i) rof"
+  },
+  "accessingRhsOperandUsingBitrangeWithNonConstantIndicesInLhsOperandUsingImplicitDimensionAccessUsingBitrangeWithNonConstantStartIndexAndNonConstantValueForEndIndex": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) for $i = 3 to 0 step 1 do b[a[0].(1 - $i):$i] <=> a[0].(2 * ($i / 2)):(1 - $i) rof"
+  },
+
+  "accessingRhsOperandUsingImplicitDimensionAccessWithFullBitwidthAccessInLhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) b[a] <=> a",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) b[a[0]] <=> a[0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingImplicitDimensionAccessWithBitAccessUsingConstantValueInLhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) b[a.0] <=> a.1",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) b[a[0].0] <=> a[0].1"
+  },
+  "accessingRhsOperandUsingImplicitDimensionAccessWithBitAccessUsingNonConstantValueInLhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 2 do b[a.$i] <=> a.1 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 3 to 0 step 1 do b[a[0].0] <=> a[0].1 rof"
+  },
+  "accessingRhsOperandUsingImplicitDimensionAccessWithBitrangeAccessWithConstantValuesInLhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(4)) b[a.1:2] <=> a[0]",
+    "expectedCircuit": "module main(inout a(4), inout b(4)) b[a[0].1:2] <=> a[0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingImplicitDimensionAccessWithBitrangeAccessWithConstantValueForStartIndexInLhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 do b[a.2:($i + 2)] <=> a[0].1 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0].2:($i + 2)] <=> a[0].1 rof"
+  },
+  "accessingRhsOperandUsingImplicitDimensionAccessWithBitrangeAccessWithConstantValueForEndIndexInLhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 do b[a.($i + 2):2] <=> a[0].2 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0].($i + 2):2] <=> a[0].2 rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandUsingImplicitDimensionAccessWithBitrangeAccessWithNonConstantIndicesValuesInLhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 do b[a.($i + 2):(1 - $i)] <=> a[0].2 rof",
+    "expectedCircuit": "module main(inout a(4), inout b(1)) for $i = 0 to 3 step 1 do b[a[0].($i + 2):(1 - $i)] <=> a[0].2 rof"
+  },
+  "accessignRhsOperandInBinaryExpressionInDimensionAccessOfLhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(3)) b[(2 + a[0].1:2)] <=> a[0].0:2",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandInShiftExpressionInDimensionAccessOfLhsOperand": {
+    "inputCircuit": "module main(inout a(4), inout b(3)) b[(a[0].1:3 << 2)] <=> a[0].0:2",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessingRhsOperandInDimensionAccessOfLhsOperandWithVariableOfInterestBeingNDimensionVariableWithAccessedValueOfFirstDimensionMatching": {
+    "inputCircuit": "module main(inout a[2][4](4), inout b(4)) b[a[1][2]] <=> a[1][0]"
+  },
+  "accessingRhsOperandInDimensionAccessOfLhsOperandWithVariableOfInterestBeingNDimensionVariableWithAccessedValueOfOtherDimensionMatching": {
+    "inputCircuit": "module main(inout a[2][4](4), inout b(4)) b[a[1][2]] <=> a[0][2]"
+  },
+  "accessingRhsOperandInDimensionAccessOfLhsOperandWithVariableOfInterestBeingNDimensionVariableWithAccessedValuesOfDimensionsMatching": {
+    "inputCircuit": "module main(inout a[2][4](4), inout b(4)) b[a[1][2]] <=> a[1][2]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitaccessWithConstantValueAndLhsAccessingFullbitwidthWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) a[0][2][1] <=> b[a[0][2][1].0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitaccessWithUnknownValueAndLhsAccessingFullbitwidthWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) for $i = 0 to 3 step 2 do a[0][2][1] <=> b[a[0][2][1].$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithConstantIndicesAndLhsAccessingFullbitwidthWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) a[0][2][1] <=> b[a[0][2][1].1:2]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithStartIndexHavingConstantValueAndLhsAccessingFullbitwidthWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) for $i = 0 to 3 step 2 do a[0][2][1] <=> b[a[0][2][1].1:$i] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithUnknownIndicesValuesAndLhsAccessingFullbitwidthWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) for $i = 0 to 3 step 2 do a[0][2][1] <=> b[a[0][2][1].($i - 1):$i] rof",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsOverlappingWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].0 <=> b[a[0][2][1].0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsNotOverlappingWithAcessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].0 <=> b[a[0][2][1].2]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitEnclosedInBitrangeWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].1 <=> b[a[0][2][1].2:0]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitNotInBitrangeWithAcessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].3 <=> b[a[0][2][1].2:0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitEnclosedByBitrangeWithAcessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) a[0][2][1].2:0 <=> b[a[0][2][1].1]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitOutsideOfBitrangeWithAccessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) a[0][2][1].2:0 <=> b[a[0][2][1].3]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAcessOnSameValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) a[0][2][1].2:0 <=> b[a[0][2][1]]",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) a[0][2][1] <=> b[a[1][2][1]]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitaccessWithConstantValueAndLhsAccessingFullbitwidthWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) a[0][2][1] <=> b[a[1][2][1].0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitaccessWithUnknownValueAndLhsAccessingFullbitwidthWithAcessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) for $i = 0 to 3 step 2 do a[0][2][1] <=> b[a[1][2][1].$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithConstantIndicesAndLhsAccessingFullbitwidthWithAcessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) a[0][2][1] <=> b[a[1][2][1].1:2]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithStartIndexHavingConstantValueAndLhsAccessingFullbitwidthWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) for $i = 0 to 3 step 2 do a[0][2][1] <=> b[a[1][2][1].1:$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithUnknownIndicesValuesAndLhsAccessingFullbitwidthWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) for $i = 0 to 3 step 2 do a[0][2][1] <=> b[a[1][2][1].($i - 1):$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsOverlappingWithAcessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].0 <=> b[a[1][2][1].0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsNotOverlappingWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].0 <=> b[a[1][2][1].2]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitEnclosedInBitrangeWithAcessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].1 <=> b[a[1][2][1].2:0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitNotInBitrangeWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].3 <=> b[a[1][2][1].2:0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitEnclosedByBitrangeWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) a[0][2][1].2:0 <=> b[a[1][2][1].1]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitOutsideOfBitrangeWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) a[0][2][1].2:0 <=> b[a[1][2][1].3]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAccessOnSomeOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) a[0][2][1].2:0 <=> b[a[1][2][1]]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAccessOnSomeOverlappingValuesOfDimensionsWithRhsOperandAccessingUnknownValueOfDimension": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) for $i = 0 to 3 step 1 do a[0][2][1].2:0 <=> b[a[1][($i + 1)][1]] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAccessOnSomeOverlappingValuesOfDimensionsWithLhsOperandAccessingUnknownValueOfDimension": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) for $i = 0 to 3 step 1 do a[0][($i + 1)][1].2:0 <=> b[a[1][2][1]] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAccessOnSomeOverlappingValuesOfDimensionsWithBothOperandsAccessingUnknownValueOfDimension": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) for $i = 0 to 3 step 1 do a[0][($i + 1)][1].2:0 <=> b[a[(1 - $i)][2][1]] rof"
+  },
+
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) a[0][2][1] <=> b[a[1][1][1]]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitaccessWithConstantValueAndLhsAccessingFullbitwidthWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) a[0][2][1] <=> b[a[1][1][1].0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitaccessWithUnknownValueAndLhsAccessingFullbitwidthWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) for $i = 0 to 3 step 2 do a[0][2][1] <=> b[a[1][1][1].$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithConstantIndicesAndLhsAccessingFullbitwidthWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) a[0][2][1] <=> b[a[1][1][1].1:2]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithStartIndexHavingConstantValueAndLhsAccessingFullbitwidthWithAcessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) for $i = 0 to 3 step 2 do a[0][2][1] <=> b[a[1][1][1].1:$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithUnknownIndicesValuesAndLhsAccessingFullbitwidthWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(6)) for $i = 0 to 3 step 2 do a[0][2][1] <=> b[a[1][1][1].($i - 1):$i] rof"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsOverlappingWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].0 <=> b[a[1][1][1].0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValueAndLhsAccessingBitUsingConstantValueAndAccessedBitsNotOverlappingWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].0 <=> b[a[1][1][1].2]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitEnclosedInBitrangeWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].1 <=> b[a[1][1][1].2:0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitrangeAccessWithConstantValuesAndLhsAccessingBitUsingConstantValueAndAccessedBitNotInBitrangeWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) a[0][2][1].3 <=> b[a[1][1][1].2:0]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitEnclosedByBitrangeWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) a[0][2][1].2:0 <=> b[a[1][1][1].1]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingBitAccessWithConstantValuesAndLhsAccessingBitrangeUsingConstantIndicesWithAccessedBitOutsideOfBitrangeWithAcessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) a[0][2][1].2:0 <=> b[a[1][1][1].3]"
+  },
+  "accessOnValueOfDimensionsOfAssignedToNDimensionalSignalOnRhsOfSwapStatementUsingFullbitwidthAndLhsAccessingBitrangeUsingConstantIndicesWithAccessOnNoOverlappingValuesOfDimensions": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) a[0][2][1].2:0 <=> b[a[1][1][1]]"
+  },
+
+  "accessOnRhsOperandVariablePartsPossibleInDimensionAccessOfVariableAccessesOnLhsWithRhsAccessingBitrangeUsingConstantIndicesAndLhsAccessingBitEnclosedByAccessedBitrange": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) b[a[0][2][1].1] <=> a[0][2][1].2:0",
+    "parserConfig": {
+      "allowOverlappingAccessOnAssignedToSignalParts": true
+    }
+  },
+  "accessOnRhsOperandVariablePartsPossibleInDimensionAccessOfVariableAccessesOnLhsWithRhsAccessingBitrangeUsingConstantIndicesAndLhsAccessingBitWithUnknownValue": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(3)) for $i = 0 to 3 step 1 do b[a[0][2][1].$i] <=> a[0][2][1].2:0 rof"
+  },
+  "accessOnRhsOperandVariablePartsPossibleInDimensionAccessOfVariableAccessesOnLhsWithRhsWithAccessedValuesOfDimensionsNotOverlapping": {
+    "inputCircuit": "module main(inout a[2][4][3](6), inout b(1)) for $i = 0 to 3 step 1 do b[a[1][2][1]] <=> a[0][2][1].2 rof"
+  }
+}

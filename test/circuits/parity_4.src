@@ -1,8 +1,8 @@
-module parity_gen( in op( 1 ),out p(1), inout x1(4))
+module parity_gen(in op( 1 ),out p(1), inout x1(4))
   if op
     then //even parity
-      p ^ = ((x1.0 ^ x1.1) ^(x1.2 ^x1.3))
+      p ^= ((x1.0 ^ x1.1) ^(x1.2 ^x1.3))
     else
-      p ^ = ((x1.0 ^ x1.1) ^(x1.2 ^x1.3))
-      ~=p  //odd parity
+      p ^= ((x1.0 ^ x1.1) ^(x1.2 ^x1.3));
+      ~= p  //odd parity
 fi op

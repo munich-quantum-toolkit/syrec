@@ -21,14 +21,14 @@
 
 namespace syrec {
 
-    Variable::Variable(unsigned type, std::string name, std::vector<unsigned> dimensions, unsigned bitwidth):
+    Variable::Variable(const Type type, std::string name, std::vector<unsigned> dimensions, const unsigned bitwidth):
         type(type),
         name(std::move(name)),
         dimensions(std::move(dimensions)),
         bitwidth(bitwidth) {}
 
-    void Variable::setReference(Variable::ptr ref) {
-        reference = std::move(ref);
+    void Variable::setReference(Variable::ptr updatedReference) {
+        reference = std::move(updatedReference);
     }
 
     void VariableAccess::setVar(Variable::ptr v) {
@@ -36,7 +36,7 @@ namespace syrec {
     }
 
     Variable::ptr VariableAccess::getVar() const {
-        if (var->reference) {
+        if (var != nullptr && var->reference) {
             return var->reference;
         }
         return var;
@@ -54,11 +54,9 @@ namespace syrec {
                 }
                 assert(false);
             }
-
-            Number::loop_variable_mapping const map; // empty map
+            Number::LoopVariableMapping const map; // empty map
             return static_cast<unsigned>(std::abs(static_cast<int>(first->evaluate(map) - second->evaluate(map)))) + 1U;
         }
         return var->bitwidth;
     }
-
 } // namespace syrec

@@ -2,5 +2,5 @@ module skipcheck(inout x1(2), inout x2(2))
 skip
 
 module main(inout a(2), inout b(2))
-call skipcheck(a,b)
+call skipcheck(a,b);
 uncall skipcheck(a,b)

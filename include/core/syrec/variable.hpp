@@ -12,7 +12,7 @@
 
 #include "core/syrec/number.hpp"
 
-#include <iostream>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -34,7 +34,7 @@ namespace syrec {
         /**
        * @brief Type of variable
        */
-        enum Types {
+        enum class Type : std::uint8_t {
             /**
          * @brief Module Input Parameter (garbage output)
          */
@@ -71,15 +71,15 @@ namespace syrec {
        */
         using vec = std::vector<ptr>;
 
-        Variable(unsigned type, std::string name, std::vector<unsigned> dimensions, unsigned bitwidth);
+        Variable(Type type, std::string name, std::vector<unsigned> dimensions, unsigned bitwidth);
 
-        void setReference(Variable::ptr reference);
+        void setReference(Variable::ptr updatedReference);
 
-        unsigned              type{};
-        std::string           name{};
-        std::vector<unsigned> dimensions{};
-        unsigned              bitwidth{};
-        Variable::ptr         reference = nullptr;
+        Type                  type;
+        std::string           name;
+        std::vector<unsigned> dimensions;
+        unsigned              bitwidth;
+        Variable::ptr         reference;
     };
 
     /**
@@ -122,9 +122,9 @@ namespace syrec {
        */
         [[nodiscard]] unsigned bitwidth() const;
 
-        Variable::ptr                                      var{};
-        std::optional<std::pair<Number::ptr, Number::ptr>> range{};
-        std::vector<std::shared_ptr<Expression>>           indexes{};
+        Variable::ptr                                      var;
+        std::optional<std::pair<Number::ptr, Number::ptr>> range;
+        std::vector<std::shared_ptr<Expression>>           indexes;
     };
 
 } // namespace syrec

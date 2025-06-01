@@ -25,20 +25,21 @@
 #include <stack>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace syrec {
     class SyrecSynthesis {
     public:
-        std::stack<qc::Qubit>              expOpp;
-        std::stack<std::vector<unsigned>>  expLhss;
-        std::stack<std::vector<unsigned>>  expRhss;
-        bool                               subFlag = false;
-        std::vector<unsigned>              opVec;
-        std::vector<unsigned>              assignOpVector;
-        std::vector<unsigned>              expOpVector;
-        std::vector<std::vector<unsigned>> expLhsVector;
-        std::vector<std::vector<unsigned>> expRhsVector;
+        std::stack<BinaryExpression::BinaryOperation>  expOpp;
+        std::stack<std::vector<unsigned>>              expLhss;
+        std::stack<std::vector<unsigned>>              expRhss;
+        bool                                           subFlag = false;
+        std::vector<BinaryExpression::BinaryOperation> opVec;
+        std::vector<AssignStatement::AssignOperation>  assignOpVector;
+        std::vector<BinaryExpression::BinaryOperation> expOpVector;
+        std::vector<std::vector<unsigned>>             expLhsVector;
+        std::vector<std::vector<unsigned>>             expRhsVector;
 
         using VarLinesMap = std::map<Variable::ptr, qc::Qubit>;
 
@@ -52,6 +53,7 @@ namespace syrec {
 
     protected:
         constexpr static std::string_view GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER = "lno";
+        using OperationVariant                                                                 = std::variant<AssignStatement::AssignOperation, BinaryExpression::BinaryOperation, ShiftExpression::ShiftOperation>;
 
         virtual bool processStatement(const Statement::ptr& statement) = 0;
         virtual bool onModule(const Module::ptr&);
@@ -70,13 +72,13 @@ namespace syrec {
         bool                      onStatement(const UnaryStatement& statement);
         [[nodiscard]] static bool onStatement(const SkipStatement& statement);
 
-        virtual bool assignAdd(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] unsigned op)      = 0;
-        virtual bool assignSubtract(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] unsigned op) = 0;
-        virtual bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] unsigned op)     = 0;
+        virtual bool assignAdd(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation)      = 0;
+        virtual bool assignSubtract(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) = 0;
+        virtual bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation)     = 0;
 
-        virtual bool onExpression(const Expression::ptr& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, unsigned op);
-        virtual bool onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, unsigned op);
-        virtual bool onExpression(const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, unsigned op);
+        virtual bool onExpression(const Expression::ptr& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
+        virtual bool onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
+        virtual bool onExpression(const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
         virtual bool onExpression(const NumericExpression& expression, std::vector<qc::Qubit>& lines);
         virtual bool onExpression(const VariableExpression& expression, std::vector<qc::Qubit>& lines);
 
@@ -111,7 +113,7 @@ namespace syrec {
         static bool  swap(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest1, const std::vector<qc::Qubit>& dest2);                                             // NOLINT(cppcoreguidelines-noexcept-swap, performance-noexcept-swap) <=>
         static bool  decrease(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs);
         static bool  increase(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs);
-        virtual bool expressionOpInverse([[maybe_unused]] unsigned op, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs);
+        virtual bool expressionOpInverse([[maybe_unused]] BinaryExpression::BinaryOperation binaryOperation, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs);
         bool         checkRepeats();
 
         // shift operations
@@ -124,9 +126,12 @@ namespace syrec {
         [[nodiscard]] std::optional<qc::Qubit> getConstantLine(bool value);
         [[nodiscard]] bool                     getConstantLines(unsigned bitwidth, unsigned value, std::vector<qc::Qubit>& lines);
 
-        std::stack<Statement::ptr>    stmts;
-        Number::loop_variable_mapping loopMap;
-        std::stack<Module::ptr>       modules;
+        [[nodiscard]] static std::optional<AssignStatement::AssignOperation>  tryMapBinaryToAssignmentOperation(BinaryExpression::BinaryOperation binaryOperation) noexcept;
+        [[nodiscard]] static std::optional<BinaryExpression::BinaryOperation> tryMapAssignmentToBinaryOperation(AssignStatement::AssignOperation assignOperation) noexcept;
+
+        std::stack<Statement::ptr>  stmts;
+        Number::LoopVariableMapping loopMap;
+        std::stack<Module::ptr>     modules;
 
         AnnotatableQuantumComputation& annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 

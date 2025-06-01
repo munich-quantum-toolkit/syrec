@@ -23,6 +23,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      # As long as the boost dependency exists, the reusable workflow from:
+      # https://github.com/cda-tum/mqt-workflows/blob/main/.github/workflows/reusable-cpp-linter.yml
+      # cannot be used.
       - name: Install boost
         run: sudo apt-get update && sudo apt-get -y install libboost-all-dev
       - name: Install clang-${{ env.clang-version }}
@@ -56,7 +59,9 @@ jobs:
           style: ""
           tidy-checks: ""
           version: ${{ env.clang-version }}
-          ignore: "build|include/python|src/python"
+          # .hpp files should not be explicitly checked by .clang-tidy. Included headers of source-files
+          # are implicitly checked by .clang-tidy
+          ignore: "build|**/python|include"
           thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
           step-summary: true
           database: "build"

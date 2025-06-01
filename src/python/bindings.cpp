@@ -13,6 +13,7 @@
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
+#include "core/syrec/parser/utils/syrec_operation_utils.hpp"
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
 
@@ -63,14 +64,22 @@ PYBIND11_MODULE(pysyrec, m) {
             .def("get_string", py::overload_cast<const std::string&>(&Properties::get<std::string>, py::const_))
             .def("get_double", py::overload_cast<const std::string&>(&Properties::get<double>, py::const_));
 
+    py::enum_<utils::IntegerConstantTruncationOperation>(m, "integer_constant_truncation_operation")
+            .value("modulo", utils::IntegerConstantTruncationOperation::Modulo, "Use the modulo operation for the truncation of constant values")
+            .value("bitwise_and", utils::IntegerConstantTruncationOperation::BitwiseAnd, "Use the bitwise AND operation for the truncation of constant values")
+            .export_values();
+
     py::class_<ReadProgramSettings>(m, "read_program_settings")
             .def(py::init<>(), "Constructs ReadProgramSettings object.")
-            .def_readwrite("default_bitwidth", &ReadProgramSettings::defaultBitwidth);
+            .def_readwrite("default_bitwidth", &ReadProgramSettings::defaultBitwidth, "Defines the default variable bitwidth used by the SyReC parser for variables whose bitwidth specification was omitted")
+            .def_readwrite("integer_constant_truncation_operation", &ReadProgramSettings::integerConstantTruncationOperation, "Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language")
+            .def_readwrite("allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variableAccess", &ReadProgramSettings::allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess, "Defines whether an access on the assigned to signal parts of an assigned is allowed in variable accesses defined in any operand of the assignment. For further details we refer to the semantics of the SyReC language.");
 
     py::class_<Program>(m, "program")
             .def(py::init<>(), "Constructs SyReC program object.")
             .def("add_module", &Program::addModule)
-            .def("read", &Program::read, "filename"_a, "settings"_a = ReadProgramSettings{}, "Read a SyReC program from a file.");
+            .def("read", &Program::read, "filename"_a, "settings"_a = ReadProgramSettings{}, "Read and process a SyReC program from a file.")
+            .def("read_from_string", &Program::readFromString, "stringifiedProgram"_a, "settings"_a = ReadProgramSettings{}, "Process an already stringified SyReC program.");
 
     m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = Properties::ptr(), "statistics"_a = Properties::ptr(), "Cost-aware synthesis of the SyReC program.");
     m.def("line_aware_synthesis", &LineAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = Properties::ptr(), "statistics"_a = Properties::ptr(), "Line-aware synthesis of the SyReC program.");

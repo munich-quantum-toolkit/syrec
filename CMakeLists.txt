@@ -56,7 +56,7 @@ option(BUILD_MQT_SYREC_TESTS "Also build tests for the MQT SYREC project"
 include(cmake/ExternalDependencies.cmake)
 
 # set the include directory for the build tree
-set(MQT_SYREC_INCLUDE_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(MQT_SYREC_INCLUDE_BUILD_DIR "${CMAKE_SOURCE_DIR}/include")
 
 # add main library code
 add_subdirectory(src)
