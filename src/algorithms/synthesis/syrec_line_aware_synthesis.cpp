@@ -62,11 +62,11 @@ namespace syrec {
                 opVec.clear();
             } else {
                 if (assignmentStmt.op == 1) {
-                    synthesisOk = expressionSingleOp(annotatableQuantumComputation, 1, expLhsVector.at(0), statLhs) &&
-                                  expressionSingleOp(annotatableQuantumComputation, 1, expRhsVector.at(0), statLhs);
+                    synthesisOk = expressionSingleOp(1, expLhsVector.at(0), statLhs) &&
+                                  expressionSingleOp(1, expRhsVector.at(0), statLhs);
                 } else {
-                    synthesisOk = expressionSingleOp(annotatableQuantumComputation, assignmentStmt.op, expLhsVector.at(0), statLhs) &&
-                                  expressionSingleOp(annotatableQuantumComputation, expOpVector.at(0), expRhsVector.at(0), statLhs);
+                    synthesisOk = expressionSingleOp(assignmentStmt.op, expLhsVector.at(0), statLhs) &&
+                                  expressionSingleOp(expOpVector.at(0), expRhsVector.at(0), statLhs);
                 }
                 expOpVector.clear();
                 assignOpVector.clear();
@@ -82,8 +82,8 @@ namespace syrec {
             if (expOpVector.at(0) == 1 || expOpVector.at(0) == 2) {
                 /// cancel out the signals
             } else if (expOpVector.at(0) != 1 || expOpVector.at(0) != 2) {
-                synthesisOk = expressionSingleOp(annotatableQuantumComputation, assignmentStmt.op, expLhsVector.at(0), statLhs) &&
-                              expressionSingleOp(annotatableQuantumComputation, expOpVector.at(0), expRhsVector.at(0), statLhs);
+                synthesisOk = expressionSingleOp(assignmentStmt.op, expLhsVector.at(0), statLhs) &&
+                              expressionSingleOp(expOpVector.at(0), expRhsVector.at(0), statLhs);
             }
         } else {
             synthesisOk = solver(statLhs, assignmentStmt.op, expLhsVector.at(0), expOpVector.at(0), expRhsVector.at(0));
@@ -120,12 +120,12 @@ namespace syrec {
                         j++;
                     } else if (expOpVector.at(i) != 1 || expOpVector.at(i) != 2) {
                         if (statAssignOp.at(j) == 1) {
-                            synthesisOk = expressionSingleOp(annotatableQuantumComputation, 1, expLhsVector.at(i), statLhs) &&
-                                          expressionSingleOp(annotatableQuantumComputation, 1, expRhsVector.at(i), statLhs);
+                            synthesisOk = expressionSingleOp(1, expLhsVector.at(i), statLhs) &&
+                                          expressionSingleOp(1, expRhsVector.at(i), statLhs);
                             j++;
                         } else {
-                            synthesisOk = expressionSingleOp(annotatableQuantumComputation, statAssignOp.at(j), expLhsVector.at(i), statLhs) &&
-                                          expressionSingleOp(annotatableQuantumComputation, expOpVector.at(i), expRhsVector.at(i), statLhs);
+                            synthesisOk = expressionSingleOp(statAssignOp.at(j), expLhsVector.at(i), statLhs) &&
+                                          expressionSingleOp(expOpVector.at(i), expRhsVector.at(i), statLhs);
                             j++;
                         }
                     }
@@ -136,7 +136,7 @@ namespace syrec {
             }
             /// when only lhs exists o rhs exists
             else if (((expLhsVector.at(i).empty()) && !(expRhsVector.at(i).empty())) || ((!expLhsVector.at(i).empty()) && (expRhsVector.at(i).empty()))) {
-                synthesisOk = expEvaluate(annotatableQuantumComputation, lines, statAssignOp.at(j), expRhsVector.at(i), statLhs);
+                synthesisOk = expEvaluate(lines, statAssignOp.at(j), expRhsVector.at(i), statLhs);
                 j           = j + 1;
             }
         }
@@ -183,18 +183,18 @@ namespace syrec {
         bool synthesisOk = true;
         if (statOp == expOp) {
             if (expOp == 1) {
-                synthesisOk = expressionSingleOp(annotatableQuantumComputation, 1, expLhs, expRhs) &&
-                              expressionSingleOp(annotatableQuantumComputation, 0, statLhs, expRhs);
+                synthesisOk = expressionSingleOp(1, expLhs, expRhs) &&
+                              expressionSingleOp(0, statLhs, expRhs);
             } else {
-                synthesisOk = expressionSingleOp(annotatableQuantumComputation, statOp, expLhs, expRhs) &&
-                              expressionSingleOp(annotatableQuantumComputation, statOp, statLhs, expRhs);
+                synthesisOk = expressionSingleOp(statOp, expLhs, expRhs) &&
+                              expressionSingleOp(statOp, statLhs, expRhs);
             }
         } else {
             std::vector<qc::Qubit> lines;
             subFlag     = true;
-            synthesisOk = expEvaluate(annotatableQuantumComputation, lines, expOp, expLhs, statLhs);
+            synthesisOk = expEvaluate(lines, expOp, expLhs, statLhs);
             subFlag     = false;
-            synthesisOk &= expEvaluate(annotatableQuantumComputation, lines, statOp, lines, expRhs);
+            synthesisOk &= expEvaluate(lines, statOp, lines, expRhs);
             subFlag = true;
             if (expOp < 3) {
                 synthesisOk &= expressionOpInverse(expOp, expLhs, statLhs);
@@ -291,7 +291,7 @@ namespace syrec {
     }
 
     /// This function is used when input signals (rhs) are equal (just to solve statements individually)
-    bool LineAwareSynthesis::expEvaluate(AnnotatableQuantumComputation& annotatableQuantumComputation, std::vector<qc::Qubit>& lines, unsigned op, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) const {
+    bool LineAwareSynthesis::expEvaluate(std::vector<qc::Qubit>& lines, unsigned op, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) const {
         bool synthesisOk = true;
         switch (op) {
             case BinaryExpression::Add: // +
@@ -334,7 +334,7 @@ namespace syrec {
         return synthesisOfOperationOk;
     }
 
-    bool LineAwareSynthesis::expressionSingleOp(AnnotatableQuantumComputation& annotatableQuantumComputation, const unsigned op, const std::vector<qc::Qubit>& expLhs, const std::vector<qc::Qubit>& expRhs) const {
+    bool LineAwareSynthesis::expressionSingleOp(const unsigned op, const std::vector<qc::Qubit>& expLhs, const std::vector<qc::Qubit>& expRhs) const {
         // With the return value we only propagate an error if the defined 'synthesis' operation for any of the handled operations fails. In all other cases, we assume that
         // no synthesis should be performed and simply return OK.
         switch (op) {

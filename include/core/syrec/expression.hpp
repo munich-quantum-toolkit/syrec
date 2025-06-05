@@ -12,9 +12,8 @@
 
 #include "core/syrec/variable.hpp"
 
-#include <iostream>
+#include <cstdint>
 #include <memory>
-#include <utility>
 
 namespace syrec {
 
@@ -56,11 +55,11 @@ namespace syrec {
     /**
      * @brief Numeric Expression
      */
-    struct NumericExpression: public Expression {
+    struct NumericExpression: Expression {
         /**
        * @brief Operation to perform in case of binary numeric expression
        */
-        enum {
+        enum : std::uint8_t {
             /**
          * @brief Addition
          */
@@ -128,7 +127,7 @@ namespace syrec {
      * This class represents a variable expression and
      * capsulates a variable access pointer var().
      */
-    struct VariableExpression: public Expression {
+    struct VariableExpression: Expression {
         /**
        * @brief Constructor with variable
        *
@@ -150,11 +149,11 @@ namespace syrec {
      * This class represents a binary expression between two sub
      * expressions lhs() and rhs() by an operation op().
      */
-    struct BinaryExpression: public Expression {
+    struct BinaryExpression: Expression {
         /**
        * @brief Operation to perform
        */
-        enum {
+        enum : std::uint8_t {
             /**
          * @brief Addition
          */
@@ -300,11 +299,11 @@ namespace syrec {
      * This class represents a binary expression with a
      * sub-expression lhs() and a number rhs() by a shift operation op().
      */
-    struct ShiftExpression: public Expression {
+    struct ShiftExpression: Expression {
         /**
        * @brief Shift Operation
        */
-        enum {
+        enum : std::uint8_t {
             /**
          * @brief Left-Shift
          */
@@ -350,4 +349,20 @@ namespace syrec {
         Number::ptr     rhs = nullptr;
     };
 
+    struct UnaryExpression: Expression {
+        enum : std::uint8_t {
+            LogicalNegation,
+            BitwiseNegation
+        };
+
+        UnaryExpression(unsigned op, Expression::ptr expr):
+            op(op), expr(std::move(expr)) {}
+
+        [[nodiscard]] unsigned bitwidth() const override {
+            return op == UnaryExpression::LogicalNegation ? 1 : expr->bitwidth();
+        }
+
+        unsigned        op;
+        Expression::ptr expr;
+    };
 } // namespace syrec

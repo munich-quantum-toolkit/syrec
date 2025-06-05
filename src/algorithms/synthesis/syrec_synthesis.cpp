@@ -390,7 +390,7 @@ namespace syrec {
         return true;
     }
 
-    bool SyrecSynthesis::onExpression(const Expression::ptr& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, qc::Qubit op) {
+    bool SyrecSynthesis::onExpression(const Expression::ptr& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, unsigned op) {
         if (auto const* numeric = dynamic_cast<NumericExpression*>(expression.get())) {
             return onExpression(*numeric, lines);
         }
@@ -403,10 +403,13 @@ namespace syrec {
         if (auto const* shift = dynamic_cast<ShiftExpression*>(expression.get())) {
             return onExpression(*shift, lines, lhsStat, op);
         }
+        if (auto const* unary = dynamic_cast<UnaryExpression*>(expression.get())) {
+            return onExpression(*unary, lines, lhsStat, op);
+        }
         return false;
     }
 
-    bool SyrecSynthesis::onExpression(const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, qc::Qubit op) {
+    bool SyrecSynthesis::onExpression(const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, unsigned op) {
         std::vector<qc::Qubit> lhs;
         if (!onExpression(expression.lhs, lhs, lhsStat, op)) {
             return false;
@@ -424,6 +427,26 @@ namespace syrec {
         }
     }
 
+    bool SyrecSynthesis::onExpression(const UnaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, unsigned op) {
+        std::vector<qc::Qubit> innerExprLines;
+        if (!onExpression(expression.expr, innerExprLines, lhsStat, op)) {
+            return false;
+        }
+
+        if (expression.op == UnaryExpression::LogicalNegation) {
+            assert(innerExprLines.size() == 1U);
+        }
+
+        const auto innerExprBitwidth = expression.bitwidth();
+        bool       synthesisOk       = getConstantLines(innerExprBitwidth, 0U, lines);
+
+        // Transfer result of inner expression lines to ancillaes.
+        for (std::size_t i = 0; i < innerExprLines.size() && synthesisOk; ++i) {
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(innerExprLines.at(i), lines.at(i));
+        }
+        return synthesisOk && bitwiseNegation(annotatableQuantumComputation, lines);
+    }
+
     bool SyrecSynthesis::onExpression(const NumericExpression& expression, std::vector<qc::Qubit>& lines) {
         return getConstantLines(expression.bitwidth(), expression.value->evaluate(loopMap), lines);
     }
@@ -433,7 +456,7 @@ namespace syrec {
         return true;
     }
 
-    bool SyrecSynthesis::onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, qc::Qubit op) {
+    bool SyrecSynthesis::onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, unsigned op) {
         std::vector<qc::Qubit> lhs;
         std::vector<qc::Qubit> rhs;
 
