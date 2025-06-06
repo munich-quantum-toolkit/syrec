@@ -434,7 +434,13 @@ namespace syrec {
         }
 
         if (expression.op == UnaryExpression::LogicalNegation) {
+#if NDEBUG
             assert(innerExprLines.size() == 1U);
+#else
+            if (innerExprLines.size() != 1) {
+                return false;
+            }
+#endif
         }
 
         const auto innerExprBitwidth = expression.bitwidth();
@@ -986,8 +992,9 @@ namespace syrec {
         }
 
         bool synthesisOk = true;
+        const std::size_t sourceQubitBaseOffset = src2;
         for (std::size_t i = 0; i < nQubitsShifted && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src1[i], dest[i]);
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src1[sourceQubitBaseOffset + i], dest[i]);
         }
         return synthesisOk;
     }
