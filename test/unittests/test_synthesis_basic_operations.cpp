@@ -50,12 +50,11 @@ public:
         }
     }
 
-    void performProgramSynthesis(const syrec::Program& program) {
+    [[nodiscard]] bool performProgramSynthesis(const syrec::Program& program) {
         if (std::is_same_v<T, syrec::CostAwareSynthesis>) {
-            ASSERT_TRUE(syrec::CostAwareSynthesis::synthesize(annotatableQuantumComputation, program));
-        } else {
-            ASSERT_TRUE(syrec::LineAwareSynthesis::synthesize(annotatableQuantumComputation, program));
+            return syrec::CostAwareSynthesis::synthesize(annotatableQuantumComputation, program);
         }
+        return syrec::LineAwareSynthesis::synthesize(annotatableQuantumComputation, program);
     }
 
     syrec::AnnotatableQuantumComputation annotatableQuantumComputation;
@@ -80,7 +79,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     auto unaryAssignStmt = std::make_shared<syrec::AssignStatement>(accessOnModifiableParameter, syrec::AssignStatement::Exor, unaryExpr);
     mainModule->addStatement(unaryAssignStmt);
     program.addModule(mainModule);
-    this->performProgramSynthesis(program);
+    ASSERT_TRUE(this->performProgramSynthesis(program));
 
     constexpr std::size_t            inputStateSize = 3;
     const syrec::NBitValuesContainer inputState(inputStateSize, 0);
@@ -106,7 +105,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     auto unaryAssignStmt = std::make_shared<syrec::AssignStatement>(accessOnModifiableParameter, syrec::AssignStatement::Exor, unaryExpr);
     mainModule->addStatement(unaryAssignStmt);
     program.addModule(mainModule);
-    this->performProgramSynthesis(program);
+    ASSERT_TRUE(this->performProgramSynthesis(program));
 
     constexpr std::size_t            inputStateSize = 3;
     const syrec::NBitValuesContainer inputState(inputStateSize, 1);
@@ -138,7 +137,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     accessOnAssignedToVariable->var = assignedToVariable;
     mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::Exor, assignmentRhsExpr));
     program.addModule(mainModule);
-    this->performProgramSynthesis(program);
+    ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck   = {0, 1, 2, 3};
     const std::vector<std::uint64_t> expectedOutputStates = {
@@ -181,7 +180,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     accessOnAssignedToVariable->var = assignedToVariable;
     mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::Exor, unaryExpr));
     program.addModule(mainModule);
-    this->performProgramSynthesis(program);
+    ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck   = {0, 1, 2, 3};
     const std::vector<std::uint64_t> expectedOutputStates = {
@@ -219,7 +218,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     accessOnAssignedToVariable->var = assignedToVariable;
     mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::Exor, assignmentRhsExpr));
     program.addModule(mainModule);
-    this->performProgramSynthesis(program);
+    ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck = {
             0, // X000
@@ -267,7 +266,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     auto unaryAssignStmt = std::make_shared<syrec::AssignStatement>(accessOnModifiableParameter, syrec::AssignStatement::Exor, unaryExpr);
     mainModule->addStatement(unaryAssignStmt);
     program.addModule(mainModule);
-    this->performProgramSynthesis(program);
+    ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck   = {0, 1, 2, 3};
     const std::vector<std::uint64_t> expectedOutputStates = {
@@ -303,7 +302,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     accessOnAssignedToVariable->var = assignedToVariable;
     mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::Exor, assignmentRhsExpr));
     program.addModule(mainModule);
-    this->performProgramSynthesis(program);
+    ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck = {
             0,
@@ -352,7 +351,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     accessOnAssignedToVariable->var = assignedToVariable;
     mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::Exor, assignmentRhsExpr));
     program.addModule(mainModule);
-    this->performProgramSynthesis(program);
+    ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck = {
             0,  //000000
@@ -418,9 +417,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     auto unaryExpr = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::BitwiseNegation, shiftExpr);
     mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::Exor, unaryExpr));
     program.addModule(mainModule);
-    this->performProgramSynthesis(program);
-
-    const auto x = this->annotatableQuantumComputation.toQASM();
+    ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck = {
             0,
@@ -461,7 +458,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 16;
+        constexpr std::size_t            inputStateSize = 12;
         const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
         const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
@@ -493,7 +490,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     accessOnAssignedToVariable->var = assignedToVariable;
     mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::Exor, unaryExpr));
     program.addModule(mainModule);
-    this->performProgramSynthesis(program);
+    ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck   = {0, 1, 2, 3};
     const std::vector<std::uint64_t> expectedOutputStates = {

@@ -10,10 +10,13 @@
 
 #pragma once
 
+#include "core/syrec/number.hpp"
 #include "core/syrec/variable.hpp"
 
 #include <cstdint>
 #include <memory>
+#include <utility>
+#include <vector>
 
 namespace syrec {
 
