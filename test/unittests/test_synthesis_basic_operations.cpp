@@ -458,7 +458,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 12;
+        constexpr std::size_t            inputStateSize = 16;
         const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
         const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
