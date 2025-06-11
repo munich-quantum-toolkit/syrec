@@ -508,6 +508,33 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     }
 }
 
+TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegationOfExpressionWithBitwidthLargerThanOneNotPossible) {
+    // module main(in a(2), in b(2), out c(1)) c ^= !(a & b)
+    syrec::Program program;
+    auto           mainModule           = std::make_shared<syrec::Module>("main");
+    const auto     nestedExprLhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::In, "a", std::vector<unsigned>({1}), 2U);
+    const auto     nestedExprRhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::In, "b", std::vector<unsigned>({1}), 2U);
+    const auto     assignedToVariable   = std::make_shared<syrec::Variable>(syrec::Variable::Out, "c", std::vector<unsigned>({1}), 1U);
+    mainModule->addParameter(nestedExprLhsOperand);
+    mainModule->addParameter(nestedExprRhsOperand);
+    mainModule->addParameter(assignedToVariable);
+
+    auto accessOnNestedExprLhsOperand = std::make_shared<syrec::VariableAccess>();
+    accessOnNestedExprLhsOperand->var = nestedExprLhsOperand;
+
+    auto accessOnNestedExprRhsOperand = std::make_shared<syrec::VariableAccess>();
+    accessOnNestedExprRhsOperand->var = nestedExprRhsOperand;
+
+    auto nestedExpr        = std::make_shared<syrec::BinaryExpression>(std::make_shared<syrec::VariableExpression>(accessOnNestedExprLhsOperand), syrec::BinaryExpression::BitwiseAnd, std::make_shared<syrec::VariableExpression>(accessOnNestedExprRhsOperand));
+    auto assignmentRhsExpr = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::LogicalNegation, nestedExpr);
+
+    auto accessOnAssignedToVariable = std::make_shared<syrec::VariableAccess>();
+    accessOnAssignedToVariable->var = assignedToVariable;
+    mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::Exor, assignmentRhsExpr));
+    program.addModule(mainModule);
+    ASSERT_FALSE(this->performProgramSynthesis(program));
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BasicOperationSynthesisResultSimulationTestFixture,
                             LogicalNegationOfConstantZero,
                             LogicalNegationOfConstantOne,
@@ -518,7 +545,8 @@ REGISTER_TYPED_TEST_SUITE_P(BasicOperationSynthesisResultSimulationTestFixture,
                             BitwiseNegationOfVariable,
                             BitwiseNegationOfBinaryExpression,
                             BitwiseNegationOfShiftExpression,
-                            BitwiseNegationOfUnaryExpression);
+                            BitwiseNegationOfUnaryExpression,
+                            LogicalNegationOfExpressionWithBitwidthLargerThanOneNotPossible);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BasicOperationSynthesisResultSimulationTestFixture, SynthesizerTypes, );
