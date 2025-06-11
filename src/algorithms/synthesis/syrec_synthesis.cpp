@@ -433,14 +433,9 @@ namespace syrec {
             return false;
         }
 
-        if (expression.op == UnaryExpression::LogicalNegation) {
-#if NDEBUG
-            assert(innerExprLines.size() == 1U);
-#else
-            if (innerExprLines.size() != 1) {
-                return false;
-            }
-#endif
+        if (expression.op == UnaryExpression::LogicalNegation && innerExprLines.size() != 1) {
+            std::cerr << "Logical negation operation can only be used for expressions with a bitwidth of 1\n";
+            return false;
         }
 
         const auto innerExprBitwidth = expression.bitwidth();
