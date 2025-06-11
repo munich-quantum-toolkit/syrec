@@ -986,7 +986,7 @@ namespace syrec {
             return false;
         }
 
-        bool synthesisOk = true;
+        bool              synthesisOk           = true;
         const std::size_t sourceQubitBaseOffset = src2;
         for (std::size_t i = 0; i < nQubitsShifted && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src1[sourceQubitBaseOffset + i], dest[i]);

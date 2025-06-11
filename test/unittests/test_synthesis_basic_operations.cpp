@@ -25,8 +25,8 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 template<typename T>
 class BasicOperationSynthesisResultSimulationTestFixture: public testing::Test {
@@ -45,7 +45,7 @@ public:
         // We are assuming that the indices of the ancilla qubits are larger than the one of the inputs/output qubits.
         const std::size_t numQubitsToCheck = annotatableQuantumComputation.getNqubitsWithoutAncillae();
         for (std::size_t i = 0; i < numQubitsToCheck; ++i) {
-            ASSERT_EQ(expectedOutputState[i], actualOutputState[i]) << "Value missmatch during simulation at qubit " << std::to_string(i) << ", expected: " << std::to_string(static_cast<int>(expectedOutputState[i])) << " but was " << std::to_string(static_cast<int>(actualOutputState[i]))
+            ASSERT_EQ(expectedOutputState[i], actualOutputState[i]) << "Value mismatch during simulation at qubit " << std::to_string(i) << ", expected: " << std::to_string(static_cast<int>(expectedOutputState[i])) << " but was " << std::to_string(static_cast<int>(actualOutputState[i]))
                                                                     << "!\nInput state: " << inputState.stringify() << " | Expected output state: " << expectedOutputState.stringify() << " | Actual output state: " << actualOutputState.stringify();
         }
     }
@@ -521,4 +521,4 @@ REGISTER_TYPED_TEST_SUITE_P(BasicOperationSynthesisResultSimulationTestFixture,
                             BitwiseNegationOfUnaryExpression);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
-INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BasicOperationSynthesisResultSimulationTestFixture, SynthesizerTypes,);
+INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BasicOperationSynthesisResultSimulationTestFixture, SynthesizerTypes, );
