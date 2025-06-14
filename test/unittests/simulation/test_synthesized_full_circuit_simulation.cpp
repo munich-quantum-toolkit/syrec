@@ -20,7 +20,6 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <vector>
 
 // .clang-tidy reports a false positive here since are including the required nlohman json header file
@@ -63,7 +62,7 @@ namespace {
             return std::nullopt;
         }
 
-        static void loadNBitValuesContainerFromString(NBitValuesContainer& resultContainer, const std::string_view& stringifiedContainerContent) {
+        static void loadNBitValuesContainerFromString(NBitValuesContainer& resultContainer, const std::string& stringifiedContainerContent) {
             for (std::size_t i = 0; i < stringifiedContainerContent.size(); ++i) {
                 if (stringifiedContainerContent[i] == '1') {
                     ASSERT_TRUE(resultContainer.flip(i)) << "Failed to flip value for output bit " << std::to_string(i);
@@ -93,7 +92,7 @@ namespace {
             const std::string expectedOutputStateJsonKey = "sim_out";
             ASSERT_TRUE(currTestCaseConfigJson.contains(expectedOutputStateJsonKey)) << "Configuration did not contain expected entry '" << expectedOutputStateJsonKey << "'";
             ASSERT_TRUE(currTestCaseConfigJson[expectedOutputStateJsonKey].is_string()) << "Expected output state must be defined as a binary string";
-            ASSERT_NO_FATAL_FAILURE(loadNBitValuesContainerFromString(expectedOutputState, currTestCaseConfigJson[expectedOutputStateJsonKey]));
+            ASSERT_NO_FATAL_FAILURE(loadNBitValuesContainerFromString(expectedOutputState, currTestCaseConfigJson[expectedOutputStateJsonKey].get<std::string>()));
         }
 
         void prepareInputState(NBitValuesContainer& inputState) const {
