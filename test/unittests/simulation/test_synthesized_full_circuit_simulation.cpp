@@ -33,24 +33,23 @@ namespace {
     class FullCircuitSimulationTestsFixture: public BaseSimulationTestFixture<T> {
     public:
         void performTestExecutionForCircuit(const std::string& inputCircuitFilename, const std::string& inputCircuitJsonKeyInConfig) {
-            const std::string pathToInputCircuit = getPathToTestCaseDataDirectory() + inputCircuitFilename;
+            const std::string pathToInputCircuit = getPathToCircuitsDirectory() + inputCircuitFilename;
 
             std::string errorsOfReadInputCircuit;
             ASSERT_NO_FATAL_FAILURE(errorsOfReadInputCircuit = this->syrecProgramInstance.read(pathToInputCircuit, syrec::ReadProgramSettings()));
             ASSERT_TRUE(errorsOfReadInputCircuit.empty()) << "Expected no errors in input circuits but actually found the following: " << errorsOfReadInputCircuit;
 
             ASSERT_TRUE(this->performProgramSynthesis(this->syrecProgramInstance)) << "Synthesis of input circuit was not successful";
-
             NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits());
             expectedOutputState.resize(inputState.size());
-
             ASSERT_NO_FATAL_FAILURE(this->loadTestCaseDataFromJson(inputCircuitJsonKeyInConfig));
+
             ASSERT_NO_FATAL_FAILURE(this->prepareInputState(inputState));
             this->assertSimulationResultForStateMatchesExpectedOne(inputState, this->expectedOutputState);
         }
 
     protected:
-        [[nodiscard]] std::string getPathToTestCaseDataDirectory() override {
+        [[nodiscard]] static std::string getPathToCircuitsDirectory() {
             return "../circuits/";
         }
 
@@ -68,6 +67,8 @@ namespace {
             for (std::size_t i = 0; i < stringifiedContainerContent.size(); ++i) {
                 if (stringifiedContainerContent[i] == '1') {
                     ASSERT_TRUE(resultContainer.flip(i)) << "Failed to flip value for output bit " << std::to_string(i);
+                } else {
+                    ASSERT_EQ(stringifiedContainerContent[i], '0') << "Only the characters '0' and '1' are allowed when defining the state of an output";
                 }
             }
         }
@@ -77,8 +78,9 @@ namespace {
             ASSERT_TRUE(pathToTestCaseConfig.has_value()) << "Path to test case configuration was not defined for given synthesizer type";
 
             std::ifstream testCaseConfigInputFilestream(*pathToTestCaseConfig);
+            ASSERT_TRUE(testCaseConfigInputFilestream.good()) << "Failed to open test case config file @ " << *pathToTestCaseConfig;
             json          fullTestCaseConfigJson = json::parse(testCaseConfigInputFilestream);
-            ASSERT_TRUE(fullTestCaseConfigJson.contains(jsonKeyForCircuitInConfig));
+            ASSERT_TRUE(fullTestCaseConfigJson.contains(jsonKeyForCircuitInConfig)) << "Did not find entry with key '" << jsonKeyForCircuitInConfig << "' in test case config file @ " << *pathToTestCaseConfig;
 
             const auto& currTestCaseConfigJson = fullTestCaseConfigJson[jsonKeyForCircuitInConfig];
             ASSERT_TRUE(currTestCaseConfigJson.is_structured()) << "Configuration entry of circuit '" << jsonKeyForCircuitInConfig << "' must be a structured entry!";
@@ -97,7 +99,7 @@ namespace {
         void prepareInputState(NBitValuesContainer& inputState) const {
             for (const auto& setInputIndex: setInputIndices) {
                 ASSERT_GE(setInputIndex, 0) << "Index of input bit must be non-negative integer but was actually " << std::to_string(setInputIndex);
-                ASSERT_TRUE(inputState.set(static_cast<std::size_t>(setInputIndex))) << "Could not set value of input " << std::to_string(setInputIndex) << " in input state";
+                ASSERT_TRUE(inputState.set(static_cast<std::size_t>(setInputIndex))) << "Could not set value of input " << std::to_string(setInputIndex) << " in the input state";
             }
         }
 
@@ -129,7 +131,7 @@ TYPED_TEST_P(FullCircuitSimulationTestsFixture, TestOfCircuitModulo2) {
 }
 
 TYPED_TEST_P(FullCircuitSimulationTestsFixture, TestOfCircuitNegate8) {
-    this->performTestExecutionForCircuit("negate_2.src", "negate_2");
+    this->performTestExecutionForCircuit("negate_8.src", "negate_8");
 }
 
 REGISTER_TYPED_TEST_SUITE_P(FullCircuitSimulationTestsFixture,

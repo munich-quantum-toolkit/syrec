@@ -12,8 +12,8 @@
 #include "algorithms/simulation/simple_simulation.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
-#include "core/n_bit_values_container.hpp"
 #include "core/annotatable_quantum_computation.hpp"
+#include "core/n_bit_values_container.hpp"
 #include "core/syrec/program.hpp"
 
 #include <cstddef>
@@ -26,8 +26,6 @@ public:
     void SetUp() override {
         static_assert(std::is_same_v<T, syrec::CostAwareSynthesis> || std::is_same_v<T, syrec::LineAwareSynthesis>);
     }
-
-    [[nodiscard]] virtual std::string getPathToTestCaseDataDirectory() = 0;
 
     void assertSimulationResultForStateMatchesExpectedOne(const syrec::NBitValuesContainer& inputState, const syrec::NBitValuesContainer& expectedOutputState) const {
         ASSERT_EQ(inputState.size(), expectedOutputState.size());

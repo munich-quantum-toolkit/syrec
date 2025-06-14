@@ -8,10 +8,9 @@
  * Licensed under the MIT License
  */
 
-#include "algorithms/simulation/simple_simulation.hpp"
+#include "base_simulation_test_fixture.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
-#include "core/annotatable_quantum_computation.hpp"
 #include "core/n_bit_values_container.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/module.hpp"
@@ -24,45 +23,12 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
-template<typename T>
-class BasicOperationSynthesisResultSimulationTestFixture: public testing::Test {
-public:
-    void SetUp() override {
-        static_assert(std::is_same_v<T, syrec::CostAwareSynthesis> || std::is_same_v<T, syrec::LineAwareSynthesis>);
-    }
+TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
 
-    void assertSimulationResultForStateMatchesExpectedOne(const syrec::NBitValuesContainer& inputState, const syrec::NBitValuesContainer& expectedOutputState) const {
-        ASSERT_EQ(inputState.size(), expectedOutputState.size());
-
-        syrec::NBitValuesContainer actualOutputState(inputState.size());
-        ASSERT_NO_FATAL_FAILURE(syrec::simpleSimulation(actualOutputState, annotatableQuantumComputation, inputState));
-        ASSERT_EQ(actualOutputState.size(), expectedOutputState.size());
-
-        // We are assuming that the indices of the ancilla qubits are larger than the one of the inputs/output qubits.
-        const std::size_t numQubitsToCheck = annotatableQuantumComputation.getNqubitsWithoutAncillae();
-        for (std::size_t i = 0; i < numQubitsToCheck; ++i) {
-            ASSERT_EQ(expectedOutputState[i], actualOutputState[i]) << "Value mismatch during simulation at qubit " << std::to_string(i) << ", expected: " << std::to_string(static_cast<int>(expectedOutputState[i])) << " but was " << std::to_string(static_cast<int>(actualOutputState[i]))
-                                                                    << "!\nInput state: " << inputState.stringify() << " | Expected output state: " << expectedOutputState.stringify() << " | Actual output state: " << actualOutputState.stringify();
-        }
-    }
-
-    [[nodiscard]] bool performProgramSynthesis(const syrec::Program& program) {
-        if (std::is_same_v<T, syrec::CostAwareSynthesis>) {
-            return syrec::CostAwareSynthesis::synthesize(annotatableQuantumComputation, program);
-        }
-        return syrec::LineAwareSynthesis::synthesize(annotatableQuantumComputation, program);
-    }
-
-    syrec::AnnotatableQuantumComputation annotatableQuantumComputation;
-};
-
-TYPED_TEST_SUITE_P(BasicOperationSynthesisResultSimulationTestFixture);
-
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegationOfConstantZero) {
+TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfConstantZero) {
     // module main(out a(1)) a ^= !0
     syrec::Program program;
     auto           mainModule          = std::make_shared<syrec::Module>("main");
@@ -87,7 +53,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
 }
 
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegationOfConstantOne) {
+TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfConstantOne) {
     // module main(out a(1)) a ^= !1 with a initialized to one during simulation
     syrec::Program program;
     auto           mainModule          = std::make_shared<syrec::Module>("main");
@@ -113,7 +79,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
 }
 
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegationOfNestedExpression) {
+TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfNestedExpression) {
     // module main(in a(1), in b(1), out c(1)) c ^= !(a & b)
     syrec::Program program;
     auto           mainModule           = std::make_shared<syrec::Module>("main");
@@ -155,7 +121,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     }
 }
 
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegationOfUnaryExpression) {
+TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfUnaryExpression) {
     // module main(in a(1), in b(1), out c(1)) c ^= !(~(a | b))
     syrec::Program program;
     auto           mainModule           = std::make_shared<syrec::Module>("main");
@@ -198,7 +164,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     }
 }
 
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegationOfVariable) {
+TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfVariable) {
     // module main(in a(2), out b(1)) b ^= !a.1
     syrec::Program program;
     auto           mainModule         = std::make_shared<syrec::Module>("main");
@@ -249,7 +215,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     }
 }
 
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegationOfConstant) {
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfConstant) {
     // module main(out a(2)) a ^= ~2
     syrec::Program program;
     auto           mainModule          = std::make_shared<syrec::Module>("main");
@@ -284,7 +250,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     }
 }
 
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegationOfVariable) {
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfVariable) {
     // module main(in a(2), out b(2)) b ^= ~a
     syrec::Program program;
     auto           mainModule         = std::make_shared<syrec::Module>("main");
@@ -325,7 +291,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     }
 }
 
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegationOfBinaryExpression) {
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfBinaryExpression) {
     // module main(in a(2), in b(2), out c(2)) c ^= ~(a:1.0 & b.0:1)
     syrec::Program program;
     auto           mainModule           = std::make_shared<syrec::Module>("main");
@@ -398,7 +364,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     }
 }
 
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegationOfShiftExpression) {
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfShiftExpression) {
     // module main(in a(4), out b(4)) b ^= ~(a >> 2)
     syrec::Program program;
     auto           mainModule         = std::make_shared<syrec::Module>("main");
@@ -465,7 +431,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     }
 }
 
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
     // module main(in a(1), in b(1), out c(1)) c ^= ~(!(a | b))
     syrec::Program program;
     auto           mainModule           = std::make_shared<syrec::Module>("main");
@@ -508,7 +474,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, BitwiseNegation
     }
 }
 
-TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegationOfExpressionWithBitwidthLargerThanOneNotPossible) {
+TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfExpressionWithBitwidthLargerThanOneNotPossible) {
     // module main(in a(2), in b(2), out c(1)) c ^= !(a & b)
     syrec::Program program;
     auto           mainModule           = std::make_shared<syrec::Module>("main");
@@ -535,7 +501,7 @@ TYPED_TEST_P(BasicOperationSynthesisResultSimulationTestFixture, LogicalNegation
     ASSERT_FALSE(this->performProgramSynthesis(program));
 }
 
-REGISTER_TYPED_TEST_SUITE_P(BasicOperationSynthesisResultSimulationTestFixture,
+REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             LogicalNegationOfConstantZero,
                             LogicalNegationOfConstantOne,
                             LogicalNegationOfNestedExpression,
@@ -549,4 +515,4 @@ REGISTER_TYPED_TEST_SUITE_P(BasicOperationSynthesisResultSimulationTestFixture,
                             LogicalNegationOfExpressionWithBitwidthLargerThanOneNotPossible);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
-INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BasicOperationSynthesisResultSimulationTestFixture, SynthesizerTypes, );
+INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
