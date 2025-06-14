@@ -1,0 +1,6 @@
+module main(inout a(4), in b(4), in c(4))
+	if ((a != b) && (a > 0)) then
+		++= a
+	else
+		a -= ((b + c) - (c + 2))
+	fi ((a != b) && (a > 0))

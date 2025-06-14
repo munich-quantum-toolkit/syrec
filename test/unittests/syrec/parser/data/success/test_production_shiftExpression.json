@@ -1,0 +1,55 @@
+{
+  "usageOfLeftShiftOperation": {
+    "inputCircuit": "module main(in a(4), out res(4)) res += (a << 2)",
+    "expectedCircuit": "module main(in a(4), out res(4)) res[0] += (a[0] << 2)"
+  },
+  "usageOfRightShiftOperation": {
+    "inputCircuit": "module main(in a(4), out res(4)) res += (a >> 2)",
+    "expectedCircuit": "module main(in a(4), out res(4)) res[0] += (a[0] >> 2)"
+  },
+  "usageOfNestedExpressionAsToBeShiftedExprUsingLeftShiftOperation": {
+    "inputCircuit": "module main(in a(4), out res(4)) res += (((a * 2) - a) << 2)",
+    "expectedCircuit": "module main(in a(4), out res(4)) res[0] += (((a[0] * 2) - a[0]) << 2)"
+  },
+  "usageOfNestedExpressionAsToBeShiftedExprUsingRightShiftOperation": {
+    "inputCircuit": "module main(in a(4), out res(4)) res += (((a * 2) - a) >> 2)",
+    "expectedCircuit": "module main(in a(4), out res(4)) res[0] += (((a[0] * 2) - a[0]) >> 2)"
+  },
+  "usageOfIntegerConstantAsToBeShiftedExprUsingLeftShiftOperation": {
+    "inputCircuit": "module main(in a(4), out res(4)) res += (1 << 2)",
+    "expectedCircuit": "module main(in a(4), out res(4)) res[0] += 4"
+  },
+  "usageOfIntegerConstantAsToBeShiftedExprUsingRightShiftOperation": {
+    "inputCircuit": "module main(in a(4), out res(4)) res += (5 >> 2)",
+    "expectedCircuit": "module main(in a(4), out res(4)) res[0] += 1"
+  },
+
+  "simplificationOfLeftShiftOperationWithShiftAmountEqualToZero": {
+    "inputCircuit": "module main(in a(4), out res(4)) res += (a << (#a - 4))",
+    "expectedCircuit": "module main(in a(4), out res(4)) res[0] += a[0]"
+  },
+  "simplificationOfRightShiftOperationWithShiftAmountEqualToZero": {
+    "inputCircuit": "module main(in a(4), out res(4)) res += (a >> (#a - 4))",
+    "expectedCircuit": "module main(in a(4), out res(4)) res[0] += a[0]"
+  },
+  "simplificationOfLeftShiftOperationWithShiftAmountLargerThanLargestPossibleVariableBitlength": {
+    "inputCircuit": "module main(in a(4), out res(4)) res += (a << (#a * 8))",
+    "expectedCircuit": "module main(in a(4), out res(4)) res[0] += 0"
+  },
+  "simplificationOfRightShiftOperationWithShiftAmountLargerThanLargestPossibleVariableBitlength": {
+    "inputCircuit": "module main(in a(4), out res(4)) res += (a >> (#a * 8))",
+    "expectedCircuit": "module main(in a(4), out res(4)) res[0] += 0"
+  },
+  "integerConstantTruncationNotUsingParentOperandBitwidthIfLogicalOperationIsUsedInParentExpression": {
+    "inputCircuit": "module main(inout a(4), inout b(5)) b.0 += ((((a + 25) - b.1:4) << 2) > 1)",
+    "expectedCircuit": "module main(inout a(4), inout b(5)) b[0].0 += ((((a[0] + 10) - b[0].1:4) << 2) > 1)"
+  },
+  "expectedOperandBitwidthSetByBinaryOperationInLhsOperandOfShiftExpressionUsingLogicalOperationResetIfBothOperandsEvaluatedToAConstant": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a.0:1 += (((#a || 2) << 1) + b)",
+    "expectedCircuit": "module main(inout a(4), in b(2)) a[0].0:1 += (2 + b[0])"
+  },
+  "expectedOperandBitwidthSetByBinaryOperationInLhsOperandOfShiftExpressionUsingRelationalOperationResetIfBothOperandsEvaluatedToAConstant": {
+    "inputCircuit": "module main(inout a(4), in b(2)) a.0:1 += (((#a > 2) << 1) + b)",
+    "expectedCircuit": "module main(inout a(4), in b(2)) a[0].0:1 += (2 + b[0])"
+  }
+}

@@ -33,6 +33,7 @@ please let us know at our :doc:`Support <Support>` page or by reaching out to us
 
     Installation
     DescriptionAndFeatures
+    SyrecLanguageSemantics
     Publications
 
  .. toctree::

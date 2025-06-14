@@ -1,0 +1,317 @@
+{
+  "omittingExplicitAccessOnOnlyValueOf1DSignalPossible": {
+    "inputCircuit": "module main(inout a(4)) ++= a",
+    "expectedCircuit": "module main(inout a(4)) ++= a[0]"
+  },
+  "accessingBitUsingConstantIndexOf1DSignalWithImplicitAccessOnOnlyValueOfDimensionPossible": {
+    "inputCircuit": "module main(inout a(4)) ++= a[0].0"
+  },
+  "accessingBitrangeUsingConstantIndicesOf1DSignalWithImplicitAccessOnOnlyValueOfDimensionPossible": {
+    "inputCircuit": "module main(inout a(4)) ++= a[0].0:2"
+  },
+  "accessingBitUsingDynamicIndexEvaluatingToConstantOf1DSignalWithImplicitAccessOnOnlyValueOfDimensionPossible": {
+    "inputCircuit": "module main(inout a(4)) ++= a.((#a - 3) * 2)",
+    "expectedCircuit": "module main(inout a(4)) ++= a[0].2"
+  },
+  "accessingBitUsingDynamicIndexNotEvaluatingToConstantOf1DSignalWithImplicitAccessOnOnlyValueOfDimensionPossible": {
+    "inputCircuit": "module main(inout a(4), in b(1)) for $i = 0 to 3 step 1 do ++= a.(($i - 2) * $i) rof",
+    "expectedCircuit": "module main(inout a(4), in b(1)) for $i = 0 to 3 step 1 do ++= a[0].(($i - 2) * $i) rof"
+  },
+  "accessingBitrangeUsingConstantIndexForBitrangeStartAndDynamicExpressionForBitrangeEndEvaluatingToConstantOf1DSignalWithImplicitAccessOnOnlyValueOfDimensionPossible": {
+    "inputCircuit": "module main(inout a(4)) ++= a.0:(#a - 2)",
+    "expectedCircuit": "module main(inout a(4)) ++= a[0].0:2"
+  },
+  "accessingBitrangeUsingConstantIndexForBitrangeStartAndDynamicExpressionForBitrangEndNotEvaluatingToConstantOf1DSignalWithImplicitAccessOnOnlyValueOfDimensionPossible": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do ++= a.0:($i - 2) rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do ++= a[0].0:($i - 2) rof"
+  },
+
+  "accessingBitrangeUsingConstantIndexForBitrangeStartAndConstantIndexForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4)) ++= a.2:0",
+    "expectedCircuit": "module main(inout a(4)) ++= a[0].2:0"
+  },
+  "accessingBitrangeUsingConstantIndexForBitrangeStartAndConstantExpressionEvaluatingToConstantForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(2)) ++= a.0:(2 + (#b - 2))",
+    "expectedCircuit": "module main(inout a(4), in b(2)) ++= a[0].0:2"
+  },
+  "accessingBitrangeUsingConstantIndexForBitrangeStartAndConstantExpressionNotEvaluatingToConstantForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do ++= a.0:(2 + ($i - 2)) rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do ++= a[0].0:(2 + ($i - 2)) rof"
+  },
+
+  "accessingBitrangeUsingSignalBitwidthForBitrangeStartAndConstantIndexForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(2)) ++= a.#b:0",
+    "expectedCircuit": "module main(inout a(4), in b(2)) ++= a[0].2:0"
+  },
+  "accessingBitrangeUsingSignalBitwidthForBitrangeStartAndConstantExpressionEvaluatingToConstantForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(2)) ++= a.#b:(2 + (#b - 2))",
+    "expectedCircuit": "module main(inout a(4), in b(2)) ++= a[0].2:2"
+  },
+  "accessingBitrangeUsingSignalBitwidthForBitrangeStartAndConstantExpressionNotEvaluatingToConstantForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(1)) for $i = 0 to 3 step 1 do ++= a.#b:(2 + ($i - 2)) rof",
+    "expectedCircuit": "module main(inout a(4), in b(1)) for $i = 0 to 3 step 1 do ++= a[0].1:(2 + ($i - 2)) rof"
+  },
+  "accessingBitrangeUsingSignalBitwidthForBitrangeStartAndSignalBitwidthForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(2)) ++= a.#b:#b",
+    "expectedCircuit": "module main(inout a(4), in b(2)) ++= a[0].2:2"
+  },
+
+  "accessingBitrangeUsingConstantExpressionEvaluatingToConstantForBitrangeStartAndConstantIndexForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(2)) ++= a.(#a - 2):0",
+    "expectedCircuit": "module main(inout a(4), in b(2)) ++= a[0].2:0"
+  },
+  "accessingBitrangeUsingConstantExpressionEvaluatingToConstantForBitrangeStartAndConstantExpressionEvaluatingToConstantForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(2)) ++= a.(#a - 2):(2 + (#b - 2))",
+    "expectedCircuit": "module main(inout a(4), in b(2)) ++= a[0].2:2"
+  },
+  "accessingBitrangeUsingConstantExpressionEvaluatingToConstantForBitrangeStartAndConstantExpressionNotEvaluatingToConstantForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do ++= a.(#a - 2):(2 + ($i - 2)) rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do ++= a[0].2:(2 + ($i - 2)) rof"
+  },
+  "accessingBitrangeUsingConstantExpressionEvaluatingToConstantForBitrangeStartAndSignalBitwidthForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(2)) ++= a.(#a - 2):#b",
+    "expectedCircuit": "module main(inout a(4), in b(2)) ++= a[0].2:2"
+  },
+
+  "accessingBitrangeUsingConstantExpressionNotEvaluatingToConstantForBitrangeStartAndConstantIndexForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do ++= a.($i - 2):0 rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do ++= a[0].($i - 2):0 rof"
+  },
+  "accessingBitrangeUsingConstantExpressionNotEvaluatingToConstantForBitrangeStartAndConstantExpressionEvaluatingToConstantForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(1)) for $i = 0 to 3 do ++= a[0].($i + 2):(2 + (#b / 2)) rof",
+    "expectedCircuit": "module main(inout a(4), in b(1)) for $i = 0 to 3 step 1 do ++= a[0].($i + 2):2 rof"
+  },
+  "accessingBitrangeUsingConstantExpressionNotEvaluatingToConstantForBitrangeStartAndConstantExpressionNotEvaluatingToConstantForBitrangeEnd": {
+    "inputCircuit": "module main(inout a(4), in b(1)) for $i = 0 to 3 step 1 do ++= a[0].($i - 2):(2 + ($i - 2)) rof"
+  },
+
+  "accessingValueOfDimensionUsingConstantIndex": {
+    "inputCircuit": "module main(inout a[2][3](4)) ++= a[0][2]"
+  },
+  "accessingValueOfDimensionUsingConstantExpressionEvaluatingToConstant": {
+    "inputCircuit": "module main(inout a[2][3](4)) ++= a[(#a - 3)][2]",
+    "expectedCircuit": "module main(inout a[2][3](4)) ++= a[1][2]"
+  },
+  "accessingValueOfDimensionUsingConstantExpressionNotEvaluatingToConstant": {
+    "inputCircuit": "module main(inout a[2][3](4)) for $i = 0 to 3 do ++= a[(#a - 3)][(($i + 2) - 1)] rof",
+    "expectedCircuit": "module main(inout a[2][3](4)) for $i = 0 to 3 step 1 do ++= a[1][(($i + 2) - 1)] rof"
+  },
+  "accessingValueOfDimensionUsingShiftExpression": {
+    "inputCircuit": "module main(inout a[3](4), in b(3)) --= a[((b[0] << 2) - 1)]"
+  },
+  "accessingValueOfDimensionUsing1DSignalWithSingleValueIdentifier": {
+    "inputCircuit": "module main(inout a[3](4), in b(2)) --= a[b[0]]"
+  },
+  "accessingValueOfDimensionUsingVariableBitwidth": {
+    "inputCircuit": "module main(inout a[3](4), in b(2)) --= a[#b]",
+    "expectedCircuit": "module main(inout a[3](4), in b(2)) --= a[2]"
+  },
+  "accessingBitOfANDSignal": {
+    "inputCircuit": "module main(inout a[2][3](4)) a[0][1].0 += a[1][2].2"
+  },
+  "accessingBitrangeOfANDSignal": {
+    "inputCircuit": "module main(inout a[2][3](4)) a[0][1].(#a - 1):2 += a[1][2].1:0",
+    "expectedCircuit": "module main(inout a[2][3](4)) a[0][1].3:2 += a[1][2].1:0"
+  },
+
+  "operandBitwidthSizeRestrictionOnlyLocalToCurrentlyProcessedDimensionOf1DSignal": {
+    "inputCircuit": "module main(inout a[2](4), in b(2), in c(4)) a[(b + 2)] += c",
+    "expectedCircuit": "module main(inout a[2](4), in b(2), in c(4)) a[(b[0] + 2)] += c[0]"
+  },
+  "operandBitwidthSizeRestrictionOnlyLocalToCurrentlyProcessedDimensionOfANDSignal": {
+    "inputCircuit": "module main(inout a[2][4](4), in b(2), in c(4)) a[(b + 2)][(c - 1)] += c",
+    "expectedCircuit": "module main(inout a[2][4](4), in b(2), in c(4)) a[(b[0] + 2)][(c[0] - 1)] += c[0]"
+  },
+  "operandBitwidthSizeRestrictionFromDimensionAccessNotAppliedToOuterVariableAccessDefinitionAccessingBit": {
+    "inputCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b.0:2 + 2)].0",
+    "expectedCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b[0].0:2 + 2)].0"
+  },
+  "operandBitwidthSizeRestrictionFromDimensionAccessNotAppliedToOuterVariableAccessDefinitionAccessingWholeSignalBitwidth": {
+    "inputCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b.0:2 + 2)]",
+    "expectedCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b[0].0:2 + 2)]"
+  },
+  "operandBitwidthSizeRestrictionFromDimensionAccessNotAppliedToOuterVariableAccessDefinitionAccessingSmallerBitrange": {
+    "inputCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b.0:2 + 2)].1:2",
+    "expectedCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b[0].0:2 + 2)].1:2"
+  },
+  "operandBitwidthSizeRestrictionFromDimensionAccessNotAppliedToOuterVariableAccessDefinitionAccessingEquallyLargeBitrange": {
+    "inputCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b.0:2 + 2)].1:3",
+    "expectedCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b[0].0:2 + 2)].1:3"
+  },
+  "operandBitwidthSizeRestrictionFromDimensionAccessNotAppliedToOuterVariableAccessDefinitionAccessingLargerBitrange": {
+    "inputCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b.1:2 + 2)].0:2",
+    "expectedCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b[0].1:2 + 2)].0:2"
+  },
+  "operandBitwidthSizeRestrictionFromShiftEpressionOfDimensionAccessNotAppliedToOuterVariableAccess": {
+    "inputCircuit": "module main(inout a[2](4), in b(3)) ++= a[((b.0:2 << 2) + 7)].0",
+    "expectedCircuit": "module main(inout a[2](4), in b(3)) ++= a[(b[0].0:2 << 2)].0",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+
+  "truncationOfConstantValuesInBinaryExpressionOfDimensionAccessUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(2)) ++= a[((b - 3) + 4)]",
+    "expectedCircuit": "module main(inout a(4), in b(2)) ++= a[(b[0] + 1)]",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesInLhsOperandOfShiftExpressionUsedInDimensionAccessUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(4)) ++= a[((9 + b.1:3) << 2)]",
+    "expectedCircuit": "module main(inout a(4), in b(4)) ++= a[((2 + b[0].1:3) << 2)]",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesInRhsOperandOfShiftExpressionUsedInDimensionAccessNotPerformedUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do ++= a[((5 + b.1:2) << ($i + (#b - 2)))] rof",
+    "expectedCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do ++= a[((2 + b[0].1:2) << ($i + 2))] rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesInBinaryExpressionOfDimensionAccessUsesInternalBitwidthRestrictionAndNotExternalOneUsingModuloOperation": {
+    "inputCircuit": "module main(inout a[2](2), in b(3), in c(6), inout d(3)) d.1:2 += a[((c.3:5 + 3) + (15 + b))]",
+    "expectedCircuit": "module main(inout a[2](2), in b(3), in c(6), inout d(3)) d[0].1:2 += a[((c[0].3:5 + 3) + (1 + b[0]))]",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesInShiftExpressionOfDimensionAccessUsesInternalBitwidthRestrictionAndNotExternalOneUsingModuloOperation": {
+    "inputCircuit": "module main(inout a[2](2), in b(3), in c(6), inout d(3)) d.1:2 += a[(((c.3:5 + 3) + (15 + b)) << 2)]",
+    "expectedCircuit": "module main(inout a[2](2), in b(3), in c(6), inout d(3)) d[0].1:2 += a[(((c[0].3:5 + 3) + (1 + b[0])) << 2)]",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesInBinaryExpressionOfDimensionAccessFromNestedExpressionPropagateThroughAllExpressionsUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 1 step 1 do if a[((b.$i:($i + 1) + 5) + (a.0:1 + 7))].1 then ++= a else skip fi a[((b.$i:($i + 1) + 5) + (a.0:1 + 7))].1 rof",
+    "expectedCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 1 step 1 do if a[((b[0].$i:($i + 1) + 2) + (a[0].0:1 + 1))].1 then ++= a[0] else skip fi a[((b[0].$i:($i + 1) + 2) + (a[0].0:1 + 1))].1 rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesInShiftExpressionOfDimensionAccessFromNestedExpressionPropagateThroughAllExpressionsUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do if a[((b.$i:($i + 1) + 5) + ((a.0:1 + 7) << 2))].1 then ++= a else skip fi a[((b.$i:($i + 1) + 5) + ((a.0:1 + 7) << 2))].1 rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do if a[(b[0].$i:($i + 1) + 2)].1 then ++= a[0] else skip fi a[(b[0].$i:($i + 1) + 2)].1 rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesInBinaryExpressionOfDimensionAccessNotPerformedIfUnknownBitrangeInAllVariableAccessWereAccessUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 do for $j = 0 to 1 do ++= a[((b.0:$j + 7) - (a.$i:$j - 2))] rof rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do for $j = 0 to 1 step 1 do ++= a[((b[0].0:$j + 7) - (a[0].$i:$j - 2))] rof rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesInShiftExpressionOfDimensionAccessNotPerformedIfUnknownBitrangeInAllVariableAccessWereAccessUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 do for $j = 0 to 1 do ++= a[(((b.0:$j << 7) - (a.$i:$j - 2)) << 2)] rof rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do for $j = 0 to 1 step 1 do ++= a[(((b[0].0:$j << 7) - (a[0].$i:$j - 2)) << 2)] rof rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesInBinaryExpressionOfDimensionAccessCorrectlyPerformedIfUnknownBitOfVariableAccessIsDefinedUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do ++= a[((b.$i + 3) + 1)] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do ++= a[b[0].$i] rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesInShiftExpressionOfDimensionAccessCorrectlyPerformedIfUnknownBitOfVariableAccessIsDefinedUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do ++= a[((b.$i << 3) << 1)] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 3 step 1 do ++= a[0] rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesFromPreviousDimensionNotResusedInNextDimensionUsingModuloOperation": {
+    "inputCircuit": "module main(inout a[2][4](4), in b(2), in c(4)) ++= a[((b.0 + 2) << 3)][((c.1:2 + b) + (4 + c.0:1))]",
+    "expectedCircuit": "module main(inout a[2][4](4), in b(2), in c(4)) ++= a[0][((c[0].1:2 + b[0]) + (1 + c[0].0:1))]",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesOnlyPerformedAfterBinaryExpressionWithConstantOperandsWasEvaluatedUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(2)) ++= a[(b + ((#a - 2) + 3))]",
+    "expectedCircuit": "module main(inout a(4), in b(2)) ++= a[(b[0] + 2)]",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "truncationOfConstantValuesOnlyPerformedAfterShiftExpressionWithConstantOperandsWasEvaluatedUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(3)) ++= a[(b + ((#a + 1) << 3))]",
+    "expectedCircuit": "module main(inout a(4), in b(3)) ++= a[(b[0] + 5)]",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "simplificationOfBinaryExpressionPerformedAfterConstantValueTruncationIsPerformedUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(3)) ++= a[(b + ((#a + 1) - 5))]",
+    "expectedCircuit": "module main(inout a(4), in b(3)) ++= a[b[0]]",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "simplficationOfBinaryExpressionPerformedAfterOperandBitwidthRestrictionWasSetInNestedExpressionUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 do ++= a[((b.0:$i + 1) * (b.0:1 * 3))] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do ++= a[0] rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "simplificationOfShiftExpressionPerformedAfterConstantValueTruncationIsPerformedUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(3)) ++= a[(b + (((#a << 1) << 3) >> 7))]",
+    "expectedCircuit": "module main(inout a(4), in b(3)) ++= a[b[0]]",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "simplificationOfShiftExpressionPerformedAfterOperandBitwidthRestrictionWasSetInNestedExpressionUsingModuloOperation": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 do ++= a[((((b.0:$i - 7) * 4) << 4) + (5 + (b.$i:0 + b.0:1)))] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do ++= a[(2 + (b[0].$i:0 + b[0].0:1))] rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "evaluationOfBinaryExpressionPerformedAfterTruncationOfConstantsLeadToTwoConstantOperandsWithOperandBitwidthRestrictionFromNestedExpressionUsingModuloOperation": {
+    "inputCircuit": "module main(inout a[2](4), in b(3)) for $i = 0 to 1 do ++= a[((((b.0:$i + 5) * 7) + 3) + (12 - (b + 9)))] rof",
+    "expectedCircuit": "module main(inout a[2](4), in b(3)) for $i = 0 to 1 step 1 do ++= a[(3 + (5 - (b[0] + 2)))] rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "evaluationOfShiftExpressionPerformedAfterTruncationOfConstantsLeadToTwoConstantOperandsWithOperandBitwidthRestrictionFromNestedExpressionUsingModuloOperation": {
+    "inputCircuit": "module main(inout a[2](4), in b(3)) for $i = 0 to 1 do ++= a[((((b.0:$i + 5) << 8) + 3) + (12 - (b + 9)))] rof",
+    "expectedCircuit": "module main(inout a[2](4), in b(3)) for $i = 0 to 1 step 1 do ++= a[(3 + (5 - (b[0] + 2)))] rof",
+    "parserConfig": {
+      "constValTruncationOp": "modulo"
+    }
+  },
+  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingLeftShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitAccess": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 do ++= a[((b.$i + 2) << 2)] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do ++= a[0] rof"
+  },
+  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingLeftShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitrangeAccess": {
+    "inputCircuit": "module main(inout a(4), in b(4)) ++= a[((b.1:3 >> 1) << 3)]",
+    "expectedCircuit": "module main(inout a(4), in b(4)) ++= a[0]"
+  },
+  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingLeftShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetFullBitwidthAccess": {
+    "inputCircuit": "module main(inout a(4), in b(4)) ++= a[((b - 1) << 5)]",
+    "expectedCircuit": "module main(inout a(4), in b(4)) ++= a[0]"
+  },
+  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingRightShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitAccess": {
+    "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 do ++= a[((b.$i + 2) >> 2)] rof",
+    "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do ++= a[0] rof"
+  },
+  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingRightShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitrangeAccess": {
+    "inputCircuit": "module main(inout a(4), in b(4)) ++= a[((b.1:3 >> 1) >> 3)]",
+    "expectedCircuit": "module main(inout a(4), in b(4)) ++= a[0]"
+  },
+  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingRightShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetFullBitwidthAccess": {
+    "inputCircuit": "module main(inout a(4), in b(4)) ++= a[((b - 1) >> 5)]",
+    "expectedCircuit": "module main(inout a(4), in b(4)) ++= a[0]"
+  }
+}

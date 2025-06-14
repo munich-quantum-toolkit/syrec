@@ -1,8 +1,8 @@
-module divide( out a(2),out b(2),out c(2), inout x1(2), inout x2(2))
-a ^ = ( x1 / x2 )
-b + = ( x1 / x2 )
-c - = ( x1 / x2 )
+module divide(out a(2),out b(2),out c(2), inout x1(2), inout x2(2))
+a ^= (x1 / x2);
+b += (x1 / x2);
+c -= (x1 / x2)
 
-module main(out p(2), out q(2),out r(2),inout s(2), inout t(2) )
-  call divide( p, q, r, s, t)
-  uncall divide( p, q, r,s ,t)
+module main(out p(2), out q(2),out r(2),inout s(2), inout t(2))
+  call divide(p, q, r, s, t);
+  uncall divide(p, q, r,s ,t)

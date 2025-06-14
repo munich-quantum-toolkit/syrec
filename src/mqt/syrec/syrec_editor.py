@@ -673,11 +673,15 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         self.editor.before_build = self.logWidget.clear
         self.editor.build_successful = self.viewer.load
         self.editor.parser_failed = self.logWidget.addMessage
-        self.editor.build_failed = (
-            lambda error_message: self.logWidget.addMessage(match.group(2))
-            if (match := re.search(r"In line (.*): (.*)", error_message))
-            else self.logWidget.addMessage("No matching lines found in error message")
-        )
+        self.editor.build_failed = self.filter_and_record_parser_errors
+
+    def filter_and_record_parser_errors(self, aggregate_error_string: str) -> None:
+        regex_pattern = r"(-- line (\d+) col (\d+): (.*)(\n?))"
+        if re.search(regex_pattern, aggregate_error_string) is not None:
+            for m in re.finditer(regex_pattern, aggregate_error_string):
+                self.logWidget.addMessage(m.group(0))
+        else:
+            self.logWidget.addMessage("No matching lines found in error message")
 
     def setup_toolbar(self) -> None:
         toolbar = self.addToolBar("Main")

@@ -10,11 +10,13 @@
 
 #pragma once
 
+#include "core/syrec/number.hpp"
 #include "core/syrec/variable.hpp"
 
-#include <iostream>
+#include <cstdint>
 #include <memory>
 #include <utility>
+#include <vector>
 
 namespace syrec {
 
@@ -57,54 +59,6 @@ namespace syrec {
      * @brief Numeric Expression
      */
     struct NumericExpression: public Expression {
-        /**
-       * @brief Operation to perform in case of binary numeric expression
-       */
-        enum {
-            /**
-         * @brief Addition
-         */
-            Add,
-
-            /**
-         * @brief Subtraction
-         */
-            Subtract,
-
-            /**
-         * @brief Multiplication
-         */
-            Multiply,
-
-            /**
-         * @brief Division
-         */
-            Divide,
-
-            Modulo,
-
-            LogicalAnd,
-
-            LogicalOr,
-
-            BitwiseAnd,
-
-            BitwiseOr,
-
-            LessThan,
-
-            GreaterThan,
-
-            LessEquals,
-
-            GreaterEquals,
-
-            Equals,
-
-            NotEquals
-
-        };
-
         /**
        * @brief Creates a numeric expression with a value and a bit-width
        *
@@ -154,7 +108,7 @@ namespace syrec {
         /**
        * @brief Operation to perform
        */
-        enum {
+        enum class BinaryOperation : std::uint8_t {
             /**
          * @brief Addition
          */
@@ -251,14 +205,14 @@ namespace syrec {
        * @brief Constructor which initializes a operation
        *
        * @param lhs Expression on left hand side
-       * @param op Operation to be performed
+       * @param binaryOperation Operation to be performed
        * @param rhs Expression on right hand side
        */
         BinaryExpression(Expression::ptr lhs,
-                         unsigned        op,
+                         BinaryOperation binaryOperation,
                          Expression::ptr rhs):
             lhs(std::move(lhs)),
-            op(op), rhs(std::move(rhs)) {}
+            binaryOperation(binaryOperation), rhs(std::move(rhs)) {}
 
         /**
        * @brief Bit-width of the expression
@@ -272,17 +226,16 @@ namespace syrec {
        * @return Bit-width of the expression
        */
         [[nodiscard]] unsigned bitwidth() const override {
-            switch (op) {
-                case LogicalAnd:
-                case LogicalOr:
-                case LessThan:
-                case GreaterThan:
-                case Equals:
-                case NotEquals:
-                case LessEquals:
-                case GreaterEquals:
+            switch (binaryOperation) {
+                case BinaryOperation::LogicalAnd:
+                case BinaryOperation::LogicalOr:
+                case BinaryOperation::LessThan:
+                case BinaryOperation::GreaterThan:
+                case BinaryOperation::Equals:
+                case BinaryOperation::NotEquals:
+                case BinaryOperation::LessEquals:
+                case BinaryOperation::GreaterEquals:
                     return 1;
-
                 default:
                     // lhs and rhs are assumed to have the same bit-width
                     return lhs->bitwidth();
@@ -290,7 +243,7 @@ namespace syrec {
         }
 
         Expression::ptr lhs = nullptr;
-        unsigned        op{};
+        BinaryOperation binaryOperation{};
         Expression::ptr rhs = nullptr;
     };
 
@@ -304,7 +257,7 @@ namespace syrec {
         /**
        * @brief Shift Operation
        */
-        enum {
+        enum class ShiftOperation : std::uint8_t {
             /**
          * @brief Left-Shift
          */
@@ -324,14 +277,14 @@ namespace syrec {
        * \p rhs.
        *
        * @param lhs Expression to be shifted
-       * @param op Shift operation
+       * @param shiftOperation Shift operation
        * @param rhs Number of bits to shift
        */
-        ShiftExpression(Expression::ptr lhs,
-                        unsigned        op,
-                        Number::ptr     rhs):
+        ShiftExpression(Expression::ptr      lhs,
+                        const ShiftOperation shiftOperation,
+                        Number::ptr          rhs):
             lhs(std::move(lhs)),
-            op(op), rhs(std::move(rhs)) {}
+            shiftOperation(shiftOperation), rhs(std::move(rhs)) {}
 
         /**
        * @brief Returns the bit-width of the expression
@@ -346,8 +299,7 @@ namespace syrec {
         }
 
         Expression::ptr lhs = nullptr;
-        unsigned        op{};
+        ShiftOperation  shiftOperation{};
         Number::ptr     rhs = nullptr;
     };
-
 } // namespace syrec

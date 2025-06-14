@@ -13,7 +13,6 @@
 #include "core/syrec/statement.hpp"
 #include "core/syrec/variable.hpp"
 
-#include <iostream>
 #include <memory>
 #include <string>
 #include <utility>
@@ -85,10 +84,10 @@ namespace syrec {
             statements.emplace_back(statement);
         }
 
-        std::string    name{};
-        Variable::vec  parameters{};
-        Variable::vec  variables{};
-        Statement::vec statements{};
+        std::string    name;
+        Variable::vec  parameters;
+        Variable::vec  variables;
+        Statement::vec statements;
     };
 
 } // namespace syrec

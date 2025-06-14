@@ -1,0 +1,5 @@
+module main(in a(8), out res(8))
+	for $i = 0 to #a step 2 do
+		res.$i ^= a.($i + 1);
+		res.($i +1) ^= a.$i
+	rof

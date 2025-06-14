@@ -1,0 +1,58 @@
+{
+  "usageOfTrueBranchContainingSingleSkipStatement": {
+    "inputCircuit": "module main(inout a(4)) if (a.1 > 1) then skip else ++= a fi (a.1 > 1)",
+    "expectedCircuit": "module main(inout a(4)) if (a[0].1 > 1) then skip else ++= a[0] fi (a[0].1 > 1)"
+  },
+  "usageOfFalseBranchContainingSingleSkipStatement": {
+    "inputCircuit": "module main(inout a(4)) if (a.1 > 1) then --= a else skip fi (a.1 > 1)",
+    "expectedCircuit": "module main(inout a(4)) if (a[0].1 > 1) then --= a[0] else skip fi (a[0].1 > 1)"
+  },
+  "usageOfIntegerConstantAsGuardConditionExpression": {
+    "inputCircuit": "module main(inout a(4)) if 2 then --= a else ++= a fi 2",
+    "expectedCircuit": "module main(inout a(4)) if 0 then --= a[0] else ++= a[0] fi 0"
+  },
+  "usageOfConstantExpressionEvaluableAtCompileTimeAsGuardConditionExpression": {
+    "inputCircuit": "module main(inout a(4)) if ((2 + 1) * #a) then --= a else ++= a fi ((2 + 1) * #a)",
+    "expectedCircuit": "module main(inout a(4)) if 0 then --= a[0] else ++= a[0] fi 0"
+  },
+  "usageOfConstantExpressionNotEvaluableAtCompileTimeAsGuardConditionExpression": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do if ((2 + 1) * $i) then --= a else ++= a fi ((2 + 1) * $i) rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do if (3 * $i) then --= a[0] else ++= a[0] fi (3 * $i) rof"
+  },
+  "usageOfVariableAccessAsGuardConditionExpression": {
+    "inputCircuit": "module main(inout a(4)) if a[0].2 then ++= a else --= a fi a[0].2",
+    "expectedCircuit": "module main(inout a(4)) if a[0].2 then ++= a[0] else --= a[0] fi a[0].2"
+  },
+  "usageOfBinaryExpressionAsGuardConditionExpression": {
+    "inputCircuit": "module main(inout a(4)) if (a.1 != #a) then ++= a else --= a fi (a.1 != #a)",
+    "expectedCircuit": "module main(inout a(4)) if (a[0].1 != 0) then ++= a[0] else --= a[0] fi (a[0].1 != 0)"
+  },
+  "usageOfShiftExpressionAsGuardConditionExpression": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 3 do if (a.1 << $i) then ++= a else --= a fi (a.1 << $i) rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 3 step 1 do if (a[0].1 << $i) then ++= a[0] else --= a[0] fi (a[0].1 << $i) rof"
+  },
+  "usageOfMultipleStatementsInTrueBranch": {
+    "inputCircuit": "module main(inout a(4)) if a.1 then ++= a; if (a.2 > 1) then --= a; skip else a += (2 + #a) fi (a.2 > 1); --= a else a += 1 fi a.1",
+    "expectedCircuit": "module main(inout a(4)) if a[0].1 then ++= a[0]; if (a[0].2 > 1) then --= a[0]; skip else a[0] += 6 fi (a[0].2 > 1); --= a[0] else a[0] += 1 fi a[0].1"
+  },
+  "usageOfMultipleStatementsInFalseBranch": {
+    "inputCircuit": "module main(inout a(4)) if a.1 then a += 1 else ++= a; if (a.2 > 1) then --= a; skip else a += (2 + #a) fi (a.2 > 1) fi a.1",
+    "expectedCircuit": "module main(inout a(4)) if a[0].1 then a[0] += 1 else ++= a[0]; if (a[0].2 > 1) then --= a[0]; skip else a[0] += 6 fi (a[0].2 > 1) fi a[0].1"
+  },
+  "integerConstantsTruncatedInBinaryExpressionsNotUsingLogicalOrRelationalOperation": {
+    "inputCircuit": "module main(inout a(4), in b(4)) if ((a < (b + 2)) + (1 + (2 - (b.1 || a.0)))) then ++= a else --= a fi ((a < (b + 2)) + (1 + (2 - (b.1 || a.0))))",
+    "expectedCircuit": "module main(inout a(4), in b(4)) if ((a[0] < (b[0] + 2)) + (0 - (b[0].1 || a[0].0))) then ++= a[0] else --= a[0] fi ((a[0] < (b[0] + 2)) + (0 - (b[0].1 || a[0].0)))"
+  },
+  "integerConstantsTruncatedInLhsExpressionOfShiftExpressionWithUnknownShiftAmountValueAtCompileTime": {
+    "inputCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 2 step 1 do if (((2 < (a + b)) + (5 + (b.1 || 2))) << $i) then ++= a else --= a fi (((2 < (a + b)) + (5 + (b.1 || 2))) << $i) rof",
+    "expectedCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 2 step 1 do if (((2 < (a[0] + b[0])) + b[0].1) << $i) then ++= a[0] else --= a[0] fi (((2 < (a[0] + b[0])) + b[0].1) << $i) rof"
+  },
+  "usageOfBinaryExpressionWithUnknownOperandBitwidthAtCompileTimeDoesNotCauseError": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 2 step 1 do if (a.$i:($i + 1) + a.0:($i - 1)) then ++= a else --= a fi (a.$i:($i + 1) + a.0:($i - 1)) rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 2 step 1 do if (a[0].$i:($i + 1) + a[0].0:($i - 1)) then ++= a[0] else --= a[0] fi (a[0].$i:($i + 1) + a[0].0:($i - 1)) rof"
+  },
+  "usageOfShiftExpressionWithUnknownOperandBitwidthOfLHsOperandAtCompileTimeDoesNotCauseError": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 2 do if ((a.0:($i + 1) + 2) << $i) then ++= a else --= a fi ((a.0:($i + 1) + 2) << $i) rof",
+    "expectedCircuit": "module main(inout a(4)) for $i = 0 to 2 step 1 do if (a[0].0:($i + 1) << $i) then ++= a[0] else --= a[0] fi (a[0].0:($i + 1) << $i) rof"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "duplicateModuleDeclarationWithTypeOfParameterNotAssignableOk": {
+    "inputCircuit": "module add(inout a(4), in b(4)) a += b module add(in a(4), inout b(4)) b += a module main() skip",
+    "expectedCircuit": "module add(inout a(4), in b(4)) a[0] += b[0] module add(in a(4), inout b(4)) b[0] += a[0] module main() skip"
+  },
+  "duplicateModuleDeclarationWithTypeOfParameterMatchingButDifferentBitwidthOk": {
+    "inputCircuit": "module add(inout a(4), in b(4)) a += b module add(inout a(8), in b(8)) a += b module main() skip",
+    "expectedCircuit": "module add(inout a(4), in b(4)) a[0] += b[0] module add(inout a(8), in b(8)) a[0] += b[0] module main() skip"
+  },
+  "duplicateModuleDeclarationWithTypeOfParameterAndBitwidthMatchingButDifferentNumberOfValuesForDimensionOk": {
+    "inputCircuit": "module add(inout a(4), in b(4)) a += b module add(inout a[2](4), in b(4)) a[0] += b module main() skip",
+    "expectedCircuit": "module add(inout a(4), in b(4)) a[0] += b[0] module add(inout a[2](4), in b(4)) a[0] += b[0] module main() skip"
+  },
+  "duplicateModuleDeclarationWithTypeAndBitwidthMatchingButSmallerNumberOfDimensionsOk": {
+    "inputCircuit": "module add(inout a[2](4), in b(4)) a[1] += b module add(inout a(4), in b(4)) a += b module main() skip",
+    "expectedCircuit": "module add(inout a[2](4), in b(4)) a[1] += b[0] module add(inout a(4), in b(4)) a[0] += b[0] module main() skip"
+  },
+  "duplicateModuleDeclarationUsingLessParametersOk": {
+    "inputCircuit": "module add(inout a(4), in b(4)) a[0] += b module add(inout a(4)) ++= a module main() skip",
+    "expectedCircuit": "module add(inout a(4), in b(4)) a[0] += b[0] module add(inout a(4)) ++= a[0] module main() skip"
+  },
+  "duplicateModuleDeclarationUsingMoreParametersOk": {
+    "inputCircuit": "module add(inout a(4)) ++= a module add(inout a(4), in b(4)) a[0] += b module main() skip",
+    "expectedCircuit": "module add(inout a(4)) ++= a[0] module add(inout a(4), in b(4)) a[0] += b[0] module main() skip"
+  },
+
+  "usageOfModuleNotNamedMainAllowed": {
+    "inputCircuit": "module add(inout a(4), in b(4)) a += b",
+    "expectedCircuit": "module add(inout a(4), in b(4)) a[0] += b[0]"
+  },
+  "overloadOfModuleUsedAsMainModuleAllowed": {
+    "inputCircuit": "module add(inout a(8), in b(8)) a += b module add(inout a(4), in b(4)) a += b",
+    "expectedCircuit": "module add(inout a(8), in b(8)) a[0] += b[0] module add(inout a(4), in b(4)) a[0] += b[0]"
+  }
+}

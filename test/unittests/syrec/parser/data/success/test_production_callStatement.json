@@ -1,0 +1,46 @@
+{
+  "callOfModuleWithInParameterWithVariableOfTypeInOk": {
+    "inputCircuit": "module add(in a(4)) wire b(4) b += a module main(in a(4)) call add(a)",
+    "expectedCircuit": "module add(in a(4)) wire b(4) b[0] += a[0] module main(in a(4)) call add(a)"
+  },
+  "callOfModuleWithInParameterWithVariableOfTypeInoutOk": {
+    "inputCircuit": "module add(in a(4)) wire b(4) b += a module main(inout a(4)) call add(a)",
+    "expectedCircuit": "module add(in a(4)) wire b(4) b[0] += a[0] module main(inout a(4)) call add(a)"
+  },
+  "callOfModuleWithInParameterWithVariableOfTypeOutOk": {
+    "inputCircuit": "module add(in a(4)) wire b(4) b += a module main(out a(4)) call add(a)",
+    "expectedCircuit": "module add(in a(4)) wire b(4) b[0] += a[0] module main(out a(4)) call add(a)"
+  },
+  "callOfModuleWithInParameterWithVariableOfTypeWireOk": {
+    "inputCircuit": "module add(inout a(4), in b(4)) a += b module main(inout operand(4)) wire other(4) other += 4; call add(operand, other)",
+    "expectedCircuit": "module add(inout a(4), in b(4)) a[0] += b[0] module main(inout operand(4)) wire other(4) other[0] += 4; call add(operand, other)"
+  },
+  "callOfModuleWithInoutParameterWithVariableOfTypeInoutOk": {
+    "inputCircuit": "module add(inout a(4), in b(4)) a += b module main(inout operand(4), in other(4)) call add(operand, other)",
+    "expectedCircuit": "module add(inout a(4), in b(4)) a[0] += b[0] module main(inout operand(4), in other(4)) call add(operand, other)"
+  },
+  "callOfModuleWithInoutParameterWithVariableOfTypeOutOk": {
+    "inputCircuit": "module add(inout a(4), in b(4)) a += b module main(out operand(4), in other(4)) call add(operand, other)",
+    "expectedCircuit": "module add(inout a(4), in b(4)) a[0] += b[0] module main(out operand(4), in other(4)) call add(operand, other)"
+  },
+  "callOfModuleWithInoutParameterWithVariableOfTypeWireOk": {
+    "inputCircuit": "module add(inout a(4), in b(4)) a += b module main(in other(4)) wire operand(4) operand += 4; call add(operand, other)",
+    "expectedCircuit": "module add(inout a(4), in b(4)) a[0] += b[0] module main(in other(4)) wire operand(4) operand[0] += 4; call add(operand, other)"
+  },
+  "callOfModuleWithOutParameterWithVariableOfTypeOutOk": {
+    "inputCircuit": "module add(out a(4), in b(4)) a += b module main(out operand(4), in other(4)) operand += 4; call add(operand, other)",
+    "expectedCircuit": "module add(out a(4), in b(4)) a[0] += b[0] module main(out operand(4), in other(4)) operand[0] += 4; call add(operand, other)"
+  },
+  "callOfModuleWithOutParameterWithVariableOfTypeInoutOk": {
+    "inputCircuit": "module add(out a(4), in b(4)) a += b module main(inout operand(4), in other(4)) operand += 4; call add(operand, other)",
+    "expectedCircuit": "module add(out a(4), in b(4)) a[0] += b[0] module main(inout operand(4), in other(4)) operand[0] += 4; call add(operand, other)"
+  },
+  "callOfModuleWithOutParameterWithVariableOfTypeWireOk": {
+    "inputCircuit": "module add(out a(4), in b(4)) a += b module main(in other(4)) wire operand(4) operand += 4; call add(operand, other)",
+    "expectedCircuit": "module add(out a(4), in b(4)) a[0] += b[0] module main(in other(4)) wire operand(4) operand[0] += 4; call add(operand, other)"
+  },
+  "callOfModuleWithNDimensionalParameterOk": {
+    "inputCircuit": "module add(inout a[2](4), in b(4)) a[0] += b; a[1] += b module main(inout operand[2](4)) wire other(4) call add(operand, other)",
+    "expectedCircuit": "module add(inout a[2](4), in b(4)) a[0] += b[0]; a[1] += b[0] module main(inout operand[2](4)) wire other(4) call add(operand, other)"
+  }
+}
