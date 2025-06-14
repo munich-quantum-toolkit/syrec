@@ -8,9 +8,9 @@
  * Licensed under the MIT License
  */
 
-#include "base_simulation_test_fixture.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
+#include "base_simulation_test_fixture.hpp"
 #include "core/n_bit_values_container.hpp"
 #include "core/syrec/program.hpp"
 
@@ -79,7 +79,7 @@ namespace {
 
             std::ifstream testCaseConfigInputFilestream(*pathToTestCaseConfig);
             ASSERT_TRUE(testCaseConfigInputFilestream.good()) << "Failed to open test case config file @ " << *pathToTestCaseConfig;
-            json          fullTestCaseConfigJson = json::parse(testCaseConfigInputFilestream);
+            json fullTestCaseConfigJson = json::parse(testCaseConfigInputFilestream);
             ASSERT_TRUE(fullTestCaseConfigJson.contains(jsonKeyForCircuitInConfig)) << "Did not find entry with key '" << jsonKeyForCircuitInConfig << "' in test case config file @ " << *pathToTestCaseConfig;
 
             const auto& currTestCaseConfigJson = fullTestCaseConfigJson[jsonKeyForCircuitInConfig];

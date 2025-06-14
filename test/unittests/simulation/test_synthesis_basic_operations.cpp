@@ -8,9 +8,9 @@
  * Licensed under the MIT License
  */
 
-#include "base_simulation_test_fixture.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
+#include "base_simulation_test_fixture.hpp"
 #include "core/n_bit_values_container.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/module.hpp"
