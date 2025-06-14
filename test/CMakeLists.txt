@@ -11,6 +11,7 @@ file(GLOB_RECURSE TEST_FILES "*.cpp")
 
 # add test executable
 package_add_test(mqt-syrec-test MQT::SyReC ${TEST_FILES})
+target_compile_features(mqt-syrec-test PUBLIC cxx_std_17)
 
 add_custom_command(
   TARGET mqt-syrec-test
