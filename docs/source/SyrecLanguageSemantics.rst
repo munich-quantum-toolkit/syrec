@@ -9,7 +9,7 @@ We start by defining the semantics of the highest-level entity of a SyReC progra
 
 Module
 ------
-- The RevLib project (v2.0.1, section 2.1) :footcite:p:`wille2008revlib` states that the entry point of a well-formed SyReC program is either defined explicitly by a module with an identifier *main* or is implicitly chosen as the last defined module of the program.
+- The RevLib project (v2.0.1, section 2.1) :footcite:p:`wille2008revlib` states that the entry point of a well-formed SyReC program is either defined explicitly by a module with an identifier *main* or is implicitly chosen as the last defined module of the program. Additionally, one can also specify the identifier of the module serving as the entry point of the SyReC program in the :doc:`parser configuration <library/Settings>`. With such an entry configured, only one module matching said identifier is allowed in the SyReC program (the same restriction applies if no such entry was configured and a module with identifier 'main' was defined).
 
 - Omitting the specification of the dimensionality of any variable (i.e., the number of dimensions and the number of values per dimension) will cause the variable to be considered as a 1D variable storing a single value; The following example shows the two equivalent specifications:
 
@@ -27,7 +27,7 @@ Module
 - The maximum supported bitwidth of any variable is equal to 32.
 - Omitting the bitwidth of a variable will lead to the assumption that its bitwidth is equal to a :doc:`configurable default value <library/Settings>`.
 - The parameter and variable identifiers must be unique in a SyReC module.
-- Module overloading (i.e., the definition of a module sharing its identifier with another module while the structure [variable type, dimensionality and bitwidth] of their parameters do not match) is supported for all modules whose identifier is not equal to *main*. However, overloading the implicitly defined main module of a SyReC program is possible.
+- Module overloading (i.e., the definition of a module sharing its identifier with another module while the signature [variable type, dimensionality and bitwidth] of their parameters do not match) is supported for all modules whose identifier is not equal to the one of the "main" module. However, overloading the implicitly defined main module of a SyReC program is possible.
 
  | Two module signatures (module identifier + parameters) :math:`m_1` and :math:`m_2` are considered to be equal iff:
 
