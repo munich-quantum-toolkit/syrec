@@ -29,7 +29,7 @@
 #include <string_view>
 
 namespace syrec {
-    std::string Program::read(const std::string& filename, const ReadProgramSettings settings) {
+    std::string Program::read(const std::string& filename, const ReadProgramSettings& settings) {
         std::string foundErrorWhileReadingFileContent;
         if (const std::optional<std::string> readFileContent = tryReadFileContent(filename, &foundErrorWhileReadingFileContent); readFileContent.has_value() && foundErrorWhileReadingFileContent.empty()) {
             readProgramFromString(*readFileContent, settings, foundErrorWhileReadingFileContent);
@@ -37,13 +37,13 @@ namespace syrec {
         return foundErrorWhileReadingFileContent;
     }
 
-    std::string Program::readFromString(const std::string_view& stringifiedProgram, const ReadProgramSettings settings) {
+    std::string Program::readFromString(const std::string_view& stringifiedProgram, const ReadProgramSettings& settings) {
         std::string foundErrorWhileReadingFileContent;
         readProgramFromString(stringifiedProgram, settings, foundErrorWhileReadingFileContent);
         return foundErrorWhileReadingFileContent;
     }
 
-    bool Program::readFile(const std::string& filename, const ReadProgramSettings settings, std::string& error) {
+    bool Program::readFile(const std::string& filename, const ReadProgramSettings& settings, std::string& error) {
         error = read(filename, settings);
         return error.empty();
     }

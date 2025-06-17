@@ -110,7 +110,7 @@ namespace syrec {
          * @param settings The configuration to use by the parser.
          * @return A std::string containing the list of errors found during the processing of the file or the parsing of the SyReC program.
          */
-        std::string read(const std::string& filename, ReadProgramSettings settings = ReadProgramSettings{});
+        std::string read(const std::string& filename, const ReadProgramSettings& settings = ReadProgramSettings{});
 
         /**
          * @brief Read and parse a SyReC program from a string.
@@ -124,7 +124,7 @@ namespace syrec {
          * @param settings The configuration to use by the parser.
          * @return A std::string containing the list of errors found during the parsing of the SyReC program.
          */
-        std::string readFromString(const std::string_view& stringifiedProgram, ReadProgramSettings settings = ReadProgramSettings{});
+        std::string readFromString(const std::string_view& stringifiedProgram, const ReadProgramSettings& settings = ReadProgramSettings{});
 
     private:
         Module::vec modulesVec;
@@ -143,7 +143,7 @@ namespace syrec {
         *
         * @return true if parsing was successful, otherwise false
         */
-        bool                                            readFile(const std::string& filename, ReadProgramSettings settings, std::string& error);
+        bool                                            readFile(const std::string& filename, const ReadProgramSettings& settings, std::string& error);
         bool                                            readProgramFromString(const std::string_view& content, const ReadProgramSettings& settings, std::string&);
         [[nodiscard]] static std::optional<std::string> tryReadFileContent(const std::string& filename, std::string* foundFileHandlingErrors);
     };
