@@ -73,7 +73,8 @@ PYBIND11_MODULE(pysyrec, m) {
             .def(py::init<>(), "Constructs ReadProgramSettings object.")
             .def_readwrite("default_bitwidth", &ReadProgramSettings::defaultBitwidth, "Defines the default variable bitwidth used by the SyReC parser for variables whose bitwidth specification was omitted")
             .def_readwrite("integer_constant_truncation_operation", &ReadProgramSettings::integerConstantTruncationOperation, "Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language")
-            .def_readwrite("allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variableAccess", &ReadProgramSettings::allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess, "Defines whether an access on the assigned to signal parts of an assigned is allowed in variable accesses defined in any operand of the assignment. For further details we refer to the semantics of the SyReC language.");
+            .def_readwrite("allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variableAccess", &ReadProgramSettings::allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess, "Defines whether an access on the assigned to signal parts of an assigned is allowed in variable accesses defined in any operand of the assignment. For further details we refer to the semantics of the SyReC language.")
+            .def_readwrite("main_module_identifier", &ReadProgramSettings::optionalProgramEntryPointModuleIdentifier, "Define the identifier of the module serving as the entry-point of the to be processed SyReC program");
 
     py::class_<Program>(m, "program")
             .def(py::init<>(), "Constructs SyReC program object.")
