@@ -8,9 +8,9 @@
  * Licensed under the MIT License
  */
 
-#include "core/syrec/program.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
+#include "core/syrec/program.hpp"
 #include "test_syrec_parser_errors_base.hpp"
 
 #include <climits>

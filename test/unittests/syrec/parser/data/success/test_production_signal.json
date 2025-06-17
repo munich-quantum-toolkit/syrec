@@ -11,7 +11,7 @@
   "moduleParameterIdentifierContainingLettersAndDigitsAndUnderscores": {
     "inputCircuit": "module main(inout _p_at_index_0(4)) ++= _p_at_index_0[0]"
   },
-  "moduleParameterIdentfierWithUnderscoreMatchingOtherParameterIdentifer": {
+  "moduleParameterIdentifierWithUnderscoreMatchingOtherParameterIdentifier": {
     "inputCircuit": "module main(inout a(4), in _a(4)) a += _a",
     "expectedCircuit": "module main(inout a(4), in _a(4)) a[0] += _a[0]"
   },
@@ -31,7 +31,7 @@
     "inputCircuit": "module main(inout a(4)) wire _p_at_index_0(4) a += _p_at_index_0",
     "expectedCircuit": "module main(inout a(4)) wire _p_at_index_0(4) a[0] += _p_at_index_0[0]"
   },
-  "moduleLocalVariableIdentfierWithUnderscoreMatchingParameterIdentifer": {
+  "moduleLocalVariableIdentifierWithUnderscoreMatchingParameterIdentifier": {
     "inputCircuit": "module main(inout a(4)) wire _a(4) a += _a",
     "expectedCircuit": "module main(inout a(4)) wire _a(4) a[0] += _a[0]"
   },
