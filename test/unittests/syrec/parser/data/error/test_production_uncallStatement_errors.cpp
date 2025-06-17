@@ -8,11 +8,13 @@
  * Licensed under the MIT License
  */
 
+#include "core/syrec/program.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
 #include "test_syrec_parser_errors_base.hpp"
 
 #include <gtest/gtest.h>
+#include <string>
 
 using namespace syrec_parser_error_tests;
 
@@ -119,11 +121,25 @@ TEST_F(SyrecParserErrorTestsFixture, ModuleUncallOverloadResolutionFailedDueToTo
 }
 
 TEST_F(SyrecParserErrorTestsFixture, ModuleUncallOfImplicitlyDefinedMainModuleCausesError) {
-    buildAndRecordExpectedSemanticError<SemanticError::CannotCallMainModule>(Message::Position(1, 55));
+    buildAndRecordExpectedSemanticError<SemanticError::CannotCallMainModule>(Message::Position(1, 55), "add");
     performTestExecution("module increment(out c(4)) wire one(4) ++= one; uncall add(c, one, c) module add(in a(4), in b(4), out c(4)) c ^= (a + b)");
 }
 
 TEST_F(SyrecParserErrorTestsFixture, ModuleUncallOverloadResolutionResolvesToOfImplicitlyDefinedMainModuleCausesError) {
-    buildAndRecordExpectedSemanticError<SemanticError::CannotCallMainModule>(Message::Position(1, 55));
+    buildAndRecordExpectedSemanticError<SemanticError::CannotCallMainModule>(Message::Position(1, 55), "add");
     performTestExecution("module increment(out c(4)) wire one(4) ++= one; uncall add(c, one) module add(in a(4), in b(4), out c(4)) c ^= (a + b) module add(inout a(4), in b(4)) a += b");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, ModuleUncallOverloadResolutionResolvingToExplicitlyDefinedMainModuleCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::CannotCallMainModule>(Message::Position(1, 55), "main");
+    performTestExecution("module increment(out c(4)) wire one(4) ++= one; uncall main(c) module main(inout a(4)) call increment(a)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, ModuleUncallOverloadResolutionResolvingToExplicitlyDefinedMainModuleOfConfigCausesError) {
+    const std::string          userDefinedExpectedMainModuleIdentifier = "userDefMain";
+    syrec::ReadProgramSettings parserConfiguration;
+    parserConfiguration.optionalProgramEntryPointModuleIdentifier = userDefinedExpectedMainModuleIdentifier;
+
+    buildAndRecordExpectedSemanticError<SemanticError::CannotCallMainModule>(Message::Position(1, 55), userDefinedExpectedMainModuleIdentifier);
+    performTestExecution("module increment(out c(4)) wire one(4) ++= one; uncall userDefMain(c) module userDefMain(inout a(4)) call increment(a)", parserConfiguration);
 }

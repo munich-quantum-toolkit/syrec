@@ -39,7 +39,8 @@ namespace syrec_parser {
         InfiniteLoopDetected,
         UnhandledOperationFromGrammarInParser,
         VariableBitwidthEqualToZero,
-        NumberOfValuesOfDimensionEqualToZero
+        NumberOfValuesOfDimensionEqualToZero,
+        NoModuleMatchingUserDefinedProgramEntryPoint
     };
 
     /// Get the identifier associated with a given semantic error
@@ -99,6 +100,8 @@ namespace syrec_parser {
                 return "SEM25";
             case SemanticError::NumberOfValuesOfDimensionEqualToZero:
                 return "SEM26";
+            case SemanticError::NoModuleMatchingUserDefinedProgramEntryPoint:
+                return "SEM27";
             default:
                 return "";
         }
@@ -141,11 +144,11 @@ namespace syrec_parser {
             case SemanticError::OmittingDimensionAccessOnlyPossibleFor1DSignalWithSingleValue:
                 return "Omitting explicit access on value of dimension is only possible for 1D signal containing a single value";
             case SemanticError::DuplicateMainModuleDefinition:
-                return "Module with identifier 'main' can only be defined once";
+                return "Module with identifier '{:s}' serving as SyReC program entry point can only be defined once";
             case SemanticError::ValueOverflowDueToNoImplicitTruncationPerformed:
                 return "Implicit truncation of values is disabled at this point of the program thus value ({:s}) that was large than the maximum storable value of {:d} lead to an overflow";
             case SemanticError::CannotCallMainModule:
-                return "Cannot call 'main' module of SyReC program";
+                return "Cannot call module '{:s}' that functions as entry point of SyReC program";
             case SemanticError::ValueOfLoopVariableNotUsableInItsInitialValueDeclaration:
                 return "Loop variable {:s} cannot be used in the definition of its initial value";
             case SemanticError::ReversibilityOfStatementNotPossibleDueToAccessOnRestrictedVariableParts:
@@ -162,6 +165,8 @@ namespace syrec_parser {
                 return "Variable bitwidth must be larger than zero";
             case SemanticError::NumberOfValuesOfDimensionEqualToZero:
                 return "Number of values of dimension {:d} must be larger than zero";
+            case SemanticError::NoModuleMatchingUserDefinedProgramEntryPoint:
+                return "No module matching the user defined SyReC programs entry point identifier '{:s}'";
             default:
                 return "";
         }

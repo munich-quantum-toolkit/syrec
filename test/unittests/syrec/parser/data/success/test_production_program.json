@@ -23,13 +23,46 @@
     "inputCircuit": "module add(inout a(4)) ++= a module add(inout a(4), in b(4)) a[0] += b module main() skip",
     "expectedCircuit": "module add(inout a(4)) ++= a[0] module add(inout a(4), in b(4)) a[0] += b[0] module main() skip"
   },
-
-  "usageOfModuleNotNamedMainAllowed": {
-    "inputCircuit": "module add(inout a(4), in b(4)) a += b",
-    "expectedCircuit": "module add(inout a(4), in b(4)) a[0] += b[0]"
+  "moduleWhosIdentifierStartsWithUnderscoreEqualToIdentifierOfOtherModuleWithoutLeadingUnderscoreOk": {
+    "inputCircuit": "module add(inout a(4), in b(4)) ++= a module _add(inout a(4), in b(4)) a[0] += b module main() skip",
+    "expectedCircuit": "module add(inout a(4), in b(4)) ++= a[0] module _add(inout a(4), in b(4)) a[0] += b[0] module main() skip"
   },
+
   "overloadOfModuleUsedAsMainModuleAllowed": {
     "inputCircuit": "module add(inout a(8), in b(8)) a += b module add(inout a(4), in b(4)) a += b",
     "expectedCircuit": "module add(inout a(8), in b(8)) a[0] += b[0] module add(inout a(4), in b(4)) a[0] += b[0]"
+  },
+  "definitionOfModuleWithIdentifierMainAllowedIfUserDefinedMainModuleIdentifierHasSameValue": {
+    "inputCircuit": "module main(inout a(4), in b(4)) call userDefMain(a, b) module userDefMain(inout a(4), in b(4)) a += b",
+    "expectedCircuit": "module main(inout a(4), in b(4)) call userDefMain(a, b) module userDefMain(inout a(4), in b(4)) a[0] += b[0]",
+    "parserConfig": {
+      "mainModuleIdentifier": "main"
+    }
+  },
+  "definitionOfModuleWithIdentifierMainAllowedIfUserDefinedMainModuleIdentifierDoesNotHaveSameValue": {
+    "inputCircuit": "module main(inout a(4), in b(4)) a += b module userDefMain(inout a(4), in b(4)) call main(a, b)",
+    "expectedCircuit": "module main(inout a(4), in b(4)) a[0] += b[0] module userDefMain(inout a(4), in b(4)) call main(a, b)",
+    "parserConfig": {
+      "mainModuleIdentifier": "userDefMain"
+    }
+  },
+  "overloadOfModuleWithIdentifierMainAllowedIfUserDefinedMainModuleIdentifierDoesNotHaveSameValue": {
+    "inputCircuit": "module main(inout a(2), in b(2)) a += b module main(inout a(4), in b(4)) a += b module userDefMain(inout a(4), in b(4)) call main(a, b)",
+    "expectedCircuit": "module main(inout a(2), in b(2)) a[0] += b[0] module main(inout a(4), in b(4)) a[0] += b[0] module userDefMain(inout a(4), in b(4)) call main(a, b)",
+    "parserConfig": {
+      "mainModuleIdentifier": "userDefMain"
+    }
+  },
+  "overloadOfModuleContainingDigitsOk": {
+    "inputCircuit": "module main0(inout a(2), in b(2)) a += b[0] module main0(inout a(4), in b(4)) a[0] += b module main(inout a(4), in b(4)) call main0(a, b)",
+    "expectedCircuit": "module main0(inout a(2), in b(2)) a[0] += b[0] module main0(inout a(4), in b(4)) a[0] += b[0] module main(inout a(4), in b(4)) call main0(a, b)"
+  },
+  "overloadOfModuleContainingUnderscoreCharactersOk": {
+    "inputCircuit": "module main_add(inout a(2), in b(2)) a += b[0] module main_add(inout a(4), in b(4)) a[0] += b module main(inout a(4), in b(4)) call main_add(a, b)",
+    "expectedCircuit": "module main_add(inout a(2), in b(2)) a[0] += b[0] module main_add(inout a(4), in b(4)) a[0] += b[0] module main(inout a(4), in b(4)) call main_add(a, b)"
+  },
+  "overloadOfModuleContainingLettersAndDigitsAndUnderscoresOk": {
+    "inputCircuit": "module main_add_0(inout a(2), in b(2)) a += b[0] module main_add_0(inout a(4), in b(4)) a[0] += b module main(inout a(4), in b(4)) call main_add_0(a, b)",
+    "expectedCircuit": "module main_add_0(inout a(2), in b(2)) a[0] += b[0] module main_add_0(inout a(4), in b(4)) a[0] += b[0] module main(inout a(4), in b(4)) call main_add_0(a, b)"
   }
 }

@@ -1,4 +1,41 @@
 {
+  "moduleParameterIdentifierStartingWithUnderscoreOk": {
+    "inputCircuit": "module anotherModule(inout _a(4)) ++= _a[0]"
+  },
+  "moduleParameterIdentifierContainingUnderscoreCharactersOk": {
+    "inputCircuit": "module anotherModule(inout _a_Var(4)) ++= _a_Var[0]"
+  },
+  "moduleParameterIdentifierContainingDigitsOk": {
+    "inputCircuit": "module main(inout pAtIndex0(4)) ++= pAtIndex0[0]"
+  },
+  "moduleParameterIdentifierContainingLettersAndDigitsAndUnderscores": {
+    "inputCircuit": "module main(inout _p_at_index_0(4)) ++= _p_at_index_0[0]"
+  },
+  "moduleParameterIdentfierWithUnderscoreMatchingOtherParameterIdentifer": {
+    "inputCircuit": "module main(inout a(4), in _a(4)) a += _a",
+    "expectedCircuit": "module main(inout a(4), in _a(4)) a[0] += _a[0]"
+  },
+  "moduleLocalVariableIdentifierStartingWithUnderscoreOk": {
+    "inputCircuit": "module anotherModule(inout a(4)) wire _b(4) a += _b",
+    "expectedCircuit": "module anotherModule(inout a(4)) wire _b(4) a[0] += _b[0]"
+  },
+  "moduleLocalVariableIdentifierContainingUnderscoreCharactersOk": {
+    "inputCircuit": "module anotherModule(inout a(4)) wire _a_Var(4) a += _a_Var",
+    "expectedCircuit": "module anotherModule(inout a(4)) wire _a_Var(4) a[0] += _a_Var[0]"
+  },
+  "moduleLocalVariableIdentifierContainingDigitsOk": {
+    "inputCircuit": "module main(inout a(4)) wire pAtIndex0(4) a += pAtIndex0",
+    "expectedCircuit": "module main(inout a(4)) wire pAtIndex0(4) a[0] += pAtIndex0[0]"
+  },
+  "moduleLocalVariableIdentifierContainingLettersAndDigitsAndUnderscores": {
+    "inputCircuit": "module main(inout a(4)) wire _p_at_index_0(4) a += _p_at_index_0",
+    "expectedCircuit": "module main(inout a(4)) wire _p_at_index_0(4) a[0] += _p_at_index_0[0]"
+  },
+  "moduleLocalVariableIdentfierWithUnderscoreMatchingParameterIdentifer": {
+    "inputCircuit": "module main(inout a(4)) wire _a(4) a += _a",
+    "expectedCircuit": "module main(inout a(4)) wire _a(4) a[0] += _a[0]"
+  },
+
   "omittingExplicitAccessOnOnlyValueOf1DSignalPossible": {
     "inputCircuit": "module main(inout a(4)) ++= a",
     "expectedCircuit": "module main(inout a(4)) ++= a[0]"

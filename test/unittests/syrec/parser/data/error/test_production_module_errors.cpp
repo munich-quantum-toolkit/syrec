@@ -8,12 +8,14 @@
  * Licensed under the MIT License
  */
 
+#include "core/syrec/program.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
 #include "test_syrec_parser_errors_base.hpp"
 
 #include <climits>
 #include <gtest/gtest.h>
+#include <string>
 
 using namespace syrec_parser_error_tests;
 
@@ -68,8 +70,35 @@ TEST_F(SyrecParserErrorTestsFixture, EmptyModuleBodyCausesError) {
 }
 
 TEST_F(SyrecParserErrorTestsFixture, OverloadOfModuleNamedMainCausesError) {
-    buildAndRecordExpectedSemanticError<SemanticError::DuplicateMainModuleDefinition>(Message::Position(1, 37));
+    buildAndRecordExpectedSemanticError<SemanticError::DuplicateMainModuleDefinition>(Message::Position(1, 37), "main");
     performTestExecution("module main(in a[2](16)) skip module main(out b[1](16)) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, OverloadOfModuleMatchingUserDefinedExpectedMainModuleIdentifierCausesError) {
+    const std::string          userDefinedExpectedMainModuleIdentifier = "userDefMain";
+    syrec::ReadProgramSettings parserConfiguration;
+    parserConfiguration.optionalProgramEntryPointModuleIdentifier = userDefinedExpectedMainModuleIdentifier;
+
+    buildAndRecordExpectedSemanticError<SemanticError::DuplicateMainModuleDefinition>(Message::Position(1, 44), userDefinedExpectedMainModuleIdentifier);
+    performTestExecution("module userDefMain(in a[2](16)) skip module userDefMain(out b[1](16)) skip", parserConfiguration);
+}
+
+TEST_F(SyrecParserErrorTestsFixture, NoModuleMatchingUserDefinedExpectedMainModuleIdentifierWithOtherModulesNotMatchingPotentialMainModuleRequirementsCausesError) {
+    const std::string          userDefinedExpectedMainModuleIdentifier = "userDefMain";
+    syrec::ReadProgramSettings parserConfiguration;
+    parserConfiguration.optionalProgramEntryPointModuleIdentifier = userDefinedExpectedMainModuleIdentifier;
+
+    buildAndRecordExpectedSemanticError<SemanticError::NoModuleMatchingUserDefinedProgramEntryPoint>(Message::Position(0, 0), userDefinedExpectedMainModuleIdentifier);
+    performTestExecution("module userMain(in a[2](16)) skip module other(out b[1](16)) skip", parserConfiguration);
+}
+
+TEST_F(SyrecParserErrorTestsFixture, NoModuleMatchingUserDefinedExpectedMainModuleIdentifierWithOtherModulesMatchingPotentialMainModuleRequirementsCausesError) {
+    const std::string          userDefinedExpectedMainModuleIdentifier = "userDefMain";
+    syrec::ReadProgramSettings parserConfiguration;
+    parserConfiguration.optionalProgramEntryPointModuleIdentifier = userDefinedExpectedMainModuleIdentifier;
+
+    buildAndRecordExpectedSemanticError<SemanticError::NoModuleMatchingUserDefinedProgramEntryPoint>(Message::Position(0, 0), userDefinedExpectedMainModuleIdentifier);
+    performTestExecution("module userMain(in a[2](16)) skip module main(out b[1](16)) skip", parserConfiguration);
 }
 
 TEST_F(SyrecParserErrorTestsFixture, DuplicateDeclarationOfModuleUsingSameInParameterTypeCausesError) {

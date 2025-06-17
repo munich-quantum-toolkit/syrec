@@ -19,10 +19,11 @@
 
 namespace syrec {
     struct ReadProgramSettings {
-        explicit ReadProgramSettings(unsigned bitwidth = 32U, utils::IntegerConstantTruncationOperation integerConstantTruncationOperation = utils::IntegerConstantTruncationOperation::BitwiseAnd,
-                                     bool allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess = false):
-            defaultBitwidth(bitwidth), integerConstantTruncationOperation(integerConstantTruncationOperation),
-            allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess(allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess) {}
+        explicit ReadProgramSettings(unsigned defaultSignalBitwidth = 32U, utils::IntegerConstantTruncationOperation integerConstantTruncationOperation = utils::IntegerConstantTruncationOperation::BitwiseAnd,
+                                     bool allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess = false, const std::optional<std::string>& optionalProgramEntryPointModuleIdentifier = std::nullopt):
+            defaultBitwidth(defaultSignalBitwidth), integerConstantTruncationOperation(integerConstantTruncationOperation),
+            allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess(allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess),
+            optionalProgramEntryPointModuleIdentifier(optionalProgramEntryPointModuleIdentifier) {}
 
         /**
          * @brief Defines the default variable bitwidth used by the SyReC parser for variables whose bitwidth specification was omitted.
@@ -64,6 +65,15 @@ namespace syrec {
          * III.    module main(inout a[2](4)) for $i = 0 to 1 do a[0] += a[$i] rof
          */
         bool allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess;
+
+        /**
+         * @brief Define the identifier of the module that should serve as the entry point of the SyReC program.
+         * @details By default the entry point in a SyReC program is identified by a module with an identifier equal to 'main'. If no such module is found, the last defined module in the program also serves as the entry point for the latter.
+         * - If this property is set then only one module that matches this identifier is allowed to exist. Module overload resolution for modules with identifier 'main' is allowed in that case.
+         * - If this property is not set then only one module matching the identifier 'main' is allowed to exist. If no such module is found then the last defined module of the program is used as the entry point of the program.
+         * Note that the "entry-point" module cannot be called/uncalled.
+         */
+        std::optional<std::string> optionalProgramEntryPointModuleIdentifier;
     };
 
     class Program {

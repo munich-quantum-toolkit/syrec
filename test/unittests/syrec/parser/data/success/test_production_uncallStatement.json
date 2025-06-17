@@ -42,5 +42,17 @@
   "uncallOfModuleWithNDimensionalParameterOk": {
     "inputCircuit": "module add(inout a[2](4), in b(4)) a[0] += b; a[1] += b module main(inout operand[2](4)) wire other(4) uncall add(operand, other)",
     "expectedCircuit": "module add(inout a[2](4), in b(4)) a[0] += b[0]; a[1] += b[0] module main(inout operand[2](4)) wire other(4) uncall add(operand, other)"
+  },
+  "callOfModuleContainingDigitsOk": {
+    "inputCircuit": "module add4(inout a(4), in b(4)) a += b module main(inout a(4), in b(4)) uncall add4(a, b)",
+    "expectedCircuit": "module add4(inout a(4), in b(4)) a[0] += b[0] module main(inout a(4), in b(4)) uncall add4(a, b)"
+  },
+  "callOfModuleContainingUnderscoreCharactersOk": {
+    "inputCircuit": "module add_vars(inout a(4), in b(4)) a += b module main(inout a(4), in b(4)) uncall add_vars(a, b)",
+    "expectedCircuit": "module add_vars(inout a(4), in b(4)) a[0] += b[0] module main(inout a(4), in b(4)) uncall add_vars(a, b)"
+  },
+  "callOfModuleContainingLettersAndDigitsAndUnderscoresOk": {
+    "inputCircuit": "module add_vars_4(inout a(4), in b(4)) a += b module main(inout a(4), in b(4)) uncall add_vars_4(a, b)",
+    "expectedCircuit": "module add_vars_4(inout a(4), in b(4)) a[0] += b[0] module main(inout a(4), in b(4)) uncall add_vars_4(a, b)"
   }
 }

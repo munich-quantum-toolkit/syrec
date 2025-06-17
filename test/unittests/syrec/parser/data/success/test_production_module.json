@@ -1,4 +1,16 @@
 {
+  "moduleIdentifierStartingWithUnderscoreOk": {
+    "inputCircuit": "module _anotherModule() skip"
+  },
+  "moduleIdentifierContainingUnderscoreCharactersOk": {
+    "inputCircuit": "module _an_other_Module() skip"
+  },
+  "moduleIdentifierContainingDigitsOk": {
+    "inputCircuit": "module another123Module() skip"
+  },
+  "moduleIdentifierContainingLettersAndDigitsAndUnderscores": {
+    "inputCircuit": "module _another_123_module() skip"
+  },
   "moduleDeclarationWithoutParametersOk": {
     "inputCircuit": "module main() skip"
   },

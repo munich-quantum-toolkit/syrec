@@ -50,6 +50,7 @@ protected:
     std::string jsonKeyInTestCaseDataForDefaultSignalBitwidthInParserConfig                                               = "defaultBitwidth";
     std::string jsonKeyInTestCaseDataForConstantValueTruncationOperation                                                  = "constValTruncationOp";
     std::string jsonKeyInTestCaseDataForAllowingOverlappingAccessOnAssignedToVariablePartsInAnyVariableAccessOfAssignment = "allowOverlappingAccessOnAssignedToSignalParts";
+    std::string jsonKeyInTestCaseDataForExpectedMainModuleIdentifier                                                      = "mainModuleIdentifier";
 
     TestFromJson                              loadedTestCaseData;
     syrec::Program                            parserInstance;
@@ -120,6 +121,10 @@ protected:
         if (jsonObject.contains(jsonKeyInTestCaseDataForAllowingOverlappingAccessOnAssignedToVariablePartsInAnyVariableAccessOfAssignment)) {
             ASSERT_TRUE(jsonObject.at(jsonKeyInTestCaseDataForAllowingOverlappingAccessOnAssignedToVariablePartsInAnyVariableAccessOfAssignment).is_boolean());
             userDefinedParserConfiguration->allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess = jsonObject.at(jsonKeyInTestCaseDataForAllowingOverlappingAccessOnAssignedToVariablePartsInAnyVariableAccessOfAssignment).get<bool>();
+        }
+        if (jsonObject.contains(jsonKeyInTestCaseDataForExpectedMainModuleIdentifier)) {
+            ASSERT_TRUE(jsonObject.at(jsonKeyInTestCaseDataForExpectedMainModuleIdentifier).is_string());
+            userDefinedParserConfiguration->optionalProgramEntryPointModuleIdentifier = jsonObject.at(jsonKeyInTestCaseDataForExpectedMainModuleIdentifier).get<std::string>();
         }
     }
 

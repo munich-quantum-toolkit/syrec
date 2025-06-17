@@ -54,7 +54,22 @@ std::optional<std::shared_ptr<syrec::Program>> CustomModuleVisitor::visitProgram
         }
     }
 
-    const std::shared_ptr<const syrec::Module> definedMainModule = symbolTable->existsModuleForName("name") ? symbolTable->getModulesByName("main").front() : lastProcessedUserDefinedModule;
+    std::string                          programEntryPointModuleIdentifier;
+    std::shared_ptr<const syrec::Module> definedMainModule = nullptr;
+    if (const std::string& userDefinedProgramEntryPointModuleIdentifier = parserConfiguration.optionalProgramEntryPointModuleIdentifier.value_or(""); !userDefinedProgramEntryPointModuleIdentifier.empty()) {
+        const syrec::Module::vec modulesMatchingIdentifier = symbolTable->getModulesByName(userDefinedProgramEntryPointModuleIdentifier);
+        if (modulesMatchingIdentifier.empty()) {
+            recordSemanticError<SemanticError::NoModuleMatchingUserDefinedProgramEntryPoint>(Message::Position(0, 0), userDefinedProgramEntryPointModuleIdentifier);
+        } else {
+            definedMainModule = modulesMatchingIdentifier.front();
+        }
+    } else {
+        if (const syrec::Module::vec modulesMatchingIdentifier = symbolTable->getModulesByName("main"); !modulesMatchingIdentifier.empty()) {
+            definedMainModule = modulesMatchingIdentifier.front();
+        } else {
+            definedMainModule = lastProcessedUserDefinedModule;
+        }
+    }
 
     // We are not requiring a C89 style def-before use for both call-/uncall statements, thus we need to perform overload resolution for any of these statements after the whole program was processed.
     const std::vector<CustomStatementVisitor::NotOverloadResolutedCallStatementScope> callStatementsScopeForWhichOverloadResolutionShouldBePerformed = statementVisitorInstance->getCallStatementsWithNotPerformedOverloadResolution();
@@ -66,8 +81,8 @@ std::optional<std::shared_ptr<syrec::Program>> CustomModuleVisitor::visitProgram
             const utils::BaseSymbolTable::ModuleOverloadResolutionResult overloadResolutionResult = symbolTable->getModulesMatchingSignature(callStatementVariant.calledModuleIdentifier, callStatementVariant.symbolTableEntriesForCallerArguments);
             const auto                                                   semanticErrorPosition    = Message::Position(callStatementVariant.linePositionOfModuleIdentifier, callStatementVariant.columnPositionOfModuleIdentifier);
 
-            if (definedMainModule && definedMainModule->name == "main" && definedMainModule->name == callStatementVariant.calledModuleIdentifier) {
-                recordSemanticError<SemanticError::CannotCallMainModule>(semanticErrorPosition);
+            if (callStatementVariant.calledModuleIdentifier == programEntryPointModuleIdentifier && definedMainModule != nullptr) {
+                recordSemanticError<SemanticError::CannotCallMainModule>(semanticErrorPosition, programEntryPointModuleIdentifier);
                 continue;
             }
 
@@ -76,16 +91,16 @@ std::optional<std::shared_ptr<syrec::Program>> CustomModuleVisitor::visitProgram
                 continue;
             }
 
-            // Recursive module calls should be possible since we cannot determine for all cases whether such calls would lead to an infinite
-            // recursion depth without performing a symbol execution of the called modules statements. If no call/uncall statement is defined in the branch
-            // of an if-statement whose guard expression does not evaluate to a constant value, an infinite loop check could be performed (but is not performed in the
-            // current parser implementation)
+            // Recursive module calls are possible since we cannot determine whether this would produce an infinite recursion without performing a symbol execution of the call stack.
+            // If no call/uncall statement is defined in the branch of an if-statement whose guard expression does not evaluate to a constant value, an infinite loop check could be performed
+            // (but is not performed in the current parser implementation). It is the users responsibility to prevent such infinite recursions.
             if (overloadResolutionResult.resolutionResult != utils::BaseSymbolTable::ModuleOverloadResolutionResult::Result::SingleMatchFound) {
                 recordSemanticError<SemanticError::NoModuleMatchingCallSignature>(semanticErrorPosition);
-            } else if (overloadResolutionResult.resolutionResult == utils::BaseSymbolTable::ModuleOverloadResolutionResult::Result::SingleMatchFound && overloadResolutionResult.moduleMatchingSignature.has_value() && overloadResolutionResult.moduleMatchingSignature.value() && definedMainModule && definedMainModule->name == overloadResolutionResult.moduleMatchingSignature->get()->name && doVariableCollectionsMatch(definedMainModule->parameters, overloadResolutionResult.moduleMatchingSignature->get()->parameters)) {
-                // Recursive module calls are allowed except for either the explicitly or implicitly defined 'main' module of a SyReC program. The parser will not check whether a recursive
-                // call will lead to an infinite recursion since this would require a formal execution of the program and the responsibility to prevent such calls is placed on the user.
-                recordSemanticError<SemanticError::CannotCallMainModule>(semanticErrorPosition);
+            } else if (overloadResolutionResult.resolutionResult == utils::BaseSymbolTable::ModuleOverloadResolutionResult::Result::SingleMatchFound && overloadResolutionResult.moduleMatchingSignature.has_value() && definedMainModule != nullptr && overloadResolutionResult.moduleMatchingSignature->get()->name == definedMainModule->name && doVariableCollectionsMatch(definedMainModule->parameters, overloadResolutionResult.moduleMatchingSignature->get()->parameters)) {
+                // We need to check whether the module (assuming to have the identifier T) defining the entry-point of the SyReC program is not called by the user. In case that no module with the identifier 'main' was found and
+                // the user did not explicitly define the expected identifier of the module serving as the entry-point then module overloading is possible even for modules with identifier T since we identify the 'main' module as the last
+                // defined module in the SyReC program.
+                recordSemanticError<SemanticError::CannotCallMainModule>(semanticErrorPosition, definedMainModule->name);
             } else if (overloadResolutionResult.moduleMatchingSignature.has_value()) {
                 if (std::holds_alternative<std::shared_ptr<syrec::CallStatement>>(callStatementVariant.callStatementVariantInstance)) {
                     const auto& callStatementInstance = std::get<std::shared_ptr<syrec::CallStatement>>(callStatementVariant.callStatementVariantInstance);
@@ -107,14 +122,15 @@ std::optional<syrec::Module::ptr> CustomModuleVisitor::visitModuleTyped(const TS
         return std::nullopt;
     }
 
+    const std::string&         mainModuleIdentifier = parserConfiguration.optionalProgramEntryPointModuleIdentifier.value_or("main");
     std::optional<std::string> moduleIdentifier;
     if (context->literalIdent() != nullptr) {
         moduleIdentifier = context->literalIdent()->getText();
-        // According to the SyReC specification (https://revlib.org/doc/docu/revlib_2_0_1.pdf section 2.1): "The top-module of a program is defined by the special identifier main.".
-        // Due to this restriction, the otherwise allowed overload of SyReC modules is disabled for modules declared with the identifier 'main' and will report a semantic error in case of a duplicate definition of
-        // such a 'main' module.
-        if (moduleIdentifier == "main" && symbolTable->existsModuleForName(*moduleIdentifier)) {
-            recordSemanticError<SemanticError::DuplicateMainModuleDefinition>(mapTokenPositionToMessagePosition(*context->literalIdent()->getSymbol()));
+        // According to the SyReC specification (https://revlib.org/doc/docu/revlib_2_0_1.pdf section 2.1): "The top-module of a program is defined by the special identifier main.". However, due to the user
+        // being able to define the expected identifier of the program entry point via the syrec::ReadProgramSettings said config entry has precedence over the SyReC specification. In both cases however, only
+        // one module can match the "main" modules identifier with violations of this invariant being reported as semantic errors.
+        if (moduleIdentifier == mainModuleIdentifier && symbolTable->existsModuleForName(*moduleIdentifier)) {
+            recordSemanticError<SemanticError::DuplicateMainModuleDefinition>(mapTokenPositionToMessagePosition(*context->literalIdent()->getSymbol()), *moduleIdentifier);
         }
     }
 
@@ -132,7 +148,7 @@ std::optional<syrec::Module::ptr> CustomModuleVisitor::visitModuleTyped(const TS
     generatedModule->statements = visitStatementListTyped(context->statementList()).value_or(syrec::Statement::vec());
 
     if (moduleIdentifier.has_value()) {
-        if (*moduleIdentifier != "main") {
+        if (*moduleIdentifier != mainModuleIdentifier) {
             auto moduleOverloadResolutionCall = utils::BaseSymbolTable::ModuleOverloadResolutionResult(utils::BaseSymbolTable::ModuleOverloadResolutionResult::NoMatchFound, std::nullopt);
             if (context->parameterList() != nullptr && !context->parameterList()->parameter().empty()) {
                 moduleOverloadResolutionCall = symbolTable->getModulesMatchingSignature(*moduleIdentifier, generatedModule->parameters);
