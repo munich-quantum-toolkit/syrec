@@ -41,9 +41,11 @@ if(BUILD_MQT_SYREC_BINDINGS)
 endif()
 
 # cmake-format: off
-set(MQT_CORE_VERSION 3.0.2
+set(MQT_CORE_MINIMUM_VERSION 3.0.3
+    CACHE STRING "MQT Core minimum version")
+set(MQT_CORE_VERSION 3.0.3
     CACHE STRING "MQT Core version")
-set(MQT_CORE_REV "9b6e01482cc77f48c828d988407ee4f8e4e93b56"
+set(MQT_CORE_REV "a06d0fdfd1baaea82a313c1e184249a0480570d2"
     CACHE STRING "MQT Core identifier (tag, branch or commit hash)")
 set(MQT_CORE_REPO_OWNER "cda-tum"
 	CACHE STRING "MQT Core repository owner (change when using a fork)")
@@ -52,7 +54,7 @@ FetchContent_Declare(
   mqt-core
   GIT_REPOSITORY https://github.com/${MQT_CORE_REPO_OWNER}/mqt-core.git
   GIT_TAG ${MQT_CORE_REV}
-  FIND_PACKAGE_ARGS ${MQT_CORE_VERSION})
+  FIND_PACKAGE_ARGS ${MQT_CORE_MINIMUM_VERSION})
 list(APPEND FETCH_PACKAGES mqt-core)
 
 if(BUILD_MQT_SYREC_TESTS)
