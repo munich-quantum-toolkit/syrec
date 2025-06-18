@@ -43,10 +43,11 @@ public:
     }
 
     [[nodiscard]] bool performProgramSynthesis(const syrec::Program& program) {
-        if (std::is_same_v<T, syrec::CostAwareSynthesis>) {
+        if constexpr (std::is_same_v<T, syrec::CostAwareSynthesis>) {
             return syrec::CostAwareSynthesis::synthesize(annotatableQuantumComputation, program);
+        } else {
+            return syrec::LineAwareSynthesis::synthesize(annotatableQuantumComputation, program);
         }
-        return syrec::LineAwareSynthesis::synthesize(annotatableQuantumComputation, program);
     }
 
     syrec::AnnotatableQuantumComputation annotatableQuantumComputation;
