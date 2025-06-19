@@ -33,29 +33,7 @@ Initial Setup
 
     Now you can make your changes locally.
 
-5. Building the project requires the Boost libraries with a minimum version of *1.71.0*.
-
-    .. tip::
-
-        The Boost libraries can be installed by running the following commands:
-
-        Linux
-
-        .. code-block:: console
-
-                $ sudo apt-get -y install libboost-all-dev
-
-        macOS
-
-        .. code-block:: console
-
-                $ brew install boost
-
-        Windows
-
-                please refer to documentation provided in `Boost library <https://www.boost.org/doc/libs/1_80_0/more/getting_started/windows.html>`_ .
-
-6. (Optional, **highly recommended**) Set up a virtual environment
+5. (Optional, **highly recommended**) Set up a virtual environment
 
     .. code-block:: console
 
@@ -77,7 +55,7 @@ Initial Setup
 
         (venv) $ pip install --upgrade pip setuptools wheel
 
-7. (Optional, **highly recommended**) Setup `nox <https://nox.thea.codes/en/stable/index.html>`_ to conveniently run many development tasks.
+6. (Optional, **highly recommended**) Setup `nox <https://nox.thea.codes/en/stable/index.html>`_ to conveniently run many development tasks.
 
     .. code-block:: console
 
@@ -96,7 +74,7 @@ Initial Setup
 
         If you use macOS, then pipx is in brew, use :code:`brew install pipx`.
 
-8. (Optional) Install `pre-commit <https://pre-commit.com/>`_ to automatically run a set of checks before each commit.
+7. (Optional) Install `pre-commit <https://pre-commit.com/>`_ to automatically run a set of checks before each commit.
 
     .. code-block:: console
 
@@ -108,7 +86,7 @@ Initial Setup
 Working on the core C++ library
 ###############################
 
-Building the project requires a C++ compiler supporting *C++17*, CMake with a minimum version of *3.24*, and the Boost libraries with a minimum version of *1.71.0*.
+Building the project requires a C++ compiler supporting *C++17*, CMake with a minimum version of *3.24*.
 
     .. note::
         We noticed some issues when compiling with Microsoft's *MSCV* compiler toolchain.
@@ -146,7 +124,7 @@ Some operating systems and development environments explicitly require a configu
 Building the project this way generates
 
 - the main library :code:`libmqt-syrec.a` (Unix) / :code:`mqt-syrec.lib` (Windows) in the :code:`build/src` directory
-- a test executable :code:`mqt_syrec_test` containing unit tests in the :code:`build/test` directory
+- a test executable :code:`mqt-syrec-test` containing unit tests in the :code:`build/test` directory
 - the Python bindings library :code:`pysyrec.<...>` in the :code:`build/mqt/syrec` directory
 
 Running C++ Tests
@@ -154,7 +132,7 @@ Running C++ Tests
 
 We use the `GoogleTest <https://google.github.io/googletest/primer.html>`_ framework for unit testing of the C++ library.
 All tests are contained in the :code:`test` directory.
-After building the project (as described above), the C++ unit tests can be run by executing the test executable :code:`mqt_syrec_test` in the :code:`build/test` directory.
+After building the project (as described above), the C++ unit tests can be run by executing the test executable :code:`mqt-syrec-test` in the :code:`build/test` directory.
 
     .. code-block:: console
 
