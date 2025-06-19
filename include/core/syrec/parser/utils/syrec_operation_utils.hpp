@@ -180,7 +180,7 @@ namespace utils {
         }
 
         if (unaryOperation == syrec::UnaryExpression::UnaryOperation::LogicalNegation) {
-            return static_cast<bool>(*expressionValue);
+            return !static_cast<bool>(*expressionValue);
         }
         if (unaryOperation == syrec::UnaryExpression::UnaryOperation::BitwiseNegation) {
             return ~*expressionValue;

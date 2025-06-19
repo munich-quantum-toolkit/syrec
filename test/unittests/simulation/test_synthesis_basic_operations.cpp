@@ -12,12 +12,7 @@
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "base_simulation_test_fixture.hpp"
 #include "core/n_bit_values_container.hpp"
-#include "core/syrec/expression.hpp"
-#include "core/syrec/module.hpp"
-#include "core/syrec/number.hpp"
 #include "core/syrec/program.hpp"
-#include "core/syrec/statement.hpp"
-#include "core/syrec/variable.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -26,83 +21,41 @@
 #include <utility>
 #include <vector>
 
+namespace {
+    void parseSyrecProgram(const std::string_view& stringifiedSyrecProgram, syrec::Program& generatedIrContainer) {
+        std::string foundErrors;
+        ASSERT_NO_FATAL_FAILURE(foundErrors = generatedIrContainer.readFromString(stringifiedSyrecProgram)) << "Error during parsing of SyReC program";
+        ASSERT_TRUE(foundErrors.empty()) << "Expected no errors to be reported when parsing the given SyReC program but actual found errors where: " << foundErrors;
+    }
+}; // namespace
+
 TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
 
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfConstantZero) {
-    // module main(out a(1)) a ^= !0
     syrec::Program program;
-    auto           mainModule          = std::make_shared<syrec::Module>("main");
-    const auto     modifiableParameter = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "a", std::vector<unsigned>({1}), 1U);
-    mainModule->addParameter(modifiableParameter);
-
-    const auto containerForConstantZero      = std::make_shared<syrec::Number>(0U);
-    const auto containerExprForConstantValue = std::make_shared<syrec::NumericExpression>(containerForConstantZero, 1U);
-    auto       unaryExpr                     = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::LogicalNegation, containerExprForConstantValue);
-
-    auto accessOnModifiableParameter = std::make_shared<syrec::VariableAccess>();
-    accessOnModifiableParameter->var = modifiableParameter;
-
-    auto unaryAssignStmt = std::make_shared<syrec::AssignStatement>(accessOnModifiableParameter, syrec::AssignStatement::AssignOperation::Exor, unaryExpr);
-    mainModule->addStatement(unaryAssignStmt);
-    program.addModule(mainModule);
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(out a(1)) a ^= !0", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
 
-    constexpr std::size_t            inputStateSize = 3;
+    constexpr std::size_t            inputStateSize = 2;
     const syrec::NBitValuesContainer inputState(inputStateSize, 0);
     const syrec::NBitValuesContainer expectedOutputState(inputStateSize, 1);
     ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfConstantOne) {
-    // module main(out a(1)) a ^= !1 with a initialized to one during simulation
     syrec::Program program;
-    auto           mainModule          = std::make_shared<syrec::Module>("main");
-    const auto     modifiableParameter = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "a", std::vector<unsigned>({1}), 1U);
-    mainModule->addParameter(modifiableParameter);
-
-    const auto containerForConstantOne       = std::make_shared<syrec::Number>(1U);
-    const auto containerExprForConstantValue = std::make_shared<syrec::NumericExpression>(containerForConstantOne, 1U);
-    auto       unaryExpr                     = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::LogicalNegation, containerExprForConstantValue);
-
-    auto accessOnModifiableParameter = std::make_shared<syrec::VariableAccess>();
-    accessOnModifiableParameter->var = modifiableParameter;
-    accessOnModifiableParameter->indexes.emplace_back(std::make_shared<syrec::NumericExpression>(std::make_shared<syrec::Number>(0), 1U));
-
-    auto unaryAssignStmt = std::make_shared<syrec::AssignStatement>(accessOnModifiableParameter, syrec::AssignStatement::AssignOperation::Exor, unaryExpr);
-    mainModule->addStatement(unaryAssignStmt);
-    program.addModule(mainModule);
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(out a(1)) a ^= !1", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
 
-    constexpr std::size_t            inputStateSize = 3;
-    const syrec::NBitValuesContainer inputState(inputStateSize, 1);
+    constexpr std::size_t            inputStateSize = 2;
+    const syrec::NBitValuesContainer inputState(inputStateSize, 0);
     const syrec::NBitValuesContainer expectedOutputState(inputStateSize, 1);
     ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfNestedExpression) {
-    // module main(in a(1), in b(1), out c(1)) c ^= !(a & b)
     syrec::Program program;
-    auto           mainModule           = std::make_shared<syrec::Module>("main");
-    const auto     nestedExprLhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "a", std::vector<unsigned>({1}), 1U);
-    const auto     nestedExprRhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "b", std::vector<unsigned>({1}), 1U);
-    const auto     assignedToVariable   = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "c", std::vector<unsigned>({1}), 1U);
-    mainModule->addParameter(nestedExprLhsOperand);
-    mainModule->addParameter(nestedExprRhsOperand);
-    mainModule->addParameter(assignedToVariable);
-
-    auto accessOnNestedExprLhsOperand = std::make_shared<syrec::VariableAccess>();
-    accessOnNestedExprLhsOperand->var = nestedExprLhsOperand;
-
-    auto accessOnNestedExprRhsOperand = std::make_shared<syrec::VariableAccess>();
-    accessOnNestedExprRhsOperand->var = nestedExprRhsOperand;
-
-    auto nestedExpr        = std::make_shared<syrec::BinaryExpression>(std::make_shared<syrec::VariableExpression>(accessOnNestedExprLhsOperand), syrec::BinaryExpression::BinaryOperation::BitwiseAnd, std::make_shared<syrec::VariableExpression>(accessOnNestedExprRhsOperand));
-    auto assignmentRhsExpr = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::LogicalNegation, nestedExpr);
-
-    auto accessOnAssignedToVariable = std::make_shared<syrec::VariableAccess>();
-    accessOnAssignedToVariable->var = assignedToVariable;
-    mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::AssignOperation::Exor, assignmentRhsExpr));
-    program.addModule(mainModule);
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(in a(1), in b(1), out c(1)) c ^= !(a & b)", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck   = {0, 1, 2, 3};
@@ -122,30 +75,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfNestedExpression) {
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfUnaryExpression) {
-    // module main(in a(1), in b(1), out c(1)) c ^= !(~(a | b))
     syrec::Program program;
-    auto           mainModule           = std::make_shared<syrec::Module>("main");
-    const auto     nestedExprLhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "a", std::vector<unsigned>({1}), 1U);
-    const auto     nestedExprRhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "b", std::vector<unsigned>({1}), 1U);
-    const auto     assignedToVariable   = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "c", std::vector<unsigned>({1}), 1U);
-    mainModule->addParameter(nestedExprLhsOperand);
-    mainModule->addParameter(nestedExprRhsOperand);
-    mainModule->addParameter(assignedToVariable);
-
-    auto accessOnNestedExprLhsOperand = std::make_shared<syrec::VariableAccess>();
-    accessOnNestedExprLhsOperand->var = nestedExprLhsOperand;
-
-    auto accessOnNestedExprRhsOperand = std::make_shared<syrec::VariableAccess>();
-    accessOnNestedExprRhsOperand->var = nestedExprRhsOperand;
-
-    auto innerBinaryExpr = std::make_shared<syrec::BinaryExpression>(std::make_shared<syrec::VariableExpression>(accessOnNestedExprLhsOperand), syrec::BinaryExpression::BinaryOperation::BitwiseOr, std::make_shared<syrec::VariableExpression>(accessOnNestedExprRhsOperand));
-    auto innerUnaryExpr  = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::BitwiseNegation, innerBinaryExpr);
-    auto unaryExpr       = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::LogicalNegation, innerUnaryExpr);
-
-    auto accessOnAssignedToVariable = std::make_shared<syrec::VariableAccess>();
-    accessOnAssignedToVariable->var = assignedToVariable;
-    mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::AssignOperation::Exor, unaryExpr));
-    program.addModule(mainModule);
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(in a(1), in b(1), out c(1)) c ^= !~(a | b)", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck   = {0, 1, 2, 3};
@@ -167,23 +98,7 @@ TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfUnaryExpression) {
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfVariable) {
     // module main(in a(2), out b(1)) b ^= !a.1
     syrec::Program program;
-    auto           mainModule         = std::make_shared<syrec::Module>("main");
-    const auto     negatedVariable    = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "a", std::vector<unsigned>({1}), 2U);
-    const auto     assignedToVariable = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "b", std::vector<unsigned>({1}), 1U);
-    mainModule->addParameter(negatedVariable);
-    mainModule->addParameter(assignedToVariable);
-
-    const auto containerForAccessedBitOfNegatedVariable = std::make_shared<syrec::Number>(1);
-    auto       accessOnNegatedVariable                  = std::make_shared<syrec::VariableAccess>();
-    accessOnNegatedVariable->var                        = negatedVariable;
-    accessOnNegatedVariable->range                      = std::make_pair(containerForAccessedBitOfNegatedVariable, containerForAccessedBitOfNegatedVariable);
-
-    auto assignmentRhsExpr = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::BitwiseNegation, std::make_shared<syrec::VariableExpression>(accessOnNegatedVariable));
-
-    auto accessOnAssignedToVariable = std::make_shared<syrec::VariableAccess>();
-    accessOnAssignedToVariable->var = assignedToVariable;
-    mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::AssignOperation::Exor, assignmentRhsExpr));
-    program.addModule(mainModule);
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(in a(2), out b(1)) b ^= !a.1", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck = {
@@ -216,22 +131,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfVariable) {
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfConstant) {
-    // module main(out a(2)) a ^= ~2
     syrec::Program program;
-    auto           mainModule          = std::make_shared<syrec::Module>("main");
-    const auto     modifiableParameter = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "a", std::vector<unsigned>({1}), 2U);
-    mainModule->addParameter(modifiableParameter);
-
-    const auto containerForConstantValue     = std::make_shared<syrec::Number>(2U);
-    const auto containerExprForConstantValue = std::make_shared<syrec::NumericExpression>(containerForConstantValue, 2U);
-    auto       unaryExpr                     = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::BitwiseNegation, containerExprForConstantValue);
-
-    auto accessOnModifiableParameter = std::make_shared<syrec::VariableAccess>();
-    accessOnModifiableParameter->var = modifiableParameter;
-
-    auto unaryAssignStmt = std::make_shared<syrec::AssignStatement>(accessOnModifiableParameter, syrec::AssignStatement::AssignOperation::Exor, unaryExpr);
-    mainModule->addStatement(unaryAssignStmt);
-    program.addModule(mainModule);
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(out a(2)) a ^= ~2", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck   = {0, 1, 2, 3};
@@ -243,7 +144,7 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfConstant) {
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 6;
+        constexpr std::size_t            inputStateSize = 4;
         const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
         const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
@@ -251,23 +152,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfConstant) {
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfVariable) {
-    // module main(in a(2), out b(2)) b ^= ~a
     syrec::Program program;
-    auto           mainModule         = std::make_shared<syrec::Module>("main");
-    const auto     negatedVariable    = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "a", std::vector<unsigned>({1}), 2U);
-    const auto     assignedToVariable = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "b", std::vector<unsigned>({1}), 2U);
-    mainModule->addParameter(negatedVariable);
-    mainModule->addParameter(assignedToVariable);
-
-    auto accessOnNegatedVariable = std::make_shared<syrec::VariableAccess>();
-    accessOnNegatedVariable->var = negatedVariable;
-
-    auto assignmentRhsExpr = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::BitwiseNegation, std::make_shared<syrec::VariableExpression>(accessOnNegatedVariable));
-
-    auto accessOnAssignedToVariable = std::make_shared<syrec::VariableAccess>();
-    accessOnAssignedToVariable->var = assignedToVariable;
-    mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::AssignOperation::Exor, assignmentRhsExpr));
-    program.addModule(mainModule);
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(in a(2), out b(2)) b ^= ~a", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck = {
@@ -292,31 +178,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfVariable) {
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfBinaryExpression) {
-    // module main(in a(2), in b(2), out c(2)) c ^= ~(a:1.0 & b.0:1)
     syrec::Program program;
-    auto           mainModule           = std::make_shared<syrec::Module>("main");
-    const auto     nestedExprLhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "a", std::vector<unsigned>({1}), 2U);
-    const auto     nestedExprRhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "b", std::vector<unsigned>({1}), 2U);
-    const auto     assignedToVariable   = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "c", std::vector<unsigned>({1}), 2U);
-    mainModule->addParameter(nestedExprLhsOperand);
-    mainModule->addParameter(nestedExprRhsOperand);
-    mainModule->addParameter(assignedToVariable);
-
-    auto accessOnNestedExprLhsOperand   = std::make_shared<syrec::VariableAccess>();
-    accessOnNestedExprLhsOperand->var   = nestedExprLhsOperand;
-    accessOnNestedExprLhsOperand->range = std::make_pair(std::make_shared<syrec::Number>(1U), std::make_shared<syrec::Number>(0U));
-
-    auto accessOnNestedExprRhsOperand   = std::make_shared<syrec::VariableAccess>();
-    accessOnNestedExprRhsOperand->var   = nestedExprRhsOperand;
-    accessOnNestedExprRhsOperand->range = std::make_pair(std::make_shared<syrec::Number>(0U), std::make_shared<syrec::Number>(1U));
-
-    auto nestedExpr        = std::make_shared<syrec::BinaryExpression>(std::make_shared<syrec::VariableExpression>(accessOnNestedExprLhsOperand), syrec::BinaryExpression::BinaryOperation::BitwiseAnd, std::make_shared<syrec::VariableExpression>(accessOnNestedExprRhsOperand));
-    auto assignmentRhsExpr = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::BitwiseNegation, nestedExpr);
-
-    auto accessOnAssignedToVariable = std::make_shared<syrec::VariableAccess>();
-    accessOnAssignedToVariable->var = assignedToVariable;
-    mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::AssignOperation::Exor, assignmentRhsExpr));
-    program.addModule(mainModule);
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(in a(2), in b(2), out c(2)) c ^= ~(a.1:0 & b.0:1)", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck = {
@@ -365,24 +228,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfBinaryExpression) {
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfShiftExpression) {
-    // module main(in a(4), out b(4)) b ^= ~(a >> 2)
     syrec::Program program;
-    auto           mainModule         = std::make_shared<syrec::Module>("main");
-    auto           toBeShiftedOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "a", std::vector<unsigned>({1}), 4U);
-    const auto     assignedToVariable = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "b", std::vector<unsigned>({1}), 4U);
-    mainModule->addParameter(toBeShiftedOperand);
-    mainModule->addParameter(assignedToVariable);
-
-    auto accessOnToBeShiftedOperand = std::make_shared<syrec::VariableAccess>();
-    accessOnToBeShiftedOperand->var = toBeShiftedOperand;
-
-    auto accessOnAssignedToVariable = std::make_shared<syrec::VariableAccess>();
-    accessOnAssignedToVariable->var = assignedToVariable;
-
-    auto shiftExpr = std::make_shared<syrec::ShiftExpression>(std::make_shared<syrec::VariableExpression>(accessOnToBeShiftedOperand), syrec::ShiftExpression::ShiftOperation::Right, std::make_shared<syrec::Number>(2));
-    auto unaryExpr = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::BitwiseNegation, shiftExpr);
-    mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::AssignOperation::Exor, unaryExpr));
-    program.addModule(mainModule);
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(in a(4), out b(4)) b ^= ~(a >> 2)", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck = {
@@ -432,30 +279,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfShiftExpression) {
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
-    // module main(in a(1), in b(1), out c(1)) c ^= ~(!(a | b))
     syrec::Program program;
-    auto           mainModule           = std::make_shared<syrec::Module>("main");
-    const auto     nestedExprLhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "a", std::vector<unsigned>({1}), 1U);
-    const auto     nestedExprRhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "b", std::vector<unsigned>({1}), 1U);
-    const auto     assignedToVariable   = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "c", std::vector<unsigned>({1}), 1U);
-    mainModule->addParameter(nestedExprLhsOperand);
-    mainModule->addParameter(nestedExprRhsOperand);
-    mainModule->addParameter(assignedToVariable);
-
-    auto accessOnNestedExprLhsOperand = std::make_shared<syrec::VariableAccess>();
-    accessOnNestedExprLhsOperand->var = nestedExprLhsOperand;
-
-    auto accessOnNestedExprRhsOperand = std::make_shared<syrec::VariableAccess>();
-    accessOnNestedExprRhsOperand->var = nestedExprRhsOperand;
-
-    auto innerBinaryExpr = std::make_shared<syrec::BinaryExpression>(std::make_shared<syrec::VariableExpression>(accessOnNestedExprLhsOperand), syrec::BinaryExpression::BinaryOperation::BitwiseOr, std::make_shared<syrec::VariableExpression>(accessOnNestedExprRhsOperand));
-    auto innerUnaryExpr  = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::LogicalNegation, innerBinaryExpr);
-    auto unaryExpr       = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::BitwiseNegation, innerUnaryExpr);
-
-    auto accessOnAssignedToVariable = std::make_shared<syrec::VariableAccess>();
-    accessOnAssignedToVariable->var = assignedToVariable;
-    mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::AssignOperation::Exor, unaryExpr));
-    program.addModule(mainModule);
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(in a(1), in b(1), out c(1)) c ^= ~!(a | b)", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
 
     const std::vector<std::uint64_t> inputStatesToCheck   = {0, 1, 2, 3};
@@ -474,33 +299,6 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
     }
 }
 
-TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfExpressionWithBitwidthLargerThanOneNotPossible) {
-    // module main(in a(2), in b(2), out c(1)) c ^= !(a & b)
-    syrec::Program program;
-    auto           mainModule           = std::make_shared<syrec::Module>("main");
-    const auto     nestedExprLhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "a", std::vector<unsigned>({1}), 2U);
-    const auto     nestedExprRhsOperand = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "b", std::vector<unsigned>({1}), 2U);
-    const auto     assignedToVariable   = std::make_shared<syrec::Variable>(syrec::Variable::Type::Out, "c", std::vector<unsigned>({1}), 1U);
-    mainModule->addParameter(nestedExprLhsOperand);
-    mainModule->addParameter(nestedExprRhsOperand);
-    mainModule->addParameter(assignedToVariable);
-
-    auto accessOnNestedExprLhsOperand = std::make_shared<syrec::VariableAccess>();
-    accessOnNestedExprLhsOperand->var = nestedExprLhsOperand;
-
-    auto accessOnNestedExprRhsOperand = std::make_shared<syrec::VariableAccess>();
-    accessOnNestedExprRhsOperand->var = nestedExprRhsOperand;
-
-    auto nestedExpr        = std::make_shared<syrec::BinaryExpression>(std::make_shared<syrec::VariableExpression>(accessOnNestedExprLhsOperand), syrec::BinaryExpression::BinaryOperation::BitwiseAnd, std::make_shared<syrec::VariableExpression>(accessOnNestedExprRhsOperand));
-    auto assignmentRhsExpr = std::make_shared<syrec::UnaryExpression>(syrec::UnaryExpression::UnaryOperation::LogicalNegation, nestedExpr);
-
-    auto accessOnAssignedToVariable = std::make_shared<syrec::VariableAccess>();
-    accessOnAssignedToVariable->var = assignedToVariable;
-    mainModule->addStatement(std::make_shared<syrec::AssignStatement>(accessOnAssignedToVariable, syrec::AssignStatement::AssignOperation::Exor, assignmentRhsExpr));
-    program.addModule(mainModule);
-    ASSERT_FALSE(this->performProgramSynthesis(program));
-}
-
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             LogicalNegationOfConstantZero,
                             LogicalNegationOfConstantOne,
@@ -511,8 +309,7 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             BitwiseNegationOfVariable,
                             BitwiseNegationOfBinaryExpression,
                             BitwiseNegationOfShiftExpression,
-                            BitwiseNegationOfUnaryExpression,
-                            LogicalNegationOfExpressionWithBitwidthLargerThanOneNotPossible);
+                            BitwiseNegationOfUnaryExpression);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );

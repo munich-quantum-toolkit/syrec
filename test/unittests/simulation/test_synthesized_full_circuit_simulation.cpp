@@ -55,10 +55,10 @@ namespace {
 
         [[nodiscard]] static std::optional<std::string> getPathToTestCaseConfig() {
             // The path to the config for the given synthesizer type is relative to the WORKING_DIRECTORY set in the CMake script that is used to generate the test executable.
-            if (std::is_same_v<T, LineAwareSynthesis>) {
+            if constexpr (std::is_same_v<T, LineAwareSynthesis>) {
                 return "./configs/circuits_line_aware_simulation.json";
             }
-            if (std::is_same_v<T, CostAwareSynthesis>) {
+            if constexpr (std::is_same_v<T, CostAwareSynthesis>) {
                 return "./configs/circuits_cost_aware_simulation.json";
             }
             return std::nullopt;
