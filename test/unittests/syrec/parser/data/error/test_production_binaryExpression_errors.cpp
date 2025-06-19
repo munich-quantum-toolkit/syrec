@@ -217,6 +217,26 @@ TEST_F(SyrecParserErrorTestsFixture, OperandBitwidthMismatchForOperandsOfBinaryE
     performTestExecution("module main(inout a[2](4), in b(2)) for $i = 0 to 3 do a[1].0 += ((a[0].$i:1 + (b = a[0].1:2)) + a[0]) rof");
 }
 
+TEST_F(SyrecParserErrorTestsFixture, OperandBitwidthMismatchForOperandsOfBinaryExpressionWithBitwidthInheritedFromNestedExpressionOfLhsOperandUsingBitwiseNegationOperationCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 67), 2, 4);
+    performTestExecution("module main(inout a[2](4), in b(2)) a[1].0:1 += ((~b + a[0].2:3) + a[0])");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, OperandBitwidthMismatchForOperandsOfBinaryExpressionWithBitwidthInheritedFromNestedExpressionOfRhsOperandUsingBitwiseNegationOperationCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 87), 2, 4);
+    performTestExecution("module main(inout a[2](4), in b(2)) for $i = 2 to 3 do a[1].0:1 += ((a[0].$i:2 + ~b) + a[0]) rof");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, OperandBitwidthMismatchForOperandsOfBinaryExpressionWithBitwidthInheritedFromNestedExpressionOfLhsOperandUsingLogicalNegationOperationCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 63), 1, 4);
+    performTestExecution("module main(inout a[2](4), in b(1)) a[1].0 += ((!b = a[0].1) + a[0])");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, OperandBitwidthMismatchForOperandsOfBinaryExpressionWithBitwidthInheritedFromNestedExpressionOfRhsOperandUsingLogicalNegationOperationCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 85), 1, 4);
+    performTestExecution("module main(inout a[2](4), in b(1)) for $i = 1 to 3 do a[1].0 += ((a[0].$i:1 + !b) + a[0]) rof");
+}
+
 TEST_F(SyrecParserErrorTestsFixture, OperandBitwidthMismatchBetweenOperandsOfBinaryExpressionConsistingOfNestedBinaryExpressionsCausesError) {
     buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 58), 4, 2);
     performTestExecution("module main(inout a[2](4), in b(2)) a[0] += ((a[1] + 2) + (a[1].1:2 + b))");

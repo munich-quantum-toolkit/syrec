@@ -102,10 +102,3 @@ TEST_F(SyrecParserErrorTestsFixture, VariableAccessOnMoreThanOneBitInUnaryExpres
     buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 39), 1U, 2U);
     performTestExecution("module main(inout a(2), in b(4)) a += !b.0:1");
 }
-
-// TODO: Operand bitwidth missmatch for unary expressions in binary and shift expression
-// TODO: Success: Logical unary expression
-// TODO: Sucess: Bitwise negation of unary expression of bitwidth 1
-// TODO: Usage of nested expressions in unary expression
-// TODO: Truncation of logical and bitwise operation in documentation
-// TODO: Evaluation of logical negation uses C++ semantics for cast to bool
