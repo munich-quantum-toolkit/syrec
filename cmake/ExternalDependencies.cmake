@@ -74,10 +74,10 @@ set(FMT_VERSION
     CACHE STRING "FMT library version")
 
 FetchContent_Declare(
-    fmt
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG ${FMT_VERSION})
-  list(APPEND FETCH_PACKAGES fmt)
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG ${FMT_VERSION})
+list(APPEND FETCH_PACKAGES fmt)
 
 # The original CMake configuration in the ANTLR C++ git repository
 # (https://github.com/antlr/antlr4/blob/master/runtime/Cpp/cmake/ExternalAntlr4Cpp.cmake) uses the
@@ -85,7 +85,8 @@ FetchContent_Declare(
 # from which this configuration file was built using the FetchContent_XX functions instead.
 set(ANTLR4_GIT_REPOSITORY "https://github.com/antlr/antlr4.git")
 
-# ANTLR v4.13.2 - minor version update could include "minor" breaking changes (see https://github.com/antlr/antlr4?tab=readme-ov-file#versioning)
+# ANTLR v4.13.2 - minor version update could include "minor" breaking changes (see
+# https://github.com/antlr/antlr4?tab=readme-ov-file#versioning)
 set(ANTLR4_VERSION
     4.13.2
     CACHE STRING "ANTLR4 runtime version")
@@ -96,10 +97,10 @@ set(ANTLR4_VERSION
 # the FetchContent_Declare CMake function (inherited from the ExternalProject_Add(...) function)
 # only allowing commit hashes if the GIT_SHALLOW argument is disabled
 # (https://cmake.org/cmake/help/latest/module/ExternalProject.html#git), a full-checkout of the
-# ANTLR4 git repository is performed. If the needed changes are merge into the
-# 'origin/master' branch of the ANTLR runtime, the ANTLR4_TAG should be updated to the 'new' version
-# number and the GIT_SHALLOW argument enabled (i.e. set to ON) to only perform a clone of the git
-# repository of depth 1.
+# ANTLR4 git repository is performed. If the needed changes are merge into the 'origin/master'
+# branch of the ANTLR runtime, the ANTLR4_TAG should be updated to the 'new' version number and the
+# GIT_SHALLOW argument enabled (i.e. set to ON) to only perform a clone of the git repository of
+# depth 1.
 set(ANTLR4_TAG
     "7b53e13ba005b978e2603f3ff81a0cb7cc98f689"
     CACHE STRING "Antlr4 runtime identifier (tag, branch or commit hash)")
@@ -135,11 +136,11 @@ if(ANTLR4_BUILD_AS_STATIC_LIBRARY)
   message(STATUS "ANTLR runtime library type: STATIC")
 
   FetchContent_Declare(
-      antlr4_static
-      GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
-      GIT_SHALLOW ${ANTLR4_GIT_SHALLOW_CLONE}
-      GIT_TAG ${ANTLR4_TAG}
-      SOURCE_SUBDIR runtime/Cpp FIND_PACKAGE_ARGS ${ANTLR4_VERSION})
+    antlr4_static
+    GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
+    GIT_SHALLOW ${ANTLR4_GIT_SHALLOW_CLONE}
+    GIT_TAG ${ANTLR4_TAG}
+    SOURCE_SUBDIR runtime/Cpp FIND_PACKAGE_ARGS ${ANTLR4_VERSION})
   list(APPEND FETCH_PACKAGES antlr4_static)
 else()
   set(ANTLR_BUILD_STATIC
@@ -150,12 +151,12 @@ else()
       CACHE INTERNAL BOOL)
   message(STATUS "ANTLR runtime library type: SHARED")
 
-   FetchContent_Declare(
-      antlr4_shared
-      GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
-      GIT_SHALLOW ${ANTLR4_GIT_SHALLOW_CLONE}
-      GIT_TAG ${ANTLR4_TAG}
-      SOURCE_SUBDIR runtime/Cpp FIND_PACKAGE_ARGS ${ANTLR4_VERSION})
+  FetchContent_Declare(
+    antlr4_shared
+    GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
+    GIT_SHALLOW ${ANTLR4_GIT_SHALLOW_CLONE}
+    GIT_TAG ${ANTLR4_TAG}
+    SOURCE_SUBDIR runtime/Cpp FIND_PACKAGE_ARGS ${ANTLR4_VERSION})
   list(APPEND FETCH_PACKAGES antlr4_shared)
 endif()
 

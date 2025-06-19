@@ -268,7 +268,7 @@ std::optional<syrec::Expression::ptr> CustomExpressionVisitor::visitUnaryExpress
         }
     }
 
-    // To aid the user when debugging operand bitwidth missmatch errors we update the position of the operand that fixed the current expected bitwidth to the
+    // To aid the user when debugging operand bitwidth mismatch errors we update the position of the operand that fixed the current expected bitwidth to the
     // position of the first token of the unary expression. This is needed since the expected operand bitwidth might be modified when the logical negation unary operation is
     // used (here the expected operand bitwidth is set to 1).
     if (optionalDeterminedOperandBitwidth.has_value()) {

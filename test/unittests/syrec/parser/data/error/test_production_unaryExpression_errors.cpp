@@ -73,13 +73,13 @@ TEST_F(SyrecParserErrorTestsFixture, UsageOfNon1DVariableInUnaryExpressionCauses
     performTestExecution("module main(inout a(4), in b[2](4)) a += ~(b + 2)");
 }
 
-TEST_F(SyrecParserErrorTestsFixture, MissmatchBetweenLogicalAndBitwiseNegationInUnaryExpressionUsedAsGuardExpressionOfIfStatementCausesError) {
+TEST_F(SyrecParserErrorTestsFixture, MismatchBetweenLogicalAndBitwiseNegationInUnaryExpressionUsedAsGuardExpressionOfIfStatementCausesError) {
     buildAndRecordExpectedSemanticError<SemanticError::IfGuardExpressionMismatch>(Message::Position(1, 36));
     buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 78), 1U, 2U);
     performTestExecution("module main(inout a(2), in b(2)) if (~(a + b) > 1) then ++= a else --= a fi (!(a + b) > 1)");
 }
 
-TEST_F(SyrecParserErrorTestsFixture, MissmatchBetweenBitwiseAndLogicalNegationInUnaryExpressionUsedAsGuardExpressionOfIfStatementCausesError) {
+TEST_F(SyrecParserErrorTestsFixture, MismatchBetweenBitwiseAndLogicalNegationInUnaryExpressionUsedAsGuardExpressionOfIfStatementCausesError) {
     buildAndRecordExpectedSemanticError<SemanticError::IfGuardExpressionMismatch>(Message::Position(1, 36));
     buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 38), 1U, 2U);
     performTestExecution("module main(inout a(2), in b(2)) if (!(a + b) > 1) then ++= a else --= a fi (~(a + b) > 1)");

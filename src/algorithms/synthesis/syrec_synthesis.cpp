@@ -256,7 +256,7 @@ namespace syrec {
 
         // calculate expression
         std::vector<qc::Qubit> expressionResult;
-        const bool synthesisOfGuardExprOk = onExpression(statement.condition, expressionResult, {}, guardExpressionTopLevelOperation);
+        const bool             synthesisOfGuardExprOk = onExpression(statement.condition, expressionResult, {}, guardExpressionTopLevelOperation);
 
         assert(expressionResult.size() == 1U);
         if (!synthesisOfGuardExprOk) {
