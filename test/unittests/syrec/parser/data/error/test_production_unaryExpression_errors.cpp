@@ -15,13 +15,97 @@
 
 using namespace syrec_parser_error_tests;
 
-TEST_F(SyrecParserErrorTestsFixture, UsageOfLogicalNegationOperationInUnaryExpressionNotSupportedAndCausesError) {
-    expectedErrorMessages.emplace_back(syrec_parser::Message::Type::Error, "UNKNOWN", syrec_parser::Message::Position(1, 36), "Unary expressions are currently not supported");
-    performTestExecution("module main(in a(4), out b(1)) b ^= !(a > 2)");
+TEST_F(SyrecParserErrorTestsFixture, UsageOfUnknownUnaryOperationInUnaryExpressionCausesError) {
+    recordSyntaxError(Message::Position(1, 36), "extraneous input '^' expecting {'!', '~', '$', '#', '(', IDENT, INT}");
+    buildAndRecordExpectedSemanticError<SemanticError::IfGuardExpressionMismatch>(Message::Position(1, 36));
+    performTestExecution("module main(inout a(1), in b(1)) if ^(a && b) then ++= a else --= a fi !(a && b)");
 }
 
-TEST_F(SyrecParserErrorTestsFixture, UsageOfBitwiseNegationOperationInUnaryExpressionNotSupportedAndCausesError) {
-    expectedErrorMessages.emplace_back(syrec_parser::Message::Type::Error, "UNKNOWN", syrec_parser::Message::Position(1, 35), "Unary expressions are currently not supported");
-    expectedErrorMessages.emplace_back(syrec_parser::Message::Type::Error, "UNKNOWN", syrec_parser::Message::Position(1, 74), "Unary expressions are currently not supported");
-    performTestExecution("module main(in a(4), out b(4)) if (~(a - 2) > 2) then ++= b else skip fi (~(a - 2) > 2)");
+TEST_F(SyrecParserErrorTestsFixture, MissingOpeningBracketInUnaryExpressionWhenUsingLogicalNegationCausesError) {
+    recordSyntaxError(Message::Position(1, 39), "mismatched input '&&' expecting 'then'");
+    performTestExecution("module main(inout a(1), in b(1)) if !a && b) then ++= a else --= a fi !(a && b)");
 }
+
+TEST_F(SyrecParserErrorTestsFixture, InvalidOpeningBracketInUnaryExpressionWhenUsingLogicalNegationCausesError) {
+    recordSyntaxError(Message::Position(1, 37), "extraneous input '[' expecting {'!', '~', '$', '#', '(', IDENT, INT}");
+    recordSyntaxError(Message::Position(1, 40), "mismatched input '&&' expecting 'then'");
+    performTestExecution("module main(inout a(1), in b(1)) if ![a && b)) then ++= a else --= a fi !(a && b)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, MissingClosingBracketInUnaryExpressionWhenUsingLogicalNegationCausesError) {
+    recordSyntaxError(Message::Position(1, 45), "missing ')' at 'then'");
+    performTestExecution("module main(inout a(1), in b(1)) if !(a && b then ++= a else --= a fi !(a && b)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, InvalidClosingBracketInUnaryExpressionWhenUsingLogicalNegationCausesError) {
+    recordSyntaxError(Message::Position(1, 44), "mismatched input ']' expecting ')'");
+    performTestExecution("module main(inout a(1), in b(1)) if !(a && b] then ++= a else --= a fi !(a && b)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, MissingOpeningBracketInUnaryExpressionWhenUsingBitwiseNegationCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 36), 1U, 2U);
+    recordSyntaxError(Message::Position(1, 45), "mismatched input '>' expecting 'then'");
+    performTestExecution("module main(inout a(2), in b(2)) if (~a + b) > 1) then ++= a else --= a fi (~(a + b) > 1)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, InvalidOpeningBracketInUnaryExpressionWhenUsingBitwiseNegationCausesError) {
+    recordSyntaxError(Message::Position(1, 38), "no viable alternative at input '(~['");
+    performTestExecution("module main(inout a(2), in b(2)) if (~[a + b) > 1) then ++= a else --= a fi (~(a + b) > 1)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, MissingClosingBracketInUnaryExpressionWhenUsingBitwiseNegationCausesError) {
+    recordSyntaxError(Message::Position(1, 45), "no viable alternative at input '(~(a + b >'");
+    performTestExecution("module main(inout a(2), in b(2)) if (~(a + b > 1) then ++= a else --= a fi (~(a + b) > 1)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, InvalidClosingBracketInUnaryExpressionWhenUsingBitwiseNegationCausesError) {
+    recordSyntaxError(Message::Position(1, 44), "no viable alternative at input '(~(a + b]'");
+    performTestExecution("module main(inout a(2), in b(2)) if (~(a + b] > 1) then ++= a else --= a fi (~(a + b) > 1)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, UsageOfUndeclaredVariableInUnaryExpressionCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::NoVariableMatchingIdentifier>(Message::Position(1, 30), "b");
+    performTestExecution("module main(inout a(4)) a += ~b");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, UsageOfNon1DVariableInUnaryExpressionCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::OmittingDimensionAccessOnlyPossibleFor1DSignalWithSingleValue>(Message::Position(1, 43));
+    performTestExecution("module main(inout a(4), in b[2](4)) a += ~(b + 2)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, MissmatchBetweenLogicalAndBitwiseNegationInUnaryExpressionUsedAsGuardExpressionOfIfStatementCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::IfGuardExpressionMismatch>(Message::Position(1, 36));
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 78), 1U, 2U);
+    performTestExecution("module main(inout a(2), in b(2)) if (~(a + b) > 1) then ++= a else --= a fi (!(a + b) > 1)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, MissmatchBetweenBitwiseAndLogicalNegationInUnaryExpressionUsedAsGuardExpressionOfIfStatementCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::IfGuardExpressionMismatch>(Message::Position(1, 36));
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 38), 1U, 2U);
+    performTestExecution("module main(inout a(2), in b(2)) if (!(a + b) > 1) then ++= a else --= a fi (~(a + b) > 1)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, ExpressionWithBitwidthLargerThanOneNotAllowedAsOperandInUnaryExpressionUsingLogicalNegationOperationCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 38), 4U, 1U);
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 39), 1U, 4U);
+    performTestExecution("module main(inout a(4), in b(4)) a += !b");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, NestedExpressionWithBitwidthLargerThanOneNotAllowedAsOperandInUnaryExpressionUsingLogicalNegationOperationCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 47), 4U, 1U);
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 48), 1U, 2U);
+    performTestExecution("module main(inout a(4), in b(4), in c(4)) a += !(b.0:1 + c.3:2)");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, VariableAccessOnMoreThanOneBitInUnaryExpressionUsingLogicalNegationCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 38), 2U, 1U);
+    buildAndRecordExpectedSemanticError<SemanticError::ExpressionBitwidthMismatches>(Message::Position(1, 39), 1U, 2U);
+    performTestExecution("module main(inout a(2), in b(4)) a += !b.0:1");
+}
+
+// TODO: Operand bitwidth missmatch for unary expressions in binary and shift expression
+// TODO: Success: Logical unary expression
+// TODO: Sucess: Bitwise negation of unary expression of bitwidth 1
+// TODO: Usage of nested expressions in unary expression
+// TODO: Truncation of logical and bitwise operation in documentation
+// TODO: Evaluation of logical negation uses C++ semantics for cast to bool

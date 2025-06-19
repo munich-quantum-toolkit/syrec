@@ -25,7 +25,7 @@ Module
 
 - The value of every variable with bitwidth :math:`b` is assumed to be an unsigned integer and thus must be in the range :math:`[0, 2^b]`.
 - The maximum supported bitwidth of any variable is equal to 32.
-- Omitting the bitwidth of a variable will lead to the assumption that its bitwidth is equal to a :doc:`configurable default value <library/Settings>`.
+- Omitting the bitwidth of a variable will cause the bitwidth to be equal to a :doc:`configurable default value <library/Settings>`.
 - The parameter and variable identifiers must be unique in a SyReC module.
 - Module overloading (i.e., the definition of a module sharing its identifier with another module while the signature [variable type, dimensionality and bitwidth] of their parameters do not match) is supported for all modules whose identifier is not equal to the one of the "main" module. However, overloading the implicitly defined main module of a SyReC program is possible.
 
@@ -299,7 +299,6 @@ VariableAccess
 
 Expressions
 -----------
-- **Currently UnaryExpressions are not supported!**.
 - Expressions with constant operands are evaluated at compile time.
 - Arithmetic and logical simplifications are applied at compile time by default (i.e., will result in a simplification of the expression ((a + b) * 0) to 0). However, semantic/syntax errors in the operands of even the simplified subexpressions are reported with the following code sample showcasing an example:
 
@@ -427,7 +426,7 @@ Expressions
   * Modulo:       :math:`2^{b} - 1`
 
 - Expressions with constant integer operands are evaluated using the C++ semantics for unsigned integers.
-- Operands of expressions using the relational ('<', '>', '<=', '>=', '=', '!=') or logical ('||', '&&') operations must to have a bitwidth equal to 1.
+- Operands of expressions using the relational ('<', '>', '<=', '>=', '=', '!='), ('||', '&&') or the unary operation ('!') must to have a bitwidth equal to 1.
 
 .. rubric:: References
 .. footbibliography::

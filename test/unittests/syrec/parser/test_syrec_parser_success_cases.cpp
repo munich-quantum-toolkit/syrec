@@ -30,10 +30,9 @@ namespace {
 
     constexpr auto PRODUCTION_BINARY_EXPRESSION_FILE_NAME = "test_production_binaryExpression.json";
     constexpr auto PRODUCTION_SHIFT_EXPRESSION_FILE_NAME  = "test_production_shiftExpression.json";
-    // Since the IR currently does not support such expressions, no tests can be executed for it!
-    //constexpr auto PRODUCTION_UNARY_EXPRESSION_FILE_NAME  = "test_production_unaryExpression.json";
-    constexpr auto PRODUCTION_SIGNAL_FILE_NAME = "test_production_signal.json";
-    constexpr auto PRODUCTION_NUMBER_FILE_NAME = "test_production_number.json";
+    constexpr auto PRODUCTION_UNARY_EXPRESSION_FILE_NAME  = "test_production_unaryExpression.json";
+    constexpr auto PRODUCTION_SIGNAL_FILE_NAME            = "test_production_signal.json";
+    constexpr auto PRODUCTION_NUMBER_FILE_NAME            = "test_production_number.json";
 
     class SyrecParserSuccessCasesTestFixture: public SyrecParserBaseTestsFixture {
     public:
@@ -62,8 +61,7 @@ INSTANTIATE_TEST_SUITE_P(
 
                                                       FilenameAndTestNamePrefix({PATH_TO_SUCCESS_CASES, PRODUCTION_BINARY_EXPRESSION_FILE_NAME, "production_binaryExpression"}),
                                                       FilenameAndTestNamePrefix({PATH_TO_SUCCESS_CASES, PRODUCTION_SHIFT_EXPRESSION_FILE_NAME, "production_shiftExpression"}),
-                                                      // Since the IR currently does not support such expressions, no tests can be executed for it!
-                                                      //FilenameAndTestNamePrefix({PATH_TO_SUCCESS_CASES, PRODUCTION_UNARY_EXPRESSION_FILE_NAME, "production_unaryExpression"}),
+                                                      FilenameAndTestNamePrefix({PATH_TO_SUCCESS_CASES, PRODUCTION_UNARY_EXPRESSION_FILE_NAME, "production_unaryExpression"}),
                                                       FilenameAndTestNamePrefix({PATH_TO_SUCCESS_CASES, PRODUCTION_SIGNAL_FILE_NAME, "production_signal"}),
                                                       FilenameAndTestNamePrefix({PATH_TO_SUCCESS_CASES, PRODUCTION_NUMBER_FILE_NAME, "production_number"})})),
         [](const testing::TestParamInfo<SyrecParserBaseTestsFixture::ParamType>& info) { return info.param.testCaseName; });
