@@ -109,14 +109,9 @@ if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-synthesis)
   target_include_directories(${MQT_SYREC_TARGET_NAME}-synthesis
                              PUBLIC ${MQT_SYREC_INCLUDE_BUILD_DIR})
 
-  # add header-only part of the Boost library
-  set(BOOST_USE_MULTITHREADED ON)
-  set(BOOST_USE_STATIC_RUNTIME OFF)
-  find_package(Boost 1.71 REQUIRED)
-
   target_link_libraries(
     ${MQT_SYREC_TARGET_NAME}-synthesis
-    PUBLIC MQT::CoreDD Boost::boost
+    PUBLIC MQT::CoreDD
     PRIVATE MQT::ProjectWarnings MQT::ProjectOptions)
 
   add_library(MQT::SyReC-Synthesis ALIAS ${MQT_SYREC_TARGET_NAME}-synthesis)
