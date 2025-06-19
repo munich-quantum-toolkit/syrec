@@ -58,7 +58,7 @@ namespace syrec {
     /**
      * @brief Numeric Expression
      */
-    struct NumericExpression: public Expression {
+    struct NumericExpression: Expression {
         /**
        * @brief Creates a numeric expression with a value and a bit-width
        *
@@ -82,7 +82,7 @@ namespace syrec {
      * This class represents a variable expression and
      * capsulates a variable access pointer var().
      */
-    struct VariableExpression: public Expression {
+    struct VariableExpression: Expression {
         /**
        * @brief Constructor with variable
        *
@@ -104,7 +104,7 @@ namespace syrec {
      * This class represents a binary expression between two sub
      * expressions lhs() and rhs() by an operation op().
      */
-    struct BinaryExpression: public Expression {
+    struct BinaryExpression: Expression {
         /**
        * @brief Operation to perform
        */
@@ -208,9 +208,9 @@ namespace syrec {
        * @param binaryOperation Operation to be performed
        * @param rhs Expression on right hand side
        */
-        BinaryExpression(Expression::ptr lhs,
-                         BinaryOperation binaryOperation,
-                         Expression::ptr rhs):
+        BinaryExpression(ptr                   lhs,
+                         const BinaryOperation binaryOperation,
+                         ptr                   rhs):
             lhs(std::move(lhs)),
             binaryOperation(binaryOperation), rhs(std::move(rhs)) {}
 
@@ -242,9 +242,9 @@ namespace syrec {
             }
         }
 
-        Expression::ptr lhs = nullptr;
+        ptr             lhs = nullptr;
         BinaryOperation binaryOperation{};
-        Expression::ptr rhs = nullptr;
+        ptr             rhs = nullptr;
     };
 
     /**
@@ -253,7 +253,7 @@ namespace syrec {
      * This class represents a binary expression with a
      * sub-expression lhs() and a number rhs() by a shift operation op().
      */
-    struct ShiftExpression: public Expression {
+    struct ShiftExpression: Expression {
         /**
        * @brief Shift Operation
        */
@@ -280,7 +280,7 @@ namespace syrec {
        * @param shiftOperation Shift operation
        * @param rhs Number of bits to shift
        */
-        ShiftExpression(Expression::ptr      lhs,
+        ShiftExpression(ptr                  lhs,
                         const ShiftOperation shiftOperation,
                         Number::ptr          rhs):
             lhs(std::move(lhs)),
@@ -298,8 +298,25 @@ namespace syrec {
             return lhs->bitwidth();
         }
 
-        Expression::ptr lhs = nullptr;
-        ShiftOperation  shiftOperation{};
-        Number::ptr     rhs = nullptr;
+        ptr            lhs = nullptr;
+        ShiftOperation shiftOperation{};
+        Number::ptr    rhs = nullptr;
+    };
+
+    struct UnaryExpression: Expression {
+        enum class UnaryOperation : std::uint8_t {
+            LogicalNegation,
+            BitwiseNegation
+        };
+
+        UnaryExpression(const UnaryOperation op, ptr expr):
+            unaryOperation(op), expr(std::move(expr)) {}
+
+        [[nodiscard]] unsigned bitwidth() const override {
+            return unaryOperation == UnaryOperation::LogicalNegation ? 1 : expr->bitwidth();
+        }
+
+        UnaryOperation unaryOperation;
+        ptr            expr;
     };
 } // namespace syrec

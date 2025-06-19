@@ -13,6 +13,7 @@
 #include "core/truthTable/truth_table.hpp"
 #include "dd/Package.hpp"
 #include "dd/Simulation.hpp"
+#include "dd/StateGeneration.hpp"
 #include "ir/QuantumComputation.hpp"
 
 #include <cassert>
@@ -53,7 +54,7 @@ namespace syrec {
                 continue;
             }
 
-            auto const inEdge    = dd->makeBasisState(nBits, boolCube);
+            auto const inEdge    = dd::makeBasisState(nBits, boolCube, *dd);
             const auto out       = dd::sample(qc, inEdge, *dd, 1);
             const auto outString = out.begin()->first;
 

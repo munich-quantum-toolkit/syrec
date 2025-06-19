@@ -53,7 +53,7 @@ namespace syrec {
 
     protected:
         constexpr static std::string_view GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER = "lno";
-        using OperationVariant                                                                 = std::variant<AssignStatement::AssignOperation, BinaryExpression::BinaryOperation, ShiftExpression::ShiftOperation>;
+        using OperationVariant                                                                 = std::variant<AssignStatement::AssignOperation, BinaryExpression::BinaryOperation, ShiftExpression::ShiftOperation, UnaryExpression::UnaryOperation>;
 
         virtual bool processStatement(const Statement::ptr& statement) = 0;
         virtual bool onModule(const Module::ptr&);
@@ -81,6 +81,7 @@ namespace syrec {
         virtual bool onExpression(const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
         virtual bool onExpression(const NumericExpression& expression, std::vector<qc::Qubit>& lines);
         virtual bool onExpression(const VariableExpression& expression, std::vector<qc::Qubit>& lines);
+        virtual bool onExpression(const UnaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
 
         virtual bool expAdd([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs)      = 0;
         virtual bool expSubtract([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) = 0;

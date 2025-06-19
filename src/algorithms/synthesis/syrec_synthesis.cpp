@@ -253,6 +253,8 @@ namespace syrec {
             synthesisOfStatementOk = onExpression(statement.condition, expressionResult, {}, binary->binaryOperation);
         } else if (auto const* shift = dynamic_cast<ShiftExpression*>(statement.condition.get())) {
             synthesisOfStatementOk = onExpression(statement.condition, expressionResult, {}, shift->shiftOperation);
+        } else if (auto const* unary = dynamic_cast<UnaryExpression*>(statement.condition.get())) {
+            synthesisOfStatementOk = onExpression(statement.condition, expressionResult, {}, unary->unaryOperation);
         } else {
             synthesisOfStatementOk = onExpression(statement.condition, expressionResult, {}, BinaryExpression::BinaryOperation::Add);
         }
@@ -412,6 +414,9 @@ namespace syrec {
         if (auto const* shift = dynamic_cast<ShiftExpression*>(expression.get())) {
             return onExpression(*shift, lines, lhsStat, operationVariant);
         }
+        if (auto const* unary = dynamic_cast<UnaryExpression*>(expression.get())) {
+            return onExpression(*unary, lines, lhsStat, operationVariant);
+        }
         return false;
     }
 
@@ -431,6 +436,27 @@ namespace syrec {
             default:
                 return false;
         }
+    }
+
+    bool SyrecSynthesis::onExpression(const UnaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, const OperationVariant operationVariant) {
+        std::vector<qc::Qubit> innerExprLines;
+        if (!onExpression(expression.expr, innerExprLines, lhsStat, operationVariant)) {
+            return false;
+        }
+
+        if (expression.unaryOperation == UnaryExpression::UnaryOperation::LogicalNegation && innerExprLines.size() != 1) {
+            std::cerr << "Logical negation operation can only be used for expressions with a bitwidth of 1\n";
+            return false;
+        }
+
+        const auto innerExprBitwidth = expression.bitwidth();
+        bool       synthesisOk       = getConstantLines(innerExprBitwidth, 0U, lines);
+
+        // Transfer result of inner expression lines to ancillaes.
+        for (std::size_t i = 0; i < innerExprLines.size() && synthesisOk; ++i) {
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(innerExprLines.at(i), lines.at(i));
+        }
+        return synthesisOk && bitwiseNegation(annotatableQuantumComputation, lines);
     }
 
     bool SyrecSynthesis::onExpression(const NumericExpression& expression, std::vector<qc::Qubit>& lines) {
@@ -981,9 +1007,10 @@ namespace syrec {
             return false;
         }
 
-        bool synthesisOk = true;
+        bool              synthesisOk           = true;
+        const std::size_t sourceQubitBaseOffset = src2;
         for (std::size_t i = 0; i < nQubitsShifted && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src1[i], dest[i]);
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src1[sourceQubitBaseOffset + i], dest[i]);
         }
         return synthesisOk;
     }
