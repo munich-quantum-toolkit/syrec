@@ -164,21 +164,21 @@ namespace syrec {
         annotatableQuantumComputation.setOrUpdateGlobalQuantumOperationAnnotation(GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER, std::to_string(static_cast<std::size_t>(statement->lineNumber)));
 
         bool okay = true;
-        if (auto const* swapStat = dynamic_cast<SwapStatement*>(statement.get())) {
+        if (auto const* swapStat = dynamic_cast<SwapStatement*>(statement.get()); swapStat != nullptr) {
             okay = onStatement(*swapStat);
-        } else if (auto const* unaryStat = dynamic_cast<UnaryStatement*>(statement.get())) {
+        } else if (auto const* unaryStat = dynamic_cast<UnaryStatement*>(statement.get()); unaryStat != nullptr) {
             okay = onStatement(*unaryStat);
-        } else if (auto const* assignStat = dynamic_cast<AssignStatement*>(statement.get())) {
+        } else if (auto const* assignStat = dynamic_cast<AssignStatement*>(statement.get()); assignStat != nullptr) {
             okay = onStatement(*assignStat);
-        } else if (auto const* ifStat = dynamic_cast<IfStatement*>(statement.get())) {
+        } else if (auto const* ifStat = dynamic_cast<IfStatement*>(statement.get()); ifStat != nullptr) {
             okay = onStatement(*ifStat);
-        } else if (auto const* forStat = dynamic_cast<ForStatement*>(statement.get())) {
+        } else if (auto const* forStat = dynamic_cast<ForStatement*>(statement.get()); forStat != nullptr) {
             okay = onStatement(*forStat);
-        } else if (auto const* callStat = dynamic_cast<CallStatement*>(statement.get())) {
+        } else if (auto const* callStat = dynamic_cast<CallStatement*>(statement.get()); callStat != nullptr) {
             okay = onStatement(*callStat);
-        } else if (auto const* uncallStat = dynamic_cast<UncallStatement*>(statement.get())) {
+        } else if (auto const* uncallStat = dynamic_cast<UncallStatement*>(statement.get()); uncallStat != nullptr) {
             okay = onStatement(*uncallStat);
-        } else if (auto const* skipStat = statement.get()) {
+        } else if (auto const* skipStat = statement.get(); skipStat != nullptr) {
             okay = onStatement(*skipStat);
         } else {
             okay = false;
@@ -245,22 +245,21 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::onStatement(const IfStatement& statement) {
-        // calculate expression
-        std::vector<qc::Qubit> expressionResult;
-
-        bool synthesisOfStatementOk = false;
-        if (auto const* binary = dynamic_cast<BinaryExpression*>(statement.condition.get())) {
-            synthesisOfStatementOk = onExpression(statement.condition, expressionResult, {}, binary->binaryOperation);
-        } else if (auto const* shift = dynamic_cast<ShiftExpression*>(statement.condition.get())) {
-            synthesisOfStatementOk = onExpression(statement.condition, expressionResult, {}, shift->shiftOperation);
-        } else if (auto const* unary = dynamic_cast<UnaryExpression*>(statement.condition.get())) {
-            synthesisOfStatementOk = onExpression(statement.condition, expressionResult, {}, unary->unaryOperation);
-        } else {
-            synthesisOfStatementOk = onExpression(statement.condition, expressionResult, {}, BinaryExpression::BinaryOperation::Add);
+        OperationVariant guardExpressionTopLevelOperation = BinaryExpression::BinaryOperation::Add;
+        if (auto const* binary = dynamic_cast<BinaryExpression*>(statement.condition.get()); binary != nullptr) {
+            guardExpressionTopLevelOperation = binary->binaryOperation;
+        } else if (auto const* shift = dynamic_cast<ShiftExpression*>(statement.condition.get()); shift != nullptr) {
+            guardExpressionTopLevelOperation = shift->shiftOperation;
+        } else if (auto const* unary = dynamic_cast<UnaryExpression*>(statement.condition.get()); unary != nullptr) {
+            guardExpressionTopLevelOperation = unary->unaryOperation;
         }
 
+        // calculate expression
+        std::vector<qc::Qubit> expressionResult;
+        const bool synthesisOfGuardExprOk = onExpression(statement.condition, expressionResult, {}, guardExpressionTopLevelOperation);
+
         assert(expressionResult.size() == 1U);
-        if (!synthesisOfStatementOk) {
+        if (!synthesisOfGuardExprOk) {
             return false;
         }
 
@@ -402,19 +401,19 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::onExpression(const Expression::ptr& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, const OperationVariant operationVariant) {
-        if (auto const* numeric = dynamic_cast<NumericExpression*>(expression.get())) {
+        if (auto const* numeric = dynamic_cast<NumericExpression*>(expression.get()); numeric != nullptr) {
             return onExpression(*numeric, lines);
         }
-        if (auto const* variable = dynamic_cast<VariableExpression*>(expression.get())) {
+        if (auto const* variable = dynamic_cast<VariableExpression*>(expression.get()); variable != nullptr) {
             return onExpression(*variable, lines);
         }
-        if (auto const* binary = dynamic_cast<BinaryExpression*>(expression.get())) {
+        if (auto const* binary = dynamic_cast<BinaryExpression*>(expression.get()); binary != nullptr) {
             return onExpression(*binary, lines, lhsStat, operationVariant);
         }
-        if (auto const* shift = dynamic_cast<ShiftExpression*>(expression.get())) {
+        if (auto const* shift = dynamic_cast<ShiftExpression*>(expression.get()); shift != nullptr) {
             return onExpression(*shift, lines, lhsStat, operationVariant);
         }
-        if (auto const* unary = dynamic_cast<UnaryExpression*>(expression.get())) {
+        if (auto const* unary = dynamic_cast<UnaryExpression*>(expression.get()); unary != nullptr) {
             return onExpression(*unary, lines, lhsStat, operationVariant);
         }
         return false;
