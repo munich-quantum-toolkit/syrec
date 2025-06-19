@@ -94,6 +94,7 @@ namespace utils {
         [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, const syrec::VariableExpression& variableExpression) const;
         [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, const syrec::NumericExpression& numericExpression) const;
         [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, const syrec::ShiftExpression& shiftExpression) const;
+        [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, const syrec::UnaryExpression& unaryExpression) const;
         [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, const syrec::VariableAccess& variableAccess) const;
         [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, const syrec::Number& number) const;
 
@@ -104,6 +105,7 @@ namespace utils {
         [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, syrec::UnaryStatement::UnaryOperation operation) const;
         [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, syrec::AssignStatement::AssignOperation operation) const;
         [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, syrec::ShiftExpression::ShiftOperation operation) const;
+        [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, syrec::UnaryExpression::UnaryOperation operation) const;
         [[maybe_unused]] virtual bool stringify(std::ostream& outputStream, syrec::Number::ConstantExpression::Operation operation) const;
         [[maybe_unused]] virtual bool stringifySkipStatement(std::ostream& outputStream) const;
 

@@ -217,7 +217,7 @@ std::optional<syrec::Expression::ptr> CustomExpressionVisitor::visitShiftExpress
     if (toBeShiftedOperand.has_value() && mappedToShiftOperation.has_value() && shiftAmount.has_value()) {
         const std::optional<unsigned int> expectedBitwidthOfOperandsInLhsOperand = optionalDeterminedOperandBitwidth.has_value() ? std::make_optional(optionalDeterminedOperandBitwidth->operandBitwidth) : std::nullopt;
         if (const std::optional<syrec::Expression::ptr> optionalSimplifiedShiftExpr = trySimplifyShiftExpression(syrec::ShiftExpression(*toBeShiftedOperand, *mappedToShiftOperation, *shiftAmount), expectedBitwidthOfOperandsInLhsOperand); optionalSimplifiedShiftExpr.has_value()) {
-            // If the binary expression evaluated to a numeric expression then the expected operand bitwidth needs to be reset since we cannot assume the expected bitwidth for such an expression.
+            // If the shift expression evaluated to a numeric expression then the expected operand bitwidth needs to be reset since we cannot assume the expected bitwidth for such an expression.
             if (const auto& simplifiedShiftExprAsNumericOne = optionalDeterminedOperandBitwidth.has_value() ? std::dynamic_pointer_cast<syrec::NumericExpression>(*optionalSimplifiedShiftExpr) : nullptr; simplifiedShiftExprAsNumericOne != nullptr) {
                 optionalDeterminedOperandBitwidth.reset();
             }
@@ -228,12 +228,68 @@ std::optional<syrec::Expression::ptr> CustomExpressionVisitor::visitShiftExpress
     return std::nullopt;
 }
 
-std::optional<syrec::Expression::ptr> CustomExpressionVisitor::visitUnaryExpressionTyped(const TSyrecParser::UnaryExpressionContext* context, [[maybe_unused]] std::optional<DeterminedExpressionOperandBitwidthInformation>& optionalDeterminedOperandBitwidth) const {
-    if (context != nullptr && context->start != nullptr) {
-        recordCustomError(mapTokenPositionToMessagePosition(*context->start), "Unary expressions are currently not supported");
+std::optional<syrec::Expression::ptr> CustomExpressionVisitor::visitUnaryExpressionTyped(const TSyrecParser::UnaryExpressionContext* context, [[maybe_unused]] std::optional<DeterminedExpressionOperandBitwidthInformation>& optionalDeterminedOperandBitwidth) {
+    if (context == nullptr) {
+        return std::nullopt;
     }
-    // As a future note, identical to the behaviour in the shift expression, the unary operation applied by this type of expression does not the change the bitwidth of the latter which
-    // in turn means that no truncation is required.
+
+    const std::optional<syrec::UnaryExpression::UnaryOperation> mappedToUnaryOperation = context->unaryOperation != nullptr ? mapTokenToUnaryOperation(*context) : std::nullopt;
+    if (context->unaryOperation != nullptr && !mappedToUnaryOperation.has_value()) {
+        recordSemanticError<SemanticError::UnhandledOperationFromGrammarInParser>(mapTokenPositionToMessagePosition(*context->unaryOperation), context->unaryOperation->getText());
+    }
+
+    if (mappedToUnaryOperation.has_value()) {
+        recordExpressionComponent(*mappedToUnaryOperation);
+    }
+    recordExpressionComponent(utils::IfStatementExpressionComponentsRecorder::ExpressionBracketKind::Opening);
+    std::optional<DeterminedExpressionOperandBitwidthInformation> unaryExprOperandBitwidth;
+    std::optional<syrec::Expression::ptr>                         unaryExpressionOperand = visitExpressionTyped(context->expression(), unaryExprOperandBitwidth);
+    recordExpressionComponent(utils::IfStatementExpressionComponentsRecorder::ExpressionBracketKind::Closing);
+
+    optionalDeterminedOperandBitwidth = unaryExprOperandBitwidth;
+    if (mappedToUnaryOperation.has_value() && *mappedToUnaryOperation == syrec::UnaryExpression::UnaryOperation::LogicalNegation) {
+        if (!optionalDeterminedOperandBitwidth.has_value()) {
+            optionalDeterminedOperandBitwidth = DeterminedExpressionOperandBitwidthInformation();
+        } else {
+            optionalDeterminedOperandBitwidth->operandBitwidth = 1;
+        }
+
+        if (unaryExprOperandBitwidth.has_value() && unaryExprOperandBitwidth->operandBitwidth != 1) {
+            recordSemanticError<SemanticError::ExpressionBitwidthMismatches>(mapTokenPositionToMessagePosition(*context->expression()->getStart()), 1, unaryExprOperandBitwidth->operandBitwidth);
+        }
+        if (unaryExpressionOperand.has_value()) {
+            // Truncate integer constants until first logical or relational operation is encountered
+            bool detectedDivisionByZeroDuringTruncationOfIntegerConstants = false;
+            truncateConstantValuesInExpression(*unaryExpressionOperand, optionalDeterminedOperandBitwidth->operandBitwidth, parserConfiguration.integerConstantTruncationOperation, &detectedDivisionByZeroDuringTruncationOfIntegerConstants);
+            if (detectedDivisionByZeroDuringTruncationOfIntegerConstants) {
+                recordSemanticError<SemanticError::ExpressionEvaluationFailedDueToDivisionByZero>(mapTokenPositionToMessagePosition(*context->expression()->getStart()));
+                return std::nullopt;
+            }
+        }
+    }
+
+    // To aid the user when debugging operand bitwidth missmatch errors we update the position of the operand that fixed the current expected bitwidth to the
+    // position of the first token of the unary expression. This is needed since the expected operand bitwidth might be modified when the logical negation unary operation is
+    // used (here the expected operand bitwidth is set to 1).
+    if (optionalDeterminedOperandBitwidth.has_value()) {
+        if (context->getStart() != nullptr) {
+            optionalDeterminedOperandBitwidth->positionOfOperandWithKnownBitwidth = mapTokenPositionToMessagePosition(*context->getStart());
+        } else {
+            optionalDeterminedOperandBitwidth.reset();
+        }
+    }
+
+    if (mappedToUnaryOperation.has_value() && unaryExpressionOperand.has_value()) {
+        // We handle the truncation of constants for unary expressions in the same way as it is done for binary and shift expressions.
+        // Since we do not have any knowledge about any parent expression in which the current unary expression might be an operand in and in which an expected operand bitwidth could be defined, we simply delegate the truncation of the constant value to the parent expression.
+        // Note that the bitwidth set for the propagated expression might be smaller than the value of said expression (i.e. assuming a variable 'a' with bitwidth 4 exists then the expression ~(a * 0) would cause the propagation of a numeric expression with bitwidth 4 and value UINT_MAX).
+        const std::optional<unsigned> constantValueOfUnaryOperand = tryGetConstantValueOf(**unaryExpressionOperand);
+        if (const std::optional<unsigned> evaluatedValueOfUnaryExpr = utils::tryEvaluate(*mappedToUnaryOperation, constantValueOfUnaryOperand); evaluatedValueOfUnaryExpr.has_value()) {
+            optionalDeterminedOperandBitwidth.reset();
+            return std::make_shared<syrec::NumericExpression>(std::make_shared<syrec::Number>(*evaluatedValueOfUnaryExpr), optionalDeterminedOperandBitwidth.has_value() ? optionalDeterminedOperandBitwidth->operandBitwidth : DEFAULT_EXPRESSION_BITWIDTH);
+        }
+        return std::make_shared<syrec::UnaryExpression>(*mappedToUnaryOperation, *unaryExpressionOperand);
+    }
     return std::nullopt;
 }
 
@@ -818,6 +874,16 @@ std::optional<syrec::Number::ConstantExpression::Operation> CustomExpressionVisi
     }
     if (constantExpressionContext.literalOpDivision() != nullptr) {
         return syrec::Number::ConstantExpression::Operation::Division;
+    }
+    return std::nullopt;
+}
+
+std::optional<syrec::UnaryExpression::UnaryOperation> CustomExpressionVisitor::mapTokenToUnaryOperation(const TSyrecParser::UnaryExpressionContext& unaryExpressionContext) {
+    if (unaryExpressionContext.literalOpLogicalNegation() != nullptr) {
+        return syrec::UnaryExpression::UnaryOperation::LogicalNegation;
+    }
+    if (unaryExpressionContext.literalOpBitwiseNegation() != nullptr) {
+        return syrec::UnaryExpression::UnaryOperation::BitwiseNegation;
     }
     return std::nullopt;
 }

@@ -40,7 +40,7 @@ namespace utils {
             Recording,
             Comparing
         };
-        using ExpressionComponent = std::variant<std::string, unsigned int, syrec::BinaryExpression::BinaryOperation, syrec::ShiftExpression::ShiftOperation, ExpressionBracketKind, VariableAccessComponent>;
+        using ExpressionComponent = std::variant<std::string, unsigned int, syrec::BinaryExpression::BinaryOperation, syrec::ShiftExpression::ShiftOperation, syrec::UnaryExpression::UnaryOperation, ExpressionBracketKind, VariableAccessComponent>;
 
         void                              recordExpressionComponent(const ExpressionComponent& expressionComponent);
         void                              switchMode(OperationMode newOperationMode);

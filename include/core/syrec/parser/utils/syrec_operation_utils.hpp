@@ -173,4 +173,18 @@ namespace utils {
         }
         return std::nullopt;
     }
+
+    [[nodiscard]] inline std::optional<unsigned int> tryEvaluate(syrec::UnaryExpression::UnaryOperation unaryOperation, const std::optional<unsigned int> expressionValue) {
+        if (!expressionValue.has_value()) {
+            return std::nullopt;
+        }
+
+        if (unaryOperation == syrec::UnaryExpression::UnaryOperation::LogicalNegation) {
+            return static_cast<bool>(*expressionValue);
+        }
+        if (unaryOperation == syrec::UnaryExpression::UnaryOperation::BitwiseNegation) {
+            return ~*expressionValue;
+        }
+        return std::nullopt;
+    }
 } // namespace utils

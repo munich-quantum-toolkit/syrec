@@ -201,6 +201,9 @@ bool BaseSyrecIrEntityStringifier::stringify(std::ostream& outputStream, const s
     if (const auto& castedToShiftExpr = dynamic_cast<const syrec::ShiftExpression*>(&expression); castedToShiftExpr != nullptr) {
         return stringify(outputStream, *castedToShiftExpr);
     }
+    if (const auto& casedToUnaryExpr = dynamic_cast<const syrec::UnaryExpression*>(&expression); casedToUnaryExpr != nullptr) {
+        return stringify(outputStream, *casedToUnaryExpr);
+    }
     return false;
 }
 
@@ -230,6 +233,13 @@ bool BaseSyrecIrEntityStringifier::stringify(std::ostream& outputStream, const s
         return setStreamInFailedState(outputStream);
     }
     return shiftExpression.lhs && shiftExpression.rhs && appendToStream(outputStream, '(') && stringify(outputStream, *shiftExpression.lhs) && (additionalFormattingOptions.useWhitespaceBetweenOperandsOfBinaryOperation ? appendToStream(outputStream, " ") && stringify(outputStream, shiftExpression.shiftOperation) && appendToStream(outputStream, " ") : stringify(outputStream, shiftExpression.shiftOperation)) && stringify(outputStream, *shiftExpression.rhs) && appendToStream(outputStream, ')');
+}
+
+bool BaseSyrecIrEntityStringifier::stringify(std::ostream& outputStream, const syrec::UnaryExpression& unaryExpression) const {
+    if (!outputStream.good()) {
+        return setStreamInFailedState(outputStream);
+    }
+    return unaryExpression.expr && stringify(outputStream, unaryExpression.unaryOperation) && stringify(outputStream, *unaryExpression.expr);
 }
 
 bool BaseSyrecIrEntityStringifier::stringify(std::ostream& outputStream, const syrec::VariableAccess& variableAccess) const {
@@ -466,6 +476,23 @@ bool BaseSyrecIrEntityStringifier::stringify(std::ostream& outputStream, syrec::
             break;
         case syrec::ShiftExpression::ShiftOperation::Right:
             outputStream << ">>";
+            break;
+        default:
+            return setStreamInFailedState(outputStream);
+    }
+    return true;
+}
+
+bool BaseSyrecIrEntityStringifier::stringify(std::ostream& outputStream, syrec::UnaryExpression::UnaryOperation operation) const {
+    if (!outputStream.good()) {
+        return setStreamInFailedState(outputStream);
+    }
+    switch (operation) {
+        case syrec::UnaryExpression::UnaryOperation::LogicalNegation:
+            outputStream << '!';
+            break;
+        case syrec::UnaryExpression::UnaryOperation::BitwiseNegation:
+            outputStream << '~';
             break;
         default:
             return setStreamInFailedState(outputStream);
