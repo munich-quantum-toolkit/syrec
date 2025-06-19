@@ -136,7 +136,7 @@ After building the project (as described above), the C++ unit tests can be run b
 
     .. code-block:: console
 
-        [.../build/test] $ ./mqt_syrec_test
+        [.../build/test] $ ./mqt-syrec-test
 
 C++ Code Formatting and Linting
 -------------------------------
