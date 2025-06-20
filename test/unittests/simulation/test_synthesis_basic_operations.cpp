@@ -17,8 +17,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <gtest/gtest.h>
-#include <memory>
-#include <utility>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace {
