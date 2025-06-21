@@ -1,0 +1,11 @@
+{
+  "TestOne": {
+    "inputCircuit": "module main(in a(1), in b(1), out c(1)) c ^= !~(a | b)",
+    "simulationRuns": [
+      { "in": "000", "out": "000" },
+      { "in": "100", "out": "101" },
+      { "in": "010", "out": "011" },
+      { "in": "110", "out": "111" }
+    ]
+  }
+}
