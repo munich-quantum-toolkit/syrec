@@ -1,0 +1,56 @@
+{
+  "TestOfCircuitAlu2": {
+    "inputCircuit": "module alu(in op(1), out x0(2), inout x1(2), inout x2(2)) if op then x0 ^= (x1 + x2) else x0 ^= (x1 - x2) fi op",
+    "simulationRuns": [
+      {
+        "in": "1000001",
+        "out": "1010001"
+      }
+    ]
+  },
+  "TestOfCircuitSwap2": {
+    "inputCircuit": "module alu(inout x1(2), inout x2(2)) x1 <=> x2",
+    "simulationRuns": [
+      {
+        "in": "0011",
+        "out": "1100"
+      }
+    ]
+  },
+  "TestOfCircuitSimpleAdd2": {
+    "inputCircuit": "module alu(out x0(2), inout x1(2), inout x2(2)) x0 += (x1 - x2)",
+    "simulationRuns": [
+      {
+        "in": "000100",
+        "out": "010100"
+      }
+    ]
+  },
+  "TestOfCircuitMultiply2": {
+    "inputCircuit": "module alu(out x0(2), inout x1(2), inout x2(2)) x0 ^= (x1 * x2)",
+    "simulationRuns": [
+      {
+        "in": "000100",
+        "out": "000100"
+      }
+    ]
+  },
+  "TestOfCircuitModulo2": {
+    "inputCircuit": "module alu(out x0(2), inout x1(2), inout x2(2)) x0 ^= (x1 % x2)",
+    "simulationRuns": [
+      {
+        "in": "000111",
+        "out": "010111"
+      }
+    ]
+  },
+  "TestOfCircuitNegate8": {
+    "inputCircuit": "module statements(inout x(8)) ~= x; ++= x; --= x module main(inout s(8)) call statements(s); uncall statements(s)",
+    "simulationRuns": [
+      {
+        "in": "00000011",
+        "out": "00000011"
+      }
+    ]
+  }
+}

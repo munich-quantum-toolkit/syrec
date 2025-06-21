@@ -72,6 +72,10 @@ public:
         }
     }
 
+    [[nodiscard]] static std::string getNameOfCurrentlyExecutedTest() {
+        return testing::UnitTest::GetInstance()->current_test_info()->name();
+    }
+
 protected:
     static void loadAndParseTestCaseDataFromJson(const std::string& pathToTestCaseDataJsonFile, const std::string& testcaseJsonKey, json& containerForJsonDataOfTestCase) {
         std::ifstream inputFileStream(pathToTestCaseDataJsonFile, std::ios_base::in);
@@ -111,8 +115,6 @@ protected:
         }
     }
 
-    // TODO: Only need to define data qubits and ignore ancillaries
-    // TODO: Only check non-ancillary qubits?
     static void assertSimulationResultForStateMatchesExpectedOne(const syrec::AnnotatableQuantumComputation& annotatableQuantumComputation, const syrec::NBitValuesContainer& inputState, const syrec::NBitValuesContainer& expectedOutputState) {
         ASSERT_EQ(inputState.size(), expectedOutputState.size());
 
@@ -130,7 +132,7 @@ protected:
 
     static void loadNBitValuesContainerFromString(syrec::NBitValuesContainer& container, const std::string& stringifiedBinaryState) {
         ASSERT_GT(container.size(), 0) << "To be able to verfiy the contents of the stringified binary state we need to know how many values are to be expected using the NBitValuesContainer";
-        ASSERT_EQ(container.size(), stringifiedBinaryState.size()) << "Expected size of NBitValues container to match stringified binary state size";
+        ASSERT_GE(container.size(), stringifiedBinaryState.size()) << "Expected size of NBitValues container must be equal to larger than stringified binary state size";
 
         for (std::size_t i = 0; i < stringifiedBinaryState.size(); ++i) {
             if (stringifiedBinaryState[i] == '1') {
