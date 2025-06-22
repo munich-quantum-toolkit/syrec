@@ -15,48 +15,48 @@
 #include <gtest/gtest.h>
 #include <string>
 
-const std::string relativePathToTestCaseDataJsonFile = "./unittests/simulation/data/test_synthesis_of_basic_operations.json";
+const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_synthesis_of_basic_operations.json";
 
 TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
 
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfConstantZero) {
-    this->performTestExecutionForCircuitLoadedFromJson(relativePathToTestCaseDataJsonFile, this->getNameOfCurrentlyExecutedTest());
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfConstantOne) {
-    this->performTestExecutionForCircuitLoadedFromJson(relativePathToTestCaseDataJsonFile, this->getNameOfCurrentlyExecutedTest());
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfNestedExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(relativePathToTestCaseDataJsonFile, this->getNameOfCurrentlyExecutedTest());
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfUnaryExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(relativePathToTestCaseDataJsonFile, this->getNameOfCurrentlyExecutedTest());
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfVariable) {
-    this->performTestExecutionForCircuitLoadedFromJson(relativePathToTestCaseDataJsonFile, this->getNameOfCurrentlyExecutedTest());
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfConstant) {
-    this->performTestExecutionForCircuitLoadedFromJson(relativePathToTestCaseDataJsonFile, this->getNameOfCurrentlyExecutedTest());
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfVariable) {
-    this->performTestExecutionForCircuitLoadedFromJson(relativePathToTestCaseDataJsonFile, this->getNameOfCurrentlyExecutedTest());
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfBinaryExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(relativePathToTestCaseDataJsonFile, this->getNameOfCurrentlyExecutedTest());
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfShiftExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(relativePathToTestCaseDataJsonFile, this->getNameOfCurrentlyExecutedTest());
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(relativePathToTestCaseDataJsonFile, this->getNameOfCurrentlyExecutedTest());
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,

@@ -20,7 +20,9 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
+#include <string_view>
 
 // The .clang-tidy warning about the missing header file seems to be a false positive since the include of the required <nlohmann/json.hpp> is defined in this file.
 // Maybe this warning is reported because the nlohmann library is implicitly added by one of the external dependencies?
@@ -81,7 +83,7 @@ protected:
         std::ifstream inputFileStream(pathToTestCaseDataJsonFile, std::ios_base::in);
         ASSERT_TRUE(inputFileStream.good()) << "Input file @" << pathToTestCaseDataJsonFile << " is not in a usable state (e.g. does not exist)";
 
-        const json& parsedJsonDataOfFile = json::parse(inputFileStream);
+        const json parsedJsonDataOfFile = json::parse(inputFileStream);
         ASSERT_TRUE(parsedJsonDataOfFile.contains(testcaseJsonKey)) << "Matching entry for test case was not found in json loaded from " << pathToTestCaseDataJsonFile << " when using '" << testcaseJsonKey << "' as key";
         containerForJsonDataOfTestCase = parsedJsonDataOfFile[testcaseJsonKey];
     }
