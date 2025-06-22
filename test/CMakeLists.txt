@@ -22,22 +22,31 @@ package_add_test(${PROJECT_NAME}-test ${PROJECT_NAME}-test-wrapper ${SYREC_TEST_
 target_link_libraries(${PROJECT_NAME}-test PRIVATE fmt::fmt)
 target_include_directories(${PROJECT_NAME}-test
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/unittests/syrec/parser/utils)
-                           
-add_custom_command(
-    TARGET ${PROJECT_NAME}-test
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/circuits
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/configs
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/simulation
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/simulation/data
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/syrec
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/syrec/parser
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/syrec/parser/data
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/syrec/parser/data/success
 
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/circuits $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/circuits
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/configs $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/configs
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/unittests/simulation/data $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/simulation/data
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/unittests/syrec/parser/data/success $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/syrec/parser/data/success
-)
+add_custom_command(
+  TARGET ${PROJECT_NAME}-test
+  POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/circuits
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/configs
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests
+  COMMAND ${CMAKE_COMMAND} -E make_directory
+          $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/simulation
+  COMMAND ${CMAKE_COMMAND} -E make_directory
+          $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/simulation/data
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/syrec
+  COMMAND ${CMAKE_COMMAND} -E make_directory
+          $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/syrec/parser
+  COMMAND ${CMAKE_COMMAND} -E make_directory
+          $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/syrec/parser/data
+  COMMAND ${CMAKE_COMMAND} -E make_directory
+          $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/syrec/parser/data/success
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/circuits
+          $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/circuits
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/configs
+          $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/configs
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/unittests/simulation/data
+          $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/simulation/data
+  COMMAND
+    ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/unittests/syrec/parser/data/success
+    $<TARGET_FILE_DIR:${PROJECT_NAME}-test>/unittests/syrec/parser/data/success)

@@ -133,7 +133,7 @@ protected:
     }
 
     static void loadNBitValuesContainerFromString(syrec::NBitValuesContainer& container, const std::string& stringifiedBinaryState) {
-        ASSERT_GT(container.size(), 0) << "To be able to verfiy the contents of the stringified binary state we need to know how many values are to be expected using the NBitValuesContainer";
+        ASSERT_GT(container.size(), 0) << "To be able to verify the contents of the stringified binary state we need to know how many values are to be expected using the NBitValuesContainer";
         ASSERT_GE(container.size(), stringifiedBinaryState.size()) << "Expected size of NBitValues container must be equal to larger than stringified binary state size";
 
         for (std::size_t i = 0; i < stringifiedBinaryState.size(); ++i) {
