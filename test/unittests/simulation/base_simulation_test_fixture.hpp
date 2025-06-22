@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <fstream>
 #include <gtest/gtest.h>
+#include <ios>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -59,7 +60,10 @@ public:
         ASSERT_NO_FATAL_FAILURE(loadAndParseTestCaseDataFromJson(pathToTestCaseDataJsonFile, testcaseJsonKey, jsonDataOfTestCase));
         ASSERT_NO_FATAL_FAILURE(validateJsonStructure(jsonDataOfTestCase));
 
-        const std::string& stringifiedInputCircuit = jsonDataOfTestCase[jsonKeyForInputCircuit].get<std::string>();
+        // Since this is a member function of a templated class, the templated function of the nlohmann namespace needs to use this specific syntax to
+        // correctly provide the template parameter for the latter (for further information read either the matching issue in the nlohman project
+        // https://github.com/nlohmann/json/issues/3827 or https://en.cppreference.com/w/cpp/language/dependent_name.html#template_disambiguator).
+        const std::string& stringifiedInputCircuit = jsonDataOfTestCase[jsonKeyForInputCircuit].template get<std::string>();
         ASSERT_NO_FATAL_FAILURE(parseInputCircuitFromString(stringifiedInputCircuit, syrecProgramInstance));
         ASSERT_TRUE(performProgramSynthesis(syrecProgramInstance, annotatableQuantumComputation)) << "Synthesis of input circuit was not successful";
 
