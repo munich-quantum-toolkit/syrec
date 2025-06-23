@@ -1123,16 +1123,16 @@ wheels = [
 
 [[package]]
 name = "pybtex"
-version = "0.24.0"
+version = "0.25.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "importlib-metadata", marker = "python_full_version < '3.10'" },
     { name = "latexcodec" },
     { name = "pyyaml" },
-    { name = "six" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/46/9b/fd39836a6397fb363446d83075a7b9c2cc562f4c449292e039ed36084376/pybtex-0.24.0.tar.gz", hash = "sha256:818eae35b61733e5c007c3fcd2cfb75ed1bc8b4173c1f70b56cc4c0802d34755", size = 402879, upload-time = "2021-01-17T20:02:27.328Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/05/9b/1c5b913cb9121aac0a2f2990ee002b77efc70d969d5d5b179e19564389fe/pybtex-0.25.0.tar.gz", hash = "sha256:10684ffb05af33b041b06dabe15868078fd75847b24e1dffd8dd91348bbb3a4b", size = 358178, upload-time = "2025-06-21T12:03:27.236Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/5f/40d8e90f985a05133a8895fc454c6127ecec3de8b095dd35bba91382f803/pybtex-0.24.0-py2.py3-none-any.whl", hash = "sha256:e1e0c8c69998452fea90e9179aa2a98ab103f3eed894405b7264e517cc2fcc0f", size = 561354, upload-time = "2021-01-17T20:02:23.696Z" },
+    { url = "https://files.pythonhosted.org/packages/b6/1d/9979b520b655657cea19523c1340c21f3cbbbe30c1dd03311833fbbad06d/pybtex-0.25.0-py2.py3-none-any.whl", hash = "sha256:bbc211abd458b42c5256d50185ea4f80000f43351959e1d5a3e86cd567a07a6d", size = 127434, upload-time = "2025-06-21T12:03:28.865Z" },
 ]
 
 [[package]]
@@ -1159,11 +1159,11 @@ wheels = [
 
 [[package]]
 name = "pygments"
-version = "2.19.1"
+version = "2.19.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7c/2d/c3338d48ea6cc0feb8446d8e6937e1408088a72a39937982cc6111d17f84/pygments-2.19.1.tar.gz", hash = "sha256:61c16d2a8576dc0649d9f39e089b5f02bcd27fba10d8fb4dcc28173f7a45151f", size = 4968581, upload-time = "2025-01-06T17:26:30.443Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b0/77/a5b8c569bf593b0140bde72ea885a803b82086995367bf2037de0159d924/pygments-2.19.2.tar.gz", hash = "sha256:636cb2477cec7f8952536970bc533bc43743542f70392ae026374600add5b887", size = 4968631, upload-time = "2025-06-21T13:39:12.283Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8a/0b/9fcc47d19c48b59121088dd6da2488a49d5f72dacf8262e2790a1d2c7d15/pygments-2.19.1-py3-none-any.whl", hash = "sha256:9ea1544ad55cecf4b8242fab6dd35a93bbce657034b0611ee383099054ab6d8c", size = 1225293, upload-time = "2025-01-06T17:26:25.553Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/21/705964c7812476f378728bdf590ca4b771ec72385c533964653c68e86bdc/pygments-2.19.2-py3-none-any.whl", hash = "sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b", size = 1225217, upload-time = "2025-06-21T13:39:07.939Z" },
 ]
 
 [[package]]
