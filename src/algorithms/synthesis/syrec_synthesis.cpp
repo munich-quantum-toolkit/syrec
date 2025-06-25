@@ -139,7 +139,9 @@ namespace syrec {
         }
 
         for (std::size_t i = 0; i < checkLhsVec.size() && !foundRepeat; ++i) {
-            foundRepeat = checkLhsVec[i] == checkRhsVec[i];
+            for (std::size_t j = 0; j < checkRhsVec.size() && !foundRepeat; ++j) {
+                foundRepeat = checkLhsVec[i] == checkRhsVec[j];
+            }
         }
 
         expOpVector.clear();
