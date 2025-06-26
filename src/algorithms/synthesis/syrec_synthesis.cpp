@@ -133,14 +133,11 @@ namespace syrec {
 
         bool foundRepeat = false;
         for (std::size_t i = 0; i < checkRhsVec.size() && !foundRepeat; ++i) {
-            for (std::size_t j = 0; j < checkRhsVec.size() && !foundRepeat; ++j) {
-                foundRepeat = i != j && checkRhsVec[i] == checkRhsVec[j];
+            for (std::size_t j = i + 1; j < checkRhsVec.size() && !foundRepeat; ++j) {
+                foundRepeat = checkRhsVec[i] == checkRhsVec[j];
             }
-        }
-
-        for (std::size_t i = 0; i < checkLhsVec.size() && !foundRepeat; ++i) {
-            for (std::size_t j = 0; j < checkRhsVec.size() && !foundRepeat; ++j) {
-                foundRepeat = checkLhsVec[i] == checkRhsVec[j];
+            for (std::size_t k = 0; k < checkLhsVec.size() && !foundRepeat; ++k) {
+                foundRepeat = checkLhsVec[k] == checkRhsVec[i];
             }
         }
 
