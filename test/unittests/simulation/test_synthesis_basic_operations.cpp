@@ -299,6 +299,57 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
     }
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, FourBitAddition) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(4), in b(4)) a += b", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    // State is defined starting with lowest qubit -> highest qubit (thus a binary string is read from left to right)
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,   // 0000 0000
+            16,  // 0000 1000
+            32,  // 0000 0100
+            48,  // 0000 1100
+            64,  // 0000 0010
+            80,  // 0000 1010
+            96,  // 0000 0110
+            112, // 0000 1110
+            128, // 0000 0001
+            144, // 0000 1001
+            160, // 0000 0101
+            176, // 0000 1101
+            192, // 0000 0011
+            208, // 0000 1011
+            224, // 0000 0111
+            240, // 0000 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            0,   // 0000 0000
+            17,  // 1000 1000
+            34,  // 0100 0100
+            51,  // 1100 1100
+            68,  // 0010 0010
+            85,  // 1010 1010
+            102, // 0110 0110
+            119, // 1110 1110
+            136, // 0001 0001
+            153, // 1001 1001
+            170, // 0101 0101
+            187, // 1101 1101
+            204, // 0011 0011
+            221, // 1011 1011
+            238, // 0111 0111
+            255, // 1111 1111
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        constexpr std::size_t            inputStateSize = 8;
+        const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             LogicalNegationOfConstantZero,
                             LogicalNegationOfConstantOne,
@@ -309,7 +360,8 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             BitwiseNegationOfVariable,
                             BitwiseNegationOfBinaryExpression,
                             BitwiseNegationOfShiftExpression,
-                            BitwiseNegationOfUnaryExpression);
+                            BitwiseNegationOfUnaryExpression,
+                            FourBitAddition);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );

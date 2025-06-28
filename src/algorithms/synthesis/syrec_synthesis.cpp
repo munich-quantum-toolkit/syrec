@@ -792,30 +792,43 @@ namespace syrec {
         }
 
         const std::size_t bitwidth = rhs.size();
-        for (std::size_t i = 1; i <= bitwidth - 1 && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(lhs[i], rhs[i]);
+        const auto&       a        = lhs;
+        const auto&       b        = rhs;
+
+        // Reference algorithm is defined in paper "Quantum Addition Circuits and Unbounded Fan-Out" (https://arxiv.org/abs/0910.2530v1)
+        // s_i = (a_i XOR b_i) XOR c_(i - 1)
+        // c_i = ((a_i XOR b_i) AND c_(i - 1)) OR (a_i AND b_i)
+        // c_0 = 0 and c_n is not of interest
+        // Implementation is based on the algorithm proposed in the paper "Quantum Addition Circuits and Unbounded Fan-Out"
+
+        // 1.
+        for (std::size_t i = 1; i < bitwidth && synthesisOk; ++i) {
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i], b[i]);
         }
 
-        for (std::size_t i = bitwidth - 2; i >= 1 && synthesisOk; --i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(lhs[i], rhs[i]);
+        // 2.
+        for (std::size_t i = bitwidth - 1; i > 1 && synthesisOk; --i) {
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i - 1], a[i]);
         }
 
-        for (std::size_t i = 0; i <= bitwidth - 2 && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingToffoliGate(rhs[i], lhs[i], lhs[i + 1]);
+        // 3.
+        for (std::size_t i = 0; i < bitwidth - 1 && synthesisOk; ++i) {
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingToffoliGate(b[i], a[i], a[i + 1]);
         }
 
-        synthesisOk &= annotatableQuantumComputation.addOperationsImplementingCnotGate(lhs[bitwidth - 1], rhs[bitwidth - 1]);
-        for (std::size_t i = bitwidth - 2; i >= 1 && synthesisOk; --i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingToffoliGate(lhs[i], rhs[i], lhs[i + 1]) && annotatableQuantumComputation.addOperationsImplementingCnotGate(lhs[i], rhs[i]);
-        }
-        synthesisOk &= annotatableQuantumComputation.addOperationsImplementingToffoliGate(lhs.front(), rhs.front(), lhs[1]) && annotatableQuantumComputation.addOperationsImplementingCnotGate(lhs.front(), rhs.front());
-
-        for (std::size_t i = 1; i <= bitwidth - 2 && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(lhs[i], rhs[i + 1]);
+        // 4.
+        for (std::size_t i = bitwidth - 1; i > 0 && synthesisOk; --i) {
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i], b[i]) && annotatableQuantumComputation.addOperationsImplementingToffoliGate(a[i - 1], b[i - 1], a[i]);
         }
 
-        for (std::size_t i = 1; i <= bitwidth - 1 && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(lhs[i], rhs[i]);
+        // 5.
+        for (std::size_t i = 1; i < bitwidth - 1 && synthesisOk; ++i) {
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i], a[i + 1]);
+        }
+
+        // 6.
+        for (std::size_t i = bitwidth; i > 0 && synthesisOk; --i) {
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i - 1], b[i - 1]);
         }
         return synthesisOk;
     }
