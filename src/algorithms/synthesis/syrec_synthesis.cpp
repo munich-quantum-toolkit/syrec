@@ -795,38 +795,39 @@ namespace syrec {
         const auto&       a        = lhs;
         const auto&       b        = rhs;
 
-        // Reference algorithm is defined in paper "Quantum Addition Circuits and Unbounded Fan-Out" (https://arxiv.org/abs/0910.2530v1)
-        // s_i = (a_i XOR b_i) XOR c_(i - 1)
-        // c_i = ((a_i XOR b_i) AND c_(i - 1)) OR (a_i AND b_i)
-        // c_0 = 0 and c_n is not of interest
-        // Implementation is based on the algorithm proposed in the paper "Quantum Addition Circuits and Unbounded Fan-Out"
+        // Implementation of the algorithm defined in the paper "Quantum Addition Circuits and Unbounded Fan-Out" (https://arxiv.org/abs/0910.2530v1) that is
+        // based on a ripple-carry adder and requires no ancillary qubits. No input carry is supported and the carry for the n-th qubit is not calculcated.
+        // The sum of the two input operands 'a' and 'b' is stored in the qubits of operand 'b' (i.e. the right-hand side operand of the expression (a + b)).
+        // We will use N to denote the bitwidth of the operands in the description of the steps of the algorithm.
 
-        // 1.
+        // 1. Calculcate the terms (a_i XOR b_i) for all 0 < i < N and store results in b_i as CNOT(control: a_i, target: b_i)
         for (std::size_t i = 1; i < bitwidth && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i], b[i]);
         }
 
-        // 2.
+        // 2. For every N > i > 0 store a backup of a_(i - 1) into a_i as CNOT(control: a_(i - 1), target: a_i)
         for (std::size_t i = bitwidth - 1; i > 1 && synthesisOk; --i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i - 1], a[i]);
         }
 
-        // 3.
+        // 3. Calculate the carry bits and store them in a_i for every 0 <= i < (N - 1) as TOFFOLI(controls: {b_i, a_i}, target: a_(i + 1))
         for (std::size_t i = 0; i < bitwidth - 1 && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingToffoliGate(b[i], a[i], a[i + 1]);
         }
 
-        // 4.
+        // 4. Calculate term (b_i XOR c_i) of the final sum terms (a_i XOR b_i XOR c_i) and "remove" the carry bit values from the lines (a_(i - 1)) storing the backup values of a_i for all N > i > 0:
+        //    - CNOT(control: a_i, b_i)
+        //    - TOFFOLI(controls: {a_(i - 1), b_(i - 1)}, target: a_i)
         for (std::size_t i = bitwidth - 1; i > 0 && synthesisOk; --i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i], b[i]) && annotatableQuantumComputation.addOperationsImplementingToffoliGate(a[i - 1], b[i - 1], a[i]);
         }
 
-        // 5.
+        // 5. Restore the backup values storing in (a_(i - 1)) back to a_i as: 0 < i < N - 1: CNOT(control: a_i, target: a_(i + 1))
         for (std::size_t i = 1; i < bitwidth - 1 && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i], a[i + 1]);
         }
 
-        // 6.
+        // 6. Calculate the final sum terms as: N > i > 0: CNOT(control: a_i, b_i)
         for (std::size_t i = bitwidth; i > 0 && synthesisOk; --i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i - 1], b[i - 1]);
         }
