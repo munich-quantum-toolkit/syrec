@@ -67,9 +67,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfNestedExpression) {
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 5;
-        const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
-        const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
     }
 }
@@ -88,9 +87,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfUnaryExpression) {
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 6;
-        const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
-        const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
     }
 }
@@ -123,9 +121,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfVariable) {
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 4;
-        const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
-        const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
     }
 }
@@ -144,9 +141,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfConstant) {
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 4;
-        const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
-        const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
     }
 }
@@ -170,9 +166,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfVariable) {
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 6;
-        const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
-        const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
     }
 }
@@ -220,9 +215,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfBinaryExpression) {
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 10;
-        const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
-        const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
     }
 }
@@ -271,9 +265,8 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfShiftExpression) {
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 16;
-        const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
-        const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
     }
 }
@@ -292,14 +285,14 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 6;
-        const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
-        const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
     }
 }
 
-TYPED_TEST_P(BaseSimulationTestFixture, FourBitAddition) {
+// TODO: Should error cases in synthesis be checked (that should already be handled by the parser)?
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToVariable) {
     syrec::Program program;
     ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(4), in b(4)) a += b", program));
     ASSERT_TRUE(this->performProgramSynthesis(program));
@@ -343,7 +336,989 @@ TYPED_TEST_P(BaseSimulationTestFixture, FourBitAddition) {
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        constexpr std::size_t            inputStateSize = 8;
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToConstant) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(3)) a += 2", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0, // 000XX
+            1, // 100XX
+            2, // 010XX
+            3, // 110XX
+            4, // 001XX
+            5, // 101XX
+            6, // 011XX
+            7, // 111XX
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            2, // 010XX
+            3, // 110XX
+            4, // 001XX
+            5, // 101XX
+            6, // 011XX
+            7, // 111XX
+            0, // 000XX
+            1, // 100XX
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToBinaryExpression) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(2), in b(2)) a += (b + 1)", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000XXXX
+            1,  // 1000XXXX
+            2,  // 0100XXXX
+            3,  // 1100XXXX
+            4,  // 0010XXXX
+            5,  // 1010XXXX
+            6,  // 0110XXXX
+            7,  // 1110XXXX
+            8,  // 0001XXXX
+            9,  // 1001XXXX
+            10, // 0101XXXX
+            11, // 1101XXXX
+            12, // 0011XXXX
+            13, // 1011XXXX
+            14, // 0111XXXX
+            15, // 1111XXXX
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            1,  // 1000XXXX
+            2,  // 0100XXXX
+            3,  // 1100XXXX
+            0,  // 0000XXXX
+            6,  // 0110XXXX
+            7,  // 1110XXXX
+            4,  // 0010XXXX
+            5,  // 1010XXXX
+            11, // 1101XXXX
+            8,  // 0001XXXX
+            9,  // 1001XXXX
+            10, // 0101XXXX
+            12, // 0011XXXX
+            13, // 1011XXXX
+            14, // 0111XXXX
+            15, // 1111XXXX
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToShiftExpression) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(2), in b(2)) a += (b << 1)", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            6,  // 0110
+            7,  // 1110
+            4,  // 0010
+            5,  // 1010
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            14, // 0111
+            15, // 1111
+            12, // 0011
+            13, // 1011
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToUnaryExpression) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(2), in b(2)) a.1 += !(b.0 != b.1)", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            2,  // 0100
+            3,  // 1100
+            0,  // 0000
+            1,  // 1000
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            14, // 0111
+            15, // 1111
+            12, // 0011
+            13, // 1011
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToNestedExpression) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(2), in b(2)) a.1 += ((b > 0) && (b < 3))", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            6,  // 0110
+            7,  // 1110
+            4,  // 0010
+            5,  // 1010
+            10, // 0101
+            11, // 1101
+            8,  // 0001
+            9,  // 1001
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitOfVariable) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(3)) a.1 += 1", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0, // 000
+            1, // 100
+            2, // 010
+            3, // 110
+            4, // 001
+            5, // 101
+            6, // 011
+            7, // 111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            2, // 010
+            3, // 110
+            0, // 000
+            1, // 100
+            6, // 011
+            7, // 111
+            4, // 001
+            5, // 101
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfVariableWithStartLargerThanEnd) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(3)) a.2:1 += 1", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0, // 000
+            1, // 100
+            2, // 010
+            3, // 110
+            4, // 001
+            5, // 101
+            6, // 011
+            7, // 111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            4, // 001
+            5, // 101
+            6, // 011
+            7, // 111
+            2, // 010
+            3, // 110
+            0, // 000
+            1, // 100
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfVariableWithStartSmallerThanEnd) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(3)) a.1:2 += 1", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0, // 000
+            1, // 100
+            2, // 010
+            3, // 110
+            4, // 001
+            5, // 101
+            6, // 011
+            7, // 111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            2, // 010
+            3, // 110
+            4, // 001
+            5, // 101
+            6, // 011
+            7, // 111
+            0, // 000
+            1, // 100
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfValueOfDimensionOfVariable) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a[2](2)) a[1] += 2", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitOfValueOfDimensionOfVariable) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a[2](2)) a[1].1 += 1", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartSmallerThanEnd) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a[2](2)) a[1].0:1 += 3", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartLargerThanEnd) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a[2](2)) a[1].1:0 += 3", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartEqualToEnd) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a[2](2)) a[0].1:1 += 1", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            2,  // 0100
+            3,  // 1100
+            0,  // 0000
+            1,  // 1000
+            6,  // 0110
+            7,  // 1110
+            4,  // 0010
+            5,  // 1010
+            10, // 0101
+            11, // 1101
+            8,  // 0001
+            9,  // 1001
+            14, // 0111
+            15, // 1111
+            12, // 0011
+            13, // 1011
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfVariable) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(3)) ++= a", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0, // 000
+            1, // 100
+            2, // 010
+            3, // 110
+            4, // 001
+            5, // 101
+            6, // 011
+            7, // 111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            1, // 100
+            2, // 010
+            3, // 110
+            4, // 001
+            5, // 101
+            6, // 011
+            7, // 111
+            0, // 000
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfBitOfVariable) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(3)) ++= a.1", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0, // 000
+            1, // 100
+            2, // 010
+            3, // 110
+            4, // 001
+            5, // 101
+            6, // 011
+            7, // 111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            2, // 010
+            3, // 110
+            0, // 000
+            1, // 100
+            6, // 011
+            7, // 111
+            4, // 001
+            5, // 101
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(4)) ++= a.2:1", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            2,  // 0100
+            3,  // 1100
+            0,  // 0000
+            1,  // 1000
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+            10, // 0101
+            11, // 1101
+            8,  // 0001
+            9,  // 1001
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(4)) ++= a.1:2", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            0,  // 0000
+            1,  // 1000
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+            8,  // 0001
+            9,  // 1001
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementValueOfDimensionOfVariable) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a[2](2)) ++= a[1]", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitOfValueOfDimensionOfVariable) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a[2](2)) ++= a[0].1", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            2,  // 0100
+            3,  // 1100
+            0,  // 0000
+            1,  // 1000
+            6,  // 0110
+            7,  // 1110
+            4,  // 0010
+            5,  // 1010
+            10, // 0101
+            11, // 1101
+            8,  // 0001
+            9,  // 1001
+            14, // 0111
+            15, // 1111
+            12, // 0011
+            13, // 1011
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a[2](2)) ++= a[1].1:0", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a[2](2)) ++= a[0].0:1", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            0,  // 0000
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            4,  // 0010
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            8,  // 0001
+            13, // 1011
+            14, // 0111
+            15, // 1111
+            12, // 0011
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
+        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
+        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd) {
+    syrec::Program program;
+    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a[2](2)) ++= a[0].1:1", program));
+    ASSERT_TRUE(this->performProgramSynthesis(program));
+
+    const std::vector<std::uint64_t> inputStatesToCheck = {
+            0,  // 0000
+            1,  // 1000
+            2,  // 0100
+            3,  // 1100
+            4,  // 0010
+            5,  // 1010
+            6,  // 0110
+            7,  // 1110
+            8,  // 0001
+            9,  // 1001
+            10, // 0101
+            11, // 1101
+            12, // 0011
+            13, // 1011
+            14, // 0111
+            15, // 1111
+    };
+    const std::vector<std::uint64_t> expectedOutputStates = {
+            2,  // 0100
+            3,  // 1100
+            0,  // 0000
+            1,  // 1000
+            6,  // 0110
+            7,  // 1110
+            4,  // 0010
+            5,  // 1010
+            10, // 0101
+            11, // 1101
+            8,  // 0001
+            9,  // 1001
+            14, // 0111
+            15, // 1111
+            12, // 0011
+            13, // 1011
+    };
+
+    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
+        constexpr std::size_t            inputStateSize = 4;
         const syrec::NBitValuesContainer inputState(inputStateSize, inputStatesToCheck[i]);
         const syrec::NBitValuesContainer expectedOutputState(inputStateSize, expectedOutputStates[i]);
         ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
@@ -361,7 +1336,29 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             BitwiseNegationOfBinaryExpression,
                             BitwiseNegationOfShiftExpression,
                             BitwiseNegationOfUnaryExpression,
-                            FourBitAddition);
+                            AddAssignWithRightHandSideEqualToVariable,
+                            AddAssignWithRightHandSideEqualToConstant,
+                            AddAssignWithRightHandSideEqualToBinaryExpression,
+                            AddAssignWithRightHandSideEqualToShiftExpression,
+                            AddAssignWithRightHandSideEqualToUnaryExpression,
+                            AddAssignWithRightHandSideEqualToNestedExpression,
+                            AddAssignOfBitOfVariable,
+                            AddAssignOfBitrangeOfVariableWithStartSmallerThanEnd,
+                            AddAssignOfBitrangeOfVariableWithStartLargerThanEnd,
+                            AddAssignOfValueOfDimensionOfVariable,
+                            AddAssignOfBitOfValueOfDimensionOfVariable,
+                            AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartSmallerThanEnd,
+                            AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartLargerThanEnd,
+                            AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartEqualToEnd,
+                            IncrementAssignOfVariable,
+                            IncrementAssignOfBitOfVariable,
+                            IncrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd,
+                            IncrementAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd,
+                            IncrementValueOfDimensionOfVariable,
+                            IncrementBitOfValueOfDimensionOfVariable,
+                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd,
+                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd,
+                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
