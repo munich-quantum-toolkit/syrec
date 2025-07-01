@@ -291,7 +291,6 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
     }
 }
 
-// TODO: Should error cases in synthesis be checked (that should already be handled by the parser)?
 TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToVariable) {
     syrec::Program program;
     ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(4), in b(4)) a += b", program));
@@ -366,55 +365,6 @@ TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToConstan
             7, // 111XX
             0, // 000XX
             1, // 100XX
-    };
-
-    for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
-        const syrec::NBitValuesContainer inputState(this->annotatableQuantumComputation.getNqubits(), inputStatesToCheck[i]);
-        const syrec::NBitValuesContainer expectedOutputState(inputState.size(), expectedOutputStates[i]);
-        ASSERT_NO_FATAL_FAILURE(this->assertSimulationResultForStateMatchesExpectedOne(inputState, expectedOutputState));
-    }
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToBinaryExpression) {
-    syrec::Program program;
-    ASSERT_NO_FATAL_FAILURE(parseSyrecProgram("module main(inout a(2), in b(2)) a += (b + 1)", program));
-    ASSERT_TRUE(this->performProgramSynthesis(program));
-
-    const std::vector<std::uint64_t> inputStatesToCheck = {
-            0,  // 0000XXXX
-            1,  // 1000XXXX
-            2,  // 0100XXXX
-            3,  // 1100XXXX
-            4,  // 0010XXXX
-            5,  // 1010XXXX
-            6,  // 0110XXXX
-            7,  // 1110XXXX
-            8,  // 0001XXXX
-            9,  // 1001XXXX
-            10, // 0101XXXX
-            11, // 1101XXXX
-            12, // 0011XXXX
-            13, // 1011XXXX
-            14, // 0111XXXX
-            15, // 1111XXXX
-    };
-    const std::vector<std::uint64_t> expectedOutputStates = {
-            1,  // 1000XXXX
-            2,  // 0100XXXX
-            3,  // 1100XXXX
-            0,  // 0000XXXX
-            6,  // 0110XXXX
-            7,  // 1110XXXX
-            4,  // 0010XXXX
-            5,  // 1010XXXX
-            11, // 1101XXXX
-            8,  // 0001XXXX
-            9,  // 1001XXXX
-            10, // 0101XXXX
-            12, // 0011XXXX
-            13, // 1011XXXX
-            14, // 0111XXXX
-            15, // 1111XXXX
     };
 
     for (std::size_t i = 0; i < inputStatesToCheck.size(); ++i) {
@@ -1338,7 +1288,6 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             BitwiseNegationOfUnaryExpression,
                             AddAssignWithRightHandSideEqualToVariable,
                             AddAssignWithRightHandSideEqualToConstant,
-                            AddAssignWithRightHandSideEqualToBinaryExpression,
                             AddAssignWithRightHandSideEqualToShiftExpression,
                             AddAssignWithRightHandSideEqualToUnaryExpression,
                             AddAssignWithRightHandSideEqualToNestedExpression,

@@ -796,10 +796,9 @@ namespace syrec {
         const auto&       a        = lhs;
         const auto&       b        = rhs;
 
-        // TODO: Is result (a + b) mod 2^(bitwidth - 1)
-        // Implementation of the addition algorithm defined in the paper "Quantum Addition Circuits and Unbounded Fan-Out" (https://arxiv.org/abs/0910.2530v1)
-        // that is based on a ripple-carry adder and requires no ancillary qubits.  The sum of the two input operands 'a' and 'b' is stored in the qubits of
-        // operand 'b' (i.e. the right-hand side operand of the expression (a + b)). We will use N to denote the bitwidth of the operands in the description of the steps of the algorithm.
+        // Implementation of the addition algorithm (a + b) mod N (N > 1) defined in the paper "Quantum Addition Circuits and Unbounded Fan-Out" (https://arxiv.org/abs/0910.2530v1)
+        // based on a ripple-carry adder that requires no ancillary qubits. The sum of the two input operands 'a' and 'b' is stored in the qubits of the operand 'b'
+        // (i.e. the right-hand side operand of the expression (a + b)). We will use N to denote the bitwidth of the operands in the description of the steps of the algorithm.
 
         // 1. Calculcate the terms (a_i XOR b_i) for all 0 < i < N and store results in b_i as CNOT(control: a_i, target: b_i)
         for (std::size_t i = 1; i < bitwidth && synthesisOk; ++i) {
@@ -819,7 +818,7 @@ namespace syrec {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingToffoliGate(b[i], a[i], a[i + 1]);
         }
 
-        // Optionally calculate the value of carry out qubit 
+        // Optionally calculate the value of carry out qubit
         synthesisOk &= !optionalCarryOut.has_value() || annotatableQuantumComputation.addOperationsImplementingToffoliGate(a[bitwidth - 1], b[bitwidth - 1], *optionalCarryOut);
 
         // 4. Calculate term (b_i XOR c_i) of the final sum terms (a_i XOR b_i XOR c_i) and "remove" the carry bit values from the lines (a_(i - 1)) storing the backup values of a_i for all N > i > 0:
