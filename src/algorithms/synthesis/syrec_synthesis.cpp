@@ -799,7 +799,7 @@ namespace syrec {
         // based on a ripple-carry adder that requires no ancillary qubits. The sum of the two input operands 'a' and 'b' is stored in the qubits of the operand 'b'
         // (i.e. the right-hand side operand of the expression (a + b)). We will use N to denote the bitwidth of the operands in the description of the steps of the algorithm.
 
-        // 1. Calculcate the terms (a_i XOR b_i) for all 0 < i < N and store results in b_i as CNOT(control: a_i, target: b_i)
+        // 1. Calculate the terms (a_i XOR b_i) for all 0 < i < N and store results in b_i as CNOT(control: a_i, target: b_i)
         for (std::size_t i = 1; i < bitwidth && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i], b[i]);
         }
