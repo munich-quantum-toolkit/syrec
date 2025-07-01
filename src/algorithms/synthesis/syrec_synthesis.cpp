@@ -484,6 +484,7 @@ namespace syrec {
         // thus the comparison between the elements was possible. Since we are now storing the scoped enum values instead, we need to separately handle binary and assignment operations when
         // comparing the two types with the latter requiring a conversion to determine its matching binary operation counterpart. While the scoped enum values can be converted to their underlying
         // numeric data type (or any other type), they require an explicit cast instead.
+        // TODO: Temporarily commented out due to changes in synthesis in line aware synthesis preventing the creation of subassignments to determine errors in the algorithm
         if (expOpp.size() == opVec.size()) {
             if (std::holds_alternative<BinaryExpression::BinaryOperation>(operationVariant) && expOpp.top() == std::get<BinaryExpression::BinaryOperation>(operationVariant)) {
                 return true;
@@ -691,7 +692,7 @@ namespace syrec {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(dest[i]);
         }
 
-        synthesisOk &= increaseWithCarry(annotatableQuantumComputation, dest, src, carry);
+        synthesisOk &= increase(annotatableQuantumComputation, dest, src, carry);
         for (std::size_t i = 0; i < src.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(dest[i]);
         }
@@ -776,7 +777,7 @@ namespace syrec {
         return lessThan(annotatableQuantumComputation, dest, src1, src2);
     }
 
-    bool SyrecSynthesis::increase(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
+    bool SyrecSynthesis::increase(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::optional<qc::Qubit>& optionalCarryOut) {
         if (lhs.size() != rhs.size()) {
             return false;
         }
@@ -795,15 +796,18 @@ namespace syrec {
         const auto&       a        = lhs;
         const auto&       b        = rhs;
 
-        // Implementation of the algorithm defined in the paper "Quantum Addition Circuits and Unbounded Fan-Out" (https://arxiv.org/abs/0910.2530v1) that is
-        // based on a ripple-carry adder and requires no ancillary qubits. No input carry is supported and the carry for the n-th qubit is not calculcated.
-        // The sum of the two input operands 'a' and 'b' is stored in the qubits of operand 'b' (i.e. the right-hand side operand of the expression (a + b)).
-        // We will use N to denote the bitwidth of the operands in the description of the steps of the algorithm.
+        // TODO: Is result (a + b) mod 2^(bitwidth - 1)
+        // Implementation of the addition algorithm defined in the paper "Quantum Addition Circuits and Unbounded Fan-Out" (https://arxiv.org/abs/0910.2530v1)
+        // that is based on a ripple-carry adder and requires no ancillary qubits.  The sum of the two input operands 'a' and 'b' is stored in the qubits of
+        // operand 'b' (i.e. the right-hand side operand of the expression (a + b)). We will use N to denote the bitwidth of the operands in the description of the steps of the algorithm.
 
         // 1. Calculcate the terms (a_i XOR b_i) for all 0 < i < N and store results in b_i as CNOT(control: a_i, target: b_i)
         for (std::size_t i = 1; i < bitwidth && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(a[i], b[i]);
         }
+
+        // Optionally copy the value of the qubit a[N - 1] for the calculation of the carry out qubit
+        synthesisOk &= !optionalCarryOut.has_value() || annotatableQuantumComputation.addOperationsImplementingCnotGate(a[bitwidth - 1], *optionalCarryOut);
 
         // 2. For every N > i > 0 store a backup of a_(i - 1) into a_i as CNOT(control: a_(i - 1), target: a_i)
         for (std::size_t i = bitwidth - 1; i > 1 && synthesisOk; --i) {
@@ -814,6 +818,9 @@ namespace syrec {
         for (std::size_t i = 0; i < bitwidth - 1 && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingToffoliGate(b[i], a[i], a[i + 1]);
         }
+
+        // Optionally calculate the value of carry out qubit 
+        synthesisOk &= !optionalCarryOut.has_value() || annotatableQuantumComputation.addOperationsImplementingToffoliGate(a[bitwidth - 1], b[bitwidth - 1], *optionalCarryOut);
 
         // 4. Calculate term (b_i XOR c_i) of the final sum terms (a_i XOR b_i XOR c_i) and "remove" the carry bit values from the lines (a_(i - 1)) storing the backup values of a_i for all N > i > 0:
         //    - CNOT(control: a_i, b_i)
@@ -842,51 +849,6 @@ namespace syrec {
         synthesisOk &= increase(annotatableQuantumComputation, rhs, lhs);
         for (std::size_t i = 0; i < rhs.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(rhs[i]);
-        }
-        return synthesisOk;
-    }
-
-    bool SyrecSynthesis::increaseWithCarry(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src, qc::Qubit carry) {
-        auto bitwidth = static_cast<int>(src.size());
-        if (bitwidth == 0) {
-            return true;
-        }
-
-        if (src.size() != dest.size()) {
-            return false;
-        }
-
-        bool       synthesisOk      = true;
-        const auto unsignedBitwidth = static_cast<std::size_t>(bitwidth);
-        for (std::size_t i = 1U; i < unsignedBitwidth && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src.at(i), dest.at(i));
-        }
-
-        if (bitwidth > 1) {
-            synthesisOk &= annotatableQuantumComputation.addOperationsImplementingCnotGate(src.at(unsignedBitwidth - 1), carry);
-        }
-
-        for (int i = bitwidth - 2; i > 0 && synthesisOk; --i) {
-            const auto castedIndex = static_cast<std::size_t>(i);
-            synthesisOk            = annotatableQuantumComputation.addOperationsImplementingCnotGate(src.at(castedIndex), src.at(castedIndex + 1));
-        }
-
-        for (std::size_t i = 0U; i < unsignedBitwidth - 1 && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingToffoliGate(src.at(i), dest.at(i), src.at(i + 1));
-        }
-        synthesisOk &= annotatableQuantumComputation.addOperationsImplementingToffoliGate(src.at(unsignedBitwidth - 1), dest.at(unsignedBitwidth - 1), carry);
-
-        for (int i = bitwidth - 1; i > 0 && synthesisOk; --i) {
-            const auto castedIndex = static_cast<std::size_t>(i);
-            synthesisOk            = annotatableQuantumComputation.addOperationsImplementingCnotGate(src.at(castedIndex), dest.at(castedIndex)) && annotatableQuantumComputation.addOperationsImplementingToffoliGate(dest.at(castedIndex - 1), src.at(castedIndex - 1), src.at(castedIndex));
-        }
-
-        for (std::size_t i = 1U; i < unsignedBitwidth - 1 && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src.at(i), src.at(i + 1));
-        }
-
-        for (std::size_t i = 0U; i < unsignedBitwidth && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src.at(i), dest.at(i));
         }
         return synthesisOk;
     }
