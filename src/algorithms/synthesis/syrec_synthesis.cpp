@@ -484,7 +484,6 @@ namespace syrec {
         // thus the comparison between the elements was possible. Since we are now storing the scoped enum values instead, we need to separately handle binary and assignment operations when
         // comparing the two types with the latter requiring a conversion to determine its matching binary operation counterpart. While the scoped enum values can be converted to their underlying
         // numeric data type (or any other type), they require an explicit cast instead.
-        // TODO: Temporarily commented out due to changes in synthesis in line aware synthesis preventing the creation of subassignments to determine errors in the algorithm
         if (expOpp.size() == opVec.size()) {
             if (std::holds_alternative<BinaryExpression::BinaryOperation>(operationVariant) && expOpp.top() == std::get<BinaryExpression::BinaryOperation>(operationVariant)) {
                 return true;
