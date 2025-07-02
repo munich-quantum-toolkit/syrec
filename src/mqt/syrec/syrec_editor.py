@@ -107,7 +107,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
     def clear(self) -> None:
         self.scene().clear()
-    
+
         self.annotatable_quantum_computation = None
         self.lines = []
         self.inputs = []
@@ -274,14 +274,17 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         data.close()
 
     def open_file(self) -> None:
-        selectedFilename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            parent=self.parent, caption="Open Specification", filter="SyReC specification (*.src)",
-            options=QtWidgets.QFileDialog.Option.ReadOnly
+        selected_file_name, _ = QtWidgets.QFileDialog.getOpenFileName(
+            parent=self.parent,
+            caption="Open Specification",
+            filter="SyReC specification (*.src)",
+            options=QtWidgets.QFileDialog.Option.ReadOnly,
         )
-        
-        if len(selectedFilename) > 0 and self.widget is not None:
-            self.widget.load(selectedFilename)
-            self.before_build()
+
+        if len(selected_file_name) > 0 and self.widget is not None:
+            self.widget.load(selected_file_name)
+            if self.before_build is not None:
+                self.before_build()
 
     def build(self) -> None:
         if self.before_build is not None:
@@ -685,7 +688,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
     def clear_error_log_and_circuit_view(self) -> None:
         self.logWidget.clear()
         self.viewer.clear()
-        
+
     def setup_toolbar(self) -> None:
         toolbar = self.addToolBar("Main")
         toolbar.setIconSize(QtCore.QSize(32, 32))
