@@ -53,6 +53,13 @@
     "transistor_costs": 2832
   },
 
+  "foldEval_4": {
+    "num_gates": 42,
+    "lines": 33,
+    "quantum_costs": 202,
+    "transistor_costs": 640
+  },
+
   "for_4": {
     "num_gates": 112,
     "lines": 41,

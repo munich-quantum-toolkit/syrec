@@ -1,0 +1,6 @@
+module main(out output(4), in a(4), in b(4), in c(4), in foldLeft(1))
+  if foldLeft then
+	output ^= ((b ^ c) ^ a)
+  else
+	output ^= (a ^ (b ^ c))
+  fi foldLeft
