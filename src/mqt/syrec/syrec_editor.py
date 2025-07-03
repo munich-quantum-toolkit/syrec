@@ -105,14 +105,18 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
         if annotatable_quantum_computation is not None:
             self.load(annotatable_quantum_computation)
 
-    def load(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
+    def clear(self) -> None:
         self.scene().clear()
 
-        self.annotatable_quantum_computation = annotatable_quantum_computation
+        self.annotatable_quantum_computation = None
         self.lines = []
         self.inputs = []
         self.outputs = []
 
+    def load(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
+        self.clear()
+
+        self.annotatable_quantum_computation = annotatable_quantum_computation
         n_quantum_ops = self.annotatable_quantum_computation.num_ops
         width = 30 * n_quantum_ops
 
@@ -270,19 +274,17 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         data.close()
 
     def open_file(self) -> None:
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            parent=self.parent, caption="Open Specification", filter="SyReC specification (*.src)"
+        selected_file_name, _ = QtWidgets.QFileDialog.getOpenFileName(
+            parent=self.parent,
+            caption="Open Specification",
+            filter="SyReC specification (*.src)",
+            options=QtWidgets.QFileDialog.Option.ReadOnly,
         )
-        self.load(filename)
 
-    def load(self, filename: str) -> None:
-        if filename:
-            self.filename = filename
-
-            f = QtCore.QFile(filename[0])
-            if f.open(QtCore.QFile.OpenModeFlag.ReadOnly | QtCore.QFile.OpenModeFlag.Text):
-                ts = QtCore.QTextStream(f)
-                self.setText(ts.readAll())
+        if len(selected_file_name) > 0 and self.widget is not None:
+            self.widget.load(selected_file_name)
+            if self.before_build is not None:
+                self.before_build()
 
     def build(self) -> None:
         if self.before_build is not None:
@@ -670,7 +672,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.logDockWidget)
 
     def setup_actions(self) -> None:
-        self.editor.before_build = self.logWidget.clear
+        self.editor.before_build = self.clear_error_log_and_circuit_view
         self.editor.build_successful = self.viewer.load
         self.editor.parser_failed = self.logWidget.addMessage
         self.editor.build_failed = self.filter_and_record_parser_errors
@@ -682,6 +684,10 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
                 self.logWidget.addMessage(m.group(0))
         else:
             self.logWidget.addMessage("No matching lines found in error message")
+
+    def clear_error_log_and_circuit_view(self) -> None:
+        self.logWidget.clear()
+        self.viewer.clear()
 
     def setup_toolbar(self) -> None:
         toolbar = self.addToolBar("Main")
