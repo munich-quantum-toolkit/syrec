@@ -19,7 +19,6 @@ const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simul
 
 TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
 
-
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfConstantZero) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
