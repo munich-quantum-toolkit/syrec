@@ -424,13 +424,13 @@ namespace syrec {
             return false;
         }
 
-        const qc::Qubit rhs = expression.rhs->evaluate(loopMap);
+        const unsigned qubitIndexShiftAmount = expression.rhs->evaluate(loopMap);
         switch (expression.shiftOperation) {
             case ShiftExpression::ShiftOperation::Left: // <<
-                return getConstantLines(expression.bitwidth(), 0U, lines) && leftShift(annotatableQuantumComputation, lines, lhs, rhs);
+                return getConstantLines(expression.bitwidth(), 0U, lines) && leftShift(annotatableQuantumComputation, lines, lhs, qubitIndexShiftAmount);
             case ShiftExpression::ShiftOperation::Right: // <<
                 return getConstantLines(expression.bitwidth(), 0U, lines) &&
-                       rightShift(annotatableQuantumComputation, lines, lhs, rhs);
+                       rightShift(annotatableQuantumComputation, lines, lhs, qubitIndexShiftAmount);
             default:
                 return false;
         }
@@ -977,38 +977,30 @@ namespace syrec {
     //*****                      Shift Operations                      *****
     //**********************************************************************
 
-    bool SyrecSynthesis::leftShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2) {
-        if (src2 > dest.size()) {
-            return false;
+    bool SyrecSynthesis::leftShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, const unsigned qubitIndexShiftAmount) {
+        if (qubitIndexShiftAmount >= dest.size()) {
+            return true;
         }
 
-        const std::size_t nQubitsShifted = dest.size() - src2;
-        if (src1.size() < nQubitsShifted) {
-            return false;
-        }
-
-        bool              synthesisOk          = true;
-        const std::size_t targetLineBaseOffset = src2;
+        const std::size_t nQubitsShifted       = dest.size() - qubitIndexShiftAmount;
+        bool              synthesisOk          = toBeShiftedQubits.size() >= nQubitsShifted;
+        const auto        targetLineBaseOffset = static_cast<std::size_t>(qubitIndexShiftAmount);
         for (std::size_t i = 0; i < nQubitsShifted && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src1[i], dest[targetLineBaseOffset + i]);
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(toBeShiftedQubits[i], dest[targetLineBaseOffset + i]);
         }
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, qc::Qubit src2) {
-        if (dest.size() < src2) {
-            return false;
+    bool SyrecSynthesis::rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, const unsigned qubitIndexShiftAmount) {
+        if (qubitIndexShiftAmount >= dest.size()) {
+            return true;
         }
 
-        const std::size_t nQubitsShifted = dest.size() - src2;
-        if (src1.size() < nQubitsShifted) {
-            return false;
-        }
-
-        bool              synthesisOk           = true;
-        const std::size_t sourceQubitBaseOffset = src2;
+        const std::size_t nQubitsShifted        = dest.size() - qubitIndexShiftAmount;
+        bool              synthesisOk           = toBeShiftedQubits.size() >= nQubitsShifted;
+        const auto        sourceQubitBaseOffset = static_cast<std::size_t>(qubitIndexShiftAmount);
         for (std::size_t i = 0; i < nQubitsShifted && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src1[sourceQubitBaseOffset + i], dest[i]);
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(toBeShiftedQubits[sourceQubitBaseOffset + i], dest[i]);
         }
         return synthesisOk;
     }

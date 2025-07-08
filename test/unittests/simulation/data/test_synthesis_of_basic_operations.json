@@ -643,6 +643,144 @@
       }
     ]
   },
+  "LeftShiftWithShiftAmountEqualToIntegerConstantEqualToShiftedExpressionBitwidth": {
+    "inputCircuit": "module main(inout a(2), in b(2)) a ^= (b << 2)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "0110"
+      },
+      {
+        "in": "1110",
+        "out": "1110"
+      },
+      {
+        "in": "0001",
+        "out": "0001"
+      },
+      {
+        "in": "1001",
+        "out": "1001"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "1101"
+      },
+      {
+        "in": "0011",
+        "out": "0011"
+      },
+      {
+        "in": "1011",
+        "out": "1011"
+      },
+      {
+        "in": "0111",
+        "out": "0111"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "LeftShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueEqualToShiftedExpressionBitwidth": {
+    "inputCircuit": "module main(inout a(2), in b(2)) for $j = 1 to 3 step 1 do for $i = 3 to 5 step 1 do a ^= (b << ($i - $j)) rof rof",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "0110"
+      },
+      {
+        "in": "1110",
+        "out": "1110"
+      },
+      {
+        "in": "0001",
+        "out": "0001"
+      },
+      {
+        "in": "1001",
+        "out": "1001"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "1101"
+      },
+      {
+        "in": "0011",
+        "out": "0011"
+      },
+      {
+        "in": "1011",
+        "out": "1011"
+      },
+      {
+        "in": "0111",
+        "out": "0111"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
   "LeftShiftWithShiftAmountEqualToIntegerConstantLargerThanShiftedExpressionBitwidth": {
     "inputCircuit": "module main(inout a(2), in b(2)) a ^= (b << 3)",
     "simulationRuns": [
@@ -1474,6 +1612,144 @@
       {
         "in": "1111",
         "out": "0011"
+      }
+    ]
+  },
+  "RightShiftWithShiftAmountEqualToIntegerConstantEqualToShiftedExpressionBitwidth": {
+    "inputCircuit": "module main(inout a(2), in b(2)) a ^= (b >> 2)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "0110"
+      },
+      {
+        "in": "1110",
+        "out": "1110"
+      },
+      {
+        "in": "0001",
+        "out": "0001"
+      },
+      {
+        "in": "1001",
+        "out": "1001"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "1101"
+      },
+      {
+        "in": "0011",
+        "out": "0011"
+      },
+      {
+        "in": "1011",
+        "out": "1011"
+      },
+      {
+        "in": "0111",
+        "out": "0111"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "RightShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueEqualToShiftedExpressionBitwidth": {
+    "inputCircuit": "module main(inout a(2), in b(2)) for $j = 1 to 3 step 1 do for $i = 3 to 5 step 1 do a ^= (b >> ($i - $j)) rof rof",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "0110"
+      },
+      {
+        "in": "1110",
+        "out": "1110"
+      },
+      {
+        "in": "0001",
+        "out": "0001"
+      },
+      {
+        "in": "1001",
+        "out": "1001"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "1101"
+      },
+      {
+        "in": "0011",
+        "out": "0011"
+      },
+      {
+        "in": "1011",
+        "out": "1011"
+      },
+      {
+        "in": "0111",
+        "out": "0111"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
       }
     ]
   },

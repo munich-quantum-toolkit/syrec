@@ -82,6 +82,14 @@ TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEvaluatingDuring
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToIntegerConstantEqualToShiftedExpressionBitwidth) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueEqualToShiftedExpressionBitwidth) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
 TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToIntegerConstantLargerThanShiftedExpressionBitwidth) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
@@ -134,6 +142,14 @@ TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEvaluatingDurin
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEqualToIntegerConstantEqualToShiftedExpressionBitwidth) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueEqualToShiftedExpressionBitwidth) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
 TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEqualToIntegerConstantLargerThanShiftedExpressionBitwidth) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
@@ -168,6 +184,7 @@ TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftedExpressionEqualToSh
 // END of tests for production ShiftExpression
 
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
+                            // BEGIN of tests for production UnaryExpression
                             LogicalNegationOfConstantZero,
                             LogicalNegationOfConstantOne,
                             LogicalNegationOfNestedExpression,
@@ -178,12 +195,16 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             BitwiseNegationOfBinaryExpression,
                             BitwiseNegationOfShiftExpression,
                             BitwiseNegationOfUnaryExpression,
-    
+                            // END of tests for production UnaryExpression
+                             
+                            // BEGIN of tests for production ShiftExpression
                             LeftShiftWithShiftAmountEqualToIntegerConstant,
                             LeftShiftWithShiftAmountEqualToLoopVariable,
                             LeftShiftWithShiftAmountEqualToConstantExpression,
                             LeftShiftWithShiftAmountEqualToIntegerConstantZero,
                             LeftShiftWithShiftAmountEvaluatingDuringSythesisToConstantZero,
+                            LeftShiftWithShiftAmountEqualToIntegerConstantEqualToShiftedExpressionBitwidth,
+                            LeftShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueEqualToShiftedExpressionBitwidth,
                             LeftShiftWithShiftAmountEqualToIntegerConstantLargerThanShiftedExpressionBitwidth,
                             LeftShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueLargerThanShiftedExpressionBitwidth,
                             LeftShiftWithShiftedExpressionEqualToIntegerConstant,
@@ -192,12 +213,14 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             LeftShiftWithShiftedExpressionEqualToBinaryExpression,
                             LeftShiftWithShiftedExpressionEqualToUnaryExpression,
                             LeftShiftWithShiftedExpressionEqualToShiftExpression,
-    
+
                             RightShiftWithShiftAmountEqualToIntegerConstant,
                             RightShiftWithShiftAmountEqualToLoopVariable,
                             RightShiftWithShiftAmountEqualToConstantExpression,
                             RightShiftWithShiftAmountEqualToIntegerConstantZero,
                             RightShiftWithShiftAmountEvaluatingDuringSythesisToConstantZero,
+                            RightShiftWithShiftAmountEqualToIntegerConstantEqualToShiftedExpressionBitwidth,
+                            RightShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueEqualToShiftedExpressionBitwidth,
                             RightShiftWithShiftAmountEqualToIntegerConstantLargerThanShiftedExpressionBitwidth,
                             RightShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueLargerThanShiftedExpressionBitwidth,
                             RightShiftWithShiftedExpressionEqualToIntegerConstant,
@@ -205,7 +228,10 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             RightShiftWithShiftedExpressionEqualToVariableAccess,
                             RightShiftWithShiftedExpressionEqualToBinaryExpression,
                             RightShiftWithShiftedExpressionEqualToUnaryExpression,
-                            RightShiftWithShiftedExpressionEqualToShiftExpression);
+                            RightShiftWithShiftedExpressionEqualToShiftExpression
+                            // END of tests for production ShiftExpression
+);
+
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
