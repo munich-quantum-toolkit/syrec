@@ -574,7 +574,7 @@
       }
     ]
   },
-  "LeftShiftWithShiftAmountEvaluatingDuringSythesisToConstantZero": {
+  "LeftShiftWithShiftAmountEvaluatingDuringSynthesisToConstantZero": {
     "inputCircuit": "module main(inout a(2), in b(2)) a^= (b << (#b - #a))",
     "simulationRuns": [
       {
@@ -1546,7 +1546,7 @@
       }
     ]
   },
-  "RightShiftWithShiftAmountEvaluatingDuringSythesisToConstantZero": {
+  "RightShiftWithShiftAmountEvaluatingDuringSynthesisToConstantZero": {
     "inputCircuit": "module main(inout a(2), in b(2)) a^= (b >> (#b - #a))",
     "simulationRuns": [
       {
