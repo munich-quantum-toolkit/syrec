@@ -19,6 +19,7 @@ const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simul
 
 TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
 
+// BEGIN of tests for production UnaryExpression
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfConstantZero) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
@@ -58,6 +59,113 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfShiftExpression) {
 TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
+// END of tests for production UnaryExpression
+
+// BEGIN of tests for production ShiftExpression
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToIntegerConstant) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToLoopVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToConstantExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToIntegerConstantZero) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEvaluatingDuringSythesisToConstantZero) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToIntegerConstantLargerThanShiftedExpressionBitwidth) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueLargerThanShiftedExpressionBitwidth) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftedExpressionEqualToIntegerConstant) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftedExpressionEqualToConstantExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftedExpressionEqualToVariableAccess) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftedExpressionEqualToBinaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftedExpressionEqualToUnaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftedExpressionEqualToShiftExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEqualToIntegerConstant) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEqualToLoopVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEqualToConstantExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEqualToIntegerConstantZero) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEvaluatingDuringSythesisToConstantZero) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEqualToIntegerConstantLargerThanShiftedExpressionBitwidth) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueLargerThanShiftedExpressionBitwidth) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftedExpressionEqualToIntegerConstant) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftedExpressionEqualToConstantExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftedExpressionEqualToVariableAccess) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftedExpressionEqualToBinaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftedExpressionEqualToUnaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftedExpressionEqualToShiftExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+// END of tests for production ShiftExpression
 
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             LogicalNegationOfConstantZero,
@@ -69,7 +177,35 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             BitwiseNegationOfVariable,
                             BitwiseNegationOfBinaryExpression,
                             BitwiseNegationOfShiftExpression,
-                            BitwiseNegationOfUnaryExpression);
+                            BitwiseNegationOfUnaryExpression,
+    
+                            LeftShiftWithShiftAmountEqualToIntegerConstant,
+                            LeftShiftWithShiftAmountEqualToLoopVariable,
+                            LeftShiftWithShiftAmountEqualToConstantExpression,
+                            LeftShiftWithShiftAmountEqualToIntegerConstantZero,
+                            LeftShiftWithShiftAmountEvaluatingDuringSythesisToConstantZero,
+                            LeftShiftWithShiftAmountEqualToIntegerConstantLargerThanShiftedExpressionBitwidth,
+                            LeftShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueLargerThanShiftedExpressionBitwidth,
+                            LeftShiftWithShiftedExpressionEqualToIntegerConstant,
+                            LeftShiftWithShiftedExpressionEqualToConstantExpression,
+                            LeftShiftWithShiftedExpressionEqualToVariableAccess,
+                            LeftShiftWithShiftedExpressionEqualToBinaryExpression,
+                            LeftShiftWithShiftedExpressionEqualToUnaryExpression,
+                            LeftShiftWithShiftedExpressionEqualToShiftExpression,
+    
+                            RightShiftWithShiftAmountEqualToIntegerConstant,
+                            RightShiftWithShiftAmountEqualToLoopVariable,
+                            RightShiftWithShiftAmountEqualToConstantExpression,
+                            RightShiftWithShiftAmountEqualToIntegerConstantZero,
+                            RightShiftWithShiftAmountEvaluatingDuringSythesisToConstantZero,
+                            RightShiftWithShiftAmountEqualToIntegerConstantLargerThanShiftedExpressionBitwidth,
+                            RightShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueLargerThanShiftedExpressionBitwidth,
+                            RightShiftWithShiftedExpressionEqualToIntegerConstant,
+                            RightShiftWithShiftedExpressionEqualToConstantExpression,
+                            RightShiftWithShiftedExpressionEqualToVariableAccess,
+                            RightShiftWithShiftedExpressionEqualToBinaryExpression,
+                            RightShiftWithShiftedExpressionEqualToUnaryExpression,
+                            RightShiftWithShiftedExpressionEqualToShiftExpression);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
