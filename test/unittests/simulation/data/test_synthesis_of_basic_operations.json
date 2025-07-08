@@ -713,7 +713,7 @@
     ]
   },
   "LeftShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueEqualToShiftedExpressionBitwidth": {
-    "inputCircuit": "module main(inout a(2), in b(2)) for $j = 1 to 3 step 1 do for $i = 3 to 5 step 1 do a ^= (b << ($i - $j)) rof rof",
+    "inputCircuit": "module main(inout a(2), in b(2)) for $j = 1 to 3 step 1 do for $i = (#b + $j) to 5 step 1 do a ^= (b << ($i - $j)) rof rof",
     "simulationRuns": [
       {
         "in": "0000",
@@ -1685,7 +1685,7 @@
     ]
   },
   "RightShiftWithShiftAmountEqualToIntegerConstantEvaluatingDuringSynthesisToValueEqualToShiftedExpressionBitwidth": {
-    "inputCircuit": "module main(inout a(2), in b(2)) for $j = 1 to 3 step 1 do for $i = 3 to 5 step 1 do a ^= (b >> ($i - $j)) rof rof",
+    "inputCircuit": "module main(inout a(2), in b(2)) for $j = 1 to 3 step 1 do for $i = (#b + $j) to 5 step 1 do a ^= (b >> ($i - $j)) rof rof",
     "simulationRuns": [
       {
         "in": "0000",
