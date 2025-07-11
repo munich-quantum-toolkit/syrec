@@ -910,13 +910,13 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mqt-core", specifier = ">=3.1.0" },
+    { name = "mqt-core", specifier = "~=3.1.0" },
     { name = "pyqt6", specifier = ">=6.8" },
 ]
 
 [package.metadata.requires-dev]
 build = [
-    { name = "mqt-core", specifier = ">=3.1.0" },
+    { name = "mqt-core", specifier = "~=3.1.0" },
     { name = "pybind11", specifier = ">=3.0.0" },
     { name = "scikit-build-core", specifier = ">=0.11.1" },
     { name = "setuptools-scm", specifier = ">=8.3.1" },
@@ -924,7 +924,7 @@ build = [
 dev = [
     { name = "furo", specifier = ">=2024.8.6" },
     { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "mqt-core", specifier = ">=3.1.0" },
+    { name = "mqt-core", specifier = "~=3.1.0" },
     { name = "nbsphinx", specifier = ">=0.9.7" },
     { name = "pybind11", specifier = ">=3.0.0" },
     { name = "pytest", specifier = ">=8.3.5" },
