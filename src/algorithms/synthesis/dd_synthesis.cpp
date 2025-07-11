@@ -157,13 +157,22 @@ namespace syrec {
         const auto  tables = dd->getUniqueTable<dd::mNode>().getTables();
         auto const& table  = tables[current.p->v];
 
+        // Mark all nodes that are reachable from the root node
+        // This is not particularly efficient, because it traverses all the DDs entirely,
+        // even though we would just need to know the active nodes at the current level.
+        // However, as of mqt-core 2.1.0, there is no direct way to access that information.
+        const auto& rootSet = dd->getRootSet<dd::mNode>();
+        for (const auto& [edge, _]: rootSet) {
+            edge.mark();
+        }
+
         for (auto* p: table) {
             // While the dd::UniqueTable can store heterogeneous entities derived from dd::NodeBase, it is assumed to only contain entities of the same type (thus storing
             // only homogeneous entities. While the type information about the entities stored in the dd::UniqueTable is not available statically (with the type information also
             // being removed from the internal dd::MemoryManager) we are assuming at this position in the code that only entities of type dd::mNode are stored in the accessed dd::UniqueTable.
             // To make this assumption more explicit, we fetch the dd::UniqueTable from the dd::Package via the templated getUniqueTable<T> function instead of accessing the member variable directly.
             // Note that due to the dd::NodeBase base of the dd::mNode not defining a polymorphic type, dynamic_cast cannot be used for the down-cast from the base to the derived class.
-            if (const auto& castedNode = static_cast<dd::mNode*>(p); castedNode != nullptr && castedNode != current.p && castedNode->ref > 0) { // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+            if (const auto& castedNode = static_cast<dd::mNode*>(p); castedNode != nullptr && castedNode != current.p && castedNode->isMarked()) { // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
                 TruthTable::Cube::Set p1Vec;
                 TruthTable::Cube::Set p2Vec;
                 if (changePaths) {
@@ -181,6 +190,12 @@ namespace syrec {
                 }
             }
         }
+
+        // unmark all nodes that are reachable from the root node
+        for (const auto& [edge, _]: rootSet) {
+            edge.unmark();
+        }
+
         return rootSigVec;
     }
 
@@ -571,7 +586,11 @@ namespace syrec {
         // Refer to algorithm Q of http://www.informatik.uni-bremen.de/agra/doc/konf/12aspdac_qmdd_synth_rev.pdf.
 
         // to preserve the `src` DD throughout the synthesis, its reference count has to be at least 2.
-        while (src.p->ref < 2U) {
+        const auto& rootSet = dd->getRootSet<dd::mNode>();
+        if (rootSet.find(src) == rootSet.end()) {
+            dd->incRef(src);
+            dd->incRef(src);
+        } else if (rootSet.at(src) == 1U) {
             dd->incRef(src);
         }
 
