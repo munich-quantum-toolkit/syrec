@@ -300,7 +300,7 @@ mqt-syrec = { workspace = true }
 
 [dependency-groups]
 build = [
-    "pybind11>=2.13.6",
+    "pybind11>=3.0.0",
     "scikit-build-core>=0.11.1",
     "setuptools-scm>=8.3.1",
     "mqt.core @ git+https://github.com/munich-quantum-toolkit/core.git@a06d0fd",
