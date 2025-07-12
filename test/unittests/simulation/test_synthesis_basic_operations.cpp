@@ -59,6 +59,94 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToConstant) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToShiftExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToUnaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToNestedExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfVariableWithStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfVariableWithStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartEqualToEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfBitOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             LogicalNegationOfConstantZero,
                             LogicalNegationOfConstantOne,
@@ -69,7 +157,29 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             BitwiseNegationOfVariable,
                             BitwiseNegationOfBinaryExpression,
                             BitwiseNegationOfShiftExpression,
-                            BitwiseNegationOfUnaryExpression);
+                            BitwiseNegationOfUnaryExpression,
+                            AddAssignWithRightHandSideEqualToVariable,
+                            AddAssignWithRightHandSideEqualToConstant,
+                            AddAssignWithRightHandSideEqualToShiftExpression,
+                            AddAssignWithRightHandSideEqualToUnaryExpression,
+                            AddAssignWithRightHandSideEqualToNestedExpression,
+                            AddAssignOfBitOfVariable,
+                            AddAssignOfBitrangeOfVariableWithStartSmallerThanEnd,
+                            AddAssignOfBitrangeOfVariableWithStartLargerThanEnd,
+                            AddAssignOfValueOfDimensionOfVariable,
+                            AddAssignOfBitOfValueOfDimensionOfVariable,
+                            AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartSmallerThanEnd,
+                            AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartLargerThanEnd,
+                            AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartEqualToEnd,
+                            IncrementAssignOfVariable,
+                            IncrementAssignOfBitOfVariable,
+                            IncrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd,
+                            IncrementAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd,
+                            IncrementValueOfDimensionOfVariable,
+                            IncrementBitOfValueOfDimensionOfVariable,
+                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd,
+                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd,
+                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
