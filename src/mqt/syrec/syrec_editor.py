@@ -263,15 +263,14 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
                 # making other check box to uncheck
                 self.buttonCostAware.setChecked(True)
 
-    def write_editor_contents_to_file(self) -> None:
-        data = QtCore.QFile("/tmp/out.src")  # noqa: S108
+    def write_editor_contents_to_file(self, to_be_written_filename: str) -> None:
+        data = QtCore.QFile(to_be_written_filename)
         if data.open(QtCore.QFile.OpenModeFlag.WriteOnly | QtCore.QFile.OpenModeFlag.Truncate):
             out = QtCore.QTextStream(data)
             out << self.getText()
         else:
+            print("While trying to store contents of code editor, failed to open file @ ", to_be_written_filename)
             return
-
-        data.close()
 
     def open_file(self) -> None:
         selected_file_name, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -290,11 +289,15 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         if self.before_build is not None:
             self.before_build()
 
-        self.write_editor_contents_to_file()
+        temp_data_file = QtCore.QTemporaryFile()
+        if temp_data_file.open():
+            self.write_editor_contents_to_file(temp_data_file.fileName())
+        else:
+            print("Failed to create temporary file to store contents of code editor")
+            return
 
         self.prog = syrec.program()
-
-        error_string = self.prog.read("/tmp/out.src")  # noqa: S108
+        error_string = self.prog.read(temp_data_file.fileName())
 
         if error_string == "PARSE_STRING_FAILED":
             if self.parser_failed is not None:
@@ -678,7 +681,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         self.editor.build_failed = self.filter_and_record_parser_errors
 
     def filter_and_record_parser_errors(self, aggregate_error_string: str) -> None:
-        regex_pattern = r"(-- line (\d+) col (\d+): (.*)(\n?))"
+        regex_pattern = r"(-- line (\d+) col (\d+): (.*)((\r)?\n)?)"
         if re.search(regex_pattern, aggregate_error_string) is not None:
             for m in re.finditer(regex_pattern, aggregate_error_string):
                 self.logWidget.addMessage(m.group(0))
