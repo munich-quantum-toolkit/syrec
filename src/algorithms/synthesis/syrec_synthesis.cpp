@@ -506,14 +506,18 @@ namespace syrec {
             case BinaryExpression::BinaryOperation::Multiply: // *
                 synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines) && multiplication(annotatableQuantumComputation, lines, lhs, rhs);
                 break;
-            case BinaryExpression::BinaryOperation::Divide: // /
-                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines) && division(annotatableQuantumComputation, lines, lhs, rhs);
+            case BinaryExpression::BinaryOperation::Divide: { // /
+                std::vector<qc::Qubit>  remainder;
+                std::vector<qc::Qubit>& quotient = lines;
+                synthesisOfExprOk                = getConstantLines(expression.bitwidth(), 0U, remainder) && getConstantLines(expression.bitwidth(), 0U, quotient) && division(annotatableQuantumComputation, lhs, rhs, quotient, remainder);
                 break;
+            }
             case BinaryExpression::BinaryOperation::Modulo: { // %
-                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, lines);
-                std::vector<qc::Qubit> quot;
-                synthesisOfExprOk &= getConstantLines(expression.bitwidth(), 0U, quot) && bitwiseCnot(annotatableQuantumComputation, lines, lhs) && modulo(annotatableQuantumComputation, quot, lines, rhs);
-            } break;
+                std::vector<qc::Qubit>& remainder = lines;
+                std::vector<qc::Qubit>  quotient;
+                synthesisOfExprOk = getConstantLines(expression.bitwidth(), 0U, remainder) && getConstantLines(expression.bitwidth(), 0U, quotient) && modulo(annotatableQuantumComputation, lhs, rhs, quotient, remainder);
+                break;
+            }
             case BinaryExpression::BinaryOperation::LogicalAnd: { // &&
                 const std::optional<qc::Qubit> ancillaryQubitForIntermediateResult = getConstantLine(false);
                 if (ancillaryQubitForIntermediateResult.has_value()) {
@@ -701,51 +705,60 @@ namespace syrec {
         return annotatableQuantumComputation.addOperationsImplementingCnotGate(src1, dest) && annotatableQuantumComputation.addOperationsImplementingCnotGate(src2, dest) && annotatableQuantumComputation.addOperationsImplementingToffoliGate(src1, src2, dest);
     }
 
-    bool SyrecSynthesis::division(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
-        if (!modulo(annotatableQuantumComputation, dest, src1, src2)) {
+    bool SyrecSynthesis::division(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dividend, const std::vector<qc::Qubit>& divisor, const std::vector<qc::Qubit>& quotient, const std::vector<qc::Qubit>& remainder) {
+        const std::size_t operandBitwidth = dividend.size();
+        if (divisor.size() != operandBitwidth || quotient.size() != operandBitwidth || remainder.size() != operandBitwidth) {
             return false;
         }
 
-        std::vector<qc::Qubit> sum;
-        std::vector<qc::Qubit> partial;
-
-        if (src2.size() < src1.size() || dest.size() < src1.size()) {
-            return false;
-        }
-
+        // Implementation of the division/modulo operation is based on the restoring division algorithm defined in the paper
+        // 'Quantum Circuit Designs of Integer Division Optimizing T-count and T-depth (arXiv:1809.09732v1)'. The non-restoring
+        // variant of the algorithm defined in the same paper requires less quantum gates in its implementation. Note that this algorithm
+        // assumes that the dividend and divisor are positive two complement numbers.
         bool synthesisOk = true;
-        for (std::size_t i = 1; i < src1.size() && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(src2[i]);
+        for (std::size_t i = 0; i < operandBitwidth && synthesisOk; ++i) {
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(dividend[i], quotient[i]);
         }
+
+        std::vector<qc::Qubit> truncatedAggregateOfRemainderAndQuotientQubits(operandBitwidth, 0);
+        // The aggregate variable V is a 'virtual' 2*N qubit variable that stores the combination of the remainder and quotient qubits in the form
+        // R_(N-1), R_(N-2), ..., R_1, R_0, Q_(N-1), Q_(N-2), ..., Q_1, Q_0
+        std::vector<qc::Qubit> aggregateOfRemainderAndQuotientQubits(operandBitwidth * 2, 0);
+        std::copy(quotient.cbegin(), quotient.cend(), aggregateOfRemainderAndQuotientQubits.begin());
+        std::copy(remainder.cbegin(), remainder.cend(), aggregateOfRemainderAndQuotientQubits.begin() + static_cast<std::ptrdiff_t>(operandBitwidth));
+        std::reverse(aggregateOfRemainderAndQuotientQubits.begin(), aggregateOfRemainderAndQuotientQubits.end());
 
         annotatableQuantumComputation.activateControlQubitPropagationScope();
-        for (std::size_t i = 1U; i < src1.size() && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src2[i]);
-        }
+        for (std::size_t i = 1; i <= operandBitwidth && synthesisOk; ++i) {
+            // Perform left shift of aggregate of remainder and quotient qubits and store them in 'virtual' variable Y (bitwidth: N)
+            std::copy_n(aggregateOfRemainderAndQuotientQubits.begin() + static_cast<std::ptrdiff_t>(i), operandBitwidth, truncatedAggregateOfRemainderAndQuotientQubits.begin());
 
-        std::size_t helperIndex = 0;
-        for (int i = static_cast<int>(src1.size()) - 1; i >= 0 && synthesisOk; --i) {
-            const auto castedIndex = static_cast<std::size_t>(i);
+            // Since the operand for the subtraction and addition operation are expected to be in little endian qubit order (i.e. least significant qubit at index 0, ... , most significant qubit at index N - 1)
+            // and our aggregate register stores the qubits in big endian qubit order, a reversal of the aggregate variable V needs to be performed after the shift was performed
+            std::reverse(truncatedAggregateOfRemainderAndQuotientQubits.begin(), truncatedAggregateOfRemainderAndQuotientQubits.end());
 
-            partial.push_back(src2[helperIndex++]);
-            sum.insert(sum.begin(), src1[castedIndex]);
-            annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(dest[castedIndex]);
-            synthesisOk = increase(annotatableQuantumComputation, sum, partial);
-            annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(dest[castedIndex]);
-            if (i == 0) {
-                continue;
-            }
+            // The carry out bit of the subtraction operation is used to determine whether the resulting difference was < 0.
+            const qc::Qubit signBitOfSubtraction = remainder[operandBitwidth - i];
+            // Y = Y - b
+            synthesisOk = decreaseWithCarry(annotatableQuantumComputation, truncatedAggregateOfRemainderAndQuotientQubits, divisor, signBitOfSubtraction);
 
-            for (std::size_t j = 1; j < src1.size() && synthesisOk; ++j) {
-                annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(src2[j]);
-            }
-            synthesisOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(src2[helperIndex]);
+            // The restore operation of the aggregate variable should only be performed when Y < 0.
+            annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(signBitOfSubtraction);
 
-            for (std::size_t j = 2; j < src1.size() && synthesisOk; ++j) {
-                annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src2[j]);
-            }
+            // Y = Y + divisor
+            synthesisOk &= increase(annotatableQuantumComputation, truncatedAggregateOfRemainderAndQuotientQubits, divisor);
+            annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(signBitOfSubtraction);
+
+            // After the 'restoring' operation for the variable V was performed, the final value of the remainder qubit can be set (remainder[i] = NOT(sign bit)).
+            annotatableQuantumComputation.addOperationsImplementingNotGate(signBitOfSubtraction);
         }
         annotatableQuantumComputation.deactivateControlQubitPropagationScope();
+
+        // While the description of the reference algorithm states that the qubits of the quotient and remainder at this point store the values of the quotient and remainder respectively,
+        // manual executions of the algorithm resulted in the quotient qubits storing the value of the remainder and vice versa, thus a final swap of the quotient and remainder qubits is required.
+        for (std::size_t i = 0; i < operandBitwidth; ++i) {
+            annotatableQuantumComputation.addOperationsImplementingFredkinGate(quotient[i], remainder[i]);
+        }
         return synthesisOk;
     }
 
@@ -858,52 +871,8 @@ namespace syrec {
         return decreaseWithCarry(annotatableQuantumComputation, src1, src2, dest) && increase(annotatableQuantumComputation, src1, src2);
     }
 
-    bool SyrecSynthesis::modulo(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
-        std::vector<qc::Qubit> sum;
-        std::vector<qc::Qubit> partial;
-
-        if (src2.size() < src1.size() || dest.size() < src1.size()) {
-            return false;
-        }
-
-        bool synthesisOk = true;
-        for (std::size_t i = 1; i < src1.size() && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(src2[i]);
-        }
-
-        annotatableQuantumComputation.activateControlQubitPropagationScope();
-        for (std::size_t i = 1; i < src1.size() && synthesisOk; ++i) {
-            annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src2[i]);
-        }
-
-        std::size_t helperIndex = 0;
-        for (int i = static_cast<int>(src1.size()) - 1; i >= 0 && synthesisOk; --i) {
-            const auto unsignedLoopVariableValue = static_cast<std::size_t>(i);
-
-            partial.push_back(src2[helperIndex++]);
-            sum.insert(sum.begin(), src1[unsignedLoopVariableValue]);
-            synthesisOk = decreaseWithCarry(annotatableQuantumComputation, sum, partial, dest[unsignedLoopVariableValue]);
-
-            annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(dest[unsignedLoopVariableValue]);
-            synthesisOk &= increase(annotatableQuantumComputation, sum, partial);
-            annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(dest[unsignedLoopVariableValue]);
-
-            synthesisOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(dest[unsignedLoopVariableValue]);
-            if (i == 0) {
-                continue;
-            }
-
-            for (std::size_t j = 1; j < src1.size() && synthesisOk; ++j) {
-                annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(src2[j]);
-            }
-            synthesisOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(src2[helperIndex]);
-
-            for (std::size_t j = 2; j < src1.size() && synthesisOk; ++j) {
-                annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src2[j]);
-            }
-        }
-        annotatableQuantumComputation.deactivateControlQubitPropagationScope();
-        return synthesisOk;
+    bool SyrecSynthesis::modulo(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dividend, const std::vector<qc::Qubit>& divisor, const std::vector<qc::Qubit>& quotient, const std::vector<qc::Qubit>& remainder) {
+        return division(annotatableQuantumComputation, dividend, divisor, quotient, remainder);
     }
 
     bool SyrecSynthesis::multiplication(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {

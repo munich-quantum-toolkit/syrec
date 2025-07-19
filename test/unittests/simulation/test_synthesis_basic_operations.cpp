@@ -61,6 +61,18 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
 }
 // END of tests for production UnaryExpression
 
+// BEGIN of tests for production BinaryExpression
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationDivision) {
+    // Since the expected values in case of a division by zero are dependent on the used synthesis algorithm, all test cases in which the divisor is 0 are omitted.
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationModulo) {
+    // Since the expected values in case of a modulo operation in which the modulus is zero are dependent on the used synthesis algorithm, all test cases in which the modulus is 0 are omitted.
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+// END of tests for production BinaryExpression
+
 // BEGIN of tests for production ShiftExpression
 TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToIntegerConstant) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
@@ -285,6 +297,11 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             BitwiseNegationOfShiftExpression,
                             BitwiseNegationOfUnaryExpression,
                             // END of tests for production UnaryExpression
+
+                            // BEGIN of tests for production BinaryExpression
+                            BinaryOperationDivision,
+                            BinaryOperationModulo,
+                            // END of tests for production BinaryExpression
 
                             // BEGIN of tests for production ShiftExpression
                             LeftShiftWithShiftAmountEqualToIntegerConstant,
