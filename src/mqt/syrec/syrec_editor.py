@@ -263,16 +263,6 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
                 # making other check box to uncheck
                 self.buttonCostAware.setChecked(True)
 
-    def write_editor_contents_to_file(self) -> None:
-        data = QtCore.QFile("/tmp/out.src")  # noqa: S108
-        if data.open(QtCore.QFile.OpenModeFlag.WriteOnly | QtCore.QFile.OpenModeFlag.Truncate):
-            out = QtCore.QTextStream(data)
-            out << self.getText()
-        else:
-            return
-
-        data.close()
-
     def open_file(self) -> None:
         selected_file_name, _ = QtWidgets.QFileDialog.getOpenFileName(
             parent=self.parent,
@@ -290,11 +280,9 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         if self.before_build is not None:
             self.before_build()
 
-        self.write_editor_contents_to_file()
-
         self.prog = syrec.program()
 
-        error_string = self.prog.read("/tmp/out.src")  # noqa: S108
+        error_string = self.prog.read_from_string(self.getText())
 
         if error_string == "PARSE_STRING_FAILED":
             if self.parser_failed is not None:
