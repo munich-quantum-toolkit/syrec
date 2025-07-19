@@ -148,12 +148,12 @@ TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVar
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationDivision) {
-    // Since the expected values in case of a division by zero are dependent on the used synthesis algorithm, all tests cases in which the divisor is 0 are omitted.
+    // Since the expected values in case of a division by zero are dependent on the used synthesis algorithm, all test cases in which the divisor is 0 are omitted.
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationModulo) {
-    // Since the expected values in case of a module operation in which the modulus is zero are dependent on the used synthesis algorithm, all tests cases in which the modulus is 0 are omitted.
+    // Since the expected values in case of a modulo operation in which the modulus is zero are dependent on the used synthesis algorithm, all test cases in which the modulus is 0 are omitted.
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 

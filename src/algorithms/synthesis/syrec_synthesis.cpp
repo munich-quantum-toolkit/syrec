@@ -712,7 +712,7 @@ namespace syrec {
         }
 
         // Implementation of the division/modulo operation is based on the restoring division algorithm defined in the paper
-        // 'Quantum Circuit Designs of Integer Division Optimizing T - count and T - depth (arXiv:1809.09732v1)'. The non-restoring
+        // 'Quantum Circuit Designs of Integer Division Optimizing T-count and T-depth (arXiv:1809.09732v1)'. The non-restoring
         // variant of the algorithm defined in the same paper requires less quantum gates in its implementation. Note that this algorithm
         // assumes that the dividend and divisor are positive two complement numbers.
         bool synthesisOk = true;
@@ -754,7 +754,7 @@ namespace syrec {
         }
         annotatableQuantumComputation.deactivateControlQubitPropagationScope();
 
-        // While the description of the reference algorithm states that the qubits of the quotient and remainder at this point store the values ofthe quotient and remainder spectively,
+        // While the description of the reference algorithm states that the qubits of the quotient and remainder at this point store the values of the quotient and remainder respectively,
         // manual executions of the algorithm resulted in the quotient qubits storing the value of the remainder and vice versa, thus a final swap of the quotient and remainder qubits is required.
         for (std::size_t i = 0; i < operandBitwidth; ++i) {
             annotatableQuantumComputation.addOperationsImplementingFredkinGate(quotient[i], remainder[i]);
