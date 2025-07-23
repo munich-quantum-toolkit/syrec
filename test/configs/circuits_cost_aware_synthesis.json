@@ -1,9 +1,9 @@
 {
   "alu_2": {
-    "num_gates": 26,
-    "lines": 11,
-    "quantum_costs": 138,
-    "transistor_costs": 384
+    "num_gates": 27,
+    "lines": 12,
+    "quantum_costs": 139,
+    "transistor_costs": 392
   },
 
   "binary_numeric": {
@@ -35,10 +35,10 @@
   },
 
   "call_8": {
-    "num_gates": 212,
-    "lines": 41,
-    "quantum_costs": 1492,
-    "transistor_costs": 3776
+    "num_gates": 214,
+    "lines": 43,
+    "quantum_costs": 1494,
+    "transistor_costs": 3792
   },
   "constExpr_8": {
     "num_gates": 8,
@@ -54,10 +54,10 @@
   },
 
   "foldEval_4": {
-    "num_gates": 42,
-    "lines": 33,
-    "quantum_costs": 202,
-    "transistor_costs": 640
+    "num_gates": 43,
+    "lines": 34,
+    "quantum_costs": 203,
+    "transistor_costs": 648
   },
 
   "for_4": {
@@ -68,17 +68,17 @@
   },
 
   "for_32": {
-    "num_gates": 2498,
-    "lines": 641,
-    "quantum_costs": 15426,
-    "transistor_costs": 41856
+    "num_gates": 2499,
+    "lines": 642,
+    "quantum_costs": 15427,
+    "transistor_costs": 41864
   },
 
   "gray_binary_conversion_16": {
-    "num_gates": 94,
-    "lines": 63,
-    "quantum_costs": 462,
-    "transistor_costs": 1472
+    "num_gates": 95,
+    "lines": 64,
+    "quantum_costs": 463,
+    "transistor_costs": 1480
   },
 
   "ifCondVariants_4": {
@@ -159,17 +159,17 @@
   },
 
   "parity_4": {
-    "num_gates": 17,
-    "lines": 12,
-    "quantum_costs": 73,
-    "transistor_costs": 232
+    "num_gates": 18,
+    "lines": 13,
+    "quantum_costs": 74,
+    "transistor_costs": 240
   },
 
   "parity_check_16": {
-    "num_gates": 69,
-    "lines": 51,
-    "quantum_costs": 333,
-    "transistor_costs": 1064
+    "num_gates": 70,
+    "lines": 52,
+    "quantum_costs": 334,
+    "transistor_costs": 1072
   },
   "relationalOp_4": {
     "num_gates": 373,

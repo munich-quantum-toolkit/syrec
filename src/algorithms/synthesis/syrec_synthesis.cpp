@@ -254,27 +254,40 @@ namespace syrec {
         }
 
         // calculate expression
-        std::vector<qc::Qubit> expressionResult;
-        const bool             synthesisOfGuardExprOk = onExpression(statement.condition, expressionResult, {}, guardExpressionTopLevelOperation);
+        std::vector<qc::Qubit> guardExpressionQubits;
+        bool                   synthesisOfGuardExprOk = onExpression(statement.condition, guardExpressionQubits, {}, guardExpressionTopLevelOperation);
+        assert(guardExpressionQubits.size() == 1U);
 
-        assert(expressionResult.size() == 1U);
+        // We need to create the ancillary qubit used to store the synthesis result of the variable expression since the onExpression(...) function does not create this ancillary qubit
+        // Additionally, a CNOT gate is required to transfer the value of the current qubit storing the synthesis result of the VariableExpression to the ancillary qubit.
+        // The ancillary qubit is only required when the original qubit of the guard expression is used as a target qubit in any of the statements of the true
+        // or false branch of the IfStatement but since we cannot determine whether this case will happen (at this point of the synthesis) we are 'forced' to use the ancillary qubit.
+        if (auto const* variableExpr = dynamic_cast<VariableExpression*>(statement.condition.get()); variableExpr != nullptr && synthesisOfGuardExprOk) {
+            if (const std::optional<qc::Qubit> generatedHelperLine = getConstantLine(false); generatedHelperLine.has_value()) {
+                synthesisOfGuardExprOk   = annotatableQuantumComputation.addOperationsImplementingCnotGate(guardExpressionQubits.front(), *generatedHelperLine);
+                guardExpressionQubits[0] = *generatedHelperLine;
+            } else {
+                synthesisOfGuardExprOk = false;
+            }
+        }
+
         if (!synthesisOfGuardExprOk) {
             return false;
         }
 
         // add new helper line
-        const qc::Qubit helperLine = expressionResult.front();
+        const qc::Qubit guardExpressionQubit = guardExpressionQubits.front();
         annotatableQuantumComputation.activateControlQubitPropagationScope();
-        bool synthesisOfBranchStatementsOk = annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(helperLine) && std::all_of(statement.thenStatements.cbegin(), statement.thenStatements.cend(), [&](const Statement::ptr& trueBranchStatement) { return processStatement(trueBranchStatement); });
+        bool synthesisOfBranchStatementsOk = annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(guardExpressionQubit) && std::all_of(statement.thenStatements.cbegin(), statement.thenStatements.cend(), [&](const Statement::ptr& trueBranchStatement) { return processStatement(trueBranchStatement); });
 
         // Toggle helper line.
         // We do not want to use the current helper line controlling the conditional execution of the statements
         // of both branches of the current IfStatement when negating the value of said helper line
-        synthesisOfBranchStatementsOk &= annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(helperLine) && annotatableQuantumComputation.addOperationsImplementingNotGate(helperLine) && annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(helperLine) && std::all_of(statement.elseStatements.cbegin(), statement.elseStatements.cend(), [&](const Statement::ptr& falseBranchStatement) { return processStatement(falseBranchStatement); });
+        synthesisOfBranchStatementsOk &= annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(guardExpressionQubit) && annotatableQuantumComputation.addOperationsImplementingNotGate(guardExpressionQubit) && annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(guardExpressionQubit) && std::all_of(statement.elseStatements.cbegin(), statement.elseStatements.cend(), [&](const Statement::ptr& falseBranchStatement) { return processStatement(falseBranchStatement); });
 
         // We do not want to use the current helper line controlling the conditional execution of the statements
         // of both branches of the current IfStatement when negating the value of said helper line
-        synthesisOfBranchStatementsOk &= annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(helperLine) && annotatableQuantumComputation.addOperationsImplementingNotGate(helperLine);
+        synthesisOfBranchStatementsOk &= annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(guardExpressionQubit) && annotatableQuantumComputation.addOperationsImplementingNotGate(guardExpressionQubit);
         annotatableQuantumComputation.deactivateControlQubitPropagationScope();
         return synthesisOfBranchStatementsOk;
     }

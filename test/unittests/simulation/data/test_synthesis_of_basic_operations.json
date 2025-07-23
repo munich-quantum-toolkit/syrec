@@ -3672,5 +3672,89 @@
         "out": "1011"
       }
     ]
+  },
+  "AccessOnSameQubitOfGuardConditionPossibleOnLefthandSideOfAssignment": {
+    "inputCircuit": "module main(inout a(2)) if a.1 then a.1 ^= 1 else skip fi a.1",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "00"
+      },
+      {
+        "in": "10",
+        "out": "10"
+      },
+      {
+        "in": "01",
+        "out": "00"
+      },
+      {
+        "in": "11",
+        "out": "10"
+      }
+    ]
+  },
+  "OverlappingAccessOnQubitOfGuardConditionPossibleOnLefthandSideOfAssignment": {
+    "inputCircuit": "module main(inout a(2)) if a.1 then a += 1 else skip fi a.1",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "00"
+      },
+      {
+        "in": "10",
+        "out": "10"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "00"
+      }
+    ]
+  },
+  "AccessOnSameQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand": {
+    "inputCircuit": "module main(inout a(2)) if a.1 then ++= a.1 else skip fi a.1",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "00"
+      },
+      {
+        "in": "10",
+        "out": "10"
+      },
+      {
+        "in": "01",
+        "out": "00"
+      },
+      {
+        "in": "11",
+        "out": "10"
+      }
+    ]
+  },
+  "OverlappingAccessOnQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand": {
+    "inputCircuit": "module main(inout a(2)) if a.1 then ++= a else skip fi a.1",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "00"
+      },
+      {
+        "in": "10",
+        "out": "10"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "00"
+      }
+    ]
   }
 }

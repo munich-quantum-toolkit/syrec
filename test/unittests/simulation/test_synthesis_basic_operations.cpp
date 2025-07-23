@@ -284,6 +284,22 @@ TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVar
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnSameQubitOfGuardConditionPossibleOnLefthandSideOfAssignment) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, OverlappingAccessOnQubitOfGuardConditionPossibleOnLefthandSideOfAssignment) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnSameQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, OverlappingAccessOnQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             // BEGIN of tests for production UnaryExpression
                             LogicalNegationOfConstantZero,
@@ -359,7 +375,12 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             IncrementBitOfValueOfDimensionOfVariable,
                             IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd,
                             IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd,
-                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd
+                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd,
+
+                            AccessOnSameQubitOfGuardConditionPossibleOnLefthandSideOfAssignment,
+                            OverlappingAccessOnQubitOfGuardConditionPossibleOnLefthandSideOfAssignment,
+                            AccessOnSameQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand,
+                            OverlappingAccessOnQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand
                             // END of tests for production AssignStatement
 );
 
