@@ -35,11 +35,11 @@ namespace syrec {
         using QuantumOperationAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
         using SynthesisCostMetricValue          = std::uint64_t;
 
-        [[maybe_unused]] bool addOperationsImplementingNotGate(qc::Qubit targetQubit);
-        [[maybe_unused]] bool addOperationsImplementingCnotGate(qc::Qubit controlQubit, qc::Qubit targetQubit);
-        [[maybe_unused]] bool addOperationsImplementingToffoliGate(qc::Qubit controlQubitOne, qc::Qubit controlQubitTwo, qc::Qubit targetQubit);
-        [[maybe_unused]] bool addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubitsSet, qc::Qubit targetQubit);
-        [[maybe_unused]] bool addOperationsImplementingFredkinGate(qc::Qubit targetQubitOne, qc::Qubit targetQubitTwo);
+        [[nodiscard]] bool addOperationsImplementingNotGate(qc::Qubit targetQubit);
+        [[nodiscard]] bool addOperationsImplementingCnotGate(qc::Qubit controlQubit, qc::Qubit targetQubit);
+        [[nodiscard]] bool addOperationsImplementingToffoliGate(qc::Qubit controlQubitOne, qc::Qubit controlQubitTwo, qc::Qubit targetQubit);
+        [[nodiscard]] bool addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubitsSet, qc::Qubit targetQubit);
+        [[nodiscard]] bool addOperationsImplementingFredkinGate(qc::Qubit targetQubitOne, qc::Qubit targetQubitTwo);
 
         /**
          * Add a non-ancillary qubit to the quantum computation.
@@ -108,7 +108,7 @@ namespace syrec {
          * @param controlQubit The control qubit to deregister
          * @return Whether the control qubit exists in the internally used qc::QuantumComputation and was deregistered from the last activated propagation scope.
          */
-        [[maybe_unused]] bool deregisterControlQubitFromPropagationInCurrentScope(qc::Qubit controlQubit);
+        [[nodiscard]] bool deregisterControlQubitFromPropagationInCurrentScope(qc::Qubit controlQubit);
 
         /**
          * Register a control qubit in the last activated control qubit propagation scope.
@@ -117,7 +117,7 @@ namespace syrec {
          * @param controlQubit The control qubit to register
          * @return Whether the control qubit exists in the \p quantumComputation and was registered in the last activated propagation scope.
          */
-        [[maybe_unused]] bool registerControlQubitForPropagationInCurrentAndNestedScopes(qc::Qubit controlQubit);
+        [[nodiscard]] bool registerControlQubitForPropagationInCurrentAndNestedScopes(qc::Qubit controlQubit);
 
         /**
          * Register or update a global quantum operation annotation. Global quantum operation annotations are added to all quantum operations added to the internally used qc::QuantumComputation.
