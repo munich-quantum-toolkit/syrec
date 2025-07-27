@@ -148,6 +148,9 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
             gate.setPos(i * 30 + 15, 0)
             self.scene().addItem(gate)
 
+        #inlined_variable_vertical_offset = int(-self.inputs[0].boundingRect().width() - 30)
+        #self.add_inlined_variable_information(inlined_variable_vertical_offset, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+
     def add_line_label(
         self, x: int, y: int, text: str, align: QtCore.Qt.AlignmentFlag, color: bool
     ) -> QtWidgets.QGraphicsTextItem | None:
@@ -163,6 +166,14 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
             text_item.setDefaultTextColor(QtGui.QColorConstants.Red)
 
         return text_item
+
+    def add_inlined_variable_information(self, x: int, y: int, align: QtCore.Qt.AlignmentFlag) -> None:
+        info_button = QtWidgets.QPushButton(icon=QtGui.QIcon.fromTheme("dialog-information"))
+        info_button.setGeometry(x, y, 30, 30)
+        #info_button.setStyleSheet("QPushButton { border-radius: 50 }")
+        #info_button.setGeometry(QtCore.QRect(x, y, 10, 10))
+        #info_button.setFixedSize(10,10)
+        self.scene().addWidget(info_button)
 
     def wheelEvent(self, event):  # noqa: N802
         factor = 1.2
@@ -632,6 +643,88 @@ class LogWidget(QtWidgets.QTreeWidget):  # type: ignore[misc]
         self.addTopLevelItem(item)
 
 
+class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__()
+        self.parent = parent
+        self.lookupInformation : Dict[str, str] = {}
+        
+        self.layout = QtWidgets.QVBoxLayout(self)
+        
+        searchControlsLayout = QtWidgets.QHBoxLayout()
+        qubitSearchFieldLabel = QtWidgets.QLabel("Qubit label: ")
+        self.selectableQubitLabelsComboBox = QtWidgets.QComboBox()
+        self.selectableQubitLabelsComboBox.setPlaceholderText("<SELECT A QUBIT_LABEL>")
+        self.selectableQubitLabelsComboBox.currentIndexChanged.connect(self.handleComboBoxSelectionChange)
+        self.disableControls()
+        
+        searchControlsLayout.addWidget(qubitSearchFieldLabel)
+        searchControlsLayout.addWidget(self.selectableQubitLabelsComboBox)
+        searchControlsLayout.addStretch(1)
+        self.layout.addLayout(searchControlsLayout)
+        
+        self.displayedQubitInformation = QtWidgets.QLabel("")
+        self.layout.addWidget(self.displayedQubitInformation)
+        self.layout.addStretch(1)
+        self.setLayout(self.layout)
+   
+    def setLookupInformation(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
+        self.lookupInformation.clear()
+        
+        for i in range(annotatable_quantum_computation.num_qubits):
+            if not annotatable_quantum_computation.is_circuit_qubit_garbage(i):
+               continue               
+            self.lookupInformation.update({annotatable_quantum_computation.qubit_labels[i]: annotatable_quantum_computation.qubit_labels[i]})
+        
+        self.selectableQubitLabelsComboBox.clear()
+        self.selectableQubitLabelsComboBox.insertItems(0, self.lookupInformation.values())
+        if self.selectableQubitLabelsComboBox.count() > 0:
+           self.searchAndDisplayInformationForQubit(self.selectableQubitLabelsComboBox.itemText(0), True)
+        else:
+            self.selectableQubitLabelsComboBox.setCurrentIndex(-1)
+            self.displayedQubitInformation.clear()
+        
+    def enableControls(self) -> None:
+       self.selectableQubitLabelsComboBox.setDisabled(False)
+       return
+        
+    def disableControls(self) -> None:
+       self.selectableQubitLabelsComboBox.setDisabled(True)
+       return
+
+    def clear(self) -> None:
+        self.lookupInformation.clear()
+        self.selectableQubitLabelsComboBox.clear()
+        self.displayedQubitInformation.clear()
+        self.disableControls()
+
+    def searchAndDisplayInformationForQubit(self, qubitLabel: str, updateComboBoxSelection: bool) -> None:
+       if qubitLabel in self.lookupInformation:
+         if updateComboBoxSelection:
+            comboBoxItemMatchingLabel = self.selectableQubitLabelsComboBox.findText(qubitLabel)
+            if comboBoxItemMatchingLabel == -1:
+                msg = QtWidgets.QMessageBox()
+                msg.setBaseSize(QtCore.QSize(300, 200))
+                msg.setInformativeText("While the internal lookup information did contain a qubit with a label equal to " + qubitLabel + ", the combobox did not! This should not happend.")
+                msg.setWindowTitle("Error updating information for selected qubit")
+                msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Error)
+                msg.exec()
+                self.selectableQubitLabelsCombobox.setCurrentIndex(-1)
+                self.displayedQubitInformation.setText("")
+            else:
+                self.selectableQubitLabelsComboBox.setCurrentIndex(comboBoxItemMatchingLabel)
+                self.displayedQubitInformation.setText(qubitLabel)
+       else:
+         if updateComboBoxSelection:
+            self.selectableQubitLabelsCombobox.setCurrentIndex(-1)
+            
+         self.displayedQubitInformation.setText("No information for qubit with label " + qubitLabel)
+
+    def handleComboBoxSelectionChange(self, newlySelectedIndex: int) -> None:
+        if newlySelectedIndex == -1:
+           return
+        self.searchAndDisplayInformationForQubit(self.selectableQubitLabelsComboBox.itemText(newlySelectedIndex), False)
+
 class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         QtWidgets.QWidget.__init__(self, parent)
@@ -646,10 +739,16 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
     def setup_widgets(self) -> None:
         self.editor = QtSyReCEditor(self)
         self.viewer = CircuitView(parent=self)
+        self.qubits_information_lookup = CircuitQubitsInformationLookup(parent=self)
 
+        variable_info_search_circuit_view_splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal, self)
+        variable_info_search_circuit_view_splitter.addWidget(self.qubits_information_lookup)
+        variable_info_search_circuit_view_splitter.addWidget(self.viewer)
+        variable_info_search_circuit_view_splitter.setStretchFactor(1, 10)
+        
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical, self)
         splitter.addWidget(self.editor.widget)
-        splitter.addWidget(self.viewer)
+        splitter.addWidget(variable_info_search_circuit_view_splitter)
 
         self.setCentralWidget(splitter)
 
@@ -661,7 +760,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
 
     def setup_actions(self) -> None:
         self.editor.before_build = self.clear_error_log_and_circuit_view
-        self.editor.build_successful = self.viewer.load
+        self.editor.build_successful = self.update_circuit_view_and_qubit_information
         self.editor.parser_failed = self.logWidget.addMessage
         self.editor.build_failed = self.filter_and_record_parser_errors
 
@@ -673,9 +772,15 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         else:
             self.logWidget.addMessage("No matching lines found in error message")
 
+    def update_circuit_view_and_qubit_information(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
+        self.viewer.load(annotatable_quantum_computation)
+        self.qubits_information_lookup.setLookupInformation(annotatable_quantum_computation)
+        self.qubits_information_lookup.enableControls()
+
     def clear_error_log_and_circuit_view(self) -> None:
         self.logWidget.clear()
         self.viewer.clear()
+        self.qubits_information_lookup.clear()
 
     def setup_toolbar(self) -> None:
         toolbar = self.addToolBar("Main")
