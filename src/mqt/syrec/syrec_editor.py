@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, cast, NamedTuple
 
 from mqt.core.ir.operations import OpType
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -642,6 +642,89 @@ class LogWidget(QtWidgets.QTreeWidget):  # type: ignore[misc]
         item = QtWidgets.QTreeWidgetItem([message])
         self.addTopLevelItem(item)
 
+class LineNumberAndCallTypeTuple(NamedTuple):
+    lineNumber: int
+    callType: str
+
+class CircuitQubitInlineInformation(QtWidgets.QWidget):
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__()
+        self.parent = parent
+        
+        layout = QtWidgets.QVBoxLayout(self)
+        
+        nonStackInfoLayout = QtWidgets.QGridLayout()
+        associatedModuleSignatureLabel = QtWidgets.QLabel("Associated module signature:")
+        self.associatedModuleSignatureValue = QtWidgets.QLabel("module main(inout a(4))")
+        nonStackInfoLayout.addWidget(associatedModuleSignatureLabel, 0, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        nonStackInfoLayout.addWidget(self.associatedModuleSignatureValue, 0, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        
+        originalQubitLabel = QtWidgets.QLabel("Original qubit label:")
+        self.originalQubitLabelValue = QtWidgets.QLabel("")
+        nonStackInfoLayout.addWidget(originalQubitLabel, 1, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        nonStackInfoLayout.addWidget(self.originalQubitLabelValue, 1, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        
+        internalQubitLabel = QtWidgets.QLabel("Internal qubit label:")
+        self.internalQubitLabelValue = QtWidgets.QLabel("")
+        nonStackInfoLayout.addWidget(internalQubitLabel, 2, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        nonStackInfoLayout.addWidget(self.internalQubitLabelValue, 2, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        nonStackInfoLayout.rowStretch(1)
+        
+        inlineStackTreeLayout = QtWidgets.QVBoxLayout()
+        inlineStackTreeViewLabel = QtWidgets.QLabel("Inline stack")
+        inlineStackTreeViewLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        
+        self.inlineStackTreeView = QtWidgets.QTreeView()
+        self.inlineStackTreeView.setHeaderHidden(True)
+        
+        self.inlineStackTreeModel = QtGui.QStandardItemModel()
+        self.inlineStackTreeModelRoot = self.inlineStackTreeModel.invisibleRootItem()
+        
+        row1 = self.addInlineStackEntryToTreeView("module main(inout a(4))", LineNumberAndCallTypeTuple(102, "CALL"))
+        row2 = self.addInlineStackEntryToTreeView("module other(inout a(4))", LineNumberAndCallTypeTuple(12, "UNCALL"))
+        row3 = self.addInlineStackEntryToTreeView("module add(inout a(4))", None)
+        row2.appendRow(row3)
+        row1.appendRow(row2)
+        
+        self.inlineStackTreeModelRoot.appendRow(row1)
+        
+        self.inlineStackTreeView.setModel(self.inlineStackTreeModel)
+        inlineStackTreeLayout.addWidget(inlineStackTreeViewLabel)
+        inlineStackTreeLayout.addWidget(self.inlineStackTreeView)
+        
+        layout.addLayout(nonStackInfoLayout)
+        layout.addLayout(inlineStackTreeLayout)
+        self.layout = layout
+        self.setLayout(self.layout)
+        
+    def updateInformation(self, parentModuleSignature: str, originalQubitLabel: str, internalQubitLabel: str) -> None:
+        self.associatedModuleSignatureValue.setText(parentModuleSignature)
+        self.originalQubitLabelValue.setText(originalQubitLabel)
+        self.internalQubitLabelValue.setText(internalQubitLabel)
+        
+    def clear(self) -> None:
+        self.associatedModuleSignatureValue.clear()
+        self.originalQubitLabelValue.clear()
+        self.internalQubitLabelValue.clear()
+        
+    def addInlineStackEntryToTreeView(self, signature: str, optionalLineAndCallTypeTuple: LineNumberAndCallTypeTuple | None) -> QtGui.QStandardItem:
+        treeEntry = QtGui.QStandardItem(signature)
+        boldFont = QtGui.QFont()
+        boldFont.setBold(True)
+        #QtGui.QFont("Times", 12)
+        treeEntry.setFont(boldFont)
+        treeEntry.setEditable(False)
+        
+        if optionalLineAndCallTypeTuple is not None:    
+            sourceCodeLineNumberTreeEntry = QtGui.QStandardItem("Line: " + str(optionalLineAndCallTypeTuple.lineNumber))
+            sourceCodeLineNumberTreeEntry.setEditable(False)
+        
+            callTypeTreeEntry = QtGui.QStandardItem("Call type: " + optionalLineAndCallTypeTuple.callType)
+            callTypeTreeEntry.setEditable(False)
+        
+            treeEntry.appendColumn([sourceCodeLineNumberTreeEntry, callTypeTreeEntry])
+        return treeEntry
+        
 
 class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
@@ -663,8 +746,11 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         searchControlsLayout.addStretch(1)
         self.layout.addLayout(searchControlsLayout)
         
+        self.displayedQubitInfoWidget = CircuitQubitInlineInformation(self)
+        
         self.displayedQubitInformation = QtWidgets.QLabel("")
         self.layout.addWidget(self.displayedQubitInformation)
+        self.layout.addWidget(self.displayedQubitInfoWidget)
         self.layout.addStretch(1)
         self.setLayout(self.layout)
    
@@ -697,10 +783,17 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         self.selectableQubitLabelsComboBox.clear()
         self.displayedQubitInformation.clear()
         self.disableControls()
+        self.displayedQubitInfoWidget.clear()
 
     def searchAndDisplayInformationForQubit(self, qubitLabel: str, updateComboBoxSelection: bool) -> None:
-       if qubitLabel in self.lookupInformation:
+       if qubitLabel not in self.lookupInformation:
          if updateComboBoxSelection:
+            self.selectableQubitLabelsCombobox.setCurrentIndex(-1)
+            
+         self.displayedQubitInfoWidget.clear()
+         return
+       
+       if updateComboBoxSelection:
             comboBoxItemMatchingLabel = self.selectableQubitLabelsComboBox.findText(qubitLabel)
             if comboBoxItemMatchingLabel == -1:
                 msg = QtWidgets.QMessageBox()
@@ -710,15 +803,12 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Error)
                 msg.exec()
                 self.selectableQubitLabelsCombobox.setCurrentIndex(-1)
-                self.displayedQubitInformation.setText("")
+                self.displayedQubitInfoWidget.clear()
+                return
             else:
                 self.selectableQubitLabelsComboBox.setCurrentIndex(comboBoxItemMatchingLabel)
-                self.displayedQubitInformation.setText(qubitLabel)
-       else:
-         if updateComboBoxSelection:
-            self.selectableQubitLabelsCombobox.setCurrentIndex(-1)
-            
-         self.displayedQubitInformation.setText("No information for qubit with label " + qubitLabel)
+    
+       self.displayedQubitInfoWidget.updateInformation("", qubitLabel, qubitLabel)
 
     def handleComboBoxSelectionChange(self, newlySelectedIndex: int) -> None:
         if newlySelectedIndex == -1:
