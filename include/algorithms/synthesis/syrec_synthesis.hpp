@@ -120,7 +120,7 @@ namespace syrec {
         static bool leftShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount);  // <<
         static bool rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount); // >>
 
-        [[nodiscard]] static bool addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr);
+        [[nodiscard]] static bool addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const QubitInliningStack::ptr& currentModuleCallStack);
         void                      getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines);
 
         [[nodiscard]] std::optional<qc::Qubit> getConstantLine(bool value);
@@ -134,6 +134,7 @@ namespace syrec {
         std::stack<Module::ptr>     modules;
 
         AnnotatableQuantumComputation& annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+        QubitInliningStack::ptr        currentModuleCallStack;
 
     private:
         VarLinesMap                            varLines;

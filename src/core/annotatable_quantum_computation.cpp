@@ -101,8 +101,8 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
     return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
 }
 
-std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit) {
-    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().count(qubitLabel) != 0) {
+std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
+    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().count(qubitLabel) != 0 || (optionalInliningInformation.has_value() && (optionalInliningInformation->inlineStack == nullptr || optionalInliningInformation->userDeclaredQubitLabel.empty()))) {
         return std::nullopt;
     }
 
@@ -111,6 +111,12 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(con
     addQubitRegister(qubitSize, qubitLabel);
     if (isGarbageQubit) {
         setLogicalQubitGarbage(qubitIndex);
+    }
+
+    if (optionalInliningInformation.has_value()) {
+        inlinedQubitsInformationLookup[qubitLabel] = *optionalInliningInformation;
+    } else {
+        inlinedQubitsInformationLookup.erase(qubitLabel);
     }
     return qubitIndex;
 }
@@ -336,6 +342,13 @@ bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std:
         annotationsForQuantumOperation.emplace(std::string(annotationKey), annotationValue);
     }
     return true;
+}
+
+std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> AnnotatableQuantumComputation::getInliningInformationOfQubit(const std::string& qubitLabel) const {
+    if (inlinedQubitsInformationLookup.count(qubitLabel) == 0) {
+        return std::nullopt;
+    }
+    return inlinedQubitsInformationLookup.at(qubitLabel);
 }
 
 // BEGIN NON-PUBLIC FUNCTIONALITY

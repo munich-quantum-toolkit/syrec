@@ -49,15 +49,26 @@ namespace syrec {
     void SyrecSynthesis::setMainModule(const Module::ptr& mainModule) {
         assert(modules.empty());
         modules.push(mainModule);
+        currentModuleCallStack = std::make_shared<QubitInliningStack>();
+
+        auto mainModuleCallStackEntry         = QubitInliningStack::QubitInliningStackEntry();
+        mainModuleCallStackEntry.targetModule = mainModule;
+        currentModuleCallStack->push(mainModuleCallStackEntry);
     }
 
     bool SyrecSynthesis::addVariables(const Variable::vec& variables) {
         bool couldQubitsForVariablesBeAdded = true;
+
+        // We only want to record inlining information for qubits that are actually inlined (i.e. variables of type 'wire' and 'state').
+        // Note that all variables added in this call shared the same inlining stack thus we reuse the latter when adding the former.
+        const bool              isAnyVarALocalModuleVarBasedOnVarType = std::any_of(variables.cbegin(), variables.cend(), [](const Variable::ptr& variable) { return variable->type == Variable::Type::Wire || variable->type == Variable::Type::State; });
+        QubitInliningStack::ptr copyOfQubitInliningStack              = isAnyVarALocalModuleVarBasedOnVarType && currentModuleCallStack != nullptr ? std::make_shared<QubitInliningStack>(*currentModuleCallStack) : nullptr;
+
         for (std::size_t i = 0; i < variables.size() && couldQubitsForVariablesBeAdded; ++i) {
             const auto& variable = variables[i];
             // entry in var lines map
             varLines.try_emplace(variable, annotatableQuantumComputation.getNqubits());
-            couldQubitsForVariablesBeAdded &= addVariable(annotatableQuantumComputation, variable->dimensions, variable, std::string());
+            couldQubitsForVariablesBeAdded &= addVariable(annotatableQuantumComputation, variable->dimensions, variable, std::string(), copyOfQubitInliningStack);
         }
         return couldQubitsForVariablesBeAdded;
     }
@@ -174,9 +185,9 @@ namespace syrec {
         } else if (auto const* forStat = dynamic_cast<ForStatement*>(statement.get()); forStat != nullptr) {
             okay = onStatement(*forStat);
         } else if (auto const* callStat = dynamic_cast<CallStatement*>(statement.get()); callStat != nullptr) {
-            okay = onStatement(*callStat);
+            okay = currentModuleCallStack->push(QubitInliningStack::QubitInliningStackEntry({statement->lineNumber, true, callStat->target})) && onStatement(*callStat) && currentModuleCallStack->pop();
         } else if (auto const* uncallStat = dynamic_cast<UncallStatement*>(statement.get()); uncallStat != nullptr) {
-            okay = onStatement(*uncallStat);
+            okay = currentModuleCallStack->push(QubitInliningStack::QubitInliningStackEntry({statement->lineNumber, false, uncallStat->target})) && onStatement(*uncallStat) && currentModuleCallStack->pop();
         } else if (auto const* skipStat = statement.get(); skipStat != nullptr) {
             okay = onStatement(*skipStat);
         } else {
@@ -1058,20 +1069,33 @@ namespace syrec {
         }
     }
 
-    bool SyrecSynthesis::addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr) {
+    // TODO: Error message on duplicate qubit labels?
+    // TODO: Error when expression bitwidth is larger than potential values when former is used as index for values of dimension
+    // TODO: Update parser to not allow user declared variables and modules with __ prefix
+    bool SyrecSynthesis::addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const QubitInliningStack::ptr& currentModuleCallStack) {
         bool couldQubitsForVariableBeAdded = true;
+
         if (dimensions.empty()) {
             for (qc::Qubit i = 0U; i < var->bitwidth && couldQubitsForVariableBeAdded; ++i) {
-                const std::string qubitLabel     = var->name + arraystr + "." + std::to_string(i);
-                const bool        isGarbageQubit = var->type == Variable::Type::In || var->type == Variable::Type::Wire;
-                couldQubitsForVariableBeAdded &= annotatableQuantumComputation.addNonAncillaryQubit(qubitLabel, isGarbageQubit).has_value();
+                std::string                                                           qubitLabel     = var->name;
+                const bool                                                            isGarbageQubit = var->type == Variable::Type::In || var->type == Variable::Type::Wire;
+                std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> optionalQubitInliningInformation;
+
+                if (var->type == Variable::Type::Wire || var->type == Variable::Type::State) {
+                    optionalQubitInliningInformation = AnnotatableQuantumComputation::InlinedQubitInformation({var->name, currentModuleCallStack});
+                    // To prevent name clashes when local module variables are inlined at the callsite, all local variable labels are replaced with the label '__q<n_qubits>'  and an alias created and stored
+                    // in the annotatable quantum computation.
+                    qubitLabel = "__q" + std::to_string(annotatableQuantumComputation.getNqubits());
+                }
+                qubitLabel += arraystr + "." + std::to_string(i);
+                couldQubitsForVariableBeAdded &= annotatableQuantumComputation.addNonAncillaryQubit(qubitLabel, isGarbageQubit, optionalQubitInliningInformation).has_value();
             }
         } else {
             const auto                   len = static_cast<std::size_t>(dimensions.front());
             const std::vector<qc::Qubit> newDimensions(dimensions.begin() + 1U, dimensions.end());
 
             for (qc::Qubit i = 0U; i < len && couldQubitsForVariableBeAdded; ++i) {
-                couldQubitsForVariableBeAdded &= addVariable(annotatableQuantumComputation, newDimensions, var, arraystr + "[" + std::to_string(i) + "]");
+                couldQubitsForVariableBeAdded &= addVariable(annotatableQuantumComputation, newDimensions, var, arraystr + "[" + std::to_string(i) + "]", currentModuleCallStack);
             }
         }
         return couldQubitsForVariableBeAdded;
