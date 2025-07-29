@@ -699,10 +699,15 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
             inline_stack[inline_stack_size - 1].stringified_signature_of_called_module
         )
 
-        for i in range(inline_stack_size):
-            self.inline_stack_tree_model_root.appendRow(
-                self.create_tree_view_entry_for_inline_stack_entry(inline_stack[i], i == inline_stack_size - 1)
+        prev_tree_model_entry = None
+        for i in reversed(range(inline_stack_size)):
+            parent_tree_model_entry = self.create_tree_view_entry_for_inline_stack_entry(
+                inline_stack[i], i == inline_stack_size - 1
             )
+            if prev_tree_model_entry is not None:
+                parent_tree_model_entry.appendRow(prev_tree_model_entry)
+            prev_tree_model_entry = parent_tree_model_entry
+        self.inline_stack_tree_model_root.appendRow(prev_tree_model_entry)
 
     def clear(self) -> None:
         self.associated_module_signature_value.clear()
@@ -747,6 +752,13 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
 
         self.layout = QtWidgets.QVBoxLayout(self)
 
+        header_label_layout = QtWidgets.QHBoxLayout()
+        header_label = QtWidgets.QLabel("SyReC module local variable inline information")
+        header_label_layout.addStretch()
+        header_label_layout.addWidget(header_label)
+        header_label_layout.addStretch()
+        self.layout.addLayout(header_label_layout)
+
         search_controls_layout = QtWidgets.QHBoxLayout()
         qubit_label_combobox_label = QtWidgets.QLabel("Qubit label: ")
         self.selectable_qubit_labels_combobox = QtWidgets.QComboBox()
@@ -754,9 +766,10 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         self.selectable_qubit_labels_combobox.currentIndexChanged.connect(self.handle_combobox_selection_change)
         self.disable_controls()
 
+        search_controls_layout.addStretch()
         search_controls_layout.addWidget(qubit_label_combobox_label)
         search_controls_layout.addWidget(self.selectable_qubit_labels_combobox)
-        search_controls_layout.addStretch(1)
+        search_controls_layout.addStretch()
         self.layout.addLayout(search_controls_layout)
 
         self.qubit_info_widget = CircuitQubitInlineInformation(self)
