@@ -344,11 +344,11 @@ bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std:
     return true;
 }
 
-std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> AnnotatableQuantumComputation::getInliningInformationOfQubit(const std::string& qubitLabel) const {
+const AnnotatableQuantumComputation::InlinedQubitInformation* AnnotatableQuantumComputation::getInliningInformationOfQubit(const std::string& qubitLabel) const {
     if (inlinedQubitsInformationLookup.count(qubitLabel) == 0) {
-        return std::nullopt;
+        return nullptr;
     }
-    return inlinedQubitsInformationLookup.at(qubitLabel);
+    return &inlinedQubitsInformationLookup.at(qubitLabel);
 }
 
 // BEGIN NON-PUBLIC FUNCTIONALITY

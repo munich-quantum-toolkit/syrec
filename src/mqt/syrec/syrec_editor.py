@@ -688,7 +688,6 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
         self.internal_qubit_label_value.setText(internal_qubit_label)
         inline_stack = inlined_qubit_information.inline_stack
 
-        print(internal_qubit_label + " " + str(inline_stack.size()))
         inline_stack_size = inline_stack.size()
         self.original_qubit_label_value.setText(inlined_qubit_information.user_declared_qubit_label)
 
@@ -819,12 +818,9 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 self.qubit_info_widget.clear()
                 return
             self.selectable_qubit_labels_combobox.setCurrentIndex(combobox_item_idx_matching_label)
-            return
 
         # Signature not correctly stringified (trailing comma)
         # Stringified signature of main module not set for locals of main module?
-        # Move call information one level up in inline stack ?
-        # Selection in combobox removes all inline stacks? Are all smart pointer references cleared?
         if (
             self.annotatable_quantum_computation is not None
             and self.annotatable_quantum_computation.get_inlining_information_of_qubit(qubit_label) is not None

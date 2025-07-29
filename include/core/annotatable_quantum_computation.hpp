@@ -156,7 +156,7 @@ namespace syrec {
          * @param qubitLabel The internal label of the qubit set via \see AnnotatableQuantumComputation#addNonAncillaryQubit used to retrieve the inlining information.
          * @return Returns the inlined qubit information if such data exists, otherwise std::nullopt is returned
          */
-        [[maybe_unused]] std::optional<InlinedQubitInformation> getInliningInformationOfQubit(const std::string& qubitLabel) const;
+        [[maybe_unused]] const InlinedQubitInformation* getInliningInformationOfQubit(const std::string& qubitLabel) const;
 
     protected:
         [[maybe_unused]] bool annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation);

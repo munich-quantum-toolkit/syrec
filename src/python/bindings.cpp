@@ -31,22 +31,17 @@ PYBIND11_MODULE(pysyrec, m) {
     py::module::import("mqt.core.ir");
     m.doc() = "Python interface for the SyReC programming language for the synthesis of reversible circuits";
 
-    py::class_<QubitInliningStack::QubitInliningStackEntry>(m, "qubit_inlining_stack_entry")
+    py::class_<QubitInliningStack::QubitInliningStackEntry, std::shared_ptr<QubitInliningStack::QubitInliningStackEntry>>(m, "qubit_inlining_stack_entry")
             .def(py::init<>(), "Constructs an empty qubit inlining stack entry")
             .def_property_readonly("line_number_of_call_of_target_module", [](const QubitInliningStack::QubitInliningStackEntry& stackEntry) { return stackEntry.lineNumberOfCallOfTargetModule; }, "Returns the line number in the source file in which the call statement variant was defined")
             .def_property_readonly("is_target_module_accessed_via_call_stmt", [](const QubitInliningStack::QubitInliningStackEntry& stackEntry) { return stackEntry.isTargetModuleAccessedViaCallStmt; }, "Returns whether the target module was called using a CallStatement")
             .def_property_readonly("stringified_signature_of_called_module", &QubitInliningStack::QubitInliningStackEntry::stringifySignatureOfCalledModule, "Returns the stringified target module signature");
 
     // TODO: Size and access via index could be replaced with iterator
-    py::class_<QubitInliningStack>(m, "qubit_inlining_stack")
+    py::class_<QubitInliningStack, std::shared_ptr<QubitInliningStack>>(m, "qubit_inlining_stack")
             .def(py::init<>(), "Constructs an empty qubit inlining stack")
             .def("size", &QubitInliningStack::size, "Get the number of stack entries")
-            .def("__getitem__", [](QubitInliningStack& qubitInliningStack, std::size_t idx) -> std::optional<QubitInliningStack::QubitInliningStackEntry> {
-                if (QubitInliningStack::QubitInliningStackEntry* stackEntryAtIdx = qubitInliningStack.getStackEntryAt(idx); stackEntryAtIdx != nullptr) {
-                    return std::make_optional(*stackEntryAtIdx);
-                }
-                return std::nullopt;
-            });
+            .def("__getitem__", &QubitInliningStack::getStackEntryAt, "idx"_a, py::return_value_policy::reference_internal);
 
     py::class_<AnnotatableQuantumComputation::InlinedQubitInformation>(m, "inlined_qubit_information")
             .def(py::init<>(), "Constructs an empty inline qubit information container")
@@ -59,7 +54,7 @@ PYBIND11_MODULE(pysyrec, m) {
             .def("get_quantum_cost_for_synthesis", &AnnotatableQuantumComputation::getQuantumCostForSynthesis, "Get the quantum cost to synthesis the quantum computation")
             .def("get_transistor_cost_for_synthesis", &AnnotatableQuantumComputation::getTransistorCostForSynthesis, "Get the transistor cost to synthesis the quantum computation")
             .def("get_annotations_of_quantum_operation", &AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation, "quantum_operation_index_in_quantum_operation"_a, "Get the annotations of a specific quantum operation in the quantum computation")
-            .def("get_inlining_information_of_qubit", &AnnotatableQuantumComputation::getInliningInformationOfQubit, "qubit_label"_a, "Get the inlining information for a qubit");
+            .def("get_inlining_information_of_qubit", &AnnotatableQuantumComputation::getInliningInformationOfQubit, "qubit_label"_a, "Get the inlining information for a qubit", py::return_value_policy::reference_internal);
 
     py::class_<NBitValuesContainer>(m, "n_bit_values_container")
             .def(py::init<>(), "Constructs an empty container of size zero.")
