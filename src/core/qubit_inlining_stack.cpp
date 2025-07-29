@@ -50,16 +50,14 @@ namespace {
 } // namespace
 
 std::optional<std::string> QubitInliningStack::QubitInliningStackEntry::stringifySignatureOfCalledModule() const {
+    // TODO: Is ostringstream the correct choice here?
     std::ostringstream stringifiedCalledModuleSignature;
     stringifiedCalledModuleSignature << "module " << targetModule->name << "(";
 
     bool stringificationSuccessful = true;
     for (std::size_t i = 0; i < targetModule->parameters.size() && stringificationSuccessful; ++i) {
+        stringifiedCalledModuleSignature << (i != 0 ? ", " : "");
         stringificationSuccessful = targetModule->parameters.at(i) != nullptr && stringifyModuleParameter(*targetModule->parameters.at(i), stringifiedCalledModuleSignature);
-        // TODO:
-        if (i < targetModule->parameters.size() - 2) {
-            stringifiedCalledModuleSignature << ", ";
-        }
     }
     stringifiedCalledModuleSignature << ")";
 
