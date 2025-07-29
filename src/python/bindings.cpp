@@ -19,6 +19,7 @@
 #include "ir/QuantumComputation.hpp"
 
 #include <functional>
+#include <optional>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -40,9 +41,17 @@ PYBIND11_MODULE(pysyrec, m) {
     py::class_<QubitInliningStack>(m, "qubit_inlining_stack")
             .def(py::init<>(), "Constructs an empty qubit inlining stack")
             .def("size", &QubitInliningStack::size, "Get the number of stack entries")
-            .def("__getitem__", [](const QubitInliningStack& qubitInliningStack, std::size_t idx) {
-                return qubitInliningStack.getStackEntryAt(idx);
+            .def("__getitem__", [](QubitInliningStack& qubitInliningStack, std::size_t idx) -> std::optional<QubitInliningStack::QubitInliningStackEntry> {
+                if (QubitInliningStack::QubitInliningStackEntry* stackEntryAtIdx = qubitInliningStack.getStackEntryAt(idx); stackEntryAtIdx != nullptr) {
+                    return std::make_optional(*stackEntryAtIdx);
+                }
+                return std::nullopt;
             });
+
+    py::class_<AnnotatableQuantumComputation::InlinedQubitInformation>(m, "inlined_qubit_information")
+            .def(py::init<>(), "Constructs an empty inline qubit information container")
+            .def_property_readonly("user_declared_qubit_label", [](const AnnotatableQuantumComputation::InlinedQubitInformation& inlinedQubitInfo) { return inlinedQubitInfo.userDeclaredQubitLabel; }, "Get the label of the qubit as defined by the user in the SyReC program")
+            .def_property_readonly("inline_stack", [](const AnnotatableQuantumComputation::InlinedQubitInformation& inlinedQubitInfo) { return inlinedQubitInfo.inlineStack; }, "Get the inline stack associated with the qubit");
 
     py::class_<AnnotatableQuantumComputation, qc::QuantumComputation>(m, "annotatable_quantum_computation")
             .def(py::init<>(), "Constructs an annotatable quantum computation")

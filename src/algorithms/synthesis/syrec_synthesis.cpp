@@ -49,11 +49,6 @@ namespace syrec {
     void SyrecSynthesis::setMainModule(const Module::ptr& mainModule) {
         assert(modules.empty());
         modules.push(mainModule);
-        currentModuleCallStack = std::make_shared<QubitInliningStack>();
-
-        auto mainModuleCallStackEntry         = QubitInliningStack::QubitInliningStackEntry();
-        mainModuleCallStackEntry.targetModule = mainModule;
-        currentModuleCallStack->push(mainModuleCallStackEntry);
     }
 
     bool SyrecSynthesis::addVariables(const Variable::vec& variables) {
@@ -97,6 +92,14 @@ namespace syrec {
 
         // declare as top module
         synthesizer->setMainModule(main);
+
+        if (get<bool>(settings, "create_qubit_inline_debug_information", false)) {
+            synthesizer->currentModuleCallStack = std::make_shared<QubitInliningStack>();
+
+            auto mainModuleCallStackEntry         = QubitInliningStack::QubitInliningStackEntry();
+            mainModuleCallStackEntry.targetModule = main;
+            synthesizer->currentModuleCallStack->push(mainModuleCallStackEntry);
+        }
 
         // create lines for global variables
         if (!synthesizer->addVariables(main->parameters)) {
@@ -185,9 +188,33 @@ namespace syrec {
         } else if (auto const* forStat = dynamic_cast<ForStatement*>(statement.get()); forStat != nullptr) {
             okay = onStatement(*forStat);
         } else if (auto const* callStat = dynamic_cast<CallStatement*>(statement.get()); callStat != nullptr) {
-            okay = currentModuleCallStack->push(QubitInliningStack::QubitInliningStackEntry({statement->lineNumber, true, callStat->target})) && onStatement(*callStat) && currentModuleCallStack->pop();
+            if (currentModuleCallStack == nullptr) {
+                okay = onStatement(*callStat);
+            } else {
+                assert(currentModuleCallStack->size() > 0);
+                if (auto* prevStackEntry = currentModuleCallStack->getStackEntryAt(currentModuleCallStack->size() - 1); prevStackEntry != nullptr) {
+                    prevStackEntry->lineNumberOfCallOfTargetModule    = statement->lineNumber;
+                    prevStackEntry->isTargetModuleAccessedViaCallStmt = true;
+                    okay                                              = currentModuleCallStack->push(QubitInliningStack::QubitInliningStackEntry({std::nullopt, true, callStat->target})) && onStatement(*callStat) && currentModuleCallStack->pop();
+                } else {
+                    // There must be at least on entry on the stack for the main module of the currently synthesized SyReC program
+                    okay = false;
+                }
+            }
         } else if (auto const* uncallStat = dynamic_cast<UncallStatement*>(statement.get()); uncallStat != nullptr) {
-            okay = currentModuleCallStack->push(QubitInliningStack::QubitInliningStackEntry({statement->lineNumber, false, uncallStat->target})) && onStatement(*uncallStat) && currentModuleCallStack->pop();
+            if (currentModuleCallStack == nullptr) {
+                okay = onStatement(*uncallStat);
+            } else {
+                assert(currentModuleCallStack->size() > 0);
+                if (auto* prevStackEntry = currentModuleCallStack->getStackEntryAt(currentModuleCallStack->size() - 1); prevStackEntry != nullptr) {
+                    prevStackEntry->lineNumberOfCallOfTargetModule    = statement->lineNumber;
+                    prevStackEntry->isTargetModuleAccessedViaCallStmt = false;
+                    okay                                              = currentModuleCallStack->push(QubitInliningStack::QubitInliningStackEntry({std::nullopt, false, uncallStat->target})) && onStatement(*uncallStat) && currentModuleCallStack->pop();
+                } else {
+                    // There must be at least on entry on the stack for the main module of the currently synthesized SyReC program
+                    okay = false;
+                }
+            }
         } else if (auto const* skipStat = statement.get(); skipStat != nullptr) {
             okay = onStatement(*skipStat);
         } else {
@@ -1075,26 +1102,33 @@ namespace syrec {
     bool SyrecSynthesis::addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const QubitInliningStack::ptr& currentModuleCallStack) {
         bool couldQubitsForVariableBeAdded = true;
 
+        const auto currNumQubits = annotatableQuantumComputation.getNqubits();
         if (dimensions.empty()) {
             for (qc::Qubit i = 0U; i < var->bitwidth && couldQubitsForVariableBeAdded; ++i) {
-                std::string                                                           qubitLabel     = var->name;
-                const bool                                                            isGarbageQubit = var->type == Variable::Type::In || var->type == Variable::Type::Wire;
+                std::string                                                           internalQubitLabel     = var->name;
+                std::string                                                           userDeclaredQubitLabel = var->name;
+                const bool                                                            isGarbageQubit         = var->type == Variable::Type::In || var->type == Variable::Type::Wire;
                 std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> optionalQubitInliningInformation;
 
                 if (var->type == Variable::Type::Wire || var->type == Variable::Type::State) {
-                    optionalQubitInliningInformation = AnnotatableQuantumComputation::InlinedQubitInformation({var->name, currentModuleCallStack});
-                    // To prevent name clashes when local module variables are inlined at the callsite, all local variable labels are replaced with the label '__q<n_qubits>'  and an alias created and stored
-                    // in the annotatable quantum computation.
-                    qubitLabel = "__q" + std::to_string(annotatableQuantumComputation.getNqubits());
+                    // To prevent name clashes when local module variables are inlined at the callsite, all local variable names are transformed to '__q<curr_num_qubits>' and an alias is created and stored
+                    // in the annotatable quantum computation. The <curr_num_qubits> portion of the new variable name is the number of qubits prior to the addition of any variable in this call so that the qubits
+                    // created for each value of a dimension of a variable share the same name prefix (i.e. the variable 'wire a[2](2)' will cause the generation of the qubits '__q0[0].0', '__q0[0].1','__q0[1].0', '__q0[1].0')
+                    internalQubitLabel = "__q" + std::to_string(currNumQubits);
                 }
-                qubitLabel += arraystr + "." + std::to_string(i);
-                couldQubitsForVariableBeAdded &= annotatableQuantumComputation.addNonAncillaryQubit(qubitLabel, isGarbageQubit, optionalQubitInliningInformation).has_value();
+                internalQubitLabel += arraystr + "." + std::to_string(i);
+                userDeclaredQubitLabel += arraystr + "." + std::to_string(i);
+
+                if (internalQubitLabel != userDeclaredQubitLabel) {
+                    optionalQubitInliningInformation = AnnotatableQuantumComputation::InlinedQubitInformation({userDeclaredQubitLabel, currentModuleCallStack});
+                }
+                couldQubitsForVariableBeAdded &= annotatableQuantumComputation.addNonAncillaryQubit(internalQubitLabel, isGarbageQubit, optionalQubitInliningInformation).has_value();
             }
         } else {
             const auto                   len = static_cast<std::size_t>(dimensions.front());
             const std::vector<qc::Qubit> newDimensions(dimensions.begin() + 1U, dimensions.end());
 
-            for (qc::Qubit i = 0U; i < len && couldQubitsForVariableBeAdded; ++i) {
+            for (std::size_t i = 0U; i < len && couldQubitsForVariableBeAdded; ++i) {
                 couldQubitsForVariableBeAdded &= addVariable(annotatableQuantumComputation, newDimensions, var, arraystr + "[" + std::to_string(i) + "]", currentModuleCallStack);
             }
         }

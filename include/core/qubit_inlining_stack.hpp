@@ -31,10 +31,10 @@ namespace syrec {
             [[nodiscard]] std::optional<std::string> stringifySignatureOfCalledModule() const;
         };
 
-        [[maybe_unused]] bool                                   push(const QubitInliningStackEntry& inlineStackEntry);
-        [[maybe_unused]] bool                                   pop();
-        [[maybe_unused]] std::size_t                            size() const;
-        [[maybe_unused]] std::optional<QubitInliningStackEntry> getStackEntryAt(std::size_t idx) const;
+        [[maybe_unused]] bool                     push(const QubitInliningStackEntry& inlineStackEntry);
+        [[maybe_unused]] bool                     pop();
+        [[maybe_unused]] std::size_t              size() const;
+        [[maybe_unused]] QubitInliningStackEntry* getStackEntryAt(std::size_t idx);
 
     protected:
         std::vector<QubitInliningStackEntry> stackEntries;

@@ -89,6 +89,6 @@ std::size_t QubitInliningStack::size() const {
     return stackEntries.size();
 }
 
-std::optional<QubitInliningStack::QubitInliningStackEntry> QubitInliningStack::getStackEntryAt(std::size_t idx) const {
-    return idx < size() ? std::make_optional(stackEntries[idx]) : std::nullopt;
+QubitInliningStack::QubitInliningStackEntry* QubitInliningStack::getStackEntryAt(std::size_t idx) {
+    return idx < size() ? &stackEntries[idx] : nullptr;
 }
