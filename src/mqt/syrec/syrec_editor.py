@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast, NamedTuple
+from typing import TYPE_CHECKING, Any, cast
 
 from mqt.core.ir.operations import OpType
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -148,9 +148,6 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
             gate.setPos(i * 30 + 15, 0)
             self.scene().addItem(gate)
 
-        #inlined_variable_vertical_offset = int(-self.inputs[0].boundingRect().width() - 30)
-        #self.add_inlined_variable_information(inlined_variable_vertical_offset, 0, QtCore.Qt.AlignmentFlag.AlignRight)
-
     def add_line_label(
         self, x: int, y: int, text: str, align: QtCore.Qt.AlignmentFlag, color: bool
     ) -> QtWidgets.QGraphicsTextItem | None:
@@ -166,14 +163,6 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
             text_item.setDefaultTextColor(QtGui.QColorConstants.Red)
 
         return text_item
-
-    def add_inlined_variable_information(self, x: int, y: int, align: QtCore.Qt.AlignmentFlag) -> None:
-        info_button = QtWidgets.QPushButton(icon=QtGui.QIcon.fromTheme("dialog-information"))
-        info_button.setGeometry(x, y, 30, 30)
-        #info_button.setStyleSheet("QPushButton { border-radius: 50 }")
-        #info_button.setGeometry(QtCore.QRect(x, y, 10, 10))
-        #info_button.setFixedSize(10,10)
-        self.scene().addWidget(info_button)
 
     def wheelEvent(self, event):  # noqa: N802
         factor = 1.2
@@ -307,10 +296,12 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
 
         self.annotatable_quantum_computation = syrec.annotatable_quantum_computation()
 
+        synthesis_settings = syrec.properties()
+        synthesis_settings.set_bool("create_qubit_inline_debug_information", True)
         if self.cost_aware_synthesis:
-            syrec.cost_aware_synthesis(self.annotatable_quantum_computation, self.prog)
+            syrec.cost_aware_synthesis(self.annotatable_quantum_computation, self.prog, synthesis_settings)
         else:
-            syrec.line_aware_synthesis(self.annotatable_quantum_computation, self.prog)
+            syrec.line_aware_synthesis(self.annotatable_quantum_computation, self.prog, synthesis_settings)
 
         self.sim_action.setDisabled(False)
         self.stat_action.setDisabled(False)
@@ -642,178 +633,215 @@ class LogWidget(QtWidgets.QTreeWidget):  # type: ignore[misc]
         item = QtWidgets.QTreeWidgetItem([message])
         self.addTopLevelItem(item)
 
-class LineNumberAndCallTypeTuple(NamedTuple):
-    lineNumber: int
-    callType: str
 
-class CircuitQubitInlineInformation(QtWidgets.QWidget):
+class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__()
         self.parent = parent
-        
+
         layout = QtWidgets.QVBoxLayout(self)
-        
-        nonStackInfoLayout = QtWidgets.QGridLayout()
-        associatedModuleSignatureLabel = QtWidgets.QLabel("Associated module signature:")
-        self.associatedModuleSignatureValue = QtWidgets.QLabel("module main(inout a(4))")
-        nonStackInfoLayout.addWidget(associatedModuleSignatureLabel, 0, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
-        nonStackInfoLayout.addWidget(self.associatedModuleSignatureValue, 0, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
-        
-        originalQubitLabel = QtWidgets.QLabel("Original qubit label:")
-        self.originalQubitLabelValue = QtWidgets.QLabel("")
-        nonStackInfoLayout.addWidget(originalQubitLabel, 1, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
-        nonStackInfoLayout.addWidget(self.originalQubitLabelValue, 1, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
-        
-        internalQubitLabel = QtWidgets.QLabel("Internal qubit label:")
-        self.internalQubitLabelValue = QtWidgets.QLabel("")
-        nonStackInfoLayout.addWidget(internalQubitLabel, 2, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
-        nonStackInfoLayout.addWidget(self.internalQubitLabelValue, 2, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
-        nonStackInfoLayout.rowStretch(1)
-        
-        inlineStackTreeLayout = QtWidgets.QVBoxLayout()
-        inlineStackTreeViewLabel = QtWidgets.QLabel("Inline stack")
-        inlineStackTreeViewLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        
-        self.inlineStackTreeView = QtWidgets.QTreeView()
-        self.inlineStackTreeView.setHeaderHidden(True)
-        
-        self.inlineStackTreeModel = QtGui.QStandardItemModel()
-        self.inlineStackTreeModelRoot = self.inlineStackTreeModel.invisibleRootItem()
-        
-        row1 = self.addInlineStackEntryToTreeView("module main(inout a(4))", LineNumberAndCallTypeTuple(102, "CALL"))
-        row2 = self.addInlineStackEntryToTreeView("module other(inout a(4))", LineNumberAndCallTypeTuple(12, "UNCALL"))
-        row3 = self.addInlineStackEntryToTreeView("module add(inout a(4))", None)
-        row2.appendRow(row3)
-        row1.appendRow(row2)
-        
-        self.inlineStackTreeModelRoot.appendRow(row1)
-        
-        self.inlineStackTreeView.setModel(self.inlineStackTreeModel)
-        inlineStackTreeLayout.addWidget(inlineStackTreeViewLabel)
-        inlineStackTreeLayout.addWidget(self.inlineStackTreeView)
-        
-        layout.addLayout(nonStackInfoLayout)
-        layout.addLayout(inlineStackTreeLayout)
+
+        non_stack_info_layout = QtWidgets.QGridLayout()
+        associated_module_signature_label = QtWidgets.QLabel("Associated module signature:")
+        self.associated_module_signature_value = QtWidgets.QLabel("")
+        non_stack_info_layout.addWidget(
+            associated_module_signature_label, 0, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft
+        )
+        non_stack_info_layout.addWidget(
+            self.associated_module_signature_value, 0, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft
+        )
+
+        original_qubit_label = QtWidgets.QLabel("Original qubit label:")
+        self.original_qubit_label_value = QtWidgets.QLabel("")
+        non_stack_info_layout.addWidget(original_qubit_label, 1, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        non_stack_info_layout.addWidget(self.original_qubit_label_value, 1, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+
+        internal_qubit_label = QtWidgets.QLabel("Internal qubit label:")
+        self.internal_qubit_label_value = QtWidgets.QLabel("")
+        non_stack_info_layout.addWidget(internal_qubit_label, 2, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        non_stack_info_layout.addWidget(self.internal_qubit_label_value, 2, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        non_stack_info_layout.rowStretch(1)
+
+        inline_stack_tree_layout = QtWidgets.QVBoxLayout()
+        inline_stack_tree_view_label = QtWidgets.QLabel("Inline stack")
+        inline_stack_tree_view_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+
+        self.inline_stack_tree_view = QtWidgets.QTreeView()
+        self.inline_stack_tree_view.setHeaderHidden(True)
+
+        self.inline_stack_tree_model = QtGui.QStandardItemModel()
+        self.inline_stack_tree_model_root = self.inline_stack_tree_model.invisibleRootItem()
+
+        self.inline_stack_tree_view.setModel(self.inline_stack_tree_model)
+        inline_stack_tree_layout.addWidget(inline_stack_tree_view_label)
+        inline_stack_tree_layout.addWidget(self.inline_stack_tree_view)
+
+        layout.addLayout(non_stack_info_layout)
+        layout.addLayout(inline_stack_tree_layout)
         self.layout = layout
         self.setLayout(self.layout)
-        
-    def updateInformation(self, parentModuleSignature: str, originalQubitLabel: str, internalQubitLabel: str) -> None:
-        self.associatedModuleSignatureValue.setText(parentModuleSignature)
-        self.originalQubitLabelValue.setText(originalQubitLabel)
-        self.internalQubitLabelValue.setText(internalQubitLabel)
-        
+
+    def update_information(
+        self, internal_qubit_label: str, inlined_qubit_information: syrec.inlined_qubit_information
+    ) -> None:
+        self.clear()
+        self.internal_qubit_label_value.setText(internal_qubit_label)
+        inline_stack = inlined_qubit_information.inline_stack
+
+        print(internal_qubit_label + " " + str(inline_stack.size()))
+        inline_stack_size = inline_stack.size()
+        self.original_qubit_label_value.setText(inlined_qubit_information.user_declared_qubit_label)
+
+        if inline_stack_size == 0:
+            self.associated_module_signature_value.setText("")
+            return
+
+        self.associated_module_signature_value.setText(
+            inline_stack[inline_stack_size - 1].stringified_signature_of_called_module
+        )
+
+        for i in range(inline_stack_size):
+            self.inline_stack_tree_model_root.appendRow(
+                self.create_tree_view_entry_for_inline_stack_entry(inline_stack[i], i == inline_stack_size - 1)
+            )
+
     def clear(self) -> None:
-        self.associatedModuleSignatureValue.clear()
-        self.originalQubitLabelValue.clear()
-        self.internalQubitLabelValue.clear()
-        
-    def addInlineStackEntryToTreeView(self, signature: str, optionalLineAndCallTypeTuple: LineNumberAndCallTypeTuple | None) -> QtGui.QStandardItem:
-        treeEntry = QtGui.QStandardItem(signature)
-        boldFont = QtGui.QFont()
-        boldFont.setBold(True)
-        #QtGui.QFont("Times", 12)
-        treeEntry.setFont(boldFont)
-        treeEntry.setEditable(False)
-        
-        if optionalLineAndCallTypeTuple is not None:    
-            sourceCodeLineNumberTreeEntry = QtGui.QStandardItem("Line: " + str(optionalLineAndCallTypeTuple.lineNumber))
-            sourceCodeLineNumberTreeEntry.setEditable(False)
-        
-            callTypeTreeEntry = QtGui.QStandardItem("Call type: " + optionalLineAndCallTypeTuple.callType)
-            callTypeTreeEntry.setEditable(False)
-        
-            treeEntry.appendColumn([sourceCodeLineNumberTreeEntry, callTypeTreeEntry])
-        return treeEntry
-        
+        self.associated_module_signature_value.clear()
+        self.original_qubit_label_value.clear()
+        self.internal_qubit_label_value.clear()
+        self.inline_stack_tree_model.removeRows(0, self.inline_stack_tree_model.rowCount())
+
+    @staticmethod
+    def create_tree_view_entry_for_inline_stack_entry(
+        inline_stack_entry: syrec.qubit_inlining_stack_entry, only_print_signature: bool
+    ) -> QtGui.QStandardItem:
+        tree_entry = QtGui.QStandardItem(inline_stack_entry.stringified_signature_of_called_module)
+        bold_font = QtGui.QFont()
+        bold_font.setBold(True)
+        # QtGui.QFont("Times", 12)
+        tree_entry.setFont(bold_font)
+        tree_entry.setEditable(False)
+
+        if not only_print_signature:
+            source_code_line_number_tree_entry = QtGui.QStandardItem(
+                "Line: " + str(inline_stack_entry.line_number_of_call_of_target_module)
+                if inline_stack_entry.line_number_of_call_of_target_module is not None
+                else "<UNKNOWN>"
+            )
+            source_code_line_number_tree_entry.setEditable(False)
+
+            target_module_call_type_tree_entry = QtGui.QStandardItem(
+                "Call type: " + ("CALL" if inline_stack_entry.is_target_module_accessed_via_call_stmt else "UNCALL")
+            )
+            target_module_call_type_tree_entry.setEditable(False)
+
+            tree_entry.appendColumn([source_code_line_number_tree_entry, target_module_call_type_tree_entry])
+        return tree_entry
+
 
 class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__()
         self.parent = parent
-        self.lookupInformation : Dict[str, str] = {}
-        
+        self.annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
+        self.qubits_labels_of_local_variables_lookup: set[str] = set()
+
         self.layout = QtWidgets.QVBoxLayout(self)
-        
-        searchControlsLayout = QtWidgets.QHBoxLayout()
-        qubitSearchFieldLabel = QtWidgets.QLabel("Qubit label: ")
-        self.selectableQubitLabelsComboBox = QtWidgets.QComboBox()
-        self.selectableQubitLabelsComboBox.setPlaceholderText("<SELECT A QUBIT_LABEL>")
-        self.selectableQubitLabelsComboBox.currentIndexChanged.connect(self.handleComboBoxSelectionChange)
-        self.disableControls()
-        
-        searchControlsLayout.addWidget(qubitSearchFieldLabel)
-        searchControlsLayout.addWidget(self.selectableQubitLabelsComboBox)
-        searchControlsLayout.addStretch(1)
-        self.layout.addLayout(searchControlsLayout)
-        
-        self.displayedQubitInfoWidget = CircuitQubitInlineInformation(self)
-        
-        self.displayedQubitInformation = QtWidgets.QLabel("")
-        self.layout.addWidget(self.displayedQubitInformation)
-        self.layout.addWidget(self.displayedQubitInfoWidget)
+
+        search_controls_layout = QtWidgets.QHBoxLayout()
+        qubit_label_combobox_label = QtWidgets.QLabel("Qubit label: ")
+        self.selectable_qubit_labels_combobox = QtWidgets.QComboBox()
+        self.selectable_qubit_labels_combobox.setPlaceholderText("<SELECT A QUBIT LABEL>")
+        self.selectable_qubit_labels_combobox.currentIndexChanged.connect(self.handle_combobox_selection_change)
+        self.disable_controls()
+
+        search_controls_layout.addWidget(qubit_label_combobox_label)
+        search_controls_layout.addWidget(self.selectable_qubit_labels_combobox)
+        search_controls_layout.addStretch(1)
+        self.layout.addLayout(search_controls_layout)
+
+        self.qubit_info_widget = CircuitQubitInlineInformation(self)
+        self.layout.addWidget(self.qubit_info_widget)
         self.layout.addStretch(1)
         self.setLayout(self.layout)
-   
-    def setLookupInformation(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
-        self.lookupInformation.clear()
-        
-        for i in range(annotatable_quantum_computation.num_qubits):
-            if not annotatable_quantum_computation.is_circuit_qubit_garbage(i):
-               continue               
-            self.lookupInformation.update({annotatable_quantum_computation.qubit_labels[i]: annotatable_quantum_computation.qubit_labels[i]})
-        
-        self.selectableQubitLabelsComboBox.clear()
-        self.selectableQubitLabelsComboBox.insertItems(0, self.lookupInformation.values())
-        if self.selectableQubitLabelsComboBox.count() > 0:
-           self.searchAndDisplayInformationForQubit(self.selectableQubitLabelsComboBox.itemText(0), True)
+
+    def set_lookup_information(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
+        self.qubits_labels_of_local_variables_lookup.clear()
+        self.annotatable_quantum_computation = annotatable_quantum_computation
+
+        for i in range(self.annotatable_quantum_computation.num_qubits):
+            if self.annotatable_quantum_computation.is_circuit_qubit_garbage(i):
+                self.qubits_labels_of_local_variables_lookup.add(self.annotatable_quantum_computation.qubit_labels[i])
+
+        self.selectable_qubit_labels_combobox.clear()
+        self.selectable_qubit_labels_combobox.insertItems(0, self.qubits_labels_of_local_variables_lookup)
+        if self.selectable_qubit_labels_combobox.count() > 0:
+            self.search_and_display_information_for_qubit(self.selectable_qubit_labels_combobox.itemText(0), True)
+            self.enable_controls()
         else:
-            self.selectableQubitLabelsComboBox.setCurrentIndex(-1)
-            self.displayedQubitInformation.clear()
-        
-    def enableControls(self) -> None:
-       self.selectableQubitLabelsComboBox.setDisabled(False)
-       return
-        
-    def disableControls(self) -> None:
-       self.selectableQubitLabelsComboBox.setDisabled(True)
-       return
+            self.selectable_qubit_labels_combobox.setCurrentIndex(-1)
+            self.disable_controls()
+
+    def enable_controls(self) -> None:
+        self.selectable_qubit_labels_combobox.setDisabled(False)
+
+    def disable_controls(self) -> None:
+        self.selectable_qubit_labels_combobox.setDisabled(True)
 
     def clear(self) -> None:
-        self.lookupInformation.clear()
-        self.selectableQubitLabelsComboBox.clear()
-        self.displayedQubitInformation.clear()
-        self.disableControls()
-        self.displayedQubitInfoWidget.clear()
+        self.qubits_labels_of_local_variables_lookup.clear()
+        self.selectable_qubit_labels_combobox.clear()
+        self.disable_controls()
+        self.qubit_info_widget.clear()
 
-    def searchAndDisplayInformationForQubit(self, qubitLabel: str, updateComboBoxSelection: bool) -> None:
-       if qubitLabel not in self.lookupInformation:
-         if updateComboBoxSelection:
-            self.selectableQubitLabelsCombobox.setCurrentIndex(-1)
-            
-         self.displayedQubitInfoWidget.clear()
-         return
-       
-       if updateComboBoxSelection:
-            comboBoxItemMatchingLabel = self.selectableQubitLabelsComboBox.findText(qubitLabel)
-            if comboBoxItemMatchingLabel == -1:
+    def search_and_display_information_for_qubit(self, qubit_label: str, update_combobox_selection: bool) -> None:
+        if qubit_label not in self.qubits_labels_of_local_variables_lookup:
+            if update_combobox_selection:
+                self.qubit_labels_combobox.setCurrentIndex(-1)
+
+            self.qubit_info_widget.clear()
+            return
+
+        if update_combobox_selection:
+            combobox_item_idx_matching_label = self.selectable_qubit_labels_combobox.findText(qubit_label)
+            if combobox_item_idx_matching_label == -1:
                 msg = QtWidgets.QMessageBox()
                 msg.setBaseSize(QtCore.QSize(300, 200))
-                msg.setInformativeText("While the internal lookup information did contain a qubit with a label equal to " + qubitLabel + ", the combobox did not! This should not happend.")
+                msg.setInformativeText(
+                    "While the internal lookup information did contain a qubit with a label equal to "
+                    + qubit_label
+                    + ", the combobox did not! This should not happen."
+                )
                 msg.setWindowTitle("Error updating information for selected qubit")
                 msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Error)
                 msg.exec()
-                self.selectableQubitLabelsCombobox.setCurrentIndex(-1)
-                self.displayedQubitInfoWidget.clear()
+                self.qubit_labels_combobox.setCurrentIndex(-1)
+                self.qubit_info_widget.clear()
                 return
-            else:
-                self.selectableQubitLabelsComboBox.setCurrentIndex(comboBoxItemMatchingLabel)
-    
-       self.displayedQubitInfoWidget.updateInformation("", qubitLabel, qubitLabel)
+            self.selectable_qubit_labels_combobox.setCurrentIndex(combobox_item_idx_matching_label)
+            return
 
-    def handleComboBoxSelectionChange(self, newlySelectedIndex: int) -> None:
-        if newlySelectedIndex == -1:
-           return
-        self.searchAndDisplayInformationForQubit(self.selectableQubitLabelsComboBox.itemText(newlySelectedIndex), False)
+        # Signature not correctly stringified (trailing comma)
+        # Stringified signature of main module not set for locals of main module?
+        # Move call information one level up in inline stack ?
+        # Selection in combobox removes all inline stacks? Are all smart pointer references cleared?
+        if (
+            self.annotatable_quantum_computation is not None
+            and self.annotatable_quantum_computation.get_inlining_information_of_qubit(qubit_label) is not None
+        ):
+            self.qubit_info_widget.update_information(
+                qubit_label, self.annotatable_quantum_computation.get_inlining_information_of_qubit(qubit_label)
+            )
+        else:
+            self.qubit_info_widget.clear()
+
+    def handle_combobox_selection_change(self, new_combobox_idx: int) -> None:
+        if new_combobox_idx == -1:
+            return
+        self.search_and_display_information_for_qubit(
+            self.selectable_qubit_labels_combobox.itemText(new_combobox_idx), False
+        )
+
 
 class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
@@ -835,7 +863,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         variable_info_search_circuit_view_splitter.addWidget(self.qubits_information_lookup)
         variable_info_search_circuit_view_splitter.addWidget(self.viewer)
         variable_info_search_circuit_view_splitter.setStretchFactor(1, 10)
-        
+
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical, self)
         splitter.addWidget(self.editor.widget)
         splitter.addWidget(variable_info_search_circuit_view_splitter)
@@ -862,10 +890,11 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         else:
             self.logWidget.addMessage("No matching lines found in error message")
 
-    def update_circuit_view_and_qubit_information(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
+    def update_circuit_view_and_qubit_information(
+        self, annotatable_quantum_computation: syrec.annotatable_quantum_computation
+    ) -> None:
         self.viewer.load(annotatable_quantum_computation)
-        self.qubits_information_lookup.setLookupInformation(annotatable_quantum_computation)
-        self.qubits_information_lookup.enableControls()
+        self.qubits_information_lookup.set_lookup_information(annotatable_quantum_computation)
 
     def clear_error_log_and_circuit_view(self) -> None:
         self.logWidget.clear()
