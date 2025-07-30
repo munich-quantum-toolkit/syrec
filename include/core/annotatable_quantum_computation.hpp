@@ -37,8 +37,8 @@ namespace syrec {
         using SynthesisCostMetricValue          = std::uint64_t;
 
         struct InlinedQubitInformation {
-            std::string             userDeclaredQubitLabel;
-            QubitInliningStack::ptr inlineStack;
+            std::string                            userDeclaredQubitLabel;
+            std::optional<QubitInliningStack::ptr> inlineStack;
         };
 
         [[maybe_unused]] bool addOperationsImplementingNotGate(qc::Qubit targetQubit);

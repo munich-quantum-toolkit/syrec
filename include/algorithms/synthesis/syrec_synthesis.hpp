@@ -31,6 +31,9 @@
 namespace syrec {
     class SyrecSynthesis {
     public:
+        inline static const std::string MAIN_MODULE_IDENTIFIER_CONFIG_KEY            = "main_module";
+        inline static const std::string GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY = "create_qubit_inline_debug_information";
+
         std::stack<BinaryExpression::BinaryOperation>  expOpp;
         std::stack<std::vector<unsigned>>              expLhss;
         std::stack<std::vector<unsigned>>              expRhss;

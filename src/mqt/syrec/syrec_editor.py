@@ -232,6 +232,18 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
 
         self.stat_action.triggered.connect(self.stat)
 
+        self.synthesis_settings = syrec.properties()
+        self.synthesis_settings.set_string(syrec.SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER, "")
+        self.synthesis_settings.set_bool(syrec.SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION, False)
+
+        self.synthesis_settings_update_button = QtWidgets.QPushButton("Update synthesis settings", self)
+        self.synthesis_settings_update_button.clicked.connect(self.update_synthesis_settings)
+
+    def update_synthesis_settings(self) -> None:
+        update_synthesis_settings_modal = SynthesisSettingsUpdater(self, self.synthesis_settings)
+        update_synthesis_settings_modal.setWindowTitle("Update synthesis settings")
+        update_synthesis_settings_modal.exec()
+
     def item_selected(self):
         # Disable sim and stat function
         self.sim_action.setDisabled(True)
@@ -295,13 +307,10 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
             return
 
         self.annotatable_quantum_computation = syrec.annotatable_quantum_computation()
-
-        synthesis_settings = syrec.properties()
-        synthesis_settings.set_bool("create_qubit_inline_debug_information", True)
         if self.cost_aware_synthesis:
-            syrec.cost_aware_synthesis(self.annotatable_quantum_computation, self.prog, synthesis_settings)
+            syrec.cost_aware_synthesis(self.annotatable_quantum_computation, self.prog, self.synthesis_settings)
         else:
-            syrec.line_aware_synthesis(self.annotatable_quantum_computation, self.prog, synthesis_settings)
+            syrec.line_aware_synthesis(self.annotatable_quantum_computation, self.prog, self.synthesis_settings)
 
         self.sim_action.setDisabled(False)
         self.stat_action.setDisabled(False)
@@ -686,15 +695,16 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
     ) -> None:
         self.clear()
         self.internal_qubit_label_value.setText(internal_qubit_label)
-        inline_stack = inlined_qubit_information.inline_stack
+        inline_stack: syrec.inlined_qubit_information.qubit_inlining_stack | None = (
+            inlined_qubit_information.inline_stack
+        )
 
-        inline_stack_size = inline_stack.size()
         self.original_qubit_label_value.setText(inlined_qubit_information.user_declared_qubit_label)
-
-        if inline_stack_size == 0:
+        if inline_stack is None or inline_stack.size() == 0:
             self.associated_module_signature_value.setText("")
             return
 
+        inline_stack_size = inline_stack.size()
         self.associated_module_signature_value.setText(
             inline_stack[inline_stack_size - 1].stringified_signature_of_called_module
         )
@@ -834,6 +844,8 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
 
         # Signature not correctly stringified (trailing comma)
         # Stringified signature of main module not set for locals of main module?
+        # Select qubit label with click in circuit view
+        # Sort combobox qubit labels according to prefix __q<NUM>
         if (
             self.annotatable_quantum_computation is not None
             and self.annotatable_quantum_computation.get_inlining_information_of_qubit(qubit_label) is not None
@@ -850,6 +862,73 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         self.search_and_display_information_for_qubit(
             self.selectable_qubit_labels_combobox.itemText(new_combobox_idx), False
         )
+
+
+class SynthesisSettingsUpdater(QtWidgets.QDialog):  # type: ignore[misc]
+    def __init__(self, parent: QtWidgets.QWidget, synthesis_settings: syrec.properties) -> None:
+        super().__init__()
+        self.parent = parent
+        self.synthesis_settings = synthesis_settings
+
+        layout = QtWidgets.QVBoxLayout(self)
+        expected_main_module_identifier_layout = QtWidgets.QHBoxLayout()
+        expected_main_module_identifier_label = QtWidgets.QLabel("Expected main module identifier:")
+        self.expected_main_module_identifier_textbox = QtWidgets.QLineEdit(
+            synthesis_settings.get_string(syrec.SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER)
+        )
+        # TODO: Resize to fit placeholder text
+        if not self.expected_main_module_identifier_textbox.text():
+            self.expected_main_module_identifier_textbox.setPlaceholderText(
+                "Leave blank if last declared module of SyReC program should be used as main module..."
+            )
+
+            # fm = QtGui.QFontMetrics(self.expected_main_module_identifier_textbox.font())
+            # textSize = fm.size(QtCore.Qt.TextFlag.TextSingleLine, self.expected_main_module_identifier_textbox.placeholderText()).width()
+            # self.expected_main_module_identifier_textbox.resize(pixelsWide, self.expected_main_module_identifier_textbox)
+            # self.expected_main_module_identifier_textbox.adjustSize()
+
+        expected_main_module_identifier_layout.addWidget(expected_main_module_identifier_label)
+        expected_main_module_identifier_layout.addWidget(self.expected_main_module_identifier_textbox)
+        expected_main_module_identifier_layout.addStretch()
+
+        generate_inlined_qubit_debug_information_layout = QtWidgets.QHBoxLayout()
+        generate_inlined_qubit_debug_information_label = QtWidgets.QLabel("Generate inlined qubit debug information:")
+        self.generate_inlined_qubit_debug_information_checkbox = QtWidgets.QCheckBox()
+        if synthesis_settings.get_bool(syrec.SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION):
+            self.generate_inlined_qubit_debug_information_checkbox.setCheckState(QtCore.Qt.CheckState.Checked)
+        else:
+            self.generate_inlined_qubit_debug_information_checkbox.setCheckState(QtCore.Qt.CheckState.Unchecked)
+
+        generate_inlined_qubit_debug_information_layout.addWidget(generate_inlined_qubit_debug_information_label)
+        generate_inlined_qubit_debug_information_layout.addWidget(
+            self.generate_inlined_qubit_debug_information_checkbox
+        )
+        generate_inlined_qubit_debug_information_layout.addStretch()
+
+        save_settings_button_layout = QtWidgets.QHBoxLayout()
+        save_settings_button_layout.addStretch()
+
+        save_settings_button = QtWidgets.QPushButton("Save")
+        save_settings_button.clicked.connect(self.save_settings)
+        save_settings_button_layout.addWidget(save_settings_button)
+        save_settings_button_layout.addStretch()
+
+        layout.addLayout(expected_main_module_identifier_layout)
+        layout.addLayout(generate_inlined_qubit_debug_information_layout)
+        layout.addLayout(save_settings_button_layout)
+        layout.addStretch()
+        self.setLayout(layout)
+
+    def save_settings(self) -> QtWidgets.QDialog.DialogCode:
+        if self.synthesis_settings is not None:
+            self.synthesis_settings.set_string(
+                syrec.SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER, self.expected_main_module_identifier_textbox.text()
+            )
+            self.synthesis_settings.set_bool(
+                syrec.SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION,
+                self.generate_inlined_qubit_debug_information_checkbox.isChecked(),
+            )
+        return self.accept()
 
 
 class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
@@ -920,6 +999,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         toolbar.addAction(self.editor.stat_action)
         toolbar.addWidget(self.editor.buttonCostAware)
         toolbar.addWidget(self.editor.buttonLineAware)
+        toolbar.addWidget(self.editor.synthesis_settings_update_button)
 
 
 def main() -> int:

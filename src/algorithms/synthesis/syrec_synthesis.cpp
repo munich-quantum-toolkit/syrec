@@ -70,17 +70,17 @@ namespace syrec {
 
     bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
         // Settings parsing
-        auto mainModule = get<std::string>(settings, "main_module", std::string());
+        auto expectedMainModuleIdentifier = settings->get<std::string>(MAIN_MODULE_IDENTIFIER_CONFIG_KEY, "");
         // Run-time measuring
         const TimeStamp simulationStartTime = std::chrono::steady_clock::now();
 
         // get the main module
         Module::ptr main;
 
-        if (!mainModule.empty()) {
-            main = program.findModule(mainModule);
+        if (!expectedMainModuleIdentifier.empty()) {
+            main = program.findModule(expectedMainModuleIdentifier);
             if (!main) {
-                std::cerr << "Program has no module: " << mainModule << "\n";
+                std::cerr << "Program has no module: " << expectedMainModuleIdentifier << "\n";
                 return false;
             }
         } else {
@@ -92,8 +92,7 @@ namespace syrec {
 
         // declare as top module
         synthesizer->setMainModule(main);
-
-        if (get<bool>(settings, "create_qubit_inline_debug_information", false)) {
+        if (settings->get<bool>(GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, false)) {
             synthesizer->currentModuleCallStack = std::make_shared<QubitInliningStack>();
 
             auto mainModuleCallStackEntry         = QubitInliningStack::QubitInliningStackEntry();
@@ -1120,7 +1119,7 @@ namespace syrec {
                 userDeclaredQubitLabel += arraystr + "." + std::to_string(i);
 
                 if (internalQubitLabel != userDeclaredQubitLabel) {
-                    optionalQubitInliningInformation = AnnotatableQuantumComputation::InlinedQubitInformation({userDeclaredQubitLabel, currentModuleCallStack});
+                    optionalQubitInliningInformation = AnnotatableQuantumComputation::InlinedQubitInformation({userDeclaredQubitLabel, currentModuleCallStack != nullptr ? std::make_optional(currentModuleCallStack) : std::nullopt});
                 }
                 couldQubitsForVariableBeAdded &= annotatableQuantumComputation.addNonAncillaryQubit(internalQubitLabel, isGarbageQubit, optionalQubitInliningInformation).has_value();
             }

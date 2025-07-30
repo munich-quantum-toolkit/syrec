@@ -82,7 +82,8 @@ PYBIND11_MODULE(pysyrec, m) {
             .def("set_unsigned", &Properties::set<unsigned>)
             .def("set_double", &Properties::set<double>)
             .def("get_string", py::overload_cast<const std::string&>(&Properties::get<std::string>, py::const_))
-            .def("get_double", py::overload_cast<const std::string&>(&Properties::get<double>, py::const_));
+            .def("get_double", py::overload_cast<const std::string&>(&Properties::get<double>, py::const_))
+            .def("get_bool", py::overload_cast<const std::string&>(&Properties::get<bool>, py::const_));
 
     py::enum_<utils::IntegerConstantTruncationOperation>(m, "integer_constant_truncation_operation")
             .value("modulo", utils::IntegerConstantTruncationOperation::Modulo, "Use the modulo operation for the truncation of constant values")
@@ -101,6 +102,9 @@ PYBIND11_MODULE(pysyrec, m) {
             .def("add_module", &Program::addModule)
             .def("read", &Program::read, "filename"_a, "settings"_a = ReadProgramSettings{}, "Read and process a SyReC program from a file.")
             .def("read_from_string", &Program::readFromString, "stringifiedProgram"_a, "settings"_a = ReadProgramSettings{}, "Process an already stringified SyReC program.");
+
+    m.attr("SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER")            = py::str(SyrecSynthesis::MAIN_MODULE_IDENTIFIER_CONFIG_KEY);
+    m.attr("SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION") = py::str(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY);
 
     m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = Properties::ptr(), "statistics"_a = Properties::ptr(), "Cost-aware synthesis of the SyReC program.");
     m.def("line_aware_synthesis", &LineAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = Properties::ptr(), "statistics"_a = Properties::ptr(), "Line-aware synthesis of the SyReC program.");
