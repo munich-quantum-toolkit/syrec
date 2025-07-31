@@ -126,7 +126,7 @@ namespace syrec {
         [[nodiscard]] static bool addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const QubitInliningStack::ptr& currentModuleCallStack);
         void                      getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines);
 
-        [[nodiscard]] std::optional<qc::Qubit> getConstantLine(bool value);
+        [[nodiscard]] std::optional<qc::Qubit> getConstantLine(bool value, const QubitInliningStack::ptr& inlinedQubitModuleCallStack);
         [[nodiscard]] bool                     getConstantLines(unsigned bitwidth, unsigned value, std::vector<qc::Qubit>& lines);
 
         [[nodiscard]] static std::optional<AssignStatement::AssignOperation>  tryMapBinaryToAssignmentOperation(BinaryExpression::BinaryOperation binaryOperation) noexcept;

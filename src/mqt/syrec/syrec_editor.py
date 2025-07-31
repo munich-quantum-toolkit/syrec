@@ -765,7 +765,13 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
             inlined_qubit_information.inline_stack
         )
 
-        self.original_qubit_label_value.setText(inlined_qubit_information.user_declared_qubit_label)
+        # No user declared qubit label will exist for ancillary qubits
+        if inlined_qubit_information.user_declared_qubit_label is not None:
+            self.original_qubit_label_value.setText(inlined_qubit_information.user_declared_qubit_label)
+        else:
+            self.original_qubit_label_value.setVisible(False)
+            self.original_qubit_label.setVisible(False)
+
         inline_stack_size = inline_stack.size() if inline_stack is not None else 0
         self.set_inline_stack_controls_visibility_based_on_stack_size(inline_stack_size)
 
