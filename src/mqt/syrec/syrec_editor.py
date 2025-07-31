@@ -685,29 +685,29 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
         layout = QtWidgets.QVBoxLayout(self)
 
         non_stack_info_layout = QtWidgets.QGridLayout()
-        associated_module_signature_label = QtWidgets.QLabel("Associated module signature:")
+        self.associated_module_signature_label = QtWidgets.QLabel("Associated module signature:")
         self.associated_module_signature_value = QtWidgets.QLabel("")
         non_stack_info_layout.addWidget(
-            associated_module_signature_label, 0, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft
+            self.associated_module_signature_label, 0, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft
         )
         non_stack_info_layout.addWidget(
             self.associated_module_signature_value, 0, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft
         )
 
-        original_qubit_label = QtWidgets.QLabel("Original qubit label:")
+        self.original_qubit_label = QtWidgets.QLabel("Original qubit label:")
         self.original_qubit_label_value = QtWidgets.QLabel("")
-        non_stack_info_layout.addWidget(original_qubit_label, 1, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        non_stack_info_layout.addWidget(self.original_qubit_label, 1, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
         non_stack_info_layout.addWidget(self.original_qubit_label_value, 1, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
 
-        internal_qubit_label = QtWidgets.QLabel("Internal qubit label:")
+        self.internal_qubit_label = QtWidgets.QLabel("Internal qubit label:")
         self.internal_qubit_label_value = QtWidgets.QLabel("")
-        non_stack_info_layout.addWidget(internal_qubit_label, 2, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        non_stack_info_layout.addWidget(self.internal_qubit_label, 2, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
         non_stack_info_layout.addWidget(self.internal_qubit_label_value, 2, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
         non_stack_info_layout.rowStretch(1)
 
         inline_stack_tree_layout = QtWidgets.QVBoxLayout()
-        inline_stack_tree_view_label = QtWidgets.QLabel("Inline stack")
-        inline_stack_tree_view_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.inline_stack_tree_view_label = QtWidgets.QLabel("Inline stack")
+        self.inline_stack_tree_view_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.inline_stack_tree_view = QtWidgets.QTreeView()
         self.inline_stack_tree_view.setHeaderHidden(True)
@@ -716,48 +716,89 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
         self.inline_stack_tree_model_root = self.inline_stack_tree_model.invisibleRootItem()
 
         self.inline_stack_tree_view.setModel(self.inline_stack_tree_model)
-        inline_stack_tree_layout.addWidget(inline_stack_tree_view_label)
+        inline_stack_tree_layout.addWidget(self.inline_stack_tree_view_label)
         inline_stack_tree_layout.addWidget(self.inline_stack_tree_view)
 
         layout.addLayout(non_stack_info_layout)
         layout.addLayout(inline_stack_tree_layout)
+
+        self.help_text_label = QtWidgets.QLabel(
+            "Select a garbage of ancillary qubit from the combobox or click on the label of the qubit in the circuit view"
+        )
+        self.help_text_label.setWordWrap(True)
+        layout.addWidget(self.help_text_label, QtCore.Qt.AlignmentFlag.AlignCenter)
+
+        self.toggle_all_inline_information_controls(False)
+
         self.layout = layout
         self.setLayout(self.layout)
+
+    def toggle_all_inline_information_controls(self, show_inline_information: bool) -> None:
+        self.associated_module_signature_label.setVisible(show_inline_information)
+        self.associated_module_signature_value.setVisible(show_inline_information)
+
+        self.original_qubit_label.setVisible(show_inline_information)
+        self.original_qubit_label_value.setVisible(show_inline_information)
+
+        self.internal_qubit_label.setVisible(show_inline_information)
+        self.internal_qubit_label_value.setVisible(show_inline_information)
+
+        self.inline_stack_tree_view_label.setVisible(show_inline_information)
+        self.inline_stack_tree_view.setVisible(show_inline_information)
+        self.help_text_label.setVisible(not show_inline_information)
+
+    def set_inline_stack_controls_visibility_based_on_stack_size(self, stack_size: int) -> None:
+        should_be_visible = stack_size != 0
+        self.associated_module_signature_label.setVisible(should_be_visible)
+        self.associated_module_signature_value.setVisible(should_be_visible)
+        self.inline_stack_tree_view_label.setVisible(should_be_visible)
+        self.inline_stack_tree_view.setVisible(should_be_visible)
 
     def update_information(
         self, internal_qubit_label: str, inlined_qubit_information: syrec.inlined_qubit_information
     ) -> None:
-        self.clear()
+        self.clear_inline_data_controls()
+        self.toggle_all_inline_information_controls(True)
+
         self.internal_qubit_label_value.setText(internal_qubit_label)
         inline_stack: syrec.inlined_qubit_information.qubit_inlining_stack | None = (
             inlined_qubit_information.inline_stack
         )
 
         self.original_qubit_label_value.setText(inlined_qubit_information.user_declared_qubit_label)
-        if inline_stack is None or inline_stack.size() == 0:
-            self.associated_module_signature_value.setText("")
+        inline_stack_size = inline_stack.size() if inline_stack is not None else 0
+        self.set_inline_stack_controls_visibility_based_on_stack_size(inline_stack_size)
+
+        if inline_stack_size == 0:
             return
 
-        inline_stack_size = inline_stack.size()
+        # We know at this point that the inline stack is not empty and thus not None
         self.associated_module_signature_value.setText(
-            inline_stack[inline_stack_size - 1].stringified_signature_of_called_module
+            inline_stack[inline_stack_size - 1].stringified_signature_of_called_module  # type: ignore[index]
         )
 
         prev_tree_model_entry = None
         for i in reversed(range(inline_stack_size)):
+            # We know at this point that the inline stack is not empty and thus not None
             parent_tree_model_entry = self.create_tree_view_entry_for_inline_stack_entry(
-                inline_stack[i], i == inline_stack_size - 1
+                inline_stack[i],  # type: ignore[index]
+                i == inline_stack_size - 1,
             )
+
             if prev_tree_model_entry is not None:
                 parent_tree_model_entry.appendRow(prev_tree_model_entry)
             prev_tree_model_entry = parent_tree_model_entry
         self.inline_stack_tree_model_root.appendRow(prev_tree_model_entry)
 
-    def clear(self) -> None:
+    def clear_inline_data_controls(self) -> None:
         self.associated_module_signature_value.clear()
         self.original_qubit_label_value.clear()
         self.internal_qubit_label_value.clear()
         self.inline_stack_tree_model.removeRows(0, self.inline_stack_tree_model.rowCount())
+
+    def clear_and_hide_all_inline_data_controls(self) -> None:
+        self.clear_inline_data_controls()
+        self.toggle_all_inline_information_controls(False)
 
     @staticmethod
     def create_tree_view_entry_for_inline_stack_entry(
@@ -808,7 +849,7 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         self.selectable_qubit_labels_combobox = QtWidgets.QComboBox()
         self.selectable_qubit_labels_combobox.setPlaceholderText("<SELECT A QUBIT LABEL>")
         self.selectable_qubit_labels_combobox.currentIndexChanged.connect(self.handle_combobox_selection_change)
-        self.disable_controls()
+        self.selectable_qubit_labels_combobox.setDisabled(True)
 
         search_controls_layout.addStretch()
         search_controls_layout.addWidget(qubit_label_combobox_label)
@@ -816,46 +857,48 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         search_controls_layout.addStretch()
         self.layout.addLayout(search_controls_layout)
 
+        qubit_info_widget_layout = QtWidgets.QHBoxLayout()
+        qubit_info_widget_layout.addStretch()
         self.qubit_info_widget = CircuitQubitInlineInformation(self)
-        self.layout.addWidget(self.qubit_info_widget)
+        qubit_info_widget_layout.addWidget(self.qubit_info_widget)
+        qubit_info_widget_layout.addStretch()
+
+        self.layout.addLayout(qubit_info_widget_layout)
         self.layout.addStretch(1)
+
         self.setLayout(self.layout)
 
+    def reset_combobox(self) -> None:
+        self.selectable_qubit_labels_combobox.clear()
+        self.selectable_qubit_labels_combobox.setDisabled(True)
+
     def set_lookup_information(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
-        self.qubits_labels_of_local_variables_lookup.clear()
+        self.reset_combobox()
         self.annotatable_quantum_computation = annotatable_quantum_computation
 
         for i in range(self.annotatable_quantum_computation.num_qubits):
-            if self.annotatable_quantum_computation.is_circuit_qubit_garbage(i):
+            if self.annotatable_quantum_computation.is_circuit_qubit_garbage(
+                i
+            ) or self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i):
                 self.qubits_labels_of_local_variables_lookup.add(self.annotatable_quantum_computation.qubit_labels[i])
 
-        self.selectable_qubit_labels_combobox.clear()
         self.selectable_qubit_labels_combobox.insertItems(0, self.qubits_labels_of_local_variables_lookup)
         if self.selectable_qubit_labels_combobox.count() > 0:
+            self.selectable_qubit_labels_combobox.setDisabled(False)
             self.search_and_display_information_for_qubit(self.selectable_qubit_labels_combobox.itemText(0), True)
-            self.enable_controls()
         else:
-            self.selectable_qubit_labels_combobox.setCurrentIndex(-1)
-            self.disable_controls()
-
-    def enable_controls(self) -> None:
-        self.selectable_qubit_labels_combobox.setDisabled(False)
-
-    def disable_controls(self) -> None:
-        self.selectable_qubit_labels_combobox.setDisabled(True)
+            self.search_and_display_information_for_qubit("", True)
 
     def clear(self) -> None:
         self.qubits_labels_of_local_variables_lookup.clear()
-        self.selectable_qubit_labels_combobox.clear()
-        self.disable_controls()
-        self.qubit_info_widget.clear()
+        self.reset_combobox()
+        self.qubit_info_widget.clear_and_hide_all_inline_data_controls()
 
     def search_and_display_information_for_qubit(self, qubit_label: str, update_combobox_selection: bool) -> None:
         if qubit_label not in self.qubits_labels_of_local_variables_lookup:
             if update_combobox_selection:
                 self.selectable_qubit_labels_combobox.setCurrentIndex(-1)
-
-            self.qubit_info_widget.clear()
+            self.qubit_info_widget.clear_and_hide_all_inline_data_controls()
             return
 
         if update_combobox_selection:
@@ -872,11 +915,11 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Error)
                 msg.exec()
                 self.selectable_qubit_labels_combobox.setCurrentIndex(-1)
-                self.qubit_info_widget.clear()
+                self.qubit_info_widget.clear_and_hide_all_inline_data_controls()
                 return
             self.selectable_qubit_labels_combobox.setCurrentIndex(combobox_item_idx_matching_label)
 
-        # Select qubit label with click in circuit view
+        self.qubit_info_widget.toggle_all_inline_information_controls(True)
         # Sort combobox qubit labels according to prefix __q<NUM>
         if (
             self.annotatable_quantum_computation is not None
@@ -886,7 +929,8 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 qubit_label, self.annotatable_quantum_computation.get_inlining_information_of_qubit(qubit_label)
             )
         else:
-            self.qubit_info_widget.clear()
+            self.qubit_info_widget.clear_inline_data_controls()
+            self.qubit_info_widget.toggle_all_inline_information_controls(False)
 
     def handle_combobox_selection_change(self, new_combobox_idx: int) -> None:
         if new_combobox_idx == -1:
