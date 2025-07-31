@@ -86,6 +86,8 @@ class GateItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
 
 
 class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
+    qubit_label_clicked = QtCore.pyqtSignal(str, name="qubitLabelClicked")
+
     def __init__(
         self,
         annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None,
@@ -99,6 +101,9 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
         # Load circuit
         self.annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
+        # We are assuming that the majority of the qubits in a quantum computation are either garbage or ancillary qubits, so checking whether a given qubit is ancillary or garbage is then
+        # equal to whether the lookup does NOT contain an entry for the qubit (this should save us some memory since we only need to store the qubit labels of the non-ancillary and non-garbage qubits)
+        self.non_ancillary_or_garbage_qubits_lookup: set[str] = set()
         self.lines: list[CircuitLineItem] = []
         self.inputs: list[QtWidgets.QGraphicsTextItem | None] = []
         self.outputs: list[QtWidgets.QGraphicsTextItem | None] = []
@@ -109,9 +114,22 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
         self.scene().clear()
 
         self.annotatable_quantum_computation = None
+        self.non_ancillary_or_garbage_qubits_lookup.clear()
         self.lines = []
         self.inputs = []
         self.outputs = []
+
+    def mousePressEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:  # noqa: N802
+        graphics_view_position_of_click: QtCore.QPoint = event.pos()
+        item: QtWidgets.QGraphicsTextItem | None = self.itemAt(graphics_view_position_of_click)
+
+        if (
+            item is not None
+            and isinstance(item, QtWidgets.QGraphicsTextItem)
+            and item.toPlainText() not in self.non_ancillary_or_garbage_qubits_lookup
+        ):
+            self.qubit_label_clicked.emit(item.toPlainText())
+        super().mousePressEvent(event)
 
     def load(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
         self.clear()
@@ -124,24 +142,33 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
             line = CircuitLineItem(i, n_quantum_ops)
             self.lines.append(line)
             self.scene().addItem(line)
-            self.inputs.append(
-                self.add_line_label(
-                    0,
-                    i * 30,
-                    self.annotatable_quantum_computation.qubit_labels[i],
-                    QtCore.Qt.AlignmentFlag.AlignRight,
-                    self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i),
-                )
+
+            qubit_label = self.annotatable_quantum_computation.qubit_labels[i]
+            should_qubit_line_text_be_clickable = self.annotatable_quantum_computation.is_circuit_qubit_ancillary(
+                i
+            ) or self.annotatable_quantum_computation.is_circuit_qubit_garbage(i)
+            if not should_qubit_line_text_be_clickable:
+                self.non_ancillary_or_garbage_qubits_lookup.add(qubit_label)
+
+            input_qubit_line_text_item = self.add_line_label(
+                0,
+                i * 30,
+                qubit_label,
+                QtCore.Qt.AlignmentFlag.AlignRight,
+                self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i),
+                should_qubit_line_text_be_clickable,
             )
-            self.outputs.append(
-                self.add_line_label(
-                    width,
-                    i * 30,
-                    self.annotatable_quantum_computation.qubit_labels[i],
-                    QtCore.Qt.AlignmentFlag.AlignLeft,
-                    self.annotatable_quantum_computation.is_circuit_qubit_garbage(i),
-                )
+            self.inputs.append(input_qubit_line_text_item)
+
+            output_qubit_line_text_item = self.add_line_label(
+                width,
+                i * 30,
+                qubit_label,
+                QtCore.Qt.AlignmentFlag.AlignLeft,
+                self.annotatable_quantum_computation.is_circuit_qubit_garbage(i),
+                should_qubit_line_text_be_clickable,
             )
+            self.outputs.append(output_qubit_line_text_item)
 
         for i in range(n_quantum_ops):
             gate = GateItem(self.annotatable_quantum_computation, i)
@@ -149,19 +176,26 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
             self.scene().addItem(gate)
 
     def add_line_label(
-        self, x: int, y: int, text: str, align: QtCore.Qt.AlignmentFlag, color: bool
+        self,
+        x: int,
+        y: int,
+        text: str,
+        align: QtCore.Qt.AlignmentFlag,
+        is_ancillary_or_garbage_qubit: bool,
+        should_label_be_clickable: bool,
     ) -> QtWidgets.QGraphicsTextItem | None:
         text_item = self.scene().addText(text)
         text_item.setPlainText(text)
+
+        if is_ancillary_or_garbage_qubit:
+            text_item.setDefaultTextColor(QtGui.QColorConstants.Red)
+        if should_label_be_clickable:
+            text_item.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse)
 
         if align == QtCore.Qt.AlignmentFlag.AlignRight:
             x -= text_item.boundingRect().width()
 
         text_item.setPos(x, y - 12)
-
-        if color:
-            text_item.setDefaultTextColor(QtGui.QColorConstants.Red)
-
         return text_item
 
     def wheelEvent(self, event):  # noqa: N802
@@ -819,7 +853,7 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
     def search_and_display_information_for_qubit(self, qubit_label: str, update_combobox_selection: bool) -> None:
         if qubit_label not in self.qubits_labels_of_local_variables_lookup:
             if update_combobox_selection:
-                self.qubit_labels_combobox.setCurrentIndex(-1)
+                self.selectable_qubit_labels_combobox.setCurrentIndex(-1)
 
             self.qubit_info_widget.clear()
             return
@@ -837,7 +871,7 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 msg.setWindowTitle("Error updating information for selected qubit")
                 msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Error)
                 msg.exec()
-                self.qubit_labels_combobox.setCurrentIndex(-1)
+                self.selectable_qubit_labels_combobox.setCurrentIndex(-1)
                 self.qubit_info_widget.clear()
                 return
             self.selectable_qubit_labels_combobox.setCurrentIndex(combobox_item_idx_matching_label)
@@ -943,6 +977,8 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         self.viewer = CircuitView(parent=self)
         self.qubits_information_lookup = CircuitQubitsInformationLookup(parent=self)
 
+        self.viewer.qubitLabelClicked.connect(self.handle_qubit_label_click_of_circuit_view)
+
         variable_info_search_circuit_view_splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal, self)
         variable_info_search_circuit_view_splitter.addWidget(self.qubits_information_lookup)
         variable_info_search_circuit_view_splitter.addWidget(self.viewer)
@@ -965,6 +1001,11 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         self.editor.build_successful = self.update_circuit_view_and_qubit_information
         self.editor.parser_failed = self.logWidget.addMessage
         self.editor.build_failed = self.filter_and_record_parser_errors
+
+    def handle_qubit_label_click_of_circuit_view(self, clicked_ancillary_or_garbage_qubit_label: str) -> None:
+        self.qubits_information_lookup.search_and_display_information_for_qubit(
+            clicked_ancillary_or_garbage_qubit_label, True
+        )
 
     def filter_and_record_parser_errors(self, aggregate_error_string: str) -> None:
         regex_pattern = r"(-- line (\d+) col (\d+): (.*)(\n?))"
