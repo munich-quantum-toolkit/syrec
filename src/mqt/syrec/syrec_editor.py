@@ -842,8 +842,6 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 return
             self.selectable_qubit_labels_combobox.setCurrentIndex(combobox_item_idx_matching_label)
 
-        # Signature not correctly stringified (trailing comma)
-        # Stringified signature of main module not set for locals of main module?
         # Select qubit label with click in circuit view
         # Sort combobox qubit labels according to prefix __q<NUM>
         if (
@@ -876,20 +874,15 @@ class SynthesisSettingsUpdater(QtWidgets.QDialog):  # type: ignore[misc]
         self.expected_main_module_identifier_textbox = QtWidgets.QLineEdit(
             synthesis_settings.get_string(syrec.SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER)
         )
-        # TODO: Resize to fit placeholder text
-        if not self.expected_main_module_identifier_textbox.text():
-            self.expected_main_module_identifier_textbox.setPlaceholderText(
-                "Leave blank if last declared module of SyReC program should be used as main module..."
-            )
-
-            # fm = QtGui.QFontMetrics(self.expected_main_module_identifier_textbox.font())
-            # textSize = fm.size(QtCore.Qt.TextFlag.TextSingleLine, self.expected_main_module_identifier_textbox.placeholderText()).width()
-            # self.expected_main_module_identifier_textbox.resize(pixelsWide, self.expected_main_module_identifier_textbox)
-            # self.expected_main_module_identifier_textbox.adjustSize()
+        self.expected_main_module_identifier_textbox.setPlaceholderText(
+            "Leave blank if last declared module of SyReC program should be used as main module..."
+        )
+        module_identifier_regular_expr = QtCore.QRegularExpression(R"(^$|^\w+\w*$)")
+        module_identifier_validator = QtGui.QRegularExpressionValidator(module_identifier_regular_expr, self)
+        self.expected_main_module_identifier_textbox.setValidator(module_identifier_validator)
 
         expected_main_module_identifier_layout.addWidget(expected_main_module_identifier_label)
         expected_main_module_identifier_layout.addWidget(self.expected_main_module_identifier_textbox)
-        expected_main_module_identifier_layout.addStretch()
 
         generate_inlined_qubit_debug_information_layout = QtWidgets.QHBoxLayout()
         generate_inlined_qubit_debug_information_label = QtWidgets.QLabel("Generate inlined qubit debug information:")
@@ -921,9 +914,12 @@ class SynthesisSettingsUpdater(QtWidgets.QDialog):  # type: ignore[misc]
 
     def save_settings(self) -> QtWidgets.QDialog.DialogCode:
         if self.synthesis_settings is not None:
-            self.synthesis_settings.set_string(
-                syrec.SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER, self.expected_main_module_identifier_textbox.text()
-            )
+            if self.expected_main_module_identifier_textbox.hasAcceptableInput():
+                self.synthesis_settings.set_string(
+                    syrec.SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER,
+                    self.expected_main_module_identifier_textbox.text(),
+                )
+
             self.synthesis_settings.set_bool(
                 syrec.SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION,
                 self.generate_inlined_qubit_debug_information_checkbox.isChecked(),
