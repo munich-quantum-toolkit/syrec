@@ -74,6 +74,68 @@ protected:
         ASSERT_TRUE(actualQubitIndex.has_value());
         ASSERT_EQ(expectedQubitIndex, *actualQubitIndex);
     }
+
+    static void assertInlineStackEntriesMatch(const QubitInliningStack::QubitInliningStackEntry& expected, const QubitInliningStack::QubitInliningStackEntry& actual) {
+        if (expected.lineNumberOfCallOfTargetModule.has_value()) {
+            ASSERT_TRUE(actual.lineNumberOfCallOfTargetModule.has_value()) << "Expected source code line number of called target module to not have a value";
+            ASSERT_EQ(*expected.lineNumberOfCallOfTargetModule, *actual.lineNumberOfCallOfTargetModule) << "Source code line number of called target module mismatch";
+        } else {
+            ASSERT_FALSE(actual.lineNumberOfCallOfTargetModule.has_value()) << "Expected source code line number of called target module to not have a value";
+        }
+
+        if (expected.isTargetModuleAccessedViaCallStmt.has_value()) {
+            ASSERT_TRUE(expected.isTargetModuleAccessedViaCallStmt.has_value()) << "Expected call type of target module to be specified";
+            ASSERT_EQ(*expected.isTargetModuleAccessedViaCallStmt, actual.isTargetModuleAccessedViaCallStmt) << "Call type of target module mismatch";
+        } else {
+            ASSERT_FALSE(actual.isTargetModuleAccessedViaCallStmt.has_value()) << "Expected call type of target module not to be specified";
+        }
+
+        if (expected.targetModule != nullptr) {
+            ASSERT_THAT(actual.targetModule, testing::NotNull()) << "Expected target module to be set";
+            ASSERT_THAT(actual.targetModule, expected.targetModule) << "Target module reference mismatch";
+        } else {
+            ASSERT_THAT(actual.targetModule, testing::IsNull()) << "Expected target module to not be set";
+        }
+    }
+
+    static void assertQubitInlineStacksMatch(QubitInliningStack& expected, QubitInliningStack& actual) {
+        const std::size_t expectedInlineStackSize = expected.size();
+        const std::size_t actualInlineStackSize   = actual.size();
+        ASSERT_EQ(expectedInlineStackSize, actualInlineStackSize) << "Expected qubit inline stack had a size of " << std::to_string(expectedInlineStackSize) << " while the actual one had a size of " << std::to_string(actualInlineStackSize);
+
+        for (std::size_t i = 0; i < expectedInlineStackSize; ++i) {
+            const QubitInliningStack::QubitInliningStackEntry* expectedInlineStackEntry = expected.getStackEntryAt(i);
+            const QubitInliningStack::QubitInliningStackEntry* actualInlineStackEntry   = actual.getStackEntryAt(i);
+            ASSERT_THAT(expectedInlineStackEntry, testing::NotNull()) << "Failed to fetch inline stack entry at index " << std::to_string(i);
+            ASSERT_THAT(actualInlineStackEntry, testing::NotNull()) << "Failed to fetch inline stack entry at index " << std::to_string(i);
+            ASSERT_NO_FATAL_FAILURE(assertInlineStackEntriesMatch(*expectedInlineStackEntry, *actualInlineStackEntry));
+        }
+    }
+
+    static void assertQubitInlineInformationMatches(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::string& internalQubitLabel, const AnnotatableQuantumComputation::InlinedQubitInformation* expectedInlineInformation) {
+        const AnnotatableQuantumComputation::InlinedQubitInformation* actualInlineInformation = actualInlineInformation = annotatedQuantumComputation.getInliningInformationOfQubit(internalQubitLabel);
+        if (expectedInlineInformation == nullptr) {
+            ASSERT_THAT(actualInlineInformation, testing::IsNull());
+            return;
+        }
+
+        ASSERT_THAT(actualInlineInformation, testing::NotNull());
+        if (expectedInlineInformation->userDeclaredQubitLabel.has_value()) {
+            ASSERT_TRUE(actualInlineInformation->userDeclaredQubitLabel.has_value()) << "Expected that user declared qubit label to be set in qubit inline information";
+            ASSERT_EQ(*expectedInlineInformation->userDeclaredQubitLabel, *actualInlineInformation->userDeclaredQubitLabel) << "User declared qubit label mismatch in qubit inline information";
+        } else {
+            ASSERT_FALSE(actualInlineInformation->userDeclaredQubitLabel.has_value()) << "Expected that user declared qubit label is not set in qubit inline information";
+        }
+
+        if (expectedInlineInformation->inlineStack.has_value()) {
+            ASSERT_TRUE(actualInlineInformation->inlineStack.has_value()) << "Expected inline stack to have a value";
+            ASSERT_THAT(*expectedInlineInformation->inlineStack, testing::NotNull()) << "Expected inline stack cannot be null";
+            ASSERT_THAT(*actualInlineInformation->inlineStack, testing::NotNull()) << "Actual inline stack cannot be null";
+            ASSERT_NO_FATAL_FAILURE(assertQubitInlineStacksMatch(**expectedInlineInformation->inlineStack, **actualInlineInformation->inlineStack));
+        } else {
+            ASSERT_FALSE(actualInlineInformation->inlineStack.has_value()) << "Expected inline stack to not be set";
+        }
+    }
 };
 
 // BEGIN Adding qubit types
@@ -365,6 +427,454 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitAfterAnyQubitWa
     ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
     ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
     ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithUserDefinedQubitLabelInInlineInformationNotPossible) {
+    const std::string              nonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(nonAncillaryQubitLabel, false, std::nullopt);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *nonAncillaryQubitIndex);
+
+    const auto defaultModule = std::make_shared<Module>("defaultModule");
+
+    auto validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+
+    const std::string              validAncillaryQubitLabel             = "anc_1";
+    const auto                     validAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
+    const std::optional<qc::Qubit> validAncillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(validAncillaryQubitLabel, false, validAncillaryQubitInlineInformation);
+    ASSERT_TRUE(validAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *validAncillaryQubitIndex);
+
+    const std::string              otherAncillaryQubitLabel               = "anc_2";
+    const auto                     invalidAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation("nonEmptyUserDefinedQubitLabel", validAncillaryQubitInlineStack);
+    const std::optional<qc::Qubit> invalidAncillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(otherAncillaryQubitLabel, true, invalidAncillaryQubitInlineInformation);
+    ASSERT_FALSE(invalidAncillaryQubitIndex.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*validAncillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*validAncillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, nonAncillaryQubitLabel, nullptr));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, validAncillaryQubitLabel, &validAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, otherAncillaryQubitLabel, nullptr));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithEmptyUserDefinedQubitLabelInInlineInformationNotPossible) {
+    const std::string              nonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(nonAncillaryQubitLabel, false, std::nullopt);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *nonAncillaryQubitIndex);
+
+    const auto defaultModule                  = std::make_shared<Module>("defaultModule");
+    auto       validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+
+    const std::string              validAncillaryQubitLabel             = "anc_1";
+    const auto                     validAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
+    const std::optional<qc::Qubit> validAncillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(validAncillaryQubitLabel, false, validAncillaryQubitInlineInformation);
+    ASSERT_TRUE(validAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *validAncillaryQubitIndex);
+
+    const std::string              otherAncillaryQubitLabel               = "anc_2";
+    const auto                     invalidAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation("", validAncillaryQubitInlineStack);
+    const std::optional<qc::Qubit> invalidAncillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(otherAncillaryQubitLabel, true, invalidAncillaryQubitInlineInformation);
+    ASSERT_FALSE(invalidAncillaryQubitIndex.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*validAncillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*validAncillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, nonAncillaryQubitLabel, nullptr));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, validAncillaryQubitLabel, &validAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, otherAncillaryQubitLabel, nullptr));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithEmptyInlineStackInInlineInformationNotPossible) {
+    const std::string              nonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(nonAncillaryQubitLabel, false, std::nullopt);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *nonAncillaryQubitIndex);
+
+    const auto defaultModule                  = std::make_shared<Module>("defaultModule");
+    auto       validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+
+    const std::string              validAncillaryQubitLabel             = "anc_1";
+    const auto                     validAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
+    const std::optional<qc::Qubit> validAncillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(validAncillaryQubitLabel, false, validAncillaryQubitInlineInformation);
+    ASSERT_TRUE(validAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *validAncillaryQubitIndex);
+
+    const std::string              otherAncillaryQubitLabel               = "anc_2";
+    const auto                     invalidAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, std::make_shared<QubitInliningStack>());
+    const std::optional<qc::Qubit> invalidAncillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(otherAncillaryQubitLabel, true, invalidAncillaryQubitInlineInformation);
+    ASSERT_FALSE(invalidAncillaryQubitIndex.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*validAncillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*validAncillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, nonAncillaryQubitLabel, nullptr));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, validAncillaryQubitLabel, &validAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, otherAncillaryQubitLabel, nullptr));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithInvalidInlineStackInInlineInformationNotPossible) {
+    const std::string              nonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(nonAncillaryQubitLabel, false, std::nullopt);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *nonAncillaryQubitIndex);
+
+    const auto defaultModule                  = std::make_shared<Module>("defaultModule");
+    auto       validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+
+    const std::string              validAncillaryQubitLabel             = "anc_1";
+    const auto                     validAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
+    const std::optional<qc::Qubit> validAncillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(validAncillaryQubitLabel, false, validAncillaryQubitInlineInformation);
+    ASSERT_TRUE(validAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *validAncillaryQubitIndex);
+
+    const std::string otherAncillaryQubitLabel               = "anc_2";
+    auto              invalidAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    invalidAncillaryQubitInlineInformation.inlineStack       = nullptr;
+
+    const std::optional<qc::Qubit> invalidAncillaryQubitIndex = annotatedQuantumComputation->addPreliminaryAncillaryQubit(otherAncillaryQubitLabel, false, invalidAncillaryQubitInlineInformation);
+    ASSERT_FALSE(invalidAncillaryQubitIndex.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*validAncillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*validAncillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, nonAncillaryQubitLabel, nullptr));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, validAncillaryQubitLabel, &validAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, otherAncillaryQubitLabel, nullptr));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitAndOmittingInlineStackInInlineInformationPossible) {
+    const std::string              nonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(nonAncillaryQubitLabel, false, std::nullopt);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *nonAncillaryQubitIndex);
+
+    const auto defaultModule                  = std::make_shared<Module>("defaultModule");
+    auto       validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+
+    const std::string              firstAncillaryQubitLabel             = "anc_1";
+    const auto                     firstAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
+    const std::optional<qc::Qubit> firstAncillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(firstAncillaryQubitLabel, false, firstAncillaryQubitInlineInformation);
+    ASSERT_TRUE(firstAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *firstAncillaryQubitIndex);
+
+    const std::string              secondAncillaryQubitLabel             = "anc_2";
+    auto                           secondAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    const std::optional<qc::Qubit> secondAncillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(secondAncillaryQubitLabel, false, secondAncillaryQubitInlineInformation);
+    ASSERT_TRUE(secondAncillaryQubitIndex.has_value());
+    ASSERT_EQ(2, *secondAncillaryQubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*firstAncillaryQubitIndex));
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*secondAncillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*firstAncillaryQubitIndex, *secondAncillaryQubitIndex}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(2, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true, true}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, nonAncillaryQubitLabel, nullptr));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, firstAncillaryQubitLabel, &firstAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, secondAncillaryQubitLabel, &secondAncillaryQubitInlineInformation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithNotSetInlineInformationPossible) {
+    const std::string              ancillaryQubitLabel             = "anc_1";
+    auto                           ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    const std::optional<qc::Qubit> ancillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false, ancillaryQubitInlineInformation);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    auto nonAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    nonAncillaryQubitInlineInformation.userDeclaredQubitLabel = "test_label";
+
+    const std::string              firstNonAncillaryQubitLabel = "nonAnc_1";
+    const std::optional<qc::Qubit> firstNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(firstNonAncillaryQubitLabel, false, nonAncillaryQubitInlineInformation);
+    ASSERT_TRUE(firstNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *firstNonAncillaryQubitIndex);
+
+    const std::string              secondNonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> secondNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(secondNonAncillaryQubitLabel, false, std::nullopt);
+    ASSERT_TRUE(secondNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(2, *secondNonAncillaryQubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, ancillaryQubitLabel, &ancillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, firstNonAncillaryQubitLabel, &nonAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, secondNonAncillaryQubitLabel, nullptr));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithEmptyUserDefinedQubitLabelInInlineInformationNotPossible) {
+    const std::string              ancillaryQubitLabel             = "anc_1";
+    auto                           ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    const std::optional<qc::Qubit> ancillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false, ancillaryQubitInlineInformation);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    auto firstNonAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    firstNonAncillaryQubitInlineInformation.userDeclaredQubitLabel = "test_label";
+
+    const std::string              firstNonAncillaryQubitLabel = "nonAnc_1";
+    const std::optional<qc::Qubit> firstNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(firstNonAncillaryQubitLabel, false, firstNonAncillaryQubitInlineInformation);
+    ASSERT_TRUE(firstNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *firstNonAncillaryQubitIndex);
+
+    auto secondNonAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    secondNonAncillaryQubitInlineInformation.userDeclaredQubitLabel = "";
+
+    const std::string              secondNonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> secondNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(secondNonAncillaryQubitLabel, false, secondNonAncillaryQubitInlineInformation);
+    ASSERT_FALSE(secondNonAncillaryQubitIndex.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, ancillaryQubitLabel, &ancillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, firstNonAncillaryQubitLabel, &firstNonAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, secondNonAncillaryQubitLabel, nullptr));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithNotSetUserDefinedQubitLabelInInlineInformationNotPossible) {
+    const std::string              ancillaryQubitLabel             = "anc_1";
+    auto                           ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    const std::optional<qc::Qubit> ancillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false, ancillaryQubitInlineInformation);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    auto firstNonAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    firstNonAncillaryQubitInlineInformation.userDeclaredQubitLabel = "test_label";
+
+    const std::string              firstNonAncillaryQubitLabel = "nonAnc_1";
+    const std::optional<qc::Qubit> firstNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(firstNonAncillaryQubitLabel, false, firstNonAncillaryQubitInlineInformation);
+    ASSERT_TRUE(firstNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *firstNonAncillaryQubitIndex);
+
+    auto secondNonAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    secondNonAncillaryQubitInlineInformation.userDeclaredQubitLabel = std::nullopt;
+
+    const std::string              secondNonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> secondNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(secondNonAncillaryQubitLabel, false, secondNonAncillaryQubitInlineInformation);
+    ASSERT_FALSE(secondNonAncillaryQubitIndex.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, ancillaryQubitLabel, &ancillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, firstNonAncillaryQubitLabel, &firstNonAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, secondNonAncillaryQubitLabel, nullptr));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithInvalidInlineStackInInlineInformationNotPossible) {
+    const std::string              ancillaryQubitLabel             = "anc_1";
+    auto                           ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    const std::optional<qc::Qubit> ancillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false, ancillaryQubitInlineInformation);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    auto firstNonAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    firstNonAncillaryQubitInlineInformation.userDeclaredQubitLabel = "test_label";
+
+    const std::string              firstNonAncillaryQubitLabel = "nonAnc_1";
+    const std::optional<qc::Qubit> firstNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(firstNonAncillaryQubitLabel, false, firstNonAncillaryQubitInlineInformation);
+    ASSERT_TRUE(firstNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *firstNonAncillaryQubitIndex);
+
+    auto secondNonAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    secondNonAncillaryQubitInlineInformation.userDeclaredQubitLabel = "test_label";
+    secondNonAncillaryQubitInlineInformation.inlineStack            = nullptr;
+
+    const std::string              secondNonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> secondNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(secondNonAncillaryQubitLabel, false, secondNonAncillaryQubitInlineInformation);
+    ASSERT_FALSE(secondNonAncillaryQubitIndex.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, ancillaryQubitLabel, &ancillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, firstNonAncillaryQubitLabel, &firstNonAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, secondNonAncillaryQubitLabel, nullptr));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithEmptyInlineStackInInlineInformationNotPossible) {
+    const std::string              ancillaryQubitLabel             = "anc_1";
+    auto                           ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    const std::optional<qc::Qubit> ancillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false, ancillaryQubitInlineInformation);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    auto firstNonAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    firstNonAncillaryQubitInlineInformation.userDeclaredQubitLabel = "test_label";
+
+    const std::string              firstNonAncillaryQubitLabel = "nonAnc_1";
+    const std::optional<qc::Qubit> firstNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(firstNonAncillaryQubitLabel, false, firstNonAncillaryQubitInlineInformation);
+    ASSERT_TRUE(firstNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *firstNonAncillaryQubitIndex);
+
+    auto secondNonAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    secondNonAncillaryQubitInlineInformation.userDeclaredQubitLabel = "test_label";
+    secondNonAncillaryQubitInlineInformation.inlineStack            = std::make_shared<QubitInliningStack>();
+
+    const std::string              secondNonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> secondNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(secondNonAncillaryQubitLabel, false, secondNonAncillaryQubitInlineInformation);
+    ASSERT_FALSE(secondNonAncillaryQubitIndex.has_value());
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, ancillaryQubitLabel, &ancillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, firstNonAncillaryQubitLabel, &firstNonAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, secondNonAncillaryQubitLabel, nullptr));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithNotSetInlineStackInInlineInformationPossible) {
+    const std::string              ancillaryQubitLabel             = "anc_1";
+    auto                           ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    const std::optional<qc::Qubit> ancillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false, ancillaryQubitInlineInformation);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    auto firstAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    firstAncillaryQubitInlineInformation.userDeclaredQubitLabel = "test_label";
+
+    const std::string              firstNonAncillaryQubitLabel = "nonAnc_1";
+    const std::optional<qc::Qubit> firstNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(firstNonAncillaryQubitLabel, false, firstAncillaryQubitInlineInformation);
+    ASSERT_TRUE(firstNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *firstNonAncillaryQubitIndex);
+
+    auto secondAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    secondAncillaryQubitInlineInformation.userDeclaredQubitLabel = "test_label";
+    secondAncillaryQubitInlineInformation.inlineStack            = std::nullopt;
+
+    const std::string              secondNonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> secondNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(secondNonAncillaryQubitLabel, false, secondAncillaryQubitInlineInformation);
+    ASSERT_TRUE(secondNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(2, *secondNonAncillaryQubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, ancillaryQubitLabel, &ancillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, firstNonAncillaryQubitLabel, &firstAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, secondNonAncillaryQubitLabel, &secondAncillaryQubitInlineInformation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, AddNonAncillaryQubitWithInternalQubitLabelAndUserDeclaredQubitLabelInInlineInformationBeingEqualPossible) {
+    const std::string              ancillaryQubitLabel             = "anc_1";
+    auto                           ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    const std::optional<qc::Qubit> ancillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false, ancillaryQubitInlineInformation);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *ancillaryQubitIndex);
+
+    auto firstAncillaryQubitInlineInformation                   = AnnotatableQuantumComputation::InlinedQubitInformation();
+    firstAncillaryQubitInlineInformation.userDeclaredQubitLabel = "test_label";
+
+    const std::string              firstNonAncillaryQubitLabel = "nonAnc_1";
+    const std::optional<qc::Qubit> firstNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(firstNonAncillaryQubitLabel, false, firstAncillaryQubitInlineInformation);
+    ASSERT_TRUE(firstNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *firstNonAncillaryQubitIndex);
+
+    const std::string secondNonAncillaryQubitLabel               = "nonAnc";
+    auto              secondAncillaryQubitInlineInformation      = AnnotatableQuantumComputation::InlinedQubitInformation();
+    secondAncillaryQubitInlineInformation.userDeclaredQubitLabel = secondNonAncillaryQubitLabel;
+    secondAncillaryQubitInlineInformation.inlineStack            = std::nullopt;
+
+    const std::optional<qc::Qubit> secondNonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(secondNonAncillaryQubitLabel, false, secondAncillaryQubitInlineInformation);
+    ASSERT_TRUE(secondNonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(2, *secondNonAncillaryQubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(3, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({true, false, false}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, ancillaryQubitLabel, &ancillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, firstNonAncillaryQubitLabel, &firstAncillaryQubitInlineInformation));
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, secondNonAncillaryQubitLabel, &secondAncillaryQubitInlineInformation));
 }
 // END Adding qubit types
 
@@ -2282,3 +2792,94 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetQuantumOperationUsingOutOfRan
     // Since we are using zero-based indices, an index equal to the number of quantum operations in the quantum computation should also not work
     ASSERT_THAT(annotatedQuantumComputation->getQuantumOperation(1), testing::IsNull());
 }
+
+// BEGIN getInliningInformationOfQubit
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetInlineInformationOfAncillaryQubit) {
+    const std::string              nonAncillaryQubitLabel = "nonAnc";
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex = annotatedQuantumComputation->addNonAncillaryQubit(nonAncillaryQubitLabel, false, std::nullopt);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *nonAncillaryQubitIndex);
+
+    const auto defaultModule                  = std::make_shared<Module>("defaultModule");
+    auto       validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+
+    const std::string              ancillaryQubitLabel             = "anc_1";
+    const auto                     ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
+    const std::optional<qc::Qubit> ancillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false, ancillaryQubitInlineInformation);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *ancillaryQubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, ancillaryQubitLabel, &ancillaryQubitInlineInformation));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetInlineInformationOfNonAncillaryQubit) {
+    const auto defaultModule                = std::make_shared<Module>("defaultModule");
+    auto       nonAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
+    nonAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+
+    const std::string              nonAncillaryQubitLabel             = "nonAnc";
+    const auto                     nonAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation("user_label", nonAncillaryQubitInlineStack);
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex             = annotatedQuantumComputation->addNonAncillaryQubit(nonAncillaryQubitLabel, false, nonAncillaryQubitInlineInformation);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *nonAncillaryQubitIndex);
+
+    const std::string              ancillaryQubitLabel             = "anc_1";
+    const auto                     ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    const std::optional<qc::Qubit> ancillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false, ancillaryQubitInlineInformation);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *ancillaryQubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, nonAncillaryQubitLabel, &nonAncillaryQubitInlineInformation));
+    // Only internal qubit label should be able to query qubit inline information
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, *nonAncillaryQubitInlineInformation.userDeclaredQubitLabel, nullptr));
+}
+
+TEST_F(AnnotatedQuantumComputationTestsFixture, GetInlineInformationOfNotExistingQubit) {
+    const auto defaultModule                = std::make_shared<Module>("defaultModule");
+    auto       nonAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
+    nonAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+
+    const std::string              nonAncillaryQubitLabel             = "nonAnc";
+    const auto                     nonAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation("user_label", nonAncillaryQubitInlineStack);
+    const std::optional<qc::Qubit> nonAncillaryQubitIndex             = annotatedQuantumComputation->addNonAncillaryQubit(nonAncillaryQubitLabel, false, nonAncillaryQubitInlineInformation);
+    ASSERT_TRUE(nonAncillaryQubitIndex.has_value());
+    ASSERT_EQ(0, *nonAncillaryQubitIndex);
+
+    const std::string              ancillaryQubitLabel             = "anc_1";
+    const auto                     ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
+    const std::optional<qc::Qubit> ancillaryQubitIndex             = annotatedQuantumComputation->addPreliminaryAncillaryQubit(ancillaryQubitLabel, false, ancillaryQubitInlineInformation);
+    ASSERT_TRUE(ancillaryQubitIndex.has_value());
+    ASSERT_EQ(1, *ancillaryQubitIndex);
+
+    ASSERT_TRUE(annotatedQuantumComputation->promotePreliminaryAncillaryQubitToDefinitiveAncillary(*ancillaryQubitIndex));
+    ASSERT_THAT(annotatedQuantumComputation->getAddedPreliminaryAncillaryQubitIndices(), testing::UnorderedElementsAreArray({*ancillaryQubitIndex}));
+    ASSERT_EQ(2, annotatedQuantumComputation->getNqubits());
+    ASSERT_EQ(0, annotatedQuantumComputation->getNgarbageQubits());
+    ASSERT_EQ(1, annotatedQuantumComputation->getNancillae());
+
+    ASSERT_THAT(annotatedQuantumComputation->getGarbage(), testing::ElementsAreArray({false, false}));
+    ASSERT_THAT(annotatedQuantumComputation->getAncillary(), testing::ElementsAreArray({false, true}));
+    ASSERT_EQ(0, annotatedQuantumComputation->getNindividualOps());
+
+    ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(*annotatedQuantumComputation, "not_existing_qubit_label", nullptr));
+}
+// END
