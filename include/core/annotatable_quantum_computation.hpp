@@ -56,7 +56,7 @@ namespace syrec {
          * @param qubitLabel The label of the ancillary qubit. Must be non-empty.
          * @param isGarbageQubit Whether the qubit is a garbage qubit.
          * @param optionalInliningInformation Optional debug information to determine the origin of the qubit in the associated SyReC program.
-         * @return The index of the non-ancillary qubit in the quantum computation, std::nullopt if a qubit with the same label already exists, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid inline stack).
+         * @return The index of the non-ancillary qubit in the quantum computation, std::nullopt if a qubit with the same label already exists, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid or empty inline stack).
          */
         [[nodiscard]] std::optional<qc::Qubit> addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
 
@@ -65,7 +65,7 @@ namespace syrec {
          * @param qubitLabel The label of the ancillary qubit. Must be non-empty.
          * @param initialStateOfQubit The initial state of the ancillary qubits. Is assumed to be 0 by default. The initial state of 1 is achieved by adding an X quantum operation.
          * @param inliningInformation Debug information to determine the origin of the ancillary qubit in the associated SyReC program.
-         * @return The index of the ancillary qubit in the quantum computation, std::nullopt if a qubit with the same label already exists or no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information was invalid (user defined qubit label must have no value).
+         * @return The index of the ancillary qubit in the quantum computation, std::nullopt if a qubit with the same label already exists or no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information was invalid (user defined qubit label must have no value and value of inline stack cannot be null or empty).
          */
         [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit, const InlinedQubitInformation& inliningInformation);
 
@@ -160,6 +160,7 @@ namespace syrec {
          * Get the inline information of a qubit.
          * @param qubitLabel The internal label of the qubit set via \see AnnotatableQuantumComputation#addNonAncillaryQubit used to retrieve the inlining information.
          * @return Returns the inlined qubit information if such data exists, otherwise std::nullopt is returned
+         * @remark The lifetime of the returned inline qubit information reference is tied to the inline stack thus any operation that changes the size of the inline stack will invalidate all fetched inline qubit information references fetched via this call
          */
         [[maybe_unused]] const InlinedQubitInformation* getInliningInformationOfQubit(const std::string& qubitLabel) const;
 
