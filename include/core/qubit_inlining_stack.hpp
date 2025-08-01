@@ -28,12 +28,38 @@ namespace syrec {
             std::optional<bool>         isTargetModuleAccessedViaCallStmt;
             Module::ptr                 targetModule;
 
+            /**
+             * Stringify the signature of the target module
+             * @return The stringified signature of the target module, std::nullopt if either the target module was not set or the stringification failed.
+             */
             [[nodiscard]] std::optional<std::string> stringifySignatureOfCalledModule() const;
         };
 
-        [[maybe_unused]] bool                     push(const QubitInliningStackEntry& inlineStackEntry);
-        [[maybe_unused]] bool                     pop();
-        [[maybe_unused]] std::size_t              size() const;
+        /**
+         * Push a new element onto the stack
+         * @param inlineStackEntry The element to push
+         * @return If the target module of the new stack entry was set (i.e. unequal to a null pointer) then true is returned, otherwise false.
+         */
+        [[maybe_unused]] bool push(const QubitInliningStackEntry& inlineStackEntry);
+
+        /**
+         * Pop an element from the stack
+         * @return Whether an element was popped from the stack.
+         */
+        [[maybe_unused]] bool pop();
+
+        /**
+         * Get the size of the stack
+         * @return The size of the stack
+         */
+        [[maybe_unused]] std::size_t size() const;
+
+        /**
+         * Fetch an element from the stack using a zero-based index.
+         * @param idx The index of an element on the stack
+         * @return If an element of the stack at the given index exists then a reference to it is returned, otherwise nullptr is returned.
+         * @remark The stack is responsible to manage the lifetime of the fetched elements, if the size of the stack changes (i.e. due to a push or pop operation) all previously fetched references to stack elements are invalid.
+         */
         [[maybe_unused]] QubitInliningStackEntry* getStackEntryAt(std::size_t idx);
 
     protected:

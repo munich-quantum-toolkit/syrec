@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -35,36 +34,38 @@ namespace {
         }
     }
 
-    [[nodiscard]] bool stringifyModuleParameter(const Variable& moduleParameter, std::ostringstream& outputStream) {
+    [[nodiscard]] bool stringifyModuleParameter(const Variable& moduleParameter, std::string& aggregateOfStringifiedModuleSignature) {
         const auto& stringifiedModuleParameterType = stringifiyModuleParameterType(moduleParameter.type);
         if (!stringifiedModuleParameterType.has_value()) {
             return false;
         }
-        outputStream << *stringifiedModuleParameterType << " " << moduleParameter.name;
-        for (const auto& valuesOfDimension: moduleParameter.dimensions) {
-            outputStream << "[" << std::to_string(valuesOfDimension) << "]";
+        aggregateOfStringifiedModuleSignature += *stringifiedModuleParameterType + " " + moduleParameter.name;
+        if (moduleParameter.name.empty() || moduleParameter.dimensions.empty()) {
+            return false;
         }
-        outputStream << "(" << std::to_string(moduleParameter.bitwidth) << ")";
+
+        for (const auto& valuesOfDimension: moduleParameter.dimensions) {
+            aggregateOfStringifiedModuleSignature += "[" + std::to_string(valuesOfDimension) + "]";
+        }
+        aggregateOfStringifiedModuleSignature += "(" + std::to_string(moduleParameter.bitwidth) + ")";
         return true;
     }
 } // namespace
 
 std::optional<std::string> QubitInliningStack::QubitInliningStackEntry::stringifySignatureOfCalledModule() const {
-    // TODO: Is ostringstream the correct choice here?
-    std::ostringstream stringifiedCalledModuleSignature;
-    stringifiedCalledModuleSignature << "module " << targetModule->name << "(";
+    std::string stringifiedCalledModuleSignature = "module " + targetModule->name + "(";
 
-    bool stringificationSuccessful = true;
+    bool stringificationSuccessful = !targetModule->name.empty();
     for (std::size_t i = 0; i < targetModule->parameters.size() && stringificationSuccessful; ++i) {
-        stringifiedCalledModuleSignature << (i != 0 ? ", " : "");
+        stringifiedCalledModuleSignature += (i != 0 ? ", " : "");
         stringificationSuccessful = targetModule->parameters.at(i) != nullptr && stringifyModuleParameter(*targetModule->parameters.at(i), stringifiedCalledModuleSignature);
     }
-    stringifiedCalledModuleSignature << ")";
+    stringifiedCalledModuleSignature += ")";
 
     if (!stringificationSuccessful) {
         return std::nullopt;
     }
-    return stringifiedCalledModuleSignature.str();
+    return stringifiedCalledModuleSignature;
 }
 
 bool QubitInliningStack::push(const QubitInliningStackEntry& inlineStackEntry) {
