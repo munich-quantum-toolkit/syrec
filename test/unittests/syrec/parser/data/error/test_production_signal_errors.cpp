@@ -23,6 +23,16 @@ TEST_F(SyrecParserErrorTestsFixture, OmittingVariableIdentifierInVariableAccessC
     performTestExecution("module main(out a(4)) ++= .0");
 }
 
+TEST_F(SyrecParserErrorTestsFixture, UsageOfReservedIdentifierPrefixInIdentifierOfModuleParameterCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(Message::Position(1, 27), "__qTest", RESERVED_IDENTIFIER_PREFIX);
+    performTestExecution("module main(inout a(4), in __qTest(4)) a += __qTest");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, UsageOfReservedIdentifierPrefixInIdentifierOfLocalModuleVariableCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(Message::Position(1, 29), "__qTest", RESERVED_IDENTIFIER_PREFIX);
+    performTestExecution("module main(inout a(4)) wire __qTest(4) a += __qTest");
+}
+
 TEST_F(SyrecParserErrorTestsFixture, OmittingOpeningBracketForAccessOnDimensionOfVariableCausesError) {
     buildAndRecordExpectedSemanticError<SemanticError::NoVariableMatchingIdentifier>(Message::Position(1, 29), "a1");
     recordSyntaxError(Message::Position(1, 31), "extraneous input ']' expecting {<EOF>, 'module'}");

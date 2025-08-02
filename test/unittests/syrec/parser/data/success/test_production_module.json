@@ -11,6 +11,22 @@
   "moduleIdentifierContainingLettersAndDigitsAndUnderscores": {
     "inputCircuit": "module _another_123_module() skip"
   },
+  "moduleIdentifierContainingReservedIdentifierPrefixNotAtStartOk": {
+    "inputCircuit": "module add__q_test_other(inout a(4)) a += 2",
+    "expectedCircuit": "module add__q_test_other(inout a(4)) a[0] += 2"
+  },
+  "moduleIdentifierEndingWithReservedIdentifierPrefixOk": {
+    "inputCircuit": "module add__q_test(inout a(4)) a += 2",
+    "expectedCircuit": "module add__q_test(inout a(4)) a[0] += 2"
+  },
+  "moduleIdentifierStartingWithReservedIdentifierPrefixButDifferentCasingOk": {
+    "inputCircuit": "module __QTest(inout a(4)) a += 2",
+    "expectedCircuit": "module __QTest(inout a(4)) a[0] += 2"
+  },
+  "moduleIdentifierStartingWithIncompleteReservedIdentifierOk": {
+    "inputCircuit": "module _qTest(inout a(4)) a += 2",
+    "expectedCircuit": "module _qTest(inout a(4)) a[0] += 2"
+  },
   "moduleDeclarationWithoutParametersOk": {
     "inputCircuit": "module main() skip"
   },

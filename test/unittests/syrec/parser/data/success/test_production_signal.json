@@ -15,6 +15,22 @@
     "inputCircuit": "module main(inout a(4), in _a(4)) a += _a",
     "expectedCircuit": "module main(inout a(4), in _a(4)) a[0] += _a[0]"
   },
+  "moduleParameterIdentifierContainingReservedIdentifierPrefixNotAtStartOk": {
+    "inputCircuit": "module main(inout var__q_0(4)) var__q_0 += 2",
+    "expectedCircuit": "module main(inout var__q_0(4)) var__q_0[0] += 2"
+  },
+  "moduleParameterIdentifierEndingWithReservedIdentifierPrefixOk": {
+    "inputCircuit": "module main(inout var__q(4)) var__q += 2",
+    "expectedCircuit": "module main(inout var__q(4)) var__q[0] += 2"
+  },
+  "moduleParameterIdentifierStartingWithReservedIdentifierPrefixButDifferentCasingOk": {
+    "inputCircuit": "module main(inout __Q_var(4)) __Q_var += 2",
+    "expectedCircuit": "module main(inout __Q_var(4)) __Q_var[0] += 2"
+  },
+  "moduleParameterIdentifierStartingWithIncompleteReservedIdentifierOk": {
+    "inputCircuit": "module main(inout _q(4)) _q += 2",
+    "expectedCircuit": "module main(inout _q(4)) _q[0] += 2"
+  },
   "moduleLocalVariableIdentifierStartingWithUnderscoreOk": {
     "inputCircuit": "module anotherModule(inout a(4)) wire _b(4) a += _b",
     "expectedCircuit": "module anotherModule(inout a(4)) wire _b(4) a[0] += _b[0]"
@@ -35,7 +51,22 @@
     "inputCircuit": "module main(inout a(4)) wire _a(4) a += _a",
     "expectedCircuit": "module main(inout a(4)) wire _a(4) a[0] += _a[0]"
   },
-
+  "moduleLocalVariableIdentifierContainingReservedIdentifierPrefixNotAtStartOk": {
+    "inputCircuit": "module main(inout a(4)) wire var__q_0(4) a += var__q_0",
+    "expectedCircuit": "module main(inout a(4)) wire var__q_0(4) a[0] += var__q_0[0]"
+  },
+  "moduleLocalVariableIdentifierEndingWithReservedIdentifierPrefixOk": {
+    "inputCircuit": "module main(inout a(4)) wire var__q(4) a += var__q",
+    "expectedCircuit": "module main(inout a(4)) wire var__q(4) a[0] += var__q[0]"
+  },
+  "moduleLocalVariableIdentifierStartingWithReservedIdentifierPrefixButDifferentCasingOk": {
+    "inputCircuit": "module main(inout a(4)) wire __Q_var(4) a += __Q_var",
+    "expectedCircuit": "module main(inout a(4)) wire __Q_var(4) a[0] += __Q_var[0]"
+  },
+  "moduleLocalVariableIdentifierStartingWithIncompleteReservedIdentifierOk": {
+    "inputCircuit": "module main(inout a(4)) wire _q(4) a += _q",
+    "expectedCircuit": "module main(inout a(4)) wire _q(4) a[0] += _q[0]"
+  },
   "omittingExplicitAccessOnOnlyValueOf1DSignalPossible": {
     "inputCircuit": "module main(inout a(4)) ++= a",
     "expectedCircuit": "module main(inout a(4)) ++= a[0]"

@@ -34,6 +34,11 @@ TEST_F(SyrecParserErrorTestsFixture, EmptyModuleIdentifierCausesError) {
     performTestExecution("module () skip");
 }
 
+TEST_F(SyrecParserErrorTestsFixture, UsageOfReservedIdentifierPrefixInModuleIdentifierCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(Message::Position(1, 7), "__q_test", RESERVED_IDENTIFIER_PREFIX);
+    performTestExecution("module __q_test(inout a(4)) a += 2");
+}
+
 TEST_F(SyrecParserErrorTestsFixture, OmittingModuleParameterListOpeningBracketCausesError) {
     recordSyntaxError(Message::Position(1, 11), "missing '(' at ')'");
     performTestExecution("module main) skip");

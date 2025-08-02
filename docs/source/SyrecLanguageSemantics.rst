@@ -27,6 +27,7 @@ Module
 - The maximum supported bitwidth of any variable is equal to 32.
 - If the bitwidth of a variable is not declared then it is assumed to be equal to a :doc:`configurable default value <library/Settings>`.
 - The parameter and variable identifiers must be unique in a SyReC module.
+- The identifier of the module and any of its parameters and local variables cannot start with the prefix '__q' that is reserved for internal use.
 - Module overloading (i.e., the definition of a module sharing its identifier with another module while the signature [variable type, dimensionality and bitwidth] of their parameters do not match) is supported for all modules whose identifier is not equal to the one of the "main" module. However, overloading the implicitly defined main module of a SyReC program is possible.
 
  | Two module signatures (module identifier + parameters) :math:`m_1` and :math:`m_2` are considered to be equal iff:

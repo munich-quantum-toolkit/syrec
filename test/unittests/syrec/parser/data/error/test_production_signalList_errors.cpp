@@ -77,30 +77,36 @@ TEST_F(SyrecParserErrorTestsFixture, InvalidSymbolInLocalModuleVariableIdentifie
     performTestExecution("module main() wire a(16), b#2 skip");
 }
 
-TEST_F(SyrecParserErrorTestsFixture, OmittingVariableValuesForDimensionOpeningBracketInLocalModuleParameterDeclarationCausesError) {
+TEST_F(SyrecParserErrorTestsFixture, OmittingVariableValuesForDimensionOpeningBracketInLocalModuleVariableDeclarationCausesError) {
     recordSyntaxError(Message::Position(1, 21), "extraneous input ']' expecting {'++=', '--=', '~=', 'call', 'uncall', 'wire', 'state', 'for', 'if', 'skip', IDENT}");
     performTestExecution("module main() wire a2](4) skip");
 }
 
-TEST_F(SyrecParserErrorTestsFixture, InvalidVariableValuesForDimensionOpeningBracketInLocalModuleParameterDeclarationCausesError) {
+TEST_F(SyrecParserErrorTestsFixture, InvalidVariableValuesForDimensionOpeningBracketInLocalModuleVariableDeclarationCausesError) {
     recordSyntaxError(Message::Position(1, 20), "token recognition error at: '{'");
     recordSyntaxError(Message::Position(1, 21), "extraneous input '2' expecting {'++=', '--=', '~=', 'call', 'uncall', 'wire', 'state', 'for', 'if', 'skip', IDENT}");
     performTestExecution("module main() wire a{2] skip");
 }
 
-TEST_F(SyrecParserErrorTestsFixture, OmittingVariableValuesForDimensionClosingBracketInLocalModuleParameterDeclarationCausesError) {
+TEST_F(SyrecParserErrorTestsFixture, OmittingVariableValuesForDimensionClosingBracketInLocalModuleVariableDeclarationCausesError) {
     recordSyntaxError(Message::Position(1, 23), "missing ']' at 'skip'");
     performTestExecution("module main() wire a[2 skip");
 }
 
-TEST_F(SyrecParserErrorTestsFixture, InvalidVariableValuesForDimensionClosingBracketInLocalModuleParameterDeclarationCausesError) {
+TEST_F(SyrecParserErrorTestsFixture, InvalidVariableValuesForDimensionClosingBracketInLocalModuleVariableDeclarationCausesError) {
     recordSyntaxError(Message::Position(1, 22), "mismatched input ')' expecting ']'");
     performTestExecution("module main() wire a[2) skip");
 }
 
-TEST_F(SyrecParserErrorTestsFixture, NoneNumericValueForNumberOfValuesForDimensionInLocalModuleParameterDeclarationCausesError) {
+TEST_F(SyrecParserErrorTestsFixture, NoneNumericValueForNumberOfValuesForDimensionInLocalModuleVariableDeclarationCausesError) {
     recordSyntaxError(Message::Position(1, 31), "mismatched input '#' expecting INT");
     performTestExecution("module main() wire b(4) wire a[#b) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, UsageOfReservedIdentifierPrefixInLocalModuleVariableSplitInMultipleDeclarationsCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(Message::Position(1, 25), "__qTest_1", RESERVED_IDENTIFIER_PREFIX);
+    buildAndRecordExpectedSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(Message::Position(1, 44), "__qTest_2", RESERVED_IDENTIFIER_PREFIX);
+    performTestExecution("module main() wire b(4), __qTest_1(4) state __qTest_2(4) skip");
 }
 
 TEST_F(SyrecParserErrorTestsFixture, OmittingValueForNumberOfValuesForDimensionInLocalModuleVariableDeclarationCausesError) {

@@ -40,7 +40,8 @@ namespace syrec_parser {
         UnhandledOperationFromGrammarInParser,
         VariableBitwidthEqualToZero,
         NumberOfValuesOfDimensionEqualToZero,
-        NoModuleMatchingUserDefinedProgramEntryPoint
+        NoModuleMatchingUserDefinedProgramEntryPoint,
+        ReservedIdentifierPrefixUsed
     };
 
     /// Get the identifier associated with a given semantic error
@@ -102,6 +103,8 @@ namespace syrec_parser {
                 return "SEM26";
             case SemanticError::NoModuleMatchingUserDefinedProgramEntryPoint:
                 return "SEM27";
+            case SemanticError::ReservedIdentifierPrefixUsed:
+                return "SEM28";
             default:
                 return "";
         }
@@ -167,6 +170,8 @@ namespace syrec_parser {
                 return "Number of values of dimension {:d} must be larger than zero";
             case SemanticError::NoModuleMatchingUserDefinedProgramEntryPoint:
                 return "No module matching the user defined SyReC programs entry point identifier '{:s}'";
+            case SemanticError::ReservedIdentifierPrefixUsed:
+                return "Identifier '{:s}' cannot start with '{:s}' since this prefix is reserved for internal use";
             default:
                 return "";
         }

@@ -62,7 +62,8 @@ namespace syrec_parser_error_tests {
         }
 
     protected:
-        MessagesContainer expectedErrorMessages;
+        MessagesContainer                 expectedErrorMessages;
+        static constexpr std::string_view RESERVED_IDENTIFIER_PREFIX = "__q";
 
         static void assertStringificationOfParsedSyrecProgramIsSuccessful(const syrec::Program& syrecProgramToStringifiy, std::ostream& containerForStringifiedProgram) {
             utils::BaseSyrecIrEntityStringifier syrecProgramStringifier(std::nullopt);

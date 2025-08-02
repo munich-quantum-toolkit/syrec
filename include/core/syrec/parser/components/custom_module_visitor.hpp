@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <vector>
 
 namespace syrec_parser {
@@ -35,7 +36,8 @@ namespace syrec_parser {
         [[maybe_unused]] std::optional<std::shared_ptr<syrec::Program>> parseProgram(const TSyrecParser::ProgramContext* context) const;
 
     protected:
-        unsigned int defaultVariableBitwidth;
+        unsigned int                      defaultVariableBitwidth;
+        static constexpr std::string_view RESERVED_IDENTIFIER_PREFIX = "__q";
 
         std::unique_ptr<CustomStatementVisitor>                         statementVisitorInstance;
         [[nodiscard]] std::optional<std::shared_ptr<syrec::Program>>    visitProgramTyped(const TSyrecParser::ProgramContext* context) const;
