@@ -131,13 +131,17 @@ namespace syrec {
 
         [[nodiscard]] static std::optional<AssignStatement::AssignOperation>  tryMapBinaryToAssignmentOperation(BinaryExpression::BinaryOperation binaryOperation) noexcept;
         [[nodiscard]] static std::optional<BinaryExpression::BinaryOperation> tryMapAssignmentToBinaryOperation(AssignStatement::AssignOperation assignOperation) noexcept;
+        [[nodiscard]] std::optional<QubitInliningStack::ptr>                  getLastCreatedModuleCallStackInstance() const;
+        [[nodiscard]] std::optional<QubitInliningStack::ptr>                  createInsertAndGetCopyOfLastCreatedCallStackInstance();
+        [[nodiscard]] bool                                                    shouldQubitInlineInformationBeRecorded() const;
+        void                                                                  discardLastCreateModuleCallStackInstance();
 
         std::stack<Statement::ptr>  stmts;
         Number::LoopVariableMapping loopMap;
         std::stack<Module::ptr>     modules;
 
-        AnnotatableQuantumComputation& annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
-        QubitInliningStack::ptr        currentModuleCallStack;
+        AnnotatableQuantumComputation&                      annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+        std::optional<std::vector<QubitInliningStack::ptr>> moduleCallStackInstances;
 
     private:
         VarLinesMap                            varLines;
