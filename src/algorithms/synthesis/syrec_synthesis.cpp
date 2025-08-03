@@ -202,7 +202,7 @@ namespace syrec {
                 if (auto* prevStackEntry = currentModuleCallStack->getStackEntryAt(currentModuleCallStack->size() - 1); prevStackEntry != nullptr) {
                     prevStackEntry->lineNumberOfCallOfTargetModule    = statement->lineNumber;
                     prevStackEntry->isTargetModuleAccessedViaCallStmt = true;
-                    okay                                              = currentModuleCallStack->push(QubitInliningStack::QubitInliningStackEntry({std::nullopt, true, callStat->target})) && onStatement(*callStat) && currentModuleCallStack->pop();
+                    okay                                              = currentModuleCallStack->push(QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, callStat->target})) && onStatement(*callStat) && currentModuleCallStack->pop();
                 } else {
                     // There must be at least on entry on the stack for the main module of the currently synthesized SyReC program
                     okay = false;
@@ -216,7 +216,7 @@ namespace syrec {
                 if (auto* prevStackEntry = currentModuleCallStack->getStackEntryAt(currentModuleCallStack->size() - 1); prevStackEntry != nullptr) {
                     prevStackEntry->lineNumberOfCallOfTargetModule    = statement->lineNumber;
                     prevStackEntry->isTargetModuleAccessedViaCallStmt = false;
-                    okay                                              = currentModuleCallStack->push(QubitInliningStack::QubitInliningStackEntry({std::nullopt, false, uncallStat->target})) && onStatement(*uncallStat) && currentModuleCallStack->pop();
+                    okay                                              = currentModuleCallStack->push(QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, uncallStat->target})) && onStatement(*uncallStat) && currentModuleCallStack->pop();
                 } else {
                     // There must be at least on entry on the stack for the main module of the currently synthesized SyReC program
                     okay = false;
@@ -1050,7 +1050,7 @@ namespace syrec {
             annotatableQuantumComputation.addOperationsImplementingNotGate(constLine);
         } else {
             const auto                     qubitIndex          = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
-            const std::string              qubitLabel          = InternalQubitLabelBuilder::buildInternalQubitLabel(annotatableQuantumComputation.getNqubits()) + "_const_" + std::to_string(static_cast<int>(value));
+            const std::string              qubitLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(annotatableQuantumComputation.getNqubits(), value);
             const auto                     inliningInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, inlinedQubitModuleCallStack);
             const std::optional<qc::Qubit> generatedQubitIndex = annotatableQuantumComputation.addPreliminaryAncillaryQubit(qubitLabel, value, inliningInformation);
             if (!generatedQubitIndex.has_value() || *generatedQubitIndex != qubitIndex) {
@@ -1124,7 +1124,7 @@ namespace syrec {
                     // To prevent name clashes when local module variables are inlined at the callsite, all local variable names are transformed to '__q<curr_num_qubits>' and an alias is created and stored
                     // in the annotatable quantum computation. The <curr_num_qubits> portion of the new variable name is the number of qubits prior to the addition of any variable in this call so that the qubits
                     // created for each value of a dimension of a variable share the same name prefix (i.e. the variable 'wire a[2](2)' will cause the generation of the qubits '__q0[0].0', '__q0[0].1','__q0[1].0', '__q0[1].0')
-                    internalQubitLabel = InternalQubitLabelBuilder::buildInternalQubitLabel(currNumQubits);
+                    internalQubitLabel = InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(currNumQubits);
                 }
                 internalQubitLabel += arraystr + "." + std::to_string(i);
                 userDeclaredQubitLabel += arraystr + "." + std::to_string(i);
