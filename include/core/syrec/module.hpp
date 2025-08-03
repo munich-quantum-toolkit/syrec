@@ -66,12 +66,16 @@ namespace syrec {
        * be determined, whether it is a parameter of a variable.
        */
         [[nodiscard]] Variable::ptr findParameterOrVariable(const std::string& n) const {
-            for (Variable::ptr var: parameters) {
-                if (var->name == n) {
-                    return var;
+            for (const Variable::ptr& param: parameters) {
+                if (param->name == n) {
+                    return param;
                 }
             }
-
+            for (const Variable::ptr& localModuleVariable: variables) {
+                if (localModuleVariable->name == n) {
+                    return localModuleVariable;
+                }
+            }
             return {};
         }
 
