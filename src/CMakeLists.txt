@@ -28,6 +28,17 @@ if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-ir)
   target_compile_features(${MQT_SYREC_TARGET_NAME}-ir PUBLIC cxx_std_17)
 endif()
 
+if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-antlr-parser OR NOT TARGET
+                                                       ${MQT_SYREC_PARSER_TARGET_NAME}-synthesis)
+  add_library(${MQT_SYREC_TARGET_NAME}-utils INTERFACE)
+  target_include_directories(
+    ${MQT_SYREC_TARGET_NAME}-utils
+    INTERFACE ${MQT_SYREC_INCLUDE_BUILD_DIR}/algorithms/synthesis/internal_qubit_label_builder.hpp)
+  target_link_libraries(${MQT_SYREC_TARGET_NAME}-utils INTERFACE MQT::ProjectWarnings
+                                                                 MQT::ProjectOptions)
+  add_library(MQT::SyReC-Utils ALIAS ${MQT_SYREC_TARGET_NAME}-utils)
+endif()
+
 if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-antlr-parser)
   file(GLOB_RECURSE SYREC_PARSER_HEADERS ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/syrec/parser/*.hpp)
   list(APPEND SYREC_PARSER_HEADERS ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/syrec/program.hpp
@@ -51,7 +62,7 @@ if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-antlr-parser)
   target_link_libraries(
     ${MQT_SYREC_TARGET_NAME}-antlr-parser
     PUBLIC ${MQT_SYREC_TARGET_NAME}-ir
-    PRIVATE MQT::ProjectWarnings MQT::ProjectOptions fmt::fmt)
+    PRIVATE MQT::ProjectWarnings MQT::ProjectOptions fmt::fmt ${MQT_SYREC_TARGET_NAME}-utils)
 
   if(ANTLR4_BUILD_AS_STATIC_LIBRARY)
     target_link_libraries(${MQT_SYREC_TARGET_NAME}-antlr-parser PRIVATE antlr4_static)
@@ -116,7 +127,7 @@ if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-synthesis)
   target_link_libraries(
     ${MQT_SYREC_TARGET_NAME}-synthesis
     PUBLIC MQT::CoreDD
-    PRIVATE MQT::ProjectWarnings MQT::ProjectOptions)
+    PRIVATE MQT::ProjectWarnings MQT::ProjectOptions ${MQT_SYREC_TARGET_NAME}-utils)
 
   add_library(MQT::SyReC-Synthesis ALIAS ${MQT_SYREC_TARGET_NAME}-synthesis)
 endif()

@@ -8,6 +8,7 @@
  * Licensed under the MIT License
  */
 
+#include "algorithms/synthesis/internal_qubit_label_builder.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
 #include "core/syrec/program.hpp"
@@ -104,8 +105,8 @@ TEST_F(SyrecParserErrorTestsFixture, NoneNumericValueForNumberOfValuesForDimensi
 }
 
 TEST_F(SyrecParserErrorTestsFixture, UsageOfReservedIdentifierPrefixInLocalModuleVariableSplitInMultipleDeclarationsCausesError) {
-    buildAndRecordExpectedSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(Message::Position(1, 25), "__qTest_1", RESERVED_IDENTIFIER_PREFIX);
-    buildAndRecordExpectedSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(Message::Position(1, 44), "__qTest_2", RESERVED_IDENTIFIER_PREFIX);
+    buildAndRecordExpectedSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(Message::Position(1, 25), "__qTest_1", syrec::InternalQubitLabelBuilder::INTERNAL_QUBIT_LABEL_PREFIX);
+    buildAndRecordExpectedSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(Message::Position(1, 44), "__qTest_2", syrec::InternalQubitLabelBuilder::INTERNAL_QUBIT_LABEL_PREFIX);
     performTestExecution("module main() wire b(4), __qTest_1(4) state __qTest_2(4) skip");
 }
 

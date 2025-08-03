@@ -11,6 +11,7 @@
 #pragma once
 
 #include "TSyrecParser.h"
+#include "algorithms/synthesis/internal_qubit_label_builder.hpp"
 #include "core/syrec/module.hpp"
 #include "core/syrec/parser/components/custom_base_visitor.hpp"
 #include "core/syrec/parser/components/custom_statement_visitor.hpp"
@@ -37,7 +38,7 @@ namespace syrec_parser {
 
     protected:
         unsigned int                      defaultVariableBitwidth;
-        static constexpr std::string_view RESERVED_IDENTIFIER_PREFIX = "__q";
+        static constexpr std::string_view RESERVED_IDENTIFIER_PREFIX = syrec::InternalQubitLabelBuilder::INTERNAL_QUBIT_LABEL_PREFIX;
 
         std::unique_ptr<CustomStatementVisitor>                         statementVisitorInstance;
         [[nodiscard]] std::optional<std::shared_ptr<syrec::Program>>    visitProgramTyped(const TSyrecParser::ProgramContext* context) const;
