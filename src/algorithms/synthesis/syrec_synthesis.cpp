@@ -27,6 +27,7 @@
 #include <optional>
 #include <stack>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -342,10 +343,16 @@ namespace syrec {
     bool SyrecSynthesis::onStatement(const CallStatement& statement) {
         // 1. Adjust the references module's parameters to the call arguments
         for (qc::Qubit i = 0U; i < statement.parameters.size(); ++i) {
-            const std::string&   parameter       = statement.parameters.at(i);
-            const Variable::ptr& moduleParameter = statement.target->parameters.at(i);
+            assert(!modules.empty());
 
-            moduleParameter->setReference(modules.top()->findParameterOrVariable(parameter));
+            const std::string_view&             parameterIdentifier                        = statement.parameters.at(i);
+            const std::optional<Variable::ptr>& matchingParameterOrVariableOfCurrentModule = modules.top()->findParameterOrVariable(parameterIdentifier);
+            if (!matchingParameterOrVariableOfCurrentModule.has_value() || matchingParameterOrVariableOfCurrentModule.value() == nullptr) {
+                std::cerr << "Failed to find matching parameter or variable of module " << modules.top()->name << " for parameter '" << parameterIdentifier << "' when setting references of parameters of called module " << statement.target->name;
+                return false;
+            }
+            const auto& moduleParameter = statement.target->parameters.at(i);
+            moduleParameter->setReference(*matchingParameterOrVariableOfCurrentModule);
         }
 
         // 2. Create new lines for the module's variables
@@ -367,10 +374,16 @@ namespace syrec {
     bool SyrecSynthesis::onStatement(const UncallStatement& statement) {
         // 1. Adjust the references module's parameters to the call arguments
         for (qc::Qubit i = 0U; i < statement.parameters.size(); ++i) {
-            const std::string& parameter       = statement.parameters.at(i);
-            const auto&        moduleParameter = statement.target->parameters.at(i);
+            assert(!modules.empty());
 
-            moduleParameter->setReference(modules.top()->findParameterOrVariable(parameter));
+            const std::string_view&             parameterIdentifier                        = statement.parameters.at(i);
+            const std::optional<Variable::ptr>& matchingParameterOrVariableOfCurrentModule = modules.top()->findParameterOrVariable(parameterIdentifier);
+            if (!matchingParameterOrVariableOfCurrentModule.has_value() || matchingParameterOrVariableOfCurrentModule.value() == nullptr) {
+                std::cerr << "Failed to find matching parameter or variable of module " << modules.top()->name << " for parameter '" << parameterIdentifier << "' when setting references of parameters of uncalled module " << statement.target->name;
+                return false;
+            }
+            const auto& moduleParameter = statement.target->parameters.at(i);
+            moduleParameter->setReference(*matchingParameterOrVariableOfCurrentModule);
         }
 
         // 2. Create new lines for the module's variables

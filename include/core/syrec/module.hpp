@@ -14,7 +14,9 @@
 #include "core/syrec/variable.hpp"
 
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -59,20 +61,23 @@ namespace syrec {
         /**
        * @brief Finds a parameter or variable in the module
        *
-       * This methods tries to find a parameter or a variable
-       * by its name. If no such parameter or variable exists,
-       * then the empty smart pointer variable::ptr() is returned.
-       * Otherwise, using the \ref variable::type() "type" it can
-       * be determined, whether it is a parameter of a variable.
+       * @param variableIdentifierToFind The identifier used to find a matching parameter or local variable of the module.
+       * @returns The first matching parameter or local variable of the module, otherwise std::nullopt.
+       * @remark The \ref variable::type() of the returned variable can be used to determine whether the variable is a parameter or local variable of the module.
        */
-        [[nodiscard]] Variable::ptr findParameterOrVariable(const std::string& n) const {
-            for (Variable::ptr var: parameters) {
-                if (var->name == n) {
-                    return var;
+        [[nodiscard]] std::optional<Variable::ptr> findParameterOrVariable(const std::string_view& variableIdentifierToFind) const {
+            for (const auto& parameter: parameters) {
+                if (parameter->name == variableIdentifierToFind) {
+                    return parameter;
                 }
             }
 
-            return {};
+            for (const auto& localVariable: variables) {
+                if (localVariable->name == variableIdentifierToFind) {
+                    return localVariable;
+                }
+            }
+            return std::nullopt;
         }
 
         /**
