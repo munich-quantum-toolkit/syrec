@@ -300,6 +300,114 @@ TYPED_TEST_P(BaseSimulationTestFixture, OverlappingAccessOnQubitOfGuardCondition
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+// BEGIN of tests for production CallStatement
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeInAsValueForParameterOfTypeInOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeOutAsValueForParameterOfTypeInOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeWireAsValueForParameterOfTypeInOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeStateAsValueForParameterOfTypeInOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInoutOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeOutAsValueForParameterOfTypeInoutOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeWireAsValueForParameterOfTypeInoutOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeInoutAsValueForParameterOfTypeOutOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeOutAsValueForParameterOfTypeOutOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeWireAsValueForParameterOfTypeOutOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfNDimensionalModuleParameterAsValueForParameterOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+// END of tests for production CallStatement
+
+// BEGIN of tests for production UncallStatement
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeInAsValueForParameterOfTypeInOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeOutAsValueForParameterOfTypeInOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeWireAsValueForParameterOfTypeInOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeStateAsValueForParameterOfTypeInOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInoutOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeOutAsValueForParameterOfTypeInoutOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeWireAsValueForParameterOfTypeInoutOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeInoutAsValueForParameterOfTypeOutOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeOutAsValueForParameterOfTypeOutOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeWireAsValueForParameterOfTypeOutOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfNDimensionalModuleParameterAsValueForParameterOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+// END of tests for production UncallStatement
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             // BEGIN of tests for production UnaryExpression
                             LogicalNegationOfConstantZero,
@@ -380,8 +488,40 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             AccessOnSameQubitOfGuardConditionPossibleOnLefthandSideOfAssignment,
                             OverlappingAccessOnQubitOfGuardConditionPossibleOnLefthandSideOfAssignment,
                             AccessOnSameQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand,
-                            OverlappingAccessOnQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand
+                            OverlappingAccessOnQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand,
                             // END of tests for production AssignStatement
+
+                            // BEGIN of tests for production CallStatement
+                            UsageOfVariableOfTypeInAsValueForParameterOfTypeInOfCalledModule,
+                            UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInOfCalledModule,
+                            UsageOfVariableOfTypeOutAsValueForParameterOfTypeInOfCalledModule,
+                            UsageOfVariableOfTypeWireAsValueForParameterOfTypeInOfCalledModule,
+                            UsageOfVariableOfTypeStateAsValueForParameterOfTypeInOfCalledModule,
+                            UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInoutOfCalledModule,
+                            UsageOfVariableOfTypeOutAsValueForParameterOfTypeInoutOfCalledModule,
+                            UsageOfVariableOfTypeWireAsValueForParameterOfTypeInoutOfCalledModule,
+                            UsageOfVariableOfTypeInoutAsValueForParameterOfTypeOutOfCalledModule,
+                            UsageOfVariableOfTypeOutAsValueForParameterOfTypeOutOfCalledModule,
+                            UsageOfVariableOfTypeWireAsValueForParameterOfTypeOutOfCalledModule,
+                            UsageOfNDimensionalModuleParameterAsValueForParameterOfCalledModule,
+                            UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfCalledModule,
+                            // END of tests for production CallStatement
+
+                            // BEGIN of tests for production UncallStatement
+                            UsageOfVariableOfTypeInAsValueForParameterOfTypeInOfUncalledModule,
+                            UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInOfUncalledModule,
+                            UsageOfVariableOfTypeOutAsValueForParameterOfTypeInOfUncalledModule,
+                            UsageOfVariableOfTypeWireAsValueForParameterOfTypeInOfUncalledModule,
+                            UsageOfVariableOfTypeStateAsValueForParameterOfTypeInOfUncalledModule,
+                            UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInoutOfUncalledModule,
+                            UsageOfVariableOfTypeOutAsValueForParameterOfTypeInoutOfUncalledModule,
+                            UsageOfVariableOfTypeWireAsValueForParameterOfTypeInoutOfUncalledModule,
+                            UsageOfVariableOfTypeInoutAsValueForParameterOfTypeOutOfUncalledModule,
+                            UsageOfVariableOfTypeOutAsValueForParameterOfTypeOutOfUncalledModule,
+                            UsageOfVariableOfTypeWireAsValueForParameterOfTypeOutOfUncalledModule,
+                            UsageOfNDimensionalModuleParameterAsValueForParameterOfUncalledModule,
+                            UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfUncalledModule
+                            // END of tests for production UncallStatement
 );
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;

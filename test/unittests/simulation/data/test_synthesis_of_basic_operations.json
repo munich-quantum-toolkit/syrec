@@ -3756,5 +3756,1801 @@
         "out": "00"
       }
     ]
+  },
+
+  "UsageOfVariableOfTypeInAsValueForParameterOfTypeInOfCalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), in b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInOfCalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), inout b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeOutAsValueForParameterOfTypeInOfCalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), out b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeWireAsValueForParameterOfTypeInOfCalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), in b(2)) wire t(2) t ^= b; call add(a, t)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeStateAsValueForParameterOfTypeInOfCalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), in b(2)) state t(2) call add(a, t)",
+    "simulationRuns": [
+      {
+        "in": "000000",
+        "out": "000000"
+      },
+      {
+        "in": "100000",
+        "out": "100000"
+      },
+      {
+        "in": "010000",
+        "out": "010000"
+      },
+      {
+        "in": "110000",
+        "out": "110000"
+      },
+      {
+        "in": "001010",
+        "out": "101010"
+      },
+      {
+        "in": "101010",
+        "out": "011010"
+      },
+      {
+        "in": "011010",
+        "out": "111010"
+      },
+      {
+        "in": "111010",
+        "out": "001010"
+      },
+      {
+        "in": "000101",
+        "out": "010101"
+      },
+      {
+        "in": "100101",
+        "out": "110101"
+      },
+      {
+        "in": "010101",
+        "out": "000101"
+      },
+      {
+        "in": "110101",
+        "out": "100101"
+      },
+      {
+        "in": "001111",
+        "out": "111111"
+      },
+      {
+        "in": "101111",
+        "out": "001111"
+      },
+      {
+        "in": "011111",
+        "out": "101111"
+      },
+      {
+        "in": "111111",
+        "out": "011111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInoutOfCalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), in b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeOutAsValueForParameterOfTypeInoutOfCalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(out a(2), in b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeWireAsValueForParameterOfTypeInoutOfCalledModule": {
+    "inputCircuit": "module add(inout a(2), inout b(2)) a += b module main(inout a(2), in b(2)) wire t(2) t ^= b; call add(a, t)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeInoutAsValueForParameterOfTypeOutOfCalledModule": {
+    "inputCircuit": "module add(out a(2), in b(2)) a += b module main(inout a(2), in b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeOutAsValueForParameterOfTypeOutOfCalledModule": {
+    "inputCircuit": "module add(out a(2), in b(2)) a += b module main(out a(2), in b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeWireAsValueForParameterOfTypeOutOfCalledModule": {
+    "inputCircuit": "module add(out a(2), in b(2)) a += b module main(out a(2), in b(2)) wire t(2) call add(t, b); a += t",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfNDimensionalModuleParameterAsValueForParameterOfCalledModule": {
+    "inputCircuit": "module add(inout a[2](2)) a[0] += a[1] module main(inout a[2](2)) call add(a)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfCalledModule": {
+    "inputCircuit": "module add(inout a[2](2)) a[0] += a[1] module main(inout a[2](2)) wire t[2](2) t[0] ^= a[0]; t[1] ^= a[1]; call add(t); a[0] += t[1]",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+
+  "UsageOfVariableOfTypeInAsValueForParameterOfTypeInOfUncalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), in b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInOfUncalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), inout b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeOutAsValueForParameterOfTypeInOfUncalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), out b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeWireAsValueForParameterOfTypeInOfUncalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), in b(2)) wire t(2) t ^= b; call add(a, t)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeStateAsValueForParameterOfTypeInOfUncalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), in b(2)) state t(2) call add(a, t)",
+    "simulationRuns": [
+      {
+        "in": "000000",
+        "out": "000000"
+      },
+      {
+        "in": "100000",
+        "out": "100000"
+      },
+      {
+        "in": "010000",
+        "out": "010000"
+      },
+      {
+        "in": "110000",
+        "out": "110000"
+      },
+      {
+        "in": "001010",
+        "out": "101010"
+      },
+      {
+        "in": "101010",
+        "out": "011010"
+      },
+      {
+        "in": "011010",
+        "out": "111010"
+      },
+      {
+        "in": "111010",
+        "out": "001010"
+      },
+      {
+        "in": "000101",
+        "out": "010101"
+      },
+      {
+        "in": "100101",
+        "out": "110101"
+      },
+      {
+        "in": "010101",
+        "out": "000101"
+      },
+      {
+        "in": "110101",
+        "out": "100101"
+      },
+      {
+        "in": "001111",
+        "out": "111111"
+      },
+      {
+        "in": "101111",
+        "out": "001111"
+      },
+      {
+        "in": "011111",
+        "out": "101111"
+      },
+      {
+        "in": "111111",
+        "out": "011111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeInoutAsValueForParameterOfTypeInoutOfUncalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), in b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeOutAsValueForParameterOfTypeInoutOfUncalledModule": {
+    "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(out a(2), in b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeWireAsValueForParameterOfTypeInoutOfUncalledModule": {
+    "inputCircuit": "module add(inout a(2), inout b(2)) a += b module main(inout a(2), in b(2)) wire t(2) t ^= b; call add(a, t)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeInoutAsValueForParameterOfTypeOutOfUncalledModule": {
+    "inputCircuit": "module add(out a(2), in b(2)) a += b module main(inout a(2), in b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeOutAsValueForParameterOfTypeOutOfUncalledModule": {
+    "inputCircuit": "module add(out a(2), in b(2)) a += b module main(out a(2), in b(2)) call add(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfVariableOfTypeWireAsValueForParameterOfTypeOutOfUncalledModule": {
+    "inputCircuit": "module add(out a(2), in b(2)) a += b module main(out a(2), in b(2)) wire t(2) call add(t, b); a += t",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfNDimensionalModuleParameterAsValueForParameterOfUncalledModule": {
+    "inputCircuit": "module add(inout a[2](2)) a[0] += a[1] module main(inout a[2](2)) call add(a)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfUncalledModule": {
+    "inputCircuit": "module add(inout a[2](2)) a[0] += a[1] module main(inout a[2](2)) wire t[2](2) t[0] ^= a[0]; t[1] ^= a[1]; call add(t); a[0] += t[1]",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
   }
 }
