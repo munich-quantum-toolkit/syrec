@@ -62,15 +62,15 @@ namespace syrec {
         virtual bool opRhsLhsExpression([[maybe_unused]] const VariableExpression& expression, [[maybe_unused]] std::vector<qc::Qubit>& v);
         virtual bool opRhsLhsExpression([[maybe_unused]] const BinaryExpression& expression, [[maybe_unused]] std::vector<qc::Qubit>& v);
 
-        virtual bool              onStatement(const Statement::ptr& statement);
-        virtual bool              onStatement(const AssignStatement& statement);
-        virtual bool              onStatement(const IfStatement& statement);
-        virtual bool              onStatement(const ForStatement& statement);
-        virtual bool              onStatement(const CallStatement& statement);
-        virtual bool              onStatement(const UncallStatement& statement);
-        bool                      onStatement(const SwapStatement& statement);
-        bool                      onStatement(const UnaryStatement& statement);
-        [[nodiscard]] static bool onStatement(const SkipStatement& statement);
+        virtual bool onStatement(const Statement::ptr& statement);
+        virtual bool onStatement(const AssignStatement& statement);
+        virtual bool onStatement(const IfStatement& statement);
+        virtual bool onStatement(const ForStatement& statement);
+        virtual bool onStatement(const CallStatement& statement);
+        virtual bool onStatement(const UncallStatement& statement);
+        bool         onStatement(const SwapStatement& statement);
+        bool         onStatement(const UnaryStatement& statement);
+        virtual bool onStatement(const SkipStatement& statement);
 
         virtual bool assignAdd(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation)      = 0;
         virtual bool assignSubtract(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) = 0;
