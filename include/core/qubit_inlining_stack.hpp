@@ -24,9 +24,22 @@ namespace syrec {
         using ptr = std::shared_ptr<QubitInliningStack>;
 
         struct QubitInliningStackEntry {
+            /**
+             * The optional line number of the Call-/UncallStatement that called/uncalled the target module in the SyReC program.
+             * Note that the parent entry of an inline stack entry stores this information since the parent did also contain the
+             * Call-/UncallStatement.
+             */
             std::optional<unsigned int> lineNumberOfCallOfTargetModule;
-            std::optional<bool>         isTargetModuleAccessedViaCallStmt;
-            Module::ptr                 targetModule;
+            /**
+             * An optional boolean flag to determine whether the target module was called/uncalled.
+             * Note that the parent entry of an inline stack entry stores this information since the parent did also contain the
+             * Call-/UncallStatement.
+             */
+            std::optional<bool> isTargetModuleAccessedViaCallStmt;
+            /**
+             * The target module in which the qubit was generated.
+             */
+            Module::ptr targetModule;
 
             /**
              * Stringify the signature of the target module

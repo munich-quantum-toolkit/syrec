@@ -36,8 +36,20 @@ namespace syrec {
         using QuantumOperationAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
         using SynthesisCostMetricValue          = std::uint64_t;
 
+        /**
+         * Stores debug information about the ancillary and local module variable qubits that can be used to determine the origin of the qubit in the
+         * SyReC program or to determine the user declared identifier of the associated variable for a qubit. This information is not available for the
+         * parameters of a SyReC module.
+         */
         struct InlinedQubitInformation {
-            std::optional<std::string>             userDeclaredQubitLabel;
+            /**
+             * The user declared qubit label is generated from the associated variable declaration.
+             */
+            std::optional<std::string> userDeclaredQubitLabel;
+            /**
+             *  The inline stack to determine the origin of the qubit in the hierarchy of Call-/UncallStatements of a SyReC program. The last entry of the
+             *  stack is equal to the module in which the associated variable of the qubit was declared.
+             */
             std::optional<QubitInliningStack::ptr> inlineStack;
 
             InlinedQubitInformation() = default;
@@ -161,6 +173,7 @@ namespace syrec {
          * @param qubitLabel The internal label of the qubit set via \see AnnotatableQuantumComputation#addNonAncillaryQubit used to retrieve the inlining information.
          * @return Returns the inlined qubit information if such data exists, otherwise std::nullopt is returned
          * @remark The lifetime of the returned inline qubit information reference is tied to the inline stack thus any operation that changes the size of the inline stack will invalidate all fetched inline qubit information references fetched via this call
+         * @remark The inline stack of a qubit is only recorded if the qubit inlining feature is activated via a boolean flag in the synthesis settings
          */
         [[maybe_unused]] const InlinedQubitInformation* getInliningInformationOfQubit(const std::string& qubitLabel) const;
 
