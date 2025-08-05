@@ -28,6 +28,7 @@
 #include <optional>
 #include <stack>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -309,44 +310,42 @@ namespace syrec {
         }
 
         // calculate expression
-        std::vector<qc::Qubit> expressionResult;
-        const bool             synthesisOfGuardExprOk = onExpression(statement.condition, expressionResult, {}, guardExpressionTopLevelOperation);
+        std::vector<qc::Qubit> guardExpressionQubits;
+        bool                   synthesisOfGuardExprOk = onExpression(statement.condition, guardExpressionQubits, {}, guardExpressionTopLevelOperation);
+        assert(guardExpressionQubits.size() == 1U);
 
-        assert(expressionResult.size() == 1U);
+        // We need to create the ancillary qubit used to store the synthesis result of the variable expression since the onExpression(...) function does not create this ancillary qubit
+        // Additionally, a CNOT gate is required to transfer the value of the current qubit storing the synthesis result of the VariableExpression to the ancillary qubit.
+        // The ancillary qubit is only required when the original qubit of the guard expression is used as a target qubit in any of the statements of the true
+        // or false branch of the IfStatement but since we cannot determine whether this case will happen (at this point of the synthesis) we are 'forced' to use the ancillary qubit.
+        if (auto const* variableExpr = dynamic_cast<VariableExpression*>(statement.condition.get()); variableExpr != nullptr && synthesisOfGuardExprOk) {
+            if (const std::optional<qc::Qubit> generatedHelperLine = getConstantLine(false, getLastCreatedModuleCallStackInstance().value_or(nullptr)); generatedHelperLine.has_value()) {
+                synthesisOfGuardExprOk   = annotatableQuantumComputation.addOperationsImplementingCnotGate(guardExpressionQubits.front(), *generatedHelperLine);
+                guardExpressionQubits[0] = *generatedHelperLine;
+            } else {
+                synthesisOfGuardExprOk = false;
+            }
+        }
+
         if (!synthesisOfGuardExprOk) {
             return false;
         }
 
         // add new helper line
-        const qc::Qubit helperLine = expressionResult.front();
+        const qc::Qubit guardExpressionQubit = guardExpressionQubits.front();
         annotatableQuantumComputation.activateControlQubitPropagationScope();
-        annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(helperLine);
-
-        for (const Statement::ptr& stat: statement.thenStatements) {
-            if (!processStatement(stat)) {
-                return false;
-            }
-        }
+        bool synthesisOfBranchStatementsOk = annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(guardExpressionQubit) && std::all_of(statement.thenStatements.cbegin(), statement.thenStatements.cend(), [&](const Statement::ptr& trueBranchStatement) { return processStatement(trueBranchStatement); });
 
         // Toggle helper line.
         // We do not want to use the current helper line controlling the conditional execution of the statements
         // of both branches of the current IfStatement when negating the value of said helper line
-        annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(helperLine);
-        annotatableQuantumComputation.addOperationsImplementingNotGate(helperLine);
-        annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(helperLine);
-
-        for (const Statement::ptr& stat: statement.elseStatements) {
-            if (!processStatement(stat)) {
-                return false;
-            }
-        }
+        synthesisOfBranchStatementsOk &= annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(guardExpressionQubit) && annotatableQuantumComputation.addOperationsImplementingNotGate(guardExpressionQubit) && annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(guardExpressionQubit) && std::all_of(statement.elseStatements.cbegin(), statement.elseStatements.cend(), [&](const Statement::ptr& falseBranchStatement) { return processStatement(falseBranchStatement); });
 
         // We do not want to use the current helper line controlling the conditional execution of the statements
         // of both branches of the current IfStatement when negating the value of said helper line
-        annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(helperLine);
-        annotatableQuantumComputation.addOperationsImplementingNotGate(helperLine);
+        synthesisOfBranchStatementsOk &= annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(guardExpressionQubit) && annotatableQuantumComputation.addOperationsImplementingNotGate(guardExpressionQubit);
         annotatableQuantumComputation.deactivateControlQubitPropagationScope();
-        return true;
+        return synthesisOfBranchStatementsOk;
     }
 
     bool SyrecSynthesis::onStatement(const ForStatement& statement) {
@@ -399,10 +398,16 @@ namespace syrec {
     bool SyrecSynthesis::onStatement(const CallStatement& statement) {
         // 1. Adjust the references module's parameters to the call arguments
         for (qc::Qubit i = 0U; i < statement.parameters.size(); ++i) {
-            const std::string&   parameter       = statement.parameters.at(i);
-            const Variable::ptr& moduleParameter = statement.target->parameters.at(i);
+            assert(!modules.empty());
 
-            moduleParameter->setReference(modules.top()->findParameterOrVariable(parameter));
+            const std::string_view&             parameterIdentifier                        = statement.parameters.at(i);
+            const std::optional<Variable::ptr>& matchingParameterOrVariableOfCurrentModule = modules.top()->findParameterOrVariable(parameterIdentifier);
+            if (!matchingParameterOrVariableOfCurrentModule.has_value() || matchingParameterOrVariableOfCurrentModule.value() == nullptr) {
+                std::cerr << "Failed to find matching parameter or variable of module " << modules.top()->name << " for parameter '" << parameterIdentifier << "' when setting references of parameters of called module " << statement.target->name;
+                return false;
+            }
+            const auto& moduleParameter = statement.target->parameters.at(i);
+            moduleParameter->setReference(*matchingParameterOrVariableOfCurrentModule);
         }
 
         // 2. Create new lines for the module's variables
@@ -424,10 +429,16 @@ namespace syrec {
     bool SyrecSynthesis::onStatement(const UncallStatement& statement) {
         // 1. Adjust the references module's parameters to the call arguments
         for (qc::Qubit i = 0U; i < statement.parameters.size(); ++i) {
-            const std::string& parameter       = statement.parameters.at(i);
-            const auto&        moduleParameter = statement.target->parameters.at(i);
+            assert(!modules.empty());
 
-            moduleParameter->setReference(modules.top()->findParameterOrVariable(parameter));
+            const std::string_view&             parameterIdentifier                        = statement.parameters.at(i);
+            const std::optional<Variable::ptr>& matchingParameterOrVariableOfCurrentModule = modules.top()->findParameterOrVariable(parameterIdentifier);
+            if (!matchingParameterOrVariableOfCurrentModule.has_value() || matchingParameterOrVariableOfCurrentModule.value() == nullptr) {
+                std::cerr << "Failed to find matching parameter or variable of module " << modules.top()->name << " for parameter '" << parameterIdentifier << "' when setting references of parameters of uncalled module " << statement.target->name;
+                return false;
+            }
+            const auto& moduleParameter = statement.target->parameters.at(i);
+            moduleParameter->setReference(*matchingParameterOrVariableOfCurrentModule);
         }
 
         // 2. Create new lines for the module's variables
@@ -689,8 +700,7 @@ namespace syrec {
         annotatableQuantumComputation.activateControlQubitPropagationScope();
         bool synthesisOk = true;
         for (std::size_t i = 0; i < dest.size() && synthesisOk; ++i) {
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(dest[i]);
-            annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(dest[i]);
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(dest[i]) && annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(dest[i]);
         }
         annotatableQuantumComputation.deactivateControlQubitPropagationScope();
         return synthesisOk;
@@ -698,14 +708,14 @@ namespace syrec {
 
     bool SyrecSynthesis::increment(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest) {
         annotatableQuantumComputation.activateControlQubitPropagationScope();
-        for (const auto line: dest) {
-            annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(line);
-        }
 
         bool synthesisOk = true;
+        for (std::size_t i = 0; i < dest.size() && synthesisOk; ++i) {
+            synthesisOk = annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(dest.at(i));
+        }
+
         for (int i = static_cast<int>(dest.size()) - 1; i >= 0 && synthesisOk; --i) {
-            annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(dest[static_cast<std::size_t>(i)]);
-            synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(dest[static_cast<std::size_t>(i)]);
+            synthesisOk = annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(dest[static_cast<std::size_t>(i)]) && annotatableQuantumComputation.addOperationsImplementingNotGate(dest[static_cast<std::size_t>(i)]);
         }
         annotatableQuantumComputation.deactivateControlQubitPropagationScope();
         return synthesisOk;
@@ -724,9 +734,9 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::bitwiseCnot(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& src) {
-        const bool synthesisOk = dest.size() >= src.size();
+        bool synthesisOk = dest.size() >= src.size();
         for (std::size_t i = 0; i < src.size() && synthesisOk; ++i) {
-            annotatableQuantumComputation.addOperationsImplementingCnotGate(src[i], dest[i]);
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(src[i], dest[i]);
         }
         return synthesisOk;
     }
@@ -798,21 +808,20 @@ namespace syrec {
             synthesisOk = decreaseWithCarry(annotatableQuantumComputation, truncatedAggregateOfRemainderAndQuotientQubits, divisor, signBitOfSubtraction);
 
             // The restore operation of the aggregate variable should only be performed when Y < 0.
-            annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(signBitOfSubtraction);
+            synthesisOk &= annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(signBitOfSubtraction);
 
             // Y = Y + divisor
-            synthesisOk &= increase(annotatableQuantumComputation, truncatedAggregateOfRemainderAndQuotientQubits, divisor);
-            annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(signBitOfSubtraction);
+            synthesisOk &= increase(annotatableQuantumComputation, truncatedAggregateOfRemainderAndQuotientQubits, divisor) && annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(signBitOfSubtraction);
 
             // After the 'restoring' operation for the variable V was performed, the final value of the remainder qubit can be set (remainder[i] = NOT(sign bit)).
-            annotatableQuantumComputation.addOperationsImplementingNotGate(signBitOfSubtraction);
+            synthesisOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(signBitOfSubtraction);
         }
         annotatableQuantumComputation.deactivateControlQubitPropagationScope();
 
         // While the description of the reference algorithm states that the qubits of the quotient and remainder at this point store the values of the quotient and remainder respectively,
         // manual executions of the algorithm resulted in the quotient qubits storing the value of the remainder and vice versa, thus a final swap of the quotient and remainder qubits is required.
-        for (std::size_t i = 0; i < operandBitwidth; ++i) {
-            annotatableQuantumComputation.addOperationsImplementingFredkinGate(quotient[i], remainder[i]);
+        for (std::size_t i = 0; i < operandBitwidth && synthesisOk; ++i) {
+            synthesisOk = annotatableQuantumComputation.addOperationsImplementingFredkinGate(quotient[i], remainder[i]);
         }
         return synthesisOk;
     }
@@ -943,16 +952,12 @@ namespace syrec {
         std::vector<qc::Qubit> partial = src2;
 
         annotatableQuantumComputation.activateControlQubitPropagationScope();
-        annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src1.front());
-        bool synthesisOk = bitwiseCnot(annotatableQuantumComputation, sum, partial);
-        annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(src1.front());
+        bool synthesisOk = annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src1.front()) && bitwiseCnot(annotatableQuantumComputation, sum, partial) && annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(src1.front());
 
         for (std::size_t i = 1; i < dest.size() && synthesisOk; ++i) {
             sum.erase(sum.begin());
             partial.pop_back();
-            annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src1[i]);
-            synthesisOk = increase(annotatableQuantumComputation, sum, partial);
-            annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(src1[i]);
+            synthesisOk = annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src1[i]) && increase(annotatableQuantumComputation, sum, partial) && annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(src1[i]);
         }
         annotatableQuantumComputation.deactivateControlQubitPropagationScope();
         return synthesisOk;
@@ -1057,7 +1062,9 @@ namespace syrec {
         } else if (!freeConstLinesMap[!value].empty()) {
             constLine = freeConstLinesMap[!value].back();
             freeConstLinesMap[!value].pop_back();
-            annotatableQuantumComputation.addOperationsImplementingNotGate(constLine);
+            if (!annotatableQuantumComputation.addOperationsImplementingNotGate(constLine)) {
+                return std::nullopt;
+            }
         } else {
             const auto        qubitIndex          = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
             const std::string qubitLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(annotatableQuantumComputation.getNqubits(), value);

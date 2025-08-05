@@ -69,12 +69,15 @@ public:
 
         const json& jsonDataOfSimulationRuns = jsonDataOfTestCase[jsonKeyForSimulationRuns];
         for (const auto& jsonDataOfSimulationRun: jsonDataOfSimulationRuns) {
+            const std::size_t numQubitsToCheck = jsonDataOfSimulationRun[jsonKeyForStringifiedBinaryInputState].template get<std::string>().size();
+            ASSERT_LE(numQubitsToCheck, annotatableQuantumComputation.getNqubits()) << "Expected state values cannot contain more qubits than the quantum computation itself";
+
             syrec::NBitValuesContainer inputState(annotatableQuantumComputation.getNqubits());
             ASSERT_NO_FATAL_FAILURE(loadNBitValuesContainerFromString(inputState, jsonDataOfSimulationRun[jsonKeyForStringifiedBinaryInputState]));
 
             syrec::NBitValuesContainer outputState(inputState.size());
             ASSERT_NO_FATAL_FAILURE(loadNBitValuesContainerFromString(outputState, jsonDataOfSimulationRun[jsonKeyForStringifiedBinaryOutputState]));
-            ASSERT_NO_FATAL_FAILURE(assertSimulationResultForStateMatchesExpectedOne(annotatableQuantumComputation, inputState, outputState));
+            ASSERT_NO_FATAL_FAILURE(assertSimulationResultForStateMatchesExpectedOne(annotatableQuantumComputation, inputState, outputState, numQubitsToCheck));
         }
     }
 
@@ -121,15 +124,22 @@ protected:
         }
     }
 
-    static void assertSimulationResultForStateMatchesExpectedOne(const syrec::AnnotatableQuantumComputation& annotatableQuantumComputation, const syrec::NBitValuesContainer& inputState, const syrec::NBitValuesContainer& expectedOutputState) {
+    static void assertSimulationResultForStateMatchesExpectedOne(const syrec::AnnotatableQuantumComputation& annotatableQuantumComputation, const syrec::NBitValuesContainer& inputState, const syrec::NBitValuesContainer& expectedOutputState, const std::size_t userDefinedNumQubitsToCheck) {
         ASSERT_EQ(inputState.size(), expectedOutputState.size());
 
         syrec::NBitValuesContainer actualOutputState(inputState.size());
         ASSERT_NO_FATAL_FAILURE(syrec::simpleSimulation(actualOutputState, annotatableQuantumComputation, inputState));
         ASSERT_EQ(actualOutputState.size(), expectedOutputState.size());
 
-        // We are assuming that the indices of the ancilla qubits are larger than the one of the inputs/output qubits.
-        const std::size_t numQubitsToCheck = annotatableQuantumComputation.getNqubitsWithoutAncillae();
+        // We are assuming that the indices of the ancilla qubits are larger than the one of the inputs/output qubits and that the user is not interested in the value of the ancillary qubits.
+        // Since we cannot determine which garbage qubits refer to parameters of type 'out' or local variables of type 'wire', the user must define the number of qubits to check in input/output states
+        // to either include/exclude the value of the qubits of local variables/ancillary qubits from the checks.
+        std::size_t numQubitsToCheck = annotatableQuantumComputation.getNqubitsWithoutAncillae();
+        if (userDefinedNumQubitsToCheck != numQubitsToCheck) {
+            ASSERT_LE(userDefinedNumQubitsToCheck, inputState.size()) << "User defined number of qubits must be smaller or equal to the size of the input state";
+            numQubitsToCheck = userDefinedNumQubitsToCheck;
+        }
+
         for (std::size_t i = 0; i < numQubitsToCheck; ++i) {
             ASSERT_EQ(expectedOutputState[i], actualOutputState[i]) << "Value mismatch during simulation at qubit " << std::to_string(i) << ", expected: " << std::to_string(static_cast<int>(expectedOutputState[i])) << " but was " << std::to_string(static_cast<int>(actualOutputState[i]))
                                                                     << "!\nInput state: " << inputState.stringify() << " | Expected output state: " << expectedOutputState.stringify() << " | Actual output state: " << actualOutputState.stringify();
