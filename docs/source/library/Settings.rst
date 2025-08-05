@@ -13,7 +13,7 @@ The following enum defines the integer constant truncation operations supported 
         :undoc-members:
         :members:
 
-Class representing Property Map (used for storing settings and statistical information).
+Class representing a property map (used for storing settings and statistical information).
 
     .. autoclass:: mqt.syrec.properties
         :undoc-members:

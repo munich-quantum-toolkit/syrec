@@ -37,7 +37,6 @@ PYBIND11_MODULE(pysyrec, m) {
             .def_property_readonly("is_target_module_accessed_via_call_stmt", [](const QubitInliningStack::QubitInliningStackEntry& stackEntry) { return stackEntry.isTargetModuleAccessedViaCallStmt; }, "Returns whether the target module was called using a CallStatement")
             .def_property_readonly("stringified_signature_of_called_module", &QubitInliningStack::QubitInliningStackEntry::stringifySignatureOfCalledModule, "Returns the stringified target module signature");
 
-    // TODO: Size and access via index could be replaced with iterator
     py::class_<QubitInliningStack, std::shared_ptr<QubitInliningStack>>(m, "qubit_inlining_stack")
             .def(py::init<>(), "Constructs an empty qubit inlining stack")
             .def("size", &QubitInliningStack::size, "Get the number of stack entries")
