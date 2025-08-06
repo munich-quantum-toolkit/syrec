@@ -9,6 +9,8 @@
  */
 
 #include "core/annotatable_quantum_computation.hpp"
+#include "core/qubit_inlining_stack.hpp"
+#include "core/syrec/module.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/operations/Control.hpp"
 #include "ir/operations/OpType.hpp"
@@ -113,7 +115,7 @@ protected:
     }
 
     static void assertQubitInlineInformationMatches(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::string& internalQubitLabel, const AnnotatableQuantumComputation::InlinedQubitInformation* expectedInlineInformation) {
-        const AnnotatableQuantumComputation::InlinedQubitInformation* actualInlineInformation = actualInlineInformation = annotatedQuantumComputation.getInliningInformationOfQubit(internalQubitLabel);
+        const AnnotatableQuantumComputation::InlinedQubitInformation* actualInlineInformation = annotatedQuantumComputation.getInliningInformationOfQubit(internalQubitLabel);
         if (expectedInlineInformation == nullptr) {
             ASSERT_THAT(actualInlineInformation, testing::IsNull());
             return;

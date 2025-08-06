@@ -9,11 +9,13 @@
  */
 
 #include "core/qubit_inlining_stack.hpp"
+#include "core/syrec/module.hpp"
 
 #include <cstddef>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <string>
 #include <vector>
 
 using namespace syrec;
@@ -36,7 +38,7 @@ namespace {
 
         if (expected.targetModule != nullptr) {
             ASSERT_THAT(actual.targetModule, testing::NotNull()) << "Expected target module to be set";
-            ASSERT_THAT(actual.targetModule, expected.targetModule) << "Target module reference mismatch";
+            ASSERT_EQ(actual.targetModule, expected.targetModule) << "Target module reference mismatch";
         } else {
             ASSERT_THAT(actual.targetModule, testing::IsNull()) << "Expected target module to not be set";
         }

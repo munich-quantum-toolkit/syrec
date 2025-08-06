@@ -12,6 +12,7 @@
 
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
+#include "core/qubit_inlining_stack.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/module.hpp"
 #include "core/syrec/number.hpp"

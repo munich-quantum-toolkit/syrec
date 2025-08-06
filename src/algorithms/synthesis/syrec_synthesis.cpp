@@ -13,6 +13,7 @@
 #include "algorithms/synthesis/internal_qubit_label_builder.hpp"
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
+#include "core/qubit_inlining_stack.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
@@ -25,6 +26,7 @@
 #include <chrono>
 #include <cstddef>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <stack>
 #include <string>
@@ -1128,9 +1130,6 @@ namespace syrec {
         }
     }
 
-    // TODO: Error message on duplicate qubit labels?
-    // TODO: Error when expression bitwidth is larger than potential values when former is used as index for values of dimension
-    // TODO: Update parser to not allow user declared variables and modules with __ prefix
     bool SyrecSynthesis::addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const QubitInliningStack::ptr& currentModuleCallStack) {
         bool couldQubitsForVariableBeAdded = true;
 
@@ -1168,7 +1167,7 @@ namespace syrec {
     }
 
     std::optional<QubitInliningStack::ptr> SyrecSynthesis::getLastCreatedModuleCallStackInstance() const {
-        if (!shouldQubitInlineInformationBeRecorded() || !moduleCallStackInstances.has_value() || moduleCallStackInstances->empty()) {
+        if (!shouldQubitInlineInformationBeRecorded() || moduleCallStackInstances->empty()) {
             return std::nullopt;
         }
         return moduleCallStackInstances->back();
@@ -1190,6 +1189,6 @@ namespace syrec {
         if (!shouldQubitInlineInformationBeRecorded() || !getLastCreatedModuleCallStackInstance().has_value()) {
             return;
         }
-        return moduleCallStackInstances->pop_back();
+        moduleCallStackInstances->pop_back();
     }
 } // namespace syrec

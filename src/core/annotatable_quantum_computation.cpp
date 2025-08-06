@@ -10,6 +10,7 @@
 
 #include "core/annotatable_quantum_computation.hpp"
 
+#include "core/qubit_inlining_stack.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/operations/Control.hpp"
 #include "ir/operations/OpType.hpp"

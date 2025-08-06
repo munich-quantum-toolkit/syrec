@@ -175,7 +175,7 @@ namespace syrec {
          * @remark The lifetime of the returned inline qubit information reference is tied to the inline stack thus any operation that changes the size of the inline stack will invalidate all fetched inline qubit information references fetched via this call
          * @remark The inline stack of a qubit is only recorded if the qubit inlining feature is activated via a boolean flag in the synthesis settings
          */
-        [[maybe_unused]] const InlinedQubitInformation* getInliningInformationOfQubit(const std::string& qubitLabel) const;
+        [[nodiscard]] const InlinedQubitInformation* getInliningInformationOfQubit(const std::string& qubitLabel) const;
 
     protected:
         [[maybe_unused]] bool annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation);

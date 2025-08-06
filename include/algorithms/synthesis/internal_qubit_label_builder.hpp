@@ -18,11 +18,11 @@ namespace syrec {
     class InternalQubitLabelBuilder {
     public:
         static constexpr std::string_view   INTERNAL_QUBIT_LABEL_PREFIX = "__q";
-        [[maybe_unused]] static std::string buildNonAncillaryQubitLabel(const std::size_t currNumQubitsInQuantumComputation) noexcept {
+        [[maybe_unused]] static std::string buildNonAncillaryQubitLabel(const std::size_t currNumQubitsInQuantumComputation) {
             return std::string(INTERNAL_QUBIT_LABEL_PREFIX) + std::to_string(currNumQubitsInQuantumComputation);
         }
 
-        [[maybe_unused]] static std::string buildAncillaryQubitLabel(const std::size_t currNumQubitsInQuantumComputation, bool isInitialStateOfAncillaryQubitOne) noexcept {
+        [[maybe_unused]] static std::string buildAncillaryQubitLabel(const std::size_t currNumQubitsInQuantumComputation, bool isInitialStateOfAncillaryQubitOne) {
             return buildNonAncillaryQubitLabel(currNumQubitsInQuantumComputation) + "_const_" + (isInitialStateOfAncillaryQubitOne ? "1" : "0");
         }
     };
