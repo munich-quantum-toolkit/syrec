@@ -144,9 +144,10 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
             self.scene().addItem(line)
 
             qubit_label = self.annotatable_quantum_computation.qubit_labels[i]
-            should_qubit_line_text_be_clickable = self.annotatable_quantum_computation.is_circuit_qubit_ancillary(
-                i
-            ) or self.annotatable_quantum_computation.is_circuit_qubit_garbage(i)
+            should_qubit_line_text_be_clickable = (
+                self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i)
+                or self.annotatable_quantum_computation.is_circuit_qubit_garbage(i)
+            ) and self.annotatable_quantum_computation.get_inlining_information_of_qubit(qubit_label) is not None
             if not should_qubit_line_text_be_clickable:
                 self.non_ancillary_or_garbage_qubits_lookup.add(qubit_label)
 
@@ -885,9 +886,10 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         sorted_qubit_labels: list[str] = []
         for i in range(self.annotatable_quantum_computation.num_qubits):
             qubit_label: str = self.annotatable_quantum_computation.qubit_labels[i]
-            if self.annotatable_quantum_computation.is_circuit_qubit_garbage(
-                i
-            ) or self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i):
+            if (
+                self.annotatable_quantum_computation.is_circuit_qubit_garbage(i)
+                or self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i)
+            ) and self.annotatable_quantum_computation.get_inlining_information_of_qubit(qubit_label) is not None:
                 self.qubits_labels_of_local_variables_lookup.add(qubit_label)
                 # With the assumption that the internal qubit label contains the current number (referred to as D) of qubits of the quantum computation
                 # in the label prefix we assume that a higher index in the qubit labels collection is equal to a higher value of D thus the qubit labels are already
