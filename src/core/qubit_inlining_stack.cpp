@@ -10,11 +10,9 @@
 
 #include "core/qubit_inlining_stack.hpp"
 
-#include "core/syrec/module.hpp"
 #include "core/syrec/variable.hpp"
 
 #include <cstddef>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
