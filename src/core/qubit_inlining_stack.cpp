@@ -52,6 +52,10 @@ namespace {
 } // namespace
 
 std::optional<std::string> QubitInliningStack::QubitInliningStackEntry::stringifySignatureOfCalledModule() const {
+    if (targetModule == nullptr) {
+        return std::nullopt;
+    }
+
     std::string stringifiedCalledModuleSignature = "module " + targetModule->name + "(";
 
     bool stringificationSuccessful = !targetModule->name.empty();

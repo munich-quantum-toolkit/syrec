@@ -9,13 +9,19 @@
  */
 
 #include "core/qubit_inlining_stack.hpp"
+#include "core/syrec/expression.hpp"
 #include "core/syrec/module.hpp"
+#include "core/syrec/number.hpp"
+#include "core/syrec/statement.hpp"
+#include "core/syrec/variable.hpp"
 
 #include <cstddef>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 using namespace syrec;
@@ -50,6 +56,12 @@ namespace {
             ASSERT_THAT(inlineStackEntryAtIdx, testing::NotNull());
             ASSERT_NO_FATAL_FAILURE(assertInlineStackEntriesMatch(*inlineStackEntryAtIdx, expectedInlineStackEntries.at(i)));
         }
+    }
+
+    void assertStringifiedModuleSignaturesMatch(const QubitInliningStack::QubitInliningStackEntry& stackEntryToStringify, const std::string_view& expected) {
+        const std::optional<std::string>& stringifiedTargetModuleSignature = stackEntryToStringify.stringifySignatureOfCalledModule();
+        ASSERT_TRUE(stringifiedTargetModuleSignature.has_value()) << "Expected to be able to stringify the signature of the target module";
+        ASSERT_EQ(expected, *stringifiedTargetModuleSignature) << "Stringified module signatures did not match";
     }
 } // namespace
 
@@ -382,3 +394,166 @@ TEST(QubitInliningStackTests, GetElementAtVariousIndicesOfStack) {
     ASSERT_NO_FATAL_FAILURE(assertInlineStackEntriesMatch(thirdInlineStackEntry, *fetchedStackEntry));
 }
 // END get entry at idx tests
+
+// BEGIN stringification of target module signature tests
+TEST(QubitInliningStackTests, StringificationModuleSignatureWithTargetModuleNotSetIsNotPossible) {
+    const auto stackEntry = QubitInliningStack::QubitInliningStackEntry();
+    ASSERT_FALSE(stackEntry.stringifySignatureOfCalledModule().has_value());
+}
+
+TEST(QubitInliningStackTests, StringificationModuleSignatureWithEmptyTargetModuleIdentifierIsNotPossible) {
+    const auto targetModule = std::make_shared<Module>("");
+    auto       stackEntry   = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+    ASSERT_FALSE(stackEntry.stringifySignatureOfCalledModule().has_value());
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithInvalidParameterNotPossible) {
+    const auto targetModule               = std::make_shared<Module>("main");
+    auto       validParameterDefinition   = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
+    auto       invalidParameterDefinition = nullptr;
+    targetModule->addParameter(validParameterDefinition);
+    targetModule->addParameter(invalidParameterDefinition);
+
+    auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+    ASSERT_FALSE(stackEntry.stringifySignatureOfCalledModule().has_value());
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfNonParameterTypeNotPossible) {
+    const auto targetModuleWithParameterOfTypeWire = std::make_shared<Module>("param_type_wire_module");
+    auto       wireTypeParameter                   = std::make_shared<Variable>(Variable::Type::Wire, "a", std::vector({1U}), 4U);
+    targetModuleWithParameterOfTypeWire->addParameter(wireTypeParameter);
+
+    auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModuleWithParameterOfTypeWire;
+    ASSERT_FALSE(stackEntry.stringifySignatureOfCalledModule().has_value());
+
+    const auto targetModuleWithParameterOfTypeState = std::make_shared<Module>("param_type_state_module");
+    auto       stateTypeParameter                   = std::make_shared<Variable>(Variable::Type::State, "a", std::vector({1U}), 4U);
+    targetModuleWithParameterOfTypeState->addParameter(stateTypeParameter);
+
+    stackEntry.targetModule = targetModuleWithParameterOfTypeState;
+    ASSERT_FALSE(stackEntry.stringifySignatureOfCalledModule().has_value());
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithEmptyParameterIdentifierNotPossible) {
+    const auto targetModule               = std::make_shared<Module>("main");
+    auto       validParameterDefinition   = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
+    auto       invalidParameterDefinition = std::make_shared<Variable>(Variable::Type::Inout, "", std::vector({2U}), 4U);
+    targetModule->addParameter(validParameterDefinition);
+    targetModule->addParameter(invalidParameterDefinition);
+
+    auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+    ASSERT_FALSE(stackEntry.stringifySignatureOfCalledModule().has_value());
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterWithEmptyDimensionDeclarationNotPossible) {
+    const auto targetModule               = std::make_shared<Module>("main");
+    auto       validParameterDefinition   = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
+    auto       invalidParameterDefinition = std::make_shared<Variable>(Variable::Type::Inout, "b", std::vector<unsigned int>(), 4U);
+    targetModule->addParameter(validParameterDefinition);
+    targetModule->addParameter(invalidParameterDefinition);
+
+    auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+    ASSERT_FALSE(stackEntry.stringifySignatureOfCalledModule().has_value());
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithNoParameters) {
+    const auto targetModule = std::make_shared<Module>("main");
+    auto       stackEntry   = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+
+    ASSERT_NO_FATAL_FAILURE(assertStringifiedModuleSignaturesMatch(stackEntry, "module main()"));
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfTypeIn) {
+    const auto targetModule      = std::make_shared<Module>("main");
+    auto       parameterOfTypeIn = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
+    targetModule->addParameter(parameterOfTypeIn);
+
+    auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+
+    ASSERT_NO_FATAL_FAILURE(assertStringifiedModuleSignaturesMatch(stackEntry, "module main(in a[1](4))"));
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfTypeOut) {
+    const auto targetModule       = std::make_shared<Module>("main");
+    auto       parameterOfTypeOut = std::make_shared<Variable>(Variable::Type::Out, "a", std::vector({1U}), 4U);
+    targetModule->addParameter(parameterOfTypeOut);
+
+    auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+
+    ASSERT_NO_FATAL_FAILURE(assertStringifiedModuleSignaturesMatch(stackEntry, "module main(out a[1](4))"));
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfTypeInout) {
+    const auto targetModule         = std::make_shared<Module>("main");
+    auto       parameterOfTypeInout = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({1U}), 4U);
+    targetModule->addParameter(parameterOfTypeInout);
+
+    auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+
+    ASSERT_NO_FATAL_FAILURE(assertStringifiedModuleSignaturesMatch(stackEntry, "module main(inout a[1](4))"));
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithNDimensionalParameter) {
+    const auto targetModule         = std::make_shared<Module>("main");
+    auto       parameterOfTypeInout = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({2U, 3U, 1U}), 4U);
+    targetModule->addParameter(parameterOfTypeInout);
+
+    auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+
+    ASSERT_NO_FATAL_FAILURE(assertStringifiedModuleSignaturesMatch(stackEntry, "module main(inout a[2][3][1](4))"));
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithMultipleParameters) {
+    const auto targetModule            = std::make_shared<Module>("main");
+    auto       parameterOfTypeInout    = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({2U, 1U}), 2U);
+    auto       firstParameterOfTypeIn  = std::make_shared<Variable>(Variable::Type::In, "b", std::vector({3U}), 3U);
+    auto       secondParameterOfTypeIn = std::make_shared<Variable>(Variable::Type::In, "c", std::vector({1U}), 4U);
+    targetModule->addParameter(parameterOfTypeInout);
+    targetModule->addParameter(firstParameterOfTypeIn);
+    targetModule->addParameter(secondParameterOfTypeIn);
+
+    auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+
+    ASSERT_NO_FATAL_FAILURE(assertStringifiedModuleSignaturesMatch(stackEntry, "module main(inout a[2][1](2), in b[3](3), in c[1](4))"));
+}
+
+TEST(QubitInliningStackTests, StringificationOfModuleSignatureDoesNotStringifiyStatementsOfModuleBody) {
+    const auto targetModule        = std::make_shared<Module>("main");
+    auto       assignableParameter = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({2U}), 3U);
+    auto       readonlyParameter   = std::make_shared<Variable>(Variable::Type::In, "b", std::vector({1U}), 3U);
+    targetModule->addParameter(assignableParameter);
+    targetModule->addParameter(readonlyParameter);
+
+    const auto exprDefiningAccessedValueOfDimension = std::make_shared<NumericExpression>(std::make_shared<Number>(0U), 1U);
+
+    auto assignmentLhsOperand = std::make_shared<VariableAccess>();
+    assignmentLhsOperand->var = assignableParameter;
+    assignmentLhsOperand->indexes.emplace_back(exprDefiningAccessedValueOfDimension);
+
+    auto assignmentRhsOperand = std::make_shared<VariableAccess>();
+    assignmentRhsOperand->var = readonlyParameter;
+    assignmentRhsOperand->indexes.emplace_back(exprDefiningAccessedValueOfDimension);
+
+    const auto assignmentRhsExpr   = std::make_shared<VariableExpression>(assignmentRhsOperand);
+    const auto assignmentStmt      = std::make_shared<AssignStatement>(assignmentLhsOperand, AssignStatement::AssignOperation::Add, assignmentRhsExpr);
+    const auto unaryAssignmentStmt = std::make_shared<UnaryStatement>(UnaryStatement::UnaryOperation::Increment, assignmentLhsOperand);
+    targetModule->addStatement(assignmentStmt);
+    targetModule->addStatement(unaryAssignmentStmt);
+
+    auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
+    stackEntry.targetModule = targetModule;
+
+    ASSERT_NO_FATAL_FAILURE(assertStringifiedModuleSignaturesMatch(stackEntry, "module main(inout a[2](3), in b[1](3))"));
+}
+// END stringification of target module signature tests
