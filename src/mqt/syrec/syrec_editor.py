@@ -845,7 +845,7 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         self.layout = QtWidgets.QVBoxLayout(self)
 
         header_label_layout = QtWidgets.QHBoxLayout()
-        header_label = QtWidgets.QLabel("SyReC module local variable inline information")
+        header_label = QtWidgets.QLabel("Ancillary/local SyReC module variable qubit inline information")
         header_label_layout.addStretch()
         header_label_layout.addWidget(header_label)
         header_label_layout.addStretch()
