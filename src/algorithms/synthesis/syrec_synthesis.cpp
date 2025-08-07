@@ -209,12 +209,12 @@ namespace syrec {
                         lastPushedEntryOnInlineStack->isTargetModuleAccessedViaCallStmt = true;
                         okay                                                            = copyOfLastCreatedQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, callStat->target})) && onStatement(*callStat);
                     } else {
-                        // There must be at least on entry on the stack for the main module of the currently synthesized SyReC program
+                        // There must be at least one entry on the stack for the main module of the currently synthesized SyReC program
                         okay = false;
                     }
                     discardLastCreateModuleCallStackInstance();
                 } else {
-                    // There must be at least on entry on the stack for the main module of the currently synthesized SyReC program
+                    // There must be at least one entry on the stack for the main module of the currently synthesized SyReC program
                     okay = false;
                 }
             }
@@ -231,12 +231,12 @@ namespace syrec {
                         lastPushedEntryOnInlineStack->isTargetModuleAccessedViaCallStmt = false;
                         okay                                                            = copyOfLastCreatedQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, uncallStat->target})) && onStatement(*uncallStat);
                     } else {
-                        // There must be at least on entry on the stack for the main module of the currently synthesized SyReC program
+                        // There must be at least one entry on the stack for the main module of the currently synthesized SyReC program
                         okay = false;
                     }
                     discardLastCreateModuleCallStackInstance();
                 } else {
-                    // There must be at least on entry on the stack for the main module of the currently synthesized SyReC program
+                    // There must be at least one entry on the stack for the main module of the currently synthesized SyReC program
                     okay = false;
                 }
             }

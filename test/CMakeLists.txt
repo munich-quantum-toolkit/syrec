@@ -14,9 +14,8 @@ file(GLOB_RECURSE SYREC_TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 # are linked to is needed. Note that the test source files are assumed to be defined after the last
 # required parameter of the package_add_test macro.
 add_library(${PROJECT_NAME}-test-wrapper INTERFACE)
-target_link_libraries(
-  ${PROJECT_NAME}-test-wrapper INTERFACE MQT::SyReC-Antlr MQT::SyReC-Parsers MQT::SyReC-IR
-                                         MQT::SyReC-Synthesis MQT::SyReC-Utils)
+target_link_libraries(${PROJECT_NAME}-test-wrapper INTERFACE MQT::SyReC-Antlr MQT::SyReC-Parsers
+                                                             MQT::SyReC-IR MQT::SyReC-Synthesis)
 
 # add test executable
 package_add_test(${PROJECT_NAME}-test ${PROJECT_NAME}-test-wrapper ${SYREC_TEST_SOURCES})
