@@ -121,7 +121,7 @@ namespace syrec {
         static bool rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount); // >>
 
         [[nodiscard]] static bool addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr);
-        void                      getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines);
+        [[nodiscard]] bool        getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines);
 
         [[nodiscard]] std::optional<qc::Qubit> getConstantLine(bool value);
         [[nodiscard]] bool                     getConstantLines(unsigned bitwidth, unsigned value, std::vector<qc::Qubit>& lines);
@@ -136,7 +136,7 @@ namespace syrec {
         AnnotatableQuantumComputation& annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 
     private:
-        VarLinesMap                            varLines;
+        std::map<Variable::ptr, qc::Qubit>     varLines;
         std::map<bool, std::vector<qc::Qubit>> freeConstLinesMap;
     };
 

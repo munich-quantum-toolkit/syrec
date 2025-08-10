@@ -145,6 +145,7 @@ namespace syrec {
                     break;
                 case UnaryOperation::Invert:
                     invertedOperation = UnaryOperation::Invert;
+                    break;
                 default:
                     return std::nullopt;
             }

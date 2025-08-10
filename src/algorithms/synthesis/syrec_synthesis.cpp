@@ -57,7 +57,10 @@ namespace syrec {
         for (std::size_t i = 0; i < variables.size() && couldQubitsForVariablesBeAdded; ++i) {
             const auto& variable = variables[i];
             // entry in var lines map
-            varLines.try_emplace(variable, annotatableQuantumComputation.getNqubits());
+            if (!varLines.try_emplace(variable, annotatableQuantumComputation.getNqubits()).second) {
+                std::cerr << "Tried to add duplicate variable with identifier " << variable->name << " to internal lookup\n";
+                return false;
+            }
             couldQubitsForVariablesBeAdded &= addVariable(annotatableQuantumComputation, variable->dimensions, variable, std::string());
         }
         return couldQubitsForVariablesBeAdded;
@@ -178,7 +181,7 @@ namespace syrec {
             okay = onStatement(*callStat);
         } else if (auto const* uncallStat = dynamic_cast<UncallStatement*>(statement.get()); uncallStat != nullptr) {
             okay = onStatement(*uncallStat);
-        } else if (auto const* skipStat = statement.get(); skipStat != nullptr) {
+        } else if (auto const* skipStat = dynamic_cast<SkipStatement*>(statement.get()); skipStat != nullptr) {
             okay = onStatement(*skipStat);
         } else {
             okay = false;
@@ -192,27 +195,31 @@ namespace syrec {
         std::vector<qc::Qubit> lhs;
         std::vector<qc::Qubit> rhs;
 
-        getVariables(statement.lhs, lhs);
-        getVariables(statement.rhs, rhs);
+        bool synthesisOk = getVariables(statement.lhs, lhs) && getVariables(statement.rhs, rhs);
         assert(lhs.size() == rhs.size());
-        return swap(annotatableQuantumComputation, lhs, rhs);
+        return synthesisOk && swap(annotatableQuantumComputation, lhs, rhs);
     }
 
     bool SyrecSynthesis::onStatement(const UnaryStatement& statement) {
         // load variable
         std::vector<qc::Qubit> var;
-        getVariables(statement.var, var);
+        bool                   synthesisOk = getVariables(statement.var, var);
 
         switch (statement.unaryOperation) {
             case UnaryStatement::UnaryOperation::Invert:
-                return bitwiseNegation(annotatableQuantumComputation, var);
+                synthesisOk &= bitwiseNegation(annotatableQuantumComputation, var);
+                break;
             case UnaryStatement::UnaryOperation::Increment:
-                return increment(annotatableQuantumComputation, var);
+                synthesisOk &= increment(annotatableQuantumComputation, var);
+                break;
             case UnaryStatement::UnaryOperation::Decrement:
-                return decrement(annotatableQuantumComputation, var);
+                synthesisOk &= decrement(annotatableQuantumComputation, var);
+                break;
             default:
-                return false;
+                synthesisOk = false;
+                break;
         }
+        return synthesisOk;
     }
 
     bool SyrecSynthesis::onStatement(const AssignStatement& statement) {
@@ -220,9 +227,7 @@ namespace syrec {
         std::vector<qc::Qubit> rhs;
         std::vector<qc::Qubit> d;
 
-        getVariables(statement.lhs, lhs);
-        opRhsLhsExpression(statement.rhs, d);
-        bool synthesisOfAssignmentOk = SyrecSynthesis::onExpression(statement.rhs, rhs, lhs, statement.assignOperation);
+        bool synthesisOfAssignmentOk = getVariables(statement.lhs, lhs) && opRhsLhsExpression(statement.rhs, d) && SyrecSynthesis::onExpression(statement.rhs, rhs, lhs, statement.assignOperation);
         opVec.clear();
 
         switch (statement.assignOperation) {
@@ -392,17 +397,19 @@ namespace syrec {
         }
 
         modules.push(statement.target);
-
         const auto statements = statement.target->statements;
         for (auto it = statements.rbegin(); it != statements.rend(); ++it) {
-            const auto reverseStatement = (*it)->reverse();
-            if (!processStatement(reverseStatement)) {
+            if (const auto& reverseStatement = (*it)->reverse(); reverseStatement.has_value()) {
+                if (!processStatement(*reverseStatement)) {
+                    return false;
+                }
+            } else {
+                const std::size_t offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule = static_cast<std::size_t>(std::distance(statements.rend(), it));
+                std::cerr << "Failed to create inverse of statement at index " << std::to_string(statements.size() - offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule) << " in body of uncalled module " << statement.target->name << "(UNCALL @ " << std::to_string(statement.lineNumber) << ")";
                 return false;
             }
         }
-
         modules.pop();
-
         return true;
     }
 
@@ -473,8 +480,7 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::onExpression(const VariableExpression& expression, std::vector<qc::Qubit>& lines) {
-        getVariables(expression.var, lines);
-        return true;
+        return getVariables(expression.var, lines);
     }
 
     bool SyrecSynthesis::onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, const OperationVariant operationVariant) {
@@ -957,11 +963,25 @@ namespace syrec {
         return true;
     }
 
-    void SyrecSynthesis::getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines) {
-        const auto&       referenceVariableData           = var->getVar();
-        qc::Qubit         offset                          = varLines[referenceVariableData];
-        const std::size_t numDeclaredDimensionsOfVariable = referenceVariableData->dimensions.size();
+    bool SyrecSynthesis::getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines) {
+        Variable::ptr referenceVariableData = var->getVar();
+        // A chain of Call-/UncallStatements will also produce a chain of references set for a modules parameter
+        // that needs to be resolved by walking up the chain until the first entry is reached to be able to determine
+        // which qubit is actually referenced by the variable access
+        while (referenceVariableData->reference != nullptr) {
+            referenceVariableData = referenceVariableData->reference;
+        }
+        assert(referenceVariableData != nullptr);
 
+        qc::Qubit offsetToFirstQubitOfVariable = 0;
+        if (const auto& matchingLookupEntryForVariableIdentifier = varLines.find(referenceVariableData); matchingLookupEntryForVariableIdentifier != varLines.cend()) {
+            offsetToFirstQubitOfVariable = matchingLookupEntryForVariableIdentifier->second;
+        } else {
+            std::cerr << "Failed to determine first qubit for variable with identifier " << referenceVariableData->name << "\n";
+            return false;
+        }
+
+        const std::size_t numDeclaredDimensionsOfVariable = referenceVariableData->dimensions.size();
         if (!var->indexes.empty()) {
             // check if it is all numeric_expressions
             if (static_cast<std::size_t>(std::count_if(var->indexes.cbegin(), var->indexes.cend(), [&](const auto& p) { return dynamic_cast<NumericExpression*>(p.get()); })) == numDeclaredDimensionsOfVariable) {
@@ -971,7 +991,7 @@ namespace syrec {
                     for (std::size_t j = i + 1; j < numDeclaredDimensionsOfVariable; ++j) {
                         aggregateValue *= referenceVariableData->dimensions[i];
                     }
-                    offset += aggregateValue * referenceVariableData->bitwidth;
+                    offsetToFirstQubitOfVariable += aggregateValue * referenceVariableData->bitwidth;
                 }
             }
         }
@@ -984,18 +1004,24 @@ namespace syrec {
 
             if (first < second) {
                 for (qc::Qubit i = first; i <= second; ++i) {
-                    lines.emplace_back(offset + i);
+                    lines.emplace_back(offsetToFirstQubitOfVariable + i);
                 }
             } else {
                 for (auto i = static_cast<int>(first); i >= static_cast<int>(second); --i) {
-                    lines.emplace_back(offset + static_cast<qc::Qubit>(i));
+                    lines.emplace_back(offsetToFirstQubitOfVariable + static_cast<qc::Qubit>(i));
                 }
             }
         } else {
             for (qc::Qubit i = 0U; i < referenceVariableData->bitwidth; ++i) {
-                lines.emplace_back(offset + i);
+                lines.emplace_back(offsetToFirstQubitOfVariable + i);
             }
         }
+
+        if (lines.empty()) {
+            std::cerr << "Failed to determine accessed qubits for variable access on variable with identifier " << referenceVariableData->name << "\n";
+            return false;
+        }
+        return true;
     }
 
     std::optional<qc::Qubit> SyrecSynthesis::getConstantLine(bool value) {
