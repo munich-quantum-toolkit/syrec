@@ -43,8 +43,6 @@ namespace syrec {
         std::vector<std::vector<unsigned>>             expLhsVector;
         std::vector<std::vector<unsigned>>             expRhsVector;
 
-        using VarLinesMap = std::map<Variable::ptr, qc::Qubit>;
-
         explicit SyrecSynthesis(AnnotatableQuantumComputation& annotatableQuantumComputation);
         virtual ~SyrecSynthesis() = default;
 
