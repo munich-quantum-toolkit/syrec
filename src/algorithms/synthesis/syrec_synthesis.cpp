@@ -1125,7 +1125,7 @@ namespace syrec {
                 if (const auto& reverseStatement = (*it)->reverse(); reverseStatement.has_value()) {
                     synthesisOfModuleBodyOk = processStatement(*reverseStatement);
                 } else {
-                    const std::size_t offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule = static_cast<std::size_t>(std::distance(statements.rend(), it));
+                    const auto offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule = static_cast<std::size_t>(std::distance(statements.rend(), it));
                     if (callStmt != nullptr) {
                         std::cerr << "Failed to create inverse of statement at index " << std::to_string(statements.size() - offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule) << " in body of called module " << targetModule->name << "(CALL @ " << std::to_string(it->get()->lineNumber) << ")";
                     } else {
