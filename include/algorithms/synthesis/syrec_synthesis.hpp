@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "algorithms/synthesis/statement_execution_order_stack.hpp"
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/expression.hpp"
@@ -87,8 +88,6 @@ namespace syrec {
         virtual bool expSubtract([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) = 0;
         virtual bool expExor([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs)     = 0;
 
-        // BEGIN: Add circuit parameter to functions
-
         // unary operations
         static bool bitwiseNegation(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest); // ~
         static bool decrement(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest);       // --
@@ -133,11 +132,13 @@ namespace syrec {
         Number::LoopVariableMapping loopMap;
         std::stack<Module::ptr>     modules;
 
-        AnnotatableQuantumComputation& annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+        AnnotatableQuantumComputation&                annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+        std::unique_ptr<StatementExecutionOrderStack> statementExecutionOrderStack;
 
     private:
         std::map<Variable::ptr, qc::Qubit>     varLines;
         std::map<bool, std::vector<qc::Qubit>> freeConstLinesMap;
-    };
 
+        [[nodiscard]] bool synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant);
+    };
 } // namespace syrec
