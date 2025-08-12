@@ -26,7 +26,6 @@ namespace syrec {
         }
 
         StatementExecutionOrderStack() {
-            statementExecutionOrderAggregateState = StatementExecutionOrder::Sequential;
             addStatementExecutionOrderToAggregateState(StatementExecutionOrder::Sequential);
         }
 
@@ -52,7 +51,7 @@ namespace syrec {
         }
 
     protected:
-        StatementExecutionOrder              statementExecutionOrderAggregateState;
+        StatementExecutionOrder              statementExecutionOrderAggregateState = StatementExecutionOrder::Sequential;
         std::vector<StatementExecutionOrder> statementExecutionOrderStack;
 
         [[maybe_unused]] static StatementExecutionOrder combineStates(StatementExecutionOrder curr, StatementExecutionOrder toBeAdded) noexcept {

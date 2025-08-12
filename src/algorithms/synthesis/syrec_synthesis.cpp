@@ -25,6 +25,8 @@
 #include <chrono>
 #include <cstddef>
 #include <iostream>
+#include <iterator>
+#include <memory>
 #include <optional>
 #include <stack>
 #include <string>
@@ -202,7 +204,7 @@ namespace syrec {
         std::vector<qc::Qubit> lhs;
         std::vector<qc::Qubit> rhs;
 
-        bool synthesisOk = getVariables(statement.lhs, lhs) && getVariables(statement.rhs, rhs);
+        const bool synthesisOk = getVariables(statement.lhs, lhs) && getVariables(statement.rhs, rhs);
         assert(lhs.size() == rhs.size());
         return synthesisOk && swap(annotatableQuantumComputation, lhs, rhs);
     }

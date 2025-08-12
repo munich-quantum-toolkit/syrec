@@ -14,6 +14,7 @@
 #include "core/syrec/number.hpp"
 #include "core/syrec/variable.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -55,7 +56,7 @@ namespace syrec {
        */
         virtual ~Statement() = default;
 
-        unsigned lineNumber;
+        unsigned lineNumber = 0U;
 
         [[maybe_unused]] virtual std::optional<ptr> reverse() = 0;
     };
@@ -92,8 +93,8 @@ namespace syrec {
             return std::make_shared<SwapStatement>(lhs, rhs);
         }
 
-        VariableAccess::ptr lhs;
-        VariableAccess::ptr rhs;
+        VariableAccess::ptr lhs{};
+        VariableAccess::ptr rhs{};
     };
 
     /**
@@ -135,7 +136,7 @@ namespace syrec {
             var(std::move(var)) {}
 
         [[maybe_unused]] std::optional<ptr> reverse() override {
-            UnaryOperation invertedOperation;
+            auto invertedOperation = UnaryOperation::Increment;
             switch (unaryOperation) {
                 case UnaryOperation::Increment: // NOLINT(bugprone-branch-clone)
                     invertedOperation = UnaryOperation::Decrement;
@@ -153,7 +154,7 @@ namespace syrec {
         }
 
         UnaryOperation      unaryOperation;
-        VariableAccess::ptr var;
+        VariableAccess::ptr var{};
     };
 
     /**
@@ -197,7 +198,7 @@ namespace syrec {
             assignOperation(assignOperation), rhs(std::move(rhs)) {}
 
         [[maybe_unused]] std::optional<ptr> reverse() override {
-            AssignOperation invertedAssignOperation;
+            auto invertedAssignOperation = AssignOperation::Add;
             switch (assignOperation) {
                 case AssignOperation::Add: // NOLINT(bugprone-branch-clone)
                     invertedAssignOperation = AssignOperation::Subtract;
@@ -214,9 +215,9 @@ namespace syrec {
             return std::make_shared<AssignStatement>(lhs, invertedAssignOperation, rhs);
         }
 
-        VariableAccess::ptr lhs;
+        VariableAccess::ptr lhs{};
         AssignOperation     assignOperation;
-        Expression::ptr     rhs;
+        Expression::ptr     rhs{};
     };
 
     /**
@@ -277,10 +278,10 @@ namespace syrec {
 
         [[maybe_unused]] std::optional<ptr> reverse() override;
 
-        Expression::ptr condition;
-        vec             thenStatements;
-        vec             elseStatements;
-        Expression::ptr fiCondition;
+        Expression::ptr condition{};
+        vec             thenStatements{};
+        vec             elseStatements{};
+        Expression::ptr fiCondition{};
     };
 
     /**
@@ -308,9 +309,9 @@ namespace syrec {
         [[maybe_unused]] std::optional<ptr> reverse() override;
 
         std::string                         loopVariable;
-        std::pair<Number::ptr, Number::ptr> range;
-        Number::ptr                         step;
-        vec                                 statements;
+        std::pair<Number::ptr, Number::ptr> range{};
+        Number::ptr                         step{};
+        vec                                 statements{};
     };
 
     /**
@@ -330,8 +331,8 @@ namespace syrec {
 
         [[maybe_unused]] std::optional<ptr> reverse() override;
 
-        std::shared_ptr<Module>  target;
-        std::vector<std::string> parameters;
+        std::shared_ptr<Module>  target{};
+        std::vector<std::string> parameters{};
     };
 
     /**
@@ -351,8 +352,8 @@ namespace syrec {
 
         [[maybe_unused]] std::optional<ptr> reverse() override;
 
-        std::shared_ptr<Module>  target;
-        std::vector<std::string> parameters;
+        std::shared_ptr<Module>  target{};
+        std::vector<std::string> parameters{};
     };
 
     [[nodiscard]] inline bool invertStatementBlock(const std::vector<Statement::ptr>& statementsToInvert, std::vector<Statement::ptr>& resultContainer) {

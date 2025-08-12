@@ -22,6 +22,7 @@
 #include "ir/Definitions.hpp"
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <stack>
 #include <string>
