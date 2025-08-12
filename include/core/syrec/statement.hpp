@@ -85,10 +85,6 @@ namespace syrec {
             lhs(std::move(lhs)),
             rhs(std::move(rhs)) {}
 
-        /*[[maybe_unused]] std::optional<ptr> reverse() override {
-            return std::make_shared<SwapStatement>(rhs, lhs);
-        }*/
-
         [[maybe_unused]] std::optional<ptr> reverse() override {
             return std::make_shared<SwapStatement>(lhs, rhs);
         }
