@@ -88,8 +88,8 @@ namespace syrec {
             return std::make_shared<SwapStatement>(rhs, lhs);
         }*/
 
-        std::optional<ptr> reverse() override {
-            return std::nullopt;
+        [[maybe_unused]] std::optional<ptr> reverse() override {
+            return std::make_shared<SwapStatement>(lhs, rhs);
         }
 
         VariableAccess::ptr lhs;
@@ -237,7 +237,7 @@ namespace syrec {
        *
        * The expression \p condition is assumed to have a bit-width of 1 bit.
        *
-       * @param condition Expression
+       * @param cond Expression
        */
         void setCondition(Expression::ptr cond) {
             condition = std::move(cond);
@@ -246,7 +246,7 @@ namespace syrec {
         /**
        * @brief Adds a statement to the then branch
        *
-       * @param then_statement Statement to be executed in the if branch
+       * @param thenStatement Statement to be executed in the if branch
        */
         void addThenStatement(const ptr& thenStatement) {
             thenStatements.emplace_back(thenStatement);
@@ -255,7 +255,7 @@ namespace syrec {
         /**
        * @brief Adds a statement to the else branch
        *
-       * @param else_statement Statement to be executed in the else branch
+       * @param elseStatement Statement to be executed in the else branch
        */
         void addElseStatement(const ptr& elseStatement) {
             elseStatements.emplace_back(elseStatement);
@@ -269,24 +269,13 @@ namespace syrec {
        * i.e. executed reversed. Usually it is the same has the condition(), unless
        * the evaluation of the condition does not change in one of the branches.
        *
-       * @param fi_condition Expression
+       * @param fiCond Expression
        */
         void setFiCondition(Expression::ptr fiCond) {
             fiCondition = std::move(fiCond);
         }
 
-        [[maybe_unused]] std::optional<ptr> reverse() override {
-            auto fi = std::make_shared<IfStatement>();
-            fi->setFiCondition(condition);
-            fi->setCondition(fiCondition);
-            for (auto it = thenStatements.rbegin(); it != thenStatements.rend(); ++it) {
-                fi->addThenStatement(*it);
-            }
-            for (auto it = elseStatements.rbegin(); it != elseStatements.rend(); ++it) {
-                fi->addElseStatement(*it);
-            }
-            return fi;
-        }
+        [[maybe_unused]] std::optional<ptr> reverse() override;
 
         Expression::ptr condition;
         vec             thenStatements;
@@ -316,15 +305,7 @@ namespace syrec {
             statements.emplace_back(statement);
         }
 
-        [[maybe_unused]] std::optional<ptr> reverse() override {
-            auto forStat          = std::make_shared<ForStatement>();
-            forStat->loopVariable = loopVariable;
-            forStat->range        = std::make_pair(range.second, range.first);
-            for (auto it = statements.rbegin(); it != statements.rend(); ++it) {
-                forStat->addStatement(*it);
-            }
-            return forStat;
-        }
+        [[maybe_unused]] std::optional<ptr> reverse() override;
 
         std::string                         loopVariable;
         std::pair<Number::ptr, Number::ptr> range;
@@ -368,16 +349,45 @@ namespace syrec {
         UncallStatement(std::shared_ptr<Module> target, std::vector<std::string> parameters):
             target(std::move(target)), parameters(std::move(parameters)) {}
 
-        [[maybe_unused]] std::optional<ptr> reverse() override {
-            return std::make_shared<CallStatement>(target, parameters);
-        }
+        [[maybe_unused]] std::optional<ptr> reverse() override;
 
         std::shared_ptr<Module>  target;
         std::vector<std::string> parameters;
     };
 
+    [[nodiscard]] inline bool invertStatementBlock(const std::vector<Statement::ptr>& statementsToInvert, std::vector<Statement::ptr>& resultContainer) {
+        resultContainer.resize(statementsToInvert.size(), nullptr);
+
+        bool        inversionSuccessful = true;
+        std::size_t resultContainerIdx  = 0;
+        for (auto it = statementsToInvert.crbegin(); it != statementsToInvert.crend() && inversionSuccessful; ++it) {
+            const std::optional<Statement::ptr> reversedStmt = *it != nullptr ? it->get()->reverse() : std::nullopt;
+            resultContainer[resultContainerIdx++]            = reversedStmt.value_or(nullptr);
+            inversionSuccessful                              = reversedStmt.has_value();
+        }
+        return inversionSuccessful;
+    }
+
     inline std::optional<Statement::ptr> CallStatement::reverse() {
         return std::make_shared<UncallStatement>(target, parameters);
     }
 
+    inline std::optional<Statement::ptr> UncallStatement::reverse() {
+        return std::make_shared<CallStatement>(target, parameters);
+    }
+
+    inline std::optional<Statement::ptr> IfStatement::reverse() {
+        auto fiStmt = std::make_shared<IfStatement>();
+        fiStmt->setCondition(fiCondition);
+        fiStmt->setFiCondition(condition);
+        return invertStatementBlock(thenStatements, fiStmt->thenStatements) && invertStatementBlock(elseStatements, fiStmt->elseStatements) ? std::make_optional(fiStmt) : std::nullopt;
+    }
+
+    inline std::optional<Statement::ptr> ForStatement::reverse() {
+        auto invertedForStmt          = std::make_shared<ForStatement>();
+        invertedForStmt->loopVariable = loopVariable;
+        invertedForStmt->range        = std::make_pair(range.second, range.first);
+        invertedForStmt->step         = step;
+        return invertStatementBlock(statements, invertedForStmt->statements) ? std::make_optional(invertedForStmt) : std::nullopt;
+    }
 } // namespace syrec
