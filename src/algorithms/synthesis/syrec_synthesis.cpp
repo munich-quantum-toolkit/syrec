@@ -227,7 +227,12 @@ namespace syrec {
         std::vector<qc::Qubit> rhs;
         std::vector<qc::Qubit> d;
 
-        bool synthesisOfAssignmentOk = getVariables(statement.lhs, lhs) && opRhsLhsExpression(statement.rhs, d) && SyrecSynthesis::onExpression(statement.rhs, rhs, lhs, statement.assignOperation);
+        bool synthesisOfAssignmentOk = getVariables(statement.lhs, lhs);
+        // While a derviced class can fall back to the base class implementation to synthesis AssignStatements, the opRhsLhsExpression(...) call
+        // of the derived class might not be able to handle the expression on the right-hand side of the assignment but since we are already using the base class
+        // to synthesis the assignment (which should be able to handle all SyReC expression types) the return value of opRhsLhsExpression can be ignored.
+        opRhsLhsExpression(statement.rhs, d);
+        synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, rhs, lhs, statement.assignOperation);
         opVec.clear();
 
         switch (statement.assignOperation) {
@@ -301,13 +306,13 @@ namespace syrec {
     bool SyrecSynthesis::onStatement(const ForStatement& statement) {
         const auto& [nfrom, nTo] = statement.range;
 
-        const qc::Qubit    from         = nfrom ? nfrom->evaluate(loopMap) : 1U; // default value is 1u
-        const qc::Qubit    to           = nTo->evaluate(loopMap);
-        const qc::Qubit    step         = statement.step ? statement.step->evaluate(loopMap) : 1U; // default step is +1
+        const unsigned     from         = nfrom ? nfrom->evaluate(loopMap) : 1U; // default value is 1u
+        const unsigned     to           = nTo->evaluate(loopMap);
+        const unsigned     step         = statement.step ? statement.step->evaluate(loopMap) : 1U; // default step is +1
         const std::string& loopVariable = statement.loopVariable;
 
         if (from <= to) {
-            for (qc::Qubit i = from; i <= to; i += step) {
+            for (unsigned i = from; i <= to; i += step) {
                 // adjust loop variable if necessary
 
                 if (!loopVariable.empty()) {
@@ -347,7 +352,7 @@ namespace syrec {
 
     bool SyrecSynthesis::onStatement(const CallStatement& statement) {
         // 1. Adjust the references module's parameters to the call arguments
-        for (qc::Qubit i = 0U; i < statement.parameters.size(); ++i) {
+        for (std::size_t i = 0U; i < statement.parameters.size(); ++i) {
             assert(!modules.empty());
 
             const std::string_view&             parameterIdentifier                        = statement.parameters.at(i);
@@ -378,7 +383,7 @@ namespace syrec {
 
     bool SyrecSynthesis::onStatement(const UncallStatement& statement) {
         // 1. Adjust the references module's parameters to the call arguments
-        for (qc::Qubit i = 0U; i < statement.parameters.size(); ++i) {
+        for (std::size_t i = 0U; i < statement.parameters.size(); ++i) {
             assert(!modules.empty());
 
             const std::string_view&             parameterIdentifier                        = statement.parameters.at(i);
@@ -999,11 +1004,11 @@ namespace syrec {
         if (var->range) {
             auto [nfirst, nsecond] = *var->range;
 
-            const qc::Qubit first  = nfirst->evaluate(loopMap);
-            const qc::Qubit second = nsecond->evaluate(loopMap);
+            const unsigned first  = nfirst->evaluate(loopMap);
+            const unsigned second = nsecond->evaluate(loopMap);
 
             if (first < second) {
-                for (qc::Qubit i = first; i <= second; ++i) {
+                for (unsigned i = first; i <= second; ++i) {
                     lines.emplace_back(offsetToFirstQubitOfVariable + i);
                 }
             } else {
@@ -1012,7 +1017,7 @@ namespace syrec {
                 }
             }
         } else {
-            for (qc::Qubit i = 0U; i < referenceVariableData->bitwidth; ++i) {
+            for (unsigned i = 0U; i < referenceVariableData->bitwidth; ++i) {
                 lines.emplace_back(offsetToFirstQubitOfVariable + i);
             }
         }
@@ -1052,7 +1057,7 @@ namespace syrec {
         assert(bitwidth <= 32);
 
         bool couldQubitsForConstantLinesBeFetched = true;
-        for (qc::Qubit i = 0U; i < bitwidth && couldQubitsForConstantLinesBeFetched; ++i) {
+        for (unsigned i = 0U; i < bitwidth && couldQubitsForConstantLinesBeFetched; ++i) {
             const std::optional<qc::Qubit> ancillaryQubitIndex = getConstantLine((value & (1 << i)) != 0);
             if (ancillaryQubitIndex.has_value()) {
                 lines.emplace_back(*ancillaryQubitIndex);
@@ -1094,16 +1099,16 @@ namespace syrec {
     bool SyrecSynthesis::addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr) {
         bool couldQubitsForVariableBeAdded = true;
         if (dimensions.empty()) {
-            for (qc::Qubit i = 0U; i < var->bitwidth && couldQubitsForVariableBeAdded; ++i) {
+            for (unsigned i = 0U; i < var->bitwidth && couldQubitsForVariableBeAdded; ++i) {
                 const std::string qubitLabel     = var->name + arraystr + "." + std::to_string(i);
                 const bool        isGarbageQubit = var->type == Variable::Type::In || var->type == Variable::Type::Wire;
                 couldQubitsForVariableBeAdded &= annotatableQuantumComputation.addNonAncillaryQubit(qubitLabel, isGarbageQubit).has_value();
             }
         } else {
-            const auto                   len = static_cast<std::size_t>(dimensions.front());
-            const std::vector<qc::Qubit> newDimensions(dimensions.begin() + 1U, dimensions.end());
+            const auto        len = static_cast<std::size_t>(dimensions.front());
+            const std::vector newDimensions(dimensions.begin() + 1U, dimensions.end());
 
-            for (qc::Qubit i = 0U; i < len && couldQubitsForVariableBeAdded; ++i) {
+            for (std::size_t i = 0U; i < len && couldQubitsForVariableBeAdded; ++i) {
                 couldQubitsForVariableBeAdded &= addVariable(annotatableQuantumComputation, newDimensions, var, arraystr + "[" + std::to_string(i) + "]");
             }
         }
