@@ -36,11 +36,10 @@ namespace syrec {
         std::vector<qc::Qubit> dd;
         std::vector<qc::Qubit> ddd;
         std::vector<qc::Qubit> statLhs;
-        getVariables(assignmentStmt.lhs, statLhs);
 
         // The line aware synthesis of an assignment can only be performed when the rhs input signals are repeated (since the results are stored in the rhs)
         // and the right-hand side expression of the assignment consists of only Variable- or BinaryExpressions with the latter only containing the operations (+, - or ^).
-        const bool canAssignmentSynthesisBeOptimized = opRhsLhsExpression(assignmentStmt.rhs, d) && !opVec.empty() && flow(assignmentStmt.rhs, ddd) && checkRepeats() && flow(assignmentStmt.rhs, dd);
+        const bool canAssignmentSynthesisBeOptimized = getVariables(assignmentStmt.lhs, statLhs) && opRhsLhsExpression(assignmentStmt.rhs, d) && !opVec.empty() && flow(assignmentStmt.rhs, ddd) && checkRepeats() && flow(assignmentStmt.rhs, dd);
         if (!canAssignmentSynthesisBeOptimized) {
             expOpVector.clear();
             assignOpVector.clear();
@@ -167,8 +166,7 @@ namespace syrec {
     }
 
     bool LineAwareSynthesis::flow(const VariableExpression& expression, std::vector<qc::Qubit>& v) {
-        getVariables(expression.var, v);
-        return true;
+        return getVariables(expression.var, v);
     }
 
     /// generating LHS and RHS (can be whole expressions as well)
@@ -240,8 +238,7 @@ namespace syrec {
     }
 
     bool LineAwareSynthesis::opRhsLhsExpression(const VariableExpression& expression, std::vector<qc::Qubit>& v) {
-        getVariables(expression.var, v);
-        return true;
+        return getVariables(expression.var, v);
     }
 
     bool LineAwareSynthesis::opRhsLhsExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& v) {

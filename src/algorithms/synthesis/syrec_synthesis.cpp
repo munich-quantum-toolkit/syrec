@@ -11,6 +11,7 @@
 #include "algorithms/synthesis/syrec_synthesis.hpp"
 
 #include "algorithms/synthesis/internal_qubit_label_builder.hpp"
+#include "algorithms/synthesis/statement_execution_order_stack.hpp"
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
 #include "core/qubit_inlining_stack.hpp"
@@ -26,6 +27,7 @@
 #include <chrono>
 #include <cstddef>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <stack>
@@ -48,6 +50,7 @@ namespace syrec {
         annotatableQuantumComputation(annotatableQuantumComputation) {
         freeConstLinesMap.try_emplace(false /* emplacing a default constructed object */);
         freeConstLinesMap.try_emplace(true /* emplacing a default constructed object */);
+        statementExecutionOrderStack = std::make_unique<StatementExecutionOrderStack>();
     }
 
     void SyrecSynthesis::setMainModule(const Module::ptr& mainModule) {
@@ -65,13 +68,21 @@ namespace syrec {
         for (std::size_t i = 0; i < variables.size() && couldQubitsForVariablesBeAdded; ++i) {
             const auto& variable = variables[i];
             // entry in var lines map
-            varLines.try_emplace(variable, annotatableQuantumComputation.getNqubits());
+            if (!varLines.try_emplace(variable, annotatableQuantumComputation.getNqubits()).second) {
+                std::cerr << "Tried to add duplicate variable with identifier " << variable->name << " to internal lookup\n";
+                return false;
+            }
             couldQubitsForVariablesBeAdded &= addVariable(annotatableQuantumComputation, variable->dimensions, variable, std::string(), inlineStack);
         }
         return couldQubitsForVariablesBeAdded;
     }
 
     bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
+        if (synthesizer->statementExecutionOrderStack->getCurrentAggregateStatementExecutionOrderState() != StatementExecutionOrderStack::StatementExecutionOrder::Sequential) {
+            std::cerr << "Execution order at start of synthesis should be sequential\n";
+            return false;
+        }
+
         // Settings parsing
         const auto& expectedMainModuleIdentifier = settings != nullptr ? settings->get<std::string>(MAIN_MODULE_IDENTIFIER_CONFIG_KEY, "") : "";
         // Run-time measuring
@@ -240,7 +251,7 @@ namespace syrec {
                     okay = false;
                 }
             }
-        } else if (auto const* skipStat = statement.get(); skipStat != nullptr) {
+        } else if (auto const* skipStat = dynamic_cast<SkipStatement*>(statement.get()); skipStat != nullptr) {
             okay = onStatement(*skipStat);
         } else {
             okay = false;
@@ -254,27 +265,31 @@ namespace syrec {
         std::vector<qc::Qubit> lhs;
         std::vector<qc::Qubit> rhs;
 
-        getVariables(statement.lhs, lhs);
-        getVariables(statement.rhs, rhs);
+        const bool synthesisOk = getVariables(statement.lhs, lhs) && getVariables(statement.rhs, rhs);
         assert(lhs.size() == rhs.size());
-        return swap(annotatableQuantumComputation, lhs, rhs);
+        return synthesisOk && swap(annotatableQuantumComputation, lhs, rhs);
     }
 
     bool SyrecSynthesis::onStatement(const UnaryStatement& statement) {
         // load variable
         std::vector<qc::Qubit> var;
-        getVariables(statement.var, var);
+        bool                   synthesisOk = getVariables(statement.var, var);
 
         switch (statement.unaryOperation) {
             case UnaryStatement::UnaryOperation::Invert:
-                return bitwiseNegation(annotatableQuantumComputation, var);
+                synthesisOk &= bitwiseNegation(annotatableQuantumComputation, var);
+                break;
             case UnaryStatement::UnaryOperation::Increment:
-                return increment(annotatableQuantumComputation, var);
+                synthesisOk &= increment(annotatableQuantumComputation, var);
+                break;
             case UnaryStatement::UnaryOperation::Decrement:
-                return decrement(annotatableQuantumComputation, var);
+                synthesisOk &= decrement(annotatableQuantumComputation, var);
+                break;
             default:
-                return false;
+                synthesisOk = false;
+                break;
         }
+        return synthesisOk;
     }
 
     bool SyrecSynthesis::onStatement(const AssignStatement& statement) {
@@ -282,9 +297,12 @@ namespace syrec {
         std::vector<qc::Qubit> rhs;
         std::vector<qc::Qubit> d;
 
-        getVariables(statement.lhs, lhs);
+        bool synthesisOfAssignmentOk = getVariables(statement.lhs, lhs);
+        // While a derviced class can fall back to the base class implementation to synthesis AssignStatements, the opRhsLhsExpression(...) call
+        // of the derived class might not be able to handle the expression on the right-hand side of the assignment but since we are already using the base class
+        // to synthesis the assignment (which should be able to handle all SyReC expression types) the return value of opRhsLhsExpression can be ignored.
         opRhsLhsExpression(statement.rhs, d);
-        bool synthesisOfAssignmentOk = SyrecSynthesis::onExpression(statement.rhs, rhs, lhs, statement.assignOperation);
+        synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, rhs, lhs, statement.assignOperation);
         opVec.clear();
 
         switch (statement.assignOperation) {
@@ -358,13 +376,13 @@ namespace syrec {
     bool SyrecSynthesis::onStatement(const ForStatement& statement) {
         const auto& [nfrom, nTo] = statement.range;
 
-        const qc::Qubit    from         = nfrom ? nfrom->evaluate(loopMap) : 1U; // default value is 1u
-        const qc::Qubit    to           = nTo->evaluate(loopMap);
-        const qc::Qubit    step         = statement.step ? statement.step->evaluate(loopMap) : 1U; // default step is +1
+        const unsigned     from         = nfrom ? nfrom->evaluate(loopMap) : 1U; // default value is 1u
+        const unsigned     to           = nTo->evaluate(loopMap);
+        const unsigned     step         = statement.step ? statement.step->evaluate(loopMap) : 1U; // default step is +1
         const std::string& loopVariable = statement.loopVariable;
 
         if (from <= to) {
-            for (qc::Qubit i = from; i <= to; i += step) {
+            for (unsigned i = from; i <= to; i += step) {
                 // adjust loop variable if necessary
 
                 if (!loopVariable.empty()) {
@@ -403,69 +421,11 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::onStatement(const CallStatement& statement) {
-        // 1. Adjust the references module's parameters to the call arguments
-        for (qc::Qubit i = 0U; i < statement.parameters.size(); ++i) {
-            assert(!modules.empty());
-
-            const std::string_view&             parameterIdentifier                        = statement.parameters.at(i);
-            const std::optional<Variable::ptr>& matchingParameterOrVariableOfCurrentModule = modules.top()->findParameterOrVariable(parameterIdentifier);
-            if (!matchingParameterOrVariableOfCurrentModule.has_value() || matchingParameterOrVariableOfCurrentModule.value() == nullptr) {
-                std::cerr << "Failed to find matching parameter or variable of module " << modules.top()->name << " for parameter '" << parameterIdentifier << "' when setting references of parameters of called module " << statement.target->name;
-                return false;
-            }
-            const auto& moduleParameter = statement.target->parameters.at(i);
-            moduleParameter->setReference(*matchingParameterOrVariableOfCurrentModule);
-        }
-
-        // 2. Create new lines for the module's variables
-        if (!addVariables(statement.target->variables)) {
-            return false;
-        }
-
-        modules.push(statement.target);
-        for (const Statement::ptr& stat: statement.target->statements) {
-            if (!processStatement(stat)) {
-                return false;
-            }
-        }
-        modules.pop();
-
-        return true;
+        return synthesizeModuleCall(&statement);
     }
 
     bool SyrecSynthesis::onStatement(const UncallStatement& statement) {
-        // 1. Adjust the references module's parameters to the call arguments
-        for (qc::Qubit i = 0U; i < statement.parameters.size(); ++i) {
-            assert(!modules.empty());
-
-            const std::string_view&             parameterIdentifier                        = statement.parameters.at(i);
-            const std::optional<Variable::ptr>& matchingParameterOrVariableOfCurrentModule = modules.top()->findParameterOrVariable(parameterIdentifier);
-            if (!matchingParameterOrVariableOfCurrentModule.has_value() || matchingParameterOrVariableOfCurrentModule.value() == nullptr) {
-                std::cerr << "Failed to find matching parameter or variable of module " << modules.top()->name << " for parameter '" << parameterIdentifier << "' when setting references of parameters of uncalled module " << statement.target->name;
-                return false;
-            }
-            const auto& moduleParameter = statement.target->parameters.at(i);
-            moduleParameter->setReference(*matchingParameterOrVariableOfCurrentModule);
-        }
-
-        // 2. Create new lines for the module's variables
-        if (!addVariables(statement.target->variables)) {
-            return false;
-        }
-
-        modules.push(statement.target);
-
-        const auto statements = statement.target->statements;
-        for (auto it = statements.rbegin(); it != statements.rend(); ++it) {
-            const auto reverseStatement = (*it)->reverse();
-            if (!processStatement(reverseStatement)) {
-                return false;
-            }
-        }
-
-        modules.pop();
-
-        return true;
+        return synthesizeModuleCall(&statement);
     }
 
     bool SyrecSynthesis::onStatement(const SkipStatement& statement [[maybe_unused]]) {
@@ -535,8 +495,7 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::onExpression(const VariableExpression& expression, std::vector<qc::Qubit>& lines) {
-        getVariables(expression.var, lines);
-        return true;
+        return getVariables(expression.var, lines);
     }
 
     bool SyrecSynthesis::onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, const OperationVariant operationVariant) {
@@ -1019,11 +978,25 @@ namespace syrec {
         return true;
     }
 
-    void SyrecSynthesis::getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines) {
-        const auto&       referenceVariableData           = var->getVar();
-        qc::Qubit         offset                          = varLines[referenceVariableData];
-        const std::size_t numDeclaredDimensionsOfVariable = referenceVariableData->dimensions.size();
+    bool SyrecSynthesis::getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines) {
+        Variable::ptr referenceVariableData = var->getVar();
+        // A chain of Call-/UncallStatements will also produce a chain of references set for a modules parameter
+        // that needs to be resolved by walking up the chain until the first entry is reached to be able to determine
+        // which qubit is actually referenced by the variable access
+        while (referenceVariableData->reference != nullptr) {
+            referenceVariableData = referenceVariableData->reference;
+        }
+        assert(referenceVariableData != nullptr);
 
+        qc::Qubit offsetToFirstQubitOfVariable = 0;
+        if (const auto& matchingLookupEntryForVariableIdentifier = varLines.find(referenceVariableData); matchingLookupEntryForVariableIdentifier != varLines.cend()) {
+            offsetToFirstQubitOfVariable = matchingLookupEntryForVariableIdentifier->second;
+        } else {
+            std::cerr << "Failed to determine first qubit for variable with identifier " << referenceVariableData->name << "\n";
+            return false;
+        }
+
+        const std::size_t numDeclaredDimensionsOfVariable = referenceVariableData->dimensions.size();
         if (!var->indexes.empty()) {
             // check if it is all numeric_expressions
             if (static_cast<std::size_t>(std::count_if(var->indexes.cbegin(), var->indexes.cend(), [&](const auto& p) { return dynamic_cast<NumericExpression*>(p.get()); })) == numDeclaredDimensionsOfVariable) {
@@ -1033,7 +1006,7 @@ namespace syrec {
                     for (std::size_t j = i + 1; j < numDeclaredDimensionsOfVariable; ++j) {
                         aggregateValue *= referenceVariableData->dimensions[i];
                     }
-                    offset += aggregateValue * referenceVariableData->bitwidth;
+                    offsetToFirstQubitOfVariable += aggregateValue * referenceVariableData->bitwidth;
                 }
             }
         }
@@ -1041,23 +1014,29 @@ namespace syrec {
         if (var->range) {
             auto [nfirst, nsecond] = *var->range;
 
-            const qc::Qubit first  = nfirst->evaluate(loopMap);
-            const qc::Qubit second = nsecond->evaluate(loopMap);
+            const unsigned first  = nfirst->evaluate(loopMap);
+            const unsigned second = nsecond->evaluate(loopMap);
 
             if (first < second) {
-                for (qc::Qubit i = first; i <= second; ++i) {
-                    lines.emplace_back(offset + i);
+                for (unsigned i = first; i <= second; ++i) {
+                    lines.emplace_back(offsetToFirstQubitOfVariable + i);
                 }
             } else {
                 for (auto i = static_cast<int>(first); i >= static_cast<int>(second); --i) {
-                    lines.emplace_back(offset + static_cast<qc::Qubit>(i));
+                    lines.emplace_back(offsetToFirstQubitOfVariable + static_cast<qc::Qubit>(i));
                 }
             }
         } else {
-            for (qc::Qubit i = 0U; i < referenceVariableData->bitwidth; ++i) {
-                lines.emplace_back(offset + i);
+            for (unsigned i = 0U; i < referenceVariableData->bitwidth; ++i) {
+                lines.emplace_back(offsetToFirstQubitOfVariable + i);
             }
         }
+
+        if (lines.empty()) {
+            std::cerr << "Failed to determine accessed qubits for variable access on variable with identifier " << referenceVariableData->name << "\n";
+            return false;
+        }
+        return true;
     }
 
     std::optional<qc::Qubit> SyrecSynthesis::getConstantLine(bool value, const std::optional<QubitInliningStack::ptr>& inlinedQubitModuleCallStack) {
@@ -1096,7 +1075,7 @@ namespace syrec {
         const std::optional<QubitInliningStack::ptr> sharedAncillaryQubitModuleCallStack  = bitwidth > 0 ? getLastCreatedModuleCallStackInstance() : std::nullopt;
         bool                                         couldQubitsForConstantLinesBeFetched = shouldQubitInlineInformationBeRecorded() ? sharedAncillaryQubitModuleCallStack.has_value() : true;
 
-        for (qc::Qubit i = 0U; i < bitwidth && couldQubitsForConstantLinesBeFetched; ++i) {
+        for (unsigned i = 0U; i < bitwidth && couldQubitsForConstantLinesBeFetched; ++i) {
             const std::optional<qc::Qubit> ancillaryQubitIndex = getConstantLine((value & (1 << i)) != 0, sharedAncillaryQubitModuleCallStack);
             if (ancillaryQubitIndex.has_value()) {
                 lines.emplace_back(*ancillaryQubitIndex);
@@ -1140,7 +1119,7 @@ namespace syrec {
 
         const auto currNumQubits = annotatableQuantumComputation.getNqubits();
         if (dimensions.empty()) {
-            for (qc::Qubit i = 0U; i < var->bitwidth && couldQubitsForVariableBeAdded; ++i) {
+            for (unsigned i = 0U; i < var->bitwidth && couldQubitsForVariableBeAdded; ++i) {
                 std::string                                                           internalQubitLabel     = var->name;
                 std::string                                                           userDeclaredQubitLabel = var->name;
                 const bool                                                            isGarbageQubit         = var->type == Variable::Type::In || var->type == Variable::Type::Wire;
@@ -1163,8 +1142,8 @@ namespace syrec {
                 couldQubitsForVariableBeAdded &= annotatableQuantumComputation.addNonAncillaryQubit(internalQubitLabel, isGarbageQubit, optionalQubitInliningInformation).has_value();
             }
         } else {
-            const auto                   len = static_cast<std::size_t>(dimensions.front());
-            const std::vector<qc::Qubit> newDimensions(dimensions.begin() + 1U, dimensions.end());
+            const auto        len = static_cast<std::size_t>(dimensions.front());
+            const std::vector newDimensions(dimensions.begin() + 1U, dimensions.end());
 
             for (std::size_t i = 0U; i < len && couldQubitsForVariableBeAdded; ++i) {
                 couldQubitsForVariableBeAdded &= addVariable(annotatableQuantumComputation, newDimensions, var, arraystr + "[" + std::to_string(i) + "]", currentModuleCallStack);
@@ -1198,5 +1177,85 @@ namespace syrec {
             return;
         }
         moduleCallStackInstances->pop_back();
+    }
+
+    bool SyrecSynthesis::synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant) {
+        const CallStatement*   callStmt   = std::holds_alternative<const CallStatement*>(callStmtVariant) ? std::get<const CallStatement*>(callStmtVariant) : nullptr;
+        const UncallStatement* uncallStmt = std::holds_alternative<const UncallStatement*>(callStmtVariant) ? std::get<const UncallStatement*>(callStmtVariant) : nullptr;
+        assert(callStmt != nullptr || uncallStmt != nullptr);
+
+        const std::vector<std::string>& moduleParameters = callStmt != nullptr ? callStmt->parameters : uncallStmt->parameters;
+        const Module::ptr&              targetModule     = callStmt != nullptr ? callStmt->target : uncallStmt->target;
+
+        // 1. Adjust the references module's parameters to the call arguments
+        for (std::size_t i = 0U; i < moduleParameters.size(); ++i) {
+            assert(!modules.empty());
+
+            const std::string_view&             parameterIdentifier                        = moduleParameters.at(i);
+            const std::optional<Variable::ptr>& matchingParameterOrVariableOfCurrentModule = modules.top()->findParameterOrVariable(parameterIdentifier);
+            if (!matchingParameterOrVariableOfCurrentModule.has_value() || matchingParameterOrVariableOfCurrentModule.value() == nullptr) {
+                std::cerr << "Failed to find matching parameter or variable of module " << modules.top()->name << " for parameter '" << parameterIdentifier << "' when setting references of parameters of " << (callStmt != nullptr ? "called" : "uncalled") << " module " << targetModule->name;
+                return false;
+            }
+            const auto& moduleParameter = targetModule->parameters.at(i);
+            moduleParameter->setReference(*matchingParameterOrVariableOfCurrentModule);
+        }
+
+        // 2. Create new lines for the module's variables
+        if (!addVariables(targetModule->variables)) {
+            return false;
+        }
+
+        modules.push(targetModule);
+        const auto& statements              = targetModule->statements;
+        bool        synthesisOfModuleBodyOk = true;
+
+        const std::optional<StatementExecutionOrderStack::StatementExecutionOrder> currentStmtExecutionOrder = statementExecutionOrderStack->getCurrentAggregateStatementExecutionOrderState();
+        if (!currentStmtExecutionOrder.has_value()) {
+            std::cerr << "Failed to determine current statement execution order\n";
+            return false;
+        }
+
+        // If the current statement execution order is set to execute a statement block by inverting all of its statements and traverse them in reverse order then any UncallStatement is transformed to a CallStatement in the statement block
+        // thus the execution order added to the aggregate state for the Call-/UncallStatement needs to also take the current aggregate state into account.
+        // An example:
+        //   module main(inout a(3))
+        //     uncall child(a)
+        //
+        //   module child(inout a(3))
+        //     uncall grandChild(a)
+        //
+        //   module grandChild(inout a(3))
+        //     ++= a
+        // The aggregate statement execution order state when the UncallStatement in the 'child' module is processed will invert the UncallStatement to a CallStatement but when the latter is then synthesized the state added to the aggregate
+        // should be the one of the 'original' UncallStatement and not the one of the inverted CallStatement.
+        const auto                                                  defaultExecutionOrderOfModuleBody   = callStmt != nullptr ? StatementExecutionOrderStack::StatementExecutionOrder::Sequential : StatementExecutionOrderStack::StatementExecutionOrder::InvertedAndInReverse;
+        const auto                                                  executionOrderToAddToAggregateState = currentStmtExecutionOrder.value() == StatementExecutionOrderStack::StatementExecutionOrder::Sequential ? defaultExecutionOrderOfModuleBody : !defaultExecutionOrderOfModuleBody;
+        const StatementExecutionOrderStack::StatementExecutionOrder currentAggregateExecutionOrderState = statementExecutionOrderStack->addStatementExecutionOrderToAggregateState(executionOrderToAddToAggregateState);
+
+        if (currentAggregateExecutionOrderState == StatementExecutionOrderStack::StatementExecutionOrder::Sequential) {
+            synthesisOfModuleBodyOk = std::all_of(statements.cbegin(), statements.cend(), [&](const Statement::ptr& stmt) { return processStatement(stmt); });
+        } else {
+            for (auto it = statements.rbegin(); it != statements.rend() && synthesisOfModuleBodyOk; ++it) {
+                if (const auto& reverseStatement = (*it)->reverse(); reverseStatement.has_value()) {
+                    synthesisOfModuleBodyOk = processStatement(*reverseStatement);
+                } else {
+                    const auto offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule = static_cast<std::size_t>(std::distance(statements.rend(), it));
+                    if (callStmt != nullptr) {
+                        std::cerr << "Failed to create inverse of statement at index " << std::to_string(statements.size() - offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule) << " in body of called module " << targetModule->name << "(CALL @ " << std::to_string(it->get()->lineNumber) << ")";
+                    } else {
+                        std::cerr << "Failed to create inverse of statement at index " << std::to_string(statements.size() - offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule) << " in body of uncalled module " << targetModule->name << "(UNCALL @ " << std::to_string(it->get()->lineNumber) << ")";
+                    }
+                    synthesisOfModuleBodyOk = false;
+                }
+            }
+        }
+
+        if (!statementExecutionOrderStack->removeLastAddedStatementExecutionOrderFromAggregateState()) {
+            std::cerr << "Failed to remove last added statement execution order from internal stack\n";
+            synthesisOfModuleBodyOk = false;
+        }
+        modules.pop();
+        return synthesisOfModuleBodyOk;
     }
 } // namespace syrec

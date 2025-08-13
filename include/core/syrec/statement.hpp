@@ -14,8 +14,10 @@
 #include "core/syrec/number.hpp"
 #include "core/syrec/variable.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -54,13 +56,16 @@ namespace syrec {
        */
         virtual ~Statement() = default;
 
-        unsigned lineNumber{};
+        unsigned lineNumber = 0U;
 
-        virtual Statement::ptr reverse() {
-            return std::make_shared<Statement>(*this);
-        };
+        [[maybe_unused]] virtual std::optional<ptr> reverse() = 0;
     };
-    using SkipStatement = Statement;
+
+    struct SkipStatement: Statement {
+        [[maybe_unused]] std::optional<ptr> reverse() override {
+            return std::make_shared<SkipStatement>();
+        }
+    };
 
     /**
      * @brief SWAP Statement
@@ -68,7 +73,7 @@ namespace syrec {
      * This class represents the SyReC SWAP Statement (<=>)
      * between two variables lhs() and rhs().
      */
-    struct SwapStatement: public Statement {
+    struct SwapStatement: Statement {
         /**
        * @brief Constructor
        *
@@ -80,6 +85,10 @@ namespace syrec {
             lhs(std::move(lhs)),
             rhs(std::move(rhs)) {}
 
+        [[maybe_unused]] std::optional<ptr> reverse() override {
+            return std::make_shared<SwapStatement>(lhs, rhs);
+        }
+
         VariableAccess::ptr lhs{};
         VariableAccess::ptr rhs{};
     };
@@ -90,7 +99,7 @@ namespace syrec {
      * This class represents the SyReC Unary statements (++, --, ~)
      * on the variable access var().
      */
-    struct UnaryStatement: public Statement {
+    struct UnaryStatement: Statement {
         /**
        * @brief Type of the statement
        */
@@ -122,19 +131,25 @@ namespace syrec {
             unaryOperation(unaryOperation),
             var(std::move(var)) {}
 
-        Statement::ptr reverse() override {
+        [[maybe_unused]] std::optional<ptr> reverse() override {
+            auto invertedOperation = UnaryOperation::Increment;
             switch (unaryOperation) {
                 case UnaryOperation::Increment: // NOLINT(bugprone-branch-clone)
-                    return std::make_shared<UnaryStatement>(UnaryOperation::Decrement, var);
+                    invertedOperation = UnaryOperation::Decrement;
+                    break;
                 case UnaryOperation::Decrement:
-                    return std::make_shared<UnaryStatement>(UnaryOperation::Increment, var);
-                // TODO: Handling all other cases via the default branch might not be correct when further unary operations are added
+                    invertedOperation = UnaryOperation::Increment;
+                    break;
+                case UnaryOperation::Invert:
+                    invertedOperation = UnaryOperation::Invert;
+                    break;
                 default:
-                    return std::make_shared<UnaryStatement>(*this);
+                    return std::nullopt;
             }
+            return std::make_shared<UnaryStatement>(invertedOperation, var);
         }
 
-        UnaryOperation      unaryOperation{};
+        UnaryOperation      unaryOperation;
         VariableAccess::ptr var{};
     };
 
@@ -144,7 +159,7 @@ namespace syrec {
      * This class represents the SyReC assignment statements (+=, -=, ^=)
      * of the expression rhs() to the variable access lhs().
      */
-    struct AssignStatement: public Statement {
+    struct AssignStatement: Statement {
         /**
        * @brief Type of assignment
        */
@@ -178,20 +193,26 @@ namespace syrec {
             lhs(std::move(lhs)),
             assignOperation(assignOperation), rhs(std::move(rhs)) {}
 
-        Statement::ptr reverse() override {
+        [[maybe_unused]] std::optional<ptr> reverse() override {
+            auto invertedAssignOperation = AssignOperation::Add;
             switch (assignOperation) {
                 case AssignOperation::Add: // NOLINT(bugprone-branch-clone)
-                    return std::make_shared<AssignStatement>(lhs, AssignOperation::Subtract, rhs);
+                    invertedAssignOperation = AssignOperation::Subtract;
+                    break;
                 case AssignOperation::Subtract:
-                    return std::make_shared<AssignStatement>(lhs, AssignOperation::Add, rhs);
-                // TODO: Handling all other cases via the default branch might not be correct when further assignment operations are added
+                    invertedAssignOperation = AssignOperation::Add;
+                    break;
+                case AssignOperation::Exor:
+                    invertedAssignOperation = AssignOperation::Exor;
+                    break;
                 default:
-                    return std::make_shared<AssignStatement>(*this);
+                    return std::nullopt;
             }
+            return std::make_shared<AssignStatement>(lhs, invertedAssignOperation, rhs);
         }
 
         VariableAccess::ptr lhs{};
-        AssignOperation     assignOperation{};
+        AssignOperation     assignOperation;
         Expression::ptr     rhs{};
     };
 
@@ -200,7 +221,7 @@ namespace syrec {
      *
      * This class represents the SyReC \b if statement
      */
-    struct IfStatement: public Statement {
+    struct IfStatement: Statement {
         /**
        * @brief Standard constructor
        *
@@ -213,7 +234,7 @@ namespace syrec {
        *
        * The expression \p condition is assumed to have a bit-width of 1 bit.
        *
-       * @param condition Expression
+       * @param cond Expression
        */
         void setCondition(Expression::ptr cond) {
             condition = std::move(cond);
@@ -222,18 +243,18 @@ namespace syrec {
         /**
        * @brief Adds a statement to the then branch
        *
-       * @param then_statement Statement to be executed in the if branch
+       * @param thenStatement Statement to be executed in the if branch
        */
-        void addThenStatement(const Statement::ptr& thenStatement) {
+        void addThenStatement(const ptr& thenStatement) {
             thenStatements.emplace_back(thenStatement);
         }
 
         /**
        * @brief Adds a statement to the else branch
        *
-       * @param else_statement Statement to be executed in the else branch
+       * @param elseStatement Statement to be executed in the else branch
        */
-        void addElseStatement(const Statement::ptr& elseStatement) {
+        void addElseStatement(const ptr& elseStatement) {
             elseStatements.emplace_back(elseStatement);
         }
 
@@ -245,28 +266,17 @@ namespace syrec {
        * i.e. executed reversed. Usually it is the same has the condition(), unless
        * the evaluation of the condition does not change in one of the branches.
        *
-       * @param fi_condition Expression
+       * @param fiCond Expression
        */
         void setFiCondition(Expression::ptr fiCond) {
             fiCondition = std::move(fiCond);
         }
 
-        Statement::ptr reverse() override {
-            auto fi = std::make_shared<IfStatement>();
-            fi->setFiCondition(condition);
-            fi->setCondition(fiCondition);
-            for (auto it = thenStatements.rbegin(); it != thenStatements.rend(); ++it) {
-                fi->addThenStatement(*it);
-            }
-            for (auto it = elseStatements.rbegin(); it != elseStatements.rend(); ++it) {
-                fi->addElseStatement(*it);
-            }
-            return fi;
-        }
+        [[maybe_unused]] std::optional<ptr> reverse() override;
 
         Expression::ptr condition{};
-        Statement::vec  thenStatements{};
-        Statement::vec  elseStatements{};
+        vec             thenStatements{};
+        vec             elseStatements{};
         Expression::ptr fiCondition{};
     };
 
@@ -275,7 +285,7 @@ namespace syrec {
      *
      * This class represents the SyReC \b for statement
      */
-    struct ForStatement: public Statement {
+    struct ForStatement: Statement {
         /**
        * @brief Standard constructor
        *
@@ -288,24 +298,16 @@ namespace syrec {
        *
        * @param statement Statement
        */
-        void addStatement(const Statement::ptr& statement) {
+        void addStatement(const ptr& statement) {
             statements.emplace_back(statement);
         }
 
-        Statement::ptr reverse() override {
-            auto forStat          = std::make_shared<ForStatement>();
-            forStat->loopVariable = loopVariable;
-            forStat->range        = std::make_pair(range.second, range.first);
-            for (auto it = statements.rbegin(); it != statements.rend(); ++it) {
-                forStat->addStatement(*it);
-            }
-            return forStat;
-        }
+        [[maybe_unused]] std::optional<ptr> reverse() override;
 
-        std::string                         loopVariable{};
+        std::string                         loopVariable;
         std::pair<Number::ptr, Number::ptr> range{};
         Number::ptr                         step{};
-        Statement::vec                      statements{};
+        vec                                 statements{};
     };
 
     /**
@@ -313,7 +315,7 @@ namespace syrec {
      *
      * This class represents the SyReC \b call statement to call a module.
      */
-    struct CallStatement: public Statement {
+    struct CallStatement: Statement {
         /**
        * @brief Constructor with module and parameters
        *
@@ -323,7 +325,7 @@ namespace syrec {
         CallStatement(std::shared_ptr<Module> target, std::vector<std::string> parameters):
             target(std::move(target)), parameters(std::move(parameters)) {}
 
-        Statement::ptr reverse() override;
+        [[maybe_unused]] std::optional<ptr> reverse() override;
 
         std::shared_ptr<Module>  target{};
         std::vector<std::string> parameters{};
@@ -334,7 +336,7 @@ namespace syrec {
      *
      * This class represents the SyReC \b uncall statement to uncall a module.
      */
-    struct UncallStatement: public Statement {
+    struct UncallStatement: Statement {
         /**
        * @brief Constructor with module and parameters
        *
@@ -344,16 +346,45 @@ namespace syrec {
         UncallStatement(std::shared_ptr<Module> target, std::vector<std::string> parameters):
             target(std::move(target)), parameters(std::move(parameters)) {}
 
-        Statement::ptr reverse() override {
-            return std::make_shared<CallStatement>(target, parameters);
-        }
+        [[maybe_unused]] std::optional<ptr> reverse() override;
 
         std::shared_ptr<Module>  target{};
         std::vector<std::string> parameters{};
     };
 
-    inline Statement::ptr CallStatement::reverse() {
+    [[nodiscard]] inline bool invertStatementBlock(const std::vector<Statement::ptr>& statementsToInvert, std::vector<Statement::ptr>& resultContainer) {
+        resultContainer.resize(statementsToInvert.size(), nullptr);
+
+        bool        inversionSuccessful = true;
+        std::size_t resultContainerIdx  = 0;
+        for (auto it = statementsToInvert.crbegin(); it != statementsToInvert.crend() && inversionSuccessful; ++it) {
+            const std::optional<Statement::ptr> reversedStmt = *it != nullptr ? it->get()->reverse() : std::nullopt;
+            resultContainer[resultContainerIdx++]            = reversedStmt.value_or(nullptr);
+            inversionSuccessful                              = reversedStmt.has_value();
+        }
+        return inversionSuccessful;
+    }
+
+    inline std::optional<Statement::ptr> CallStatement::reverse() {
         return std::make_shared<UncallStatement>(target, parameters);
     }
 
+    inline std::optional<Statement::ptr> UncallStatement::reverse() {
+        return std::make_shared<CallStatement>(target, parameters);
+    }
+
+    inline std::optional<Statement::ptr> IfStatement::reverse() {
+        auto fiStmt = std::make_shared<IfStatement>();
+        fiStmt->setCondition(fiCondition);
+        fiStmt->setFiCondition(condition);
+        return invertStatementBlock(thenStatements, fiStmt->thenStatements) && invertStatementBlock(elseStatements, fiStmt->elseStatements) ? std::make_optional(fiStmt) : std::nullopt;
+    }
+
+    inline std::optional<Statement::ptr> ForStatement::reverse() {
+        auto invertedForStmt          = std::make_shared<ForStatement>();
+        invertedForStmt->loopVariable = loopVariable;
+        invertedForStmt->range        = std::make_pair(range.second, range.first);
+        invertedForStmt->step         = step;
+        return invertStatementBlock(statements, invertedForStmt->statements) ? std::make_optional(invertedForStmt) : std::nullopt;
+    }
 } // namespace syrec

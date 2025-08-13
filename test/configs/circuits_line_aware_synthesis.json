@@ -35,10 +35,10 @@
   },
 
   "call_8": {
-    "num_gates": 198,
+    "num_gates": 278,
     "lines": 27,
-    "quantum_costs": 1414,
-    "transistor_costs": 3536
+    "quantum_costs": 1798,
+    "transistor_costs": 4672
   },
   "constExpr_8": {
     "num_gates": 8,

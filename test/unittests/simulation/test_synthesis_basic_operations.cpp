@@ -352,6 +352,66 @@ TYPED_TEST_P(BaseSimulationTestFixture, UsageOfNDimensionalModuleParameterAsValu
 TYPED_TEST_P(BaseSimulationTestFixture, UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfCalledModule) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfAssignStatementUsingAddAssignOperationInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfAssignStatementUsingSubAssignOperationInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfAssignStatementUsingXorAssignOperationInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfCallStatementInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfForStatementWithStartSmallerThanEndInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfForStatementWithStartLargerThanEndInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfForStatementWithOnlyUpperBoundOfIterationRangeDefinedInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfIfStatementInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfSkipStatementInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfSwapStatementInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfUncallStatementInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfUnaryAssignStatementUsingIncrementOperationInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfUnaryAssignStatementUsingDecrementOperationInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfUnaryAssignStatementUsingBitwiseNegationOperationInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfMultipleStatementsInCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
 // END of tests for production CallStatement
 
 // BEGIN of tests for production UncallStatement
@@ -404,6 +464,66 @@ TYPED_TEST_P(BaseSimulationTestFixture, UsageOfNDimensionalModuleParameterAsValu
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfAssignStatementUsingAddAssignOperationInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfAssignStatementUsingSubAssignOperationInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfAssignStatementUsingXorAssignOperationInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfCallStatementInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfForStatementWithStartSmallerThanEndInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfForStatementWithStartLargerThanEndInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfForStatementWithOnlyUpperBoundOfIterationRangeDefinedInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfIfStatementInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfSkipStatementInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfSwapStatementInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfUncallStatementInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfUnaryAssignStatementUsingIncrementOperationInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfUnaryAssignStatementUsingDecrementOperationInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfUnaryAssignStatementUsingBitwiseNegationOperationInUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InverseOfMultipleStatementsInUncalledModule) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 // END of tests for production UncallStatement
@@ -505,6 +625,22 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             UsageOfVariableOfTypeWireAsValueForParameterOfTypeOutOfCalledModule,
                             UsageOfNDimensionalModuleParameterAsValueForParameterOfCalledModule,
                             UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfCalledModule,
+
+                            SynthesisOfAssignStatementUsingAddAssignOperationInCalledModule,
+                            SynthesisOfAssignStatementUsingSubAssignOperationInCalledModule,
+                            SynthesisOfAssignStatementUsingXorAssignOperationInCalledModule,
+                            SynthesisOfCallStatementInCalledModule,
+                            SynthesisOfForStatementWithStartSmallerThanEndInCalledModule,
+                            SynthesisOfForStatementWithStartLargerThanEndInCalledModule,
+                            SynthesisOfForStatementWithOnlyUpperBoundOfIterationRangeDefinedInCalledModule,
+                            SynthesisOfIfStatementInCalledModule,
+                            SynthesisOfSkipStatementInCalledModule,
+                            SynthesisOfSwapStatementInCalledModule,
+                            SynthesisOfUncallStatementInCalledModule,
+                            SynthesisOfUnaryAssignStatementUsingIncrementOperationInCalledModule,
+                            SynthesisOfUnaryAssignStatementUsingDecrementOperationInCalledModule,
+                            SynthesisOfUnaryAssignStatementUsingBitwiseNegationOperationInCalledModule,
+                            SynthesisOfMultipleStatementsInCalledModule,
                             // END of tests for production CallStatement
 
                             // BEGIN of tests for production UncallStatement
@@ -520,7 +656,23 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             UsageOfVariableOfTypeOutAsValueForParameterOfTypeOutOfUncalledModule,
                             UsageOfVariableOfTypeWireAsValueForParameterOfTypeOutOfUncalledModule,
                             UsageOfNDimensionalModuleParameterAsValueForParameterOfUncalledModule,
-                            UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfUncalledModule
+                            UsageOfNDimensionalLocalModuleVariableAsValueForParameterOfUncalledModule,
+
+                            InverseOfAssignStatementUsingAddAssignOperationInUncalledModule,
+                            InverseOfAssignStatementUsingSubAssignOperationInUncalledModule,
+                            InverseOfAssignStatementUsingXorAssignOperationInUncalledModule,
+                            InverseOfCallStatementInUncalledModule,
+                            InverseOfForStatementWithStartSmallerThanEndInUncalledModule,
+                            InverseOfForStatementWithStartLargerThanEndInUncalledModule,
+                            InverseOfForStatementWithOnlyUpperBoundOfIterationRangeDefinedInUncalledModule,
+                            InverseOfIfStatementInUncalledModule,
+                            InverseOfSkipStatementInUncalledModule,
+                            InverseOfSwapStatementInUncalledModule,
+                            InverseOfUncallStatementInUncalledModule,
+                            InverseOfUnaryAssignStatementUsingIncrementOperationInUncalledModule,
+                            InverseOfUnaryAssignStatementUsingDecrementOperationInUncalledModule,
+                            InverseOfUnaryAssignStatementUsingBitwiseNegationOperationInUncalledModule,
+                            InverseOfMultipleStatementsInUncalledModule
                             // END of tests for production UncallStatement
 );
 

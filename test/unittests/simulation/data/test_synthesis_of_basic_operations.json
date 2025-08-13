@@ -4656,6 +4656,642 @@
     ]
   },
 
+  "SynthesisOfAssignStatementUsingAddAssignOperationInCalledModule": {
+    "inputCircuit": "module child(inout a(2), in b(2)) a += b module main(inout a(2), in b(2)) call child(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "SynthesisOfAssignStatementUsingSubAssignOperationInCalledModule": {
+    "inputCircuit": "module child(inout a(2), in b(2)) a -= b module main(inout a(2), in b(2)) call child(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1110"
+      },
+      {
+        "in": "1010",
+        "out": "0010"
+      },
+      {
+        "in": "0110",
+        "out": "1010"
+      },
+      {
+        "in": "1110",
+        "out": "0110"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1011"
+      },
+      {
+        "in": "1011",
+        "out": "0111"
+      },
+      {
+        "in": "0111",
+        "out": "1111"
+      },
+      {
+        "in": "1111",
+        "out": "0011"
+      }
+    ]
+  },
+  "SynthesisOfAssignStatementUsingXorAssignOperationInCalledModule": {
+    "inputCircuit": "module child(inout a(2), in b(2)) a ^= b module main(inout a(2), in b(2)) call child(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0010"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0110"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0111"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0011"
+      }
+    ]
+  },
+  "SynthesisOfCallStatementInCalledModule": {
+    "inputCircuit": "module xor(inout a(1)) a ^= 1 module child(inout a(1), inout c(1)) call xor(a); c ^= a module main(inout a(1), inout b(1), inout c(1)) call child(a, c)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "101"
+      },
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "010",
+        "out": "111"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "100"
+      },
+      {
+        "in": "101",
+        "out": "001"
+      },
+      {
+        "in": "011",
+        "out": "110"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "SynthesisOfForStatementWithStartSmallerThanEndInCalledModule": {
+    "inputCircuit": "module child(inout a(3)) for $i = 1 to (#a - 1) do a.$i ^= a.($i - 1) rof module main(inout a(3)) call child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "111"
+      },
+      {
+        "in": "010",
+        "out": "011"
+      },
+      {
+        "in": "110",
+        "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "001"
+      },
+      {
+        "in": "101",
+        "out": "110"
+      },
+      {
+        "in": "011",
+        "out": "010"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "SynthesisOfForStatementWithStartLargerThanEndInCalledModule": {
+    "inputCircuit": "module child(inout a(3)) for $i = (#a - 2) to 0 do a.$i ^= a.($i + 1) rof module main(inout a(3)) call child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "100"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "111"
+      },
+      {
+        "in": "101",
+        "out": "011"
+      },
+      {
+        "in": "011",
+        "out": "001"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "SynthesisOfForStatementWithOnlyUpperBoundOfIterationRangeDefinedInCalledModule": {
+    "inputCircuit": "module child(inout a(3)) for (#a - 1) do a += 1 rof module main(inout a(3)) call child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "110"
+      },
+      {
+        "in": "100",
+        "out": "001"
+      },
+      {
+        "in": "010",
+        "out": "101"
+      },
+      {
+        "in": "110",
+        "out": "011"
+      },
+      {
+        "in": "001",
+        "out": "111"
+      },
+      {
+        "in": "101",
+        "out": "000"
+      },
+      {
+        "in": "011",
+        "out": "100"
+      },
+      {
+        "in": "111",
+        "out": "010"
+      }
+    ]
+  },
+  "SynthesisOfIfStatementInCalledModule": {
+    "inputCircuit": "module child(inout a(3)) if a.1 then a.0 ^= 1 else a.2 ^= 1 fi a.1 module main(inout a(3)) call child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "001"
+      },
+      {
+        "in": "100",
+        "out": "101"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "000"
+      },
+      {
+        "in": "101",
+        "out": "100"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "SynthesisOfSkipStatementInCalledModule": {
+    "inputCircuit": "module child(inout a(2)) skip; a += 1; skip module main(inout a(2)) call child(a)",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "10"
+      },
+      {
+        "in": "10",
+        "out": "01"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "00"
+      }
+    ]
+  },
+  "SynthesisOfSwapStatementInCalledModule": {
+    "inputCircuit": "module child(inout a(3)) a.0 <=> a.2 module main(inout a(3)) call child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "001"
+      },
+      {
+        "in": "010",
+        "out": "010"
+      },
+      {
+        "in": "110",
+        "out": "011"
+      },
+      {
+        "in": "001",
+        "out": "100"
+      },
+      {
+        "in": "101",
+        "out": "101"
+      },
+      {
+        "in": "011",
+        "out": "110"
+      },
+      {
+        "in": "111",
+        "out": "111"
+      }
+    ]
+  },
+  "SynthesisOfUncallStatementInCalledModule": {
+    "inputCircuit": "module xor(inout a(1), inout c(1)) a ^= 1; c ^= a module child(inout a(1), inout c(1)) uncall xor(a, c) module main(inout a(1), inout b(1), inout c(1)) call child(a, c)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "100"
+      },
+      {
+        "in": "100",
+        "out": "001"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "011"
+      },
+      {
+        "in": "001",
+        "out": "101"
+      },
+      {
+        "in": "101",
+        "out": "000"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "010"
+      }
+    ]
+  },
+  "SynthesisOfUnaryAssignStatementUsingIncrementOperationInCalledModule": {
+    "inputCircuit": "module child(inout a(3)) ++= a module main(inout a(3)) call child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "100"
+      },
+      {
+        "in": "100",
+        "out": "010"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "001"
+      },
+      {
+        "in": "001",
+        "out": "101"
+      },
+      {
+        "in": "101",
+        "out": "011"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "000"
+      }
+    ]
+  },
+  "SynthesisOfUnaryAssignStatementUsingDecrementOperationInCalledModule": {
+    "inputCircuit": "module child(inout a(3)) --= a module main(inout a(3)) call child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "111"
+      },
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "010",
+        "out": "100"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "110"
+      },
+      {
+        "in": "101",
+        "out": "001"
+      },
+      {
+        "in": "011",
+        "out": "101"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "SynthesisOfUnaryAssignStatementUsingBitwiseNegationOperationInCalledModule": {
+    "inputCircuit": "module child(inout a(3)) ~= a module main(inout a(3)) call child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "111"
+      },
+      {
+        "in": "100",
+        "out": "011"
+      },
+      {
+        "in": "010",
+        "out": "101"
+      },
+      {
+        "in": "110",
+        "out": "001"
+      },
+      {
+        "in": "001",
+        "out": "110"
+      },
+      {
+        "in": "101",
+        "out": "010"
+      },
+      {
+        "in": "011",
+        "out": "100"
+      },
+      {
+        "in": "111",
+        "out": "000"
+      }
+    ]
+  },
+  "SynthesisOfMultipleStatementsInCalledModule": {
+    "inputCircuit": "module child(inout a(3)) a.0 ^= 1; a.2 ^= 1; a.0 <=> a.2 module main(inout a(3)) call child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "101"
+      },
+      {
+        "in": "100",
+        "out": "100"
+      },
+      {
+        "in": "010",
+        "out": "111"
+      },
+      {
+        "in": "110",
+        "out": "110"
+      },
+      {
+        "in": "001",
+        "out": "001"
+      },
+      {
+        "in": "101",
+        "out": "000"
+      },
+      {
+        "in": "011",
+        "out": "011"
+      },
+      {
+        "in": "111",
+        "out": "010"
+      }
+    ]
+  },
+
   "UsageOfVariableOfTypeInAsValueForParameterOfTypeInOfUncalledModule": {
     "inputCircuit": "module add(inout a(2), in b(2)) a += b module main(inout a(2), in b(2)) call add(a, b)",
     "simulationRuns": [
@@ -5550,6 +6186,594 @@
       {
         "in": "1111",
         "out": "0111"
+      }
+    ]
+  },
+
+  "InverseOfAssignStatementUsingAddAssignOperationInUncalledModule": {
+    "inputCircuit": "module child(inout a(3)) a += 2 module main(inout a(3)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "011"
+      },
+      {
+        "in": "100",
+        "out": "111"
+      },
+      {
+        "in": "010",
+        "out": "000"
+      },
+      {
+        "in": "110",
+        "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "010"
+      },
+      {
+        "in": "101",
+        "out": "110"
+      },
+      {
+        "in": "011",
+        "out": "001"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "InverseOfAssignStatementUsingSubAssignOperationInUncalledModule": {
+    "inputCircuit": "module child(inout a(3)) a -= 2 module main(inout a(3)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "010"
+      },
+      {
+        "in": "100",
+        "out": "110"
+      },
+      {
+        "in": "010",
+        "out": "001"
+      },
+      {
+        "in": "110",
+        "out": "101"
+      },
+      {
+        "in": "001",
+        "out": "011"
+      },
+      {
+        "in": "101",
+        "out": "111"
+      },
+      {
+        "in": "011",
+        "out": "000"
+      },
+      {
+        "in": "111",
+        "out": "100"
+      }
+    ]
+  },
+  "InverseOfAssignStatementUsingXorAssignOperationInUncalledModule": {
+    "inputCircuit": "module child(inout a(3)) a ^= 2 module main(inout a(3)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "010"
+      },
+      {
+        "in": "100",
+        "out": "110"
+      },
+      {
+        "in": "010",
+        "out": "000"
+      },
+      {
+        "in": "110",
+        "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "011"
+      },
+      {
+        "in": "101",
+        "out": "111"
+      },
+      {
+        "in": "011",
+        "out": "001"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "InverseOfCallStatementInUncalledModule": {
+    "inputCircuit": "module grandChild(inout a(2), inout b(2)) a += b; a ^= 1 module child(inout a(2), inout b(2)) call grandChild(a, b); b ^= 1 module main(inout a(2), inout b(2)) uncall child(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0010"
+      },
+      {
+        "in": "1000",
+        "out": "1110"
+      },
+      {
+        "in": "0100",
+        "out": "0110"
+      },
+      {
+        "in": "1100",
+        "out": "1010"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "0000"
+      },
+      {
+        "in": "0110",
+        "out": "1100"
+      },
+      {
+        "in": "1110",
+        "out": "0100"
+      },
+      {
+        "in": "0001",
+        "out": "0111"
+      },
+      {
+        "in": "1001",
+        "out": "1011"
+      },
+      {
+        "in": "0101",
+        "out": "0011"
+      },
+      {
+        "in": "1101",
+        "out": "1111"
+      },
+      {
+        "in": "0011",
+        "out": "1101"
+      },
+      {
+        "in": "1011",
+        "out": "0101"
+      },
+      {
+        "in": "0111",
+        "out": "1001"
+      },
+      {
+        "in": "1111",
+        "out": "0001"
+      }
+    ]
+  },
+  "InverseOfForStatementWithStartSmallerThanEndInUncalledModule": {
+    "inputCircuit": "module child(inout a(3)) for $i = 0 to 1 do ++= a; a.$i <=> a.($i + 1) rof module main(inout a(3)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "011"
+      },
+      {
+        "in": "100",
+        "out": "111"
+      },
+      {
+        "in": "010",
+        "out": "010"
+      },
+      {
+        "in": "110",
+        "out": "110"
+      },
+      {
+        "in": "001",
+        "out": "100"
+      },
+      {
+        "in": "101",
+        "out": "000"
+      },
+      {
+        "in": "011",
+        "out": "101"
+      },
+      {
+        "in": "111",
+        "out": "001"
+      }
+    ]
+  },
+  "InverseOfForStatementWithStartLargerThanEndInUncalledModule": {
+    "inputCircuit": "module child(inout a(3)) for $i = (#a - 1) to 1 do ++= a; a.$i <=> a.($i - 1) rof module main(inout a(3)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "011"
+      },
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "010",
+        "out": "111"
+      },
+      {
+        "in": "110",
+        "out": "110"
+      },
+      {
+        "in": "001",
+        "out": "001"
+      },
+      {
+        "in": "101",
+        "out": "010"
+      },
+      {
+        "in": "011",
+        "out": "100"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "InverseOfForStatementWithOnlyUpperBoundOfIterationRangeDefinedInUncalledModule": {
+    "inputCircuit": "module child(inout a(3)) for (#a - 1) do ++= a rof module main(inout a(3)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "101"
+      },
+      {
+        "in": "100",
+        "out": "011"
+      },
+      {
+        "in": "010",
+        "out": "111"
+      },
+      {
+        "in": "110",
+        "out": "000"
+      },
+      {
+        "in": "001",
+        "out": "100"
+      },
+      {
+        "in": "101",
+        "out": "010"
+      },
+      {
+        "in": "011",
+        "out": "110"
+      },
+      {
+        "in": "111",
+        "out": "001"
+      }
+    ]
+  },
+  "InverseOfIfStatementInUncalledModule": {
+    "inputCircuit": "module child(inout a(3)) if a.1 then a.0 <=> a.2; ++= a else a.0 <=> a.2; --= a fi a.1 module main(inout a(3)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "001"
+      },
+      {
+        "in": "100",
+        "out": "010"
+      },
+      {
+        "in": "010",
+        "out": "001"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "101"
+      },
+      {
+        "in": "101",
+        "out": "110"
+      },
+      {
+        "in": "011",
+        "out": "101"
+      },
+      {
+        "in": "111",
+        "out": "110"
+      }
+    ]
+  },
+  "InverseOfSkipStatementInUncalledModule": {
+    "inputCircuit": "module child(inout a(2)) skip; ++= a; skip module main(inout a(2)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "11"
+      },
+      {
+        "in": "10",
+        "out": "00"
+      },
+      {
+        "in": "01",
+        "out": "10"
+      },
+      {
+        "in": "11",
+        "out": "01"
+      }
+    ]
+  },
+  "InverseOfSwapStatementInUncalledModule": {
+    "inputCircuit": "module child(inout a(2), inout b(2)) a.1 <=> b.1 module main(inout a(2), inout b(2)) uncall child(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "1001"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "0011"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "1100"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "1101"
+      },
+      {
+        "in": "0011",
+        "out": "0110"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "0111"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "InverseOfUncallStatementInUncalledModule": {
+    "inputCircuit": "module grandChild(inout a(2), inout b(2)) a += b; a ^= 1 module child(inout a(2), inout b(2)) uncall grandChild(a, b); b ^= 1 module main(inout a(2), inout b(2)) uncall child(a, b)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0010"
+      },
+      {
+        "in": "1000",
+        "out": "1110"
+      },
+      {
+        "in": "0100",
+        "out": "0110"
+      },
+      {
+        "in": "1100",
+        "out": "1010"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "0000"
+      },
+      {
+        "in": "0110",
+        "out": "1100"
+      },
+      {
+        "in": "1110",
+        "out": "0100"
+      },
+      {
+        "in": "0001",
+        "out": "0111"
+      },
+      {
+        "in": "1001",
+        "out": "1011"
+      },
+      {
+        "in": "0101",
+        "out": "0011"
+      },
+      {
+        "in": "1101",
+        "out": "1111"
+      },
+      {
+        "in": "0011",
+        "out": "1101"
+      },
+      {
+        "in": "1011",
+        "out": "0101"
+      },
+      {
+        "in": "0111",
+        "out": "1001"
+      },
+      {
+        "in": "1111",
+        "out": "0001"
+      }
+    ]
+  },
+  "InverseOfUnaryAssignStatementUsingIncrementOperationInUncalledModule": {
+    "inputCircuit": "module child(inout a(2)) ++= a module main(inout a(2)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "11"
+      },
+      {
+        "in": "10",
+        "out": "00"
+      },
+      {
+        "in": "01",
+        "out": "10"
+      },
+      {
+        "in": "11",
+        "out": "01"
+      }
+    ]
+  },
+  "InverseOfUnaryAssignStatementUsingDecrementOperationInUncalledModule": {
+    "inputCircuit": "module child(inout a(2)) --= a module main(inout a(2)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "10"
+      },
+      {
+        "in": "10",
+        "out": "01"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "00"
+      }
+    ]
+  },
+  "InverseOfUnaryAssignStatementUsingBitwiseNegationOperationInUncalledModule": {
+    "inputCircuit": "module child(inout a(2)) ~= a module main(inout a(2)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "11"
+      },
+      {
+        "in": "10",
+        "out": "01"
+      },
+      {
+        "in": "01",
+        "out": "10"
+      },
+      {
+        "in": "11",
+        "out": "00"
+      }
+    ]
+  },
+  "InverseOfMultipleStatementsInUncalledModule": {
+    "inputCircuit": "module child(inout a(3)) --= a; if a.1 then a.0 <=> a.1 else a.0 <=> a.2 fi a.1; ++= a module main(inout a(3)) uncall child(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "100"
+      },
+      {
+        "in": "010",
+        "out": "101"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "001"
+      },
+      {
+        "in": "101",
+        "out": "010"
+      },
+      {
+        "in": "011",
+        "out": "011"
+      },
+      {
+        "in": "111",
+        "out": "011"
       }
     ]
   }

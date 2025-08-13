@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "algorithms/synthesis/statement_execution_order_stack.hpp"
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/properties.hpp"
 #include "core/qubit_inlining_stack.hpp"
@@ -22,6 +23,7 @@
 #include "ir/Definitions.hpp"
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <stack>
 #include <string>
@@ -45,8 +47,6 @@ namespace syrec {
         std::vector<std::vector<unsigned>>             expLhsVector;
         std::vector<std::vector<unsigned>>             expRhsVector;
 
-        using VarLinesMap = std::map<Variable::ptr, qc::Qubit>;
-
         explicit SyrecSynthesis(AnnotatableQuantumComputation& annotatableQuantumComputation);
         virtual ~SyrecSynthesis() = default;
 
@@ -66,15 +66,15 @@ namespace syrec {
         virtual bool opRhsLhsExpression([[maybe_unused]] const VariableExpression& expression, [[maybe_unused]] std::vector<qc::Qubit>& v);
         virtual bool opRhsLhsExpression([[maybe_unused]] const BinaryExpression& expression, [[maybe_unused]] std::vector<qc::Qubit>& v);
 
-        virtual bool              onStatement(const Statement::ptr& statement);
-        virtual bool              onStatement(const AssignStatement& statement);
-        virtual bool              onStatement(const IfStatement& statement);
-        virtual bool              onStatement(const ForStatement& statement);
-        virtual bool              onStatement(const CallStatement& statement);
-        virtual bool              onStatement(const UncallStatement& statement);
-        bool                      onStatement(const SwapStatement& statement);
-        bool                      onStatement(const UnaryStatement& statement);
-        [[nodiscard]] static bool onStatement(const SkipStatement& statement);
+        virtual bool onStatement(const Statement::ptr& statement);
+        virtual bool onStatement(const AssignStatement& statement);
+        virtual bool onStatement(const IfStatement& statement);
+        virtual bool onStatement(const ForStatement& statement);
+        virtual bool onStatement(const CallStatement& statement);
+        virtual bool onStatement(const UncallStatement& statement);
+        bool         onStatement(const SwapStatement& statement);
+        bool         onStatement(const UnaryStatement& statement);
+        virtual bool onStatement(const SkipStatement& statement);
 
         virtual bool assignAdd(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation)      = 0;
         virtual bool assignSubtract(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) = 0;
@@ -90,8 +90,6 @@ namespace syrec {
         virtual bool expAdd([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs)      = 0;
         virtual bool expSubtract([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) = 0;
         virtual bool expExor([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs)     = 0;
-
-        // BEGIN: Add circuit parameter to functions
 
         // unary operations
         static bool bitwiseNegation(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest); // ~
@@ -125,7 +123,7 @@ namespace syrec {
         static bool rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount); // >>
 
         [[nodiscard]] static bool addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const std::optional<QubitInliningStack::ptr>& currentModuleCallStack);
-        void                      getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines);
+        [[nodiscard]] bool        getVariables(const VariableAccess::ptr& var, std::vector<qc::Qubit>& lines);
 
         [[nodiscard]] std::optional<qc::Qubit> getConstantLine(bool value, const std::optional<QubitInliningStack::ptr>& inlinedQubitModuleCallStack);
         [[nodiscard]] bool                     getConstantLines(unsigned bitwidth, unsigned value, std::vector<qc::Qubit>& lines);
@@ -143,10 +141,12 @@ namespace syrec {
 
         AnnotatableQuantumComputation&                      annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
         std::optional<std::vector<QubitInliningStack::ptr>> moduleCallStackInstances;
+        std::unique_ptr<StatementExecutionOrderStack>       statementExecutionOrderStack;
 
     private:
-        VarLinesMap                            varLines;
+        std::map<Variable::ptr, qc::Qubit>     varLines;
         std::map<bool, std::vector<qc::Qubit>> freeConstLinesMap;
-    };
 
+        [[nodiscard]] bool synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant);
+    };
 } // namespace syrec
