@@ -15,9 +15,27 @@
 #include <gtest/gtest.h>
 #include <string>
 
+constexpr int x = 2;
+
 const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_sim_production_binaryExpression.json";
 
 TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationAddition) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationSubtraction) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationXor) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationMultiplication) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
 
 TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationDivision) {
     // Since the expected values in case of a division by zero are dependent on the used synthesis algorithm, all test cases in which the divisor is 0 are omitted.
@@ -29,9 +47,118 @@ TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationModulo) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationLogicalAnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationLogicalOr) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationBitwiseAnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationBitwiseOr) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationLessThan) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationGreaterThan) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationLessOrEqualThan) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationGreaterOrEqualThan) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationEquals) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationNotEquals) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithLhsOperandBeingIntegerConstant) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithLhsOperandBeingCompileTimeConstantExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithLhsOperandBeingNestedExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithLhsOperandBeingVariableExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithRhsOperandBeingIntegerConstant) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithRhsOperandBeingCompileTimeConstantExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithRhsOperandBeingNestedExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithRhsOperandBeingVariableExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithBothOperandsBeingNestedExpressions) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithBothOperandsBeingCompileTimeConstantExpressions) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryExpressionWithBothOperandsBeingVariableAccesses) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
+                            BinaryOperationAddition,
+                            BinaryOperationSubtraction,
+                            BinaryOperationXor,
+                            BinaryOperationMultiplication,
                             BinaryOperationDivision,
-                            BinaryOperationModulo);
+                            BinaryOperationModulo,
+                            BinaryOperationLogicalAnd,
+                            BinaryOperationLogicalOr,
+                            BinaryOperationBitwiseAnd,
+                            BinaryOperationBitwiseOr,
+                            BinaryOperationLessThan,
+                            BinaryOperationLessOrEqualThan,
+                            BinaryOperationGreaterThan,
+                            BinaryOperationGreaterOrEqualThan,
+                            BinaryOperationEquals,
+                            BinaryOperationNotEquals,
+
+                            BinaryExpressionWithLhsOperandBeingIntegerConstant,
+                            BinaryExpressionWithLhsOperandBeingCompileTimeConstantExpression,
+                            BinaryExpressionWithLhsOperandBeingNestedExpression,
+                            BinaryExpressionWithLhsOperandBeingVariableExpression,
+                            BinaryExpressionWithRhsOperandBeingIntegerConstant,
+                            BinaryExpressionWithRhsOperandBeingCompileTimeConstantExpression,
+                            BinaryExpressionWithRhsOperandBeingNestedExpression,
+                            BinaryExpressionWithRhsOperandBeingVariableExpression,
+                            BinaryExpressionWithBothOperandsBeingNestedExpressions,
+                            BinaryExpressionWithBothOperandsBeingCompileTimeConstantExpressions,
+                            BinaryExpressionWithBothOperandsBeingVariableAccesses);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
