@@ -23,6 +23,7 @@ const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simul
 
 TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
 
+// BEGIN of tests of synthesis settings features
 TYPED_TEST_P(BaseSimulationTestFixture, OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesModuleWithMainIdentiferAsMainModule) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
@@ -107,6 +108,19 @@ TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedModuleIdentifierInSynthesisSe
 
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
 }
+// END of tests of synthesis settings features
+
+// BEGIN of tests for production BinaryExpression
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationDivision) {
+    // Since the expected values in case of a division by zero are dependent on the used synthesis algorithm, all test cases in which the divisor is 0 are omitted.
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationModulo) {
+    // Since the expected values in case of a modulo operation in which the modulus is zero are dependent on the used synthesis algorithm, all test cases in which the modulus is 0 are omitted.
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+// END of tests for production BinaryExpression
 
 // BEGIN of tests for production UnaryExpression
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalNegationOfConstantZero) {
@@ -149,18 +163,6 @@ TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegationOfUnaryExpression) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 // END of tests for production UnaryExpression
-
-// BEGIN of tests for production BinaryExpression
-TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationDivision) {
-    // Since the expected values in case of a division by zero are dependent on the used synthesis algorithm, all test cases in which the divisor is 0 are omitted.
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationModulo) {
-    // Since the expected values in case of a modulo operation in which the modulus is zero are dependent on the used synthesis algorithm, all test cases in which the modulus is 0 are omitted.
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-// END of tests for production BinaryExpression
 
 // BEGIN of tests for production ShiftExpression
 TYPED_TEST_P(BaseSimulationTestFixture, LeftShiftWithShiftAmountEqualToIntegerConstant) {
@@ -284,6 +286,92 @@ TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftedExpressionEqualToSh
 }
 // END of tests for production ShiftExpression
 
+// BEGIN of tests for production VariableExpression
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitUsingConstantAsIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitUsingLoopVariableAsIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitUsingConstantExpressionAsIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingConstantAsIndexOfBitrangeStartAndConstantAsIndexOfBitrangeEndIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingConstantAsIndexOfBitrangeStartAndLoopVariableAsIndexOfBitrangeEndIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingConstantAsIndexOfBitrangeStartAndConstantExpressionAsIndexOfBitrangeEndIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingLoopVariableAsIndexOfBitrangeStartAndConstantAsIndexOfBitrangeEndIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingLoopVariableAsIndexOfBitrangeStartAndLoopVariableAsIndexOfBitrangeEndIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingLoopVariableAsIndexOfBitrangeStartAndConstantExpressionAsIndexOfBitrangeEndIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingConstantExpressionAsIndexOfBitrangeStartAndConstantAsIndexOfBitrangeEndIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingConstantExpressionAsIndexOfBitrangeStartAndLoopVariableAsIndexOfBitrangeEndIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingConstantExpressionAsIndexOfBitrangeStartAndConstantExpressionAsIndexOfBitrangeEndIndexOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingConstantAsIndex) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingLoopVariableAsIndex) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingConstantExpressionAsIndex) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingVariableAccessAsIndex) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingBinaryExpressionAsIndex) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingShiftExpressionAsIndex) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingUnaryExpressionAsIndex) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, CombinationOfDimensionAndBitAccess) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, CombinationOfDimensionAndBitrangeAccess) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+// END of tests for production VariableExpression
+
 // BEGIN of tests for production AssignStatement
 TYPED_TEST_P(BaseSimulationTestFixture, AddAssignWithRightHandSideEqualToVariable) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
@@ -337,6 +425,110 @@ TYPED_TEST_P(BaseSimulationTestFixture, AddAssignOfBitrangeOfValueOfDimensionOfV
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignWithRightHandSideEqualToVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignWithRightHandSideEqualToConstant) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignWithRightHandSideEqualToShiftExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignWithRightHandSideEqualToUnaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignWithRightHandSideEqualToNestedExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignOfBitOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignOfBitrangeOfVariableWithStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignOfBitrangeOfVariableWithStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignOfBitOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignOfBitrangeOfValueOfDimensionOfVariableWithStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignOfBitrangeOfValueOfDimensionOfVariableWithStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SubAssignOfBitrangeOfValueOfDimensionOfVariableWithStartEqualToEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignWithRightHandSideEqualToVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignWithRightHandSideEqualToConstant) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignWithRightHandSideEqualToShiftExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignWithRightHandSideEqualToUnaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignWithRightHandSideEqualToNestedExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignOfBitOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignOfBitrangeOfVariableWithStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignOfBitrangeOfVariableWithStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignOfBitOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignOfBitrangeOfValueOfDimensionOfVariableWithStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignOfBitrangeOfValueOfDimensionOfVariableWithStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, XorAssignOfBitrangeOfValueOfDimensionOfVariableWithStartEqualToEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
 TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfVariable) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
@@ -349,27 +541,99 @@ TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfBitrangeOfVariableWithB
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignBitOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, DecrementAssignOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, DecrementAssignOfBitOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, DecrementAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, DecrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, DecrementAssignValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, DecrementAssignBitOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, DecrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, DecrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, DecrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegateAssignOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegateAssignOfBitOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegateAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegateAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegateAssignValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegateAssignBitOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
 TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, IncrementValueOfDimensionOfVariable) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitOfValueOfDimensionOfVariable) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
@@ -511,6 +775,240 @@ TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfNestedModuleCallHierarchy) {
 }
 // END of tests for production CallStatement
 
+// BEGIN of tests for production IfStatement
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementWithGuardConditionEqualToVariableAccessAccessingWholeBitwidthOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementWithGuardConditionEqualToVariableAccessAccessingBitOf1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementWithGuardConditionEqualToVariableAccessAccessingBitOfValueOfDimensionOfVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementWithGuardConditionEqualToUnaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementWithGuardConditionEqualToShiftExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementWithGuardConditionEqualToBinaryExpressionWithOperandsHavingBitwidthOfOne) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementWithGuardConditionEqualToBinaryExpressionWithOperandsHavingBitwidthLargerThanOne) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementWithGuardConditionEqualToIntegerConstant) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementWithGuardConditionEqualToLoopVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementWithGuardConditionEqualToConstantExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfAssignStatementInTrueBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfUnaryAssignStatementInTrueBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfForStatementInTrueBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfCallStatementInTrueBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfUncallStatementInTrueBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfSwapStatementInTrueBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfMultipleStatementsInTrueBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfAssignStatementInFalseBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfUnaryAssignStatementInFalseBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfForStatementInFalseBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfCallStatementInFalseBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfUncallStatementInFalseBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfSwapStatementInFalseBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IfStatementExecutionOfMultipleStatementsInFalseBranchIfBranchIsExecuted) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+// END of tests for production ForStatement
+
+// BEGIN of tests for production ForStatement
+
+// END of tests for production ForStatement
+
+// BEGIN of tests for production SkipStatement
+TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInTrueBranchOfIfStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInFalseBranchOfIfStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInLoopBodyOfForStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInModuleBody) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInModuleBodyOfCalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInModuleBodyOfUncalledModule) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+// END of tests for production SkipStatement
+
+// BEGIN of tests for production SwapStatement
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOn1DVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOn1DVariableWithBitOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOn1DVariableWithBitrangeOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOn1DVariableWithValueOfDimensionOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitOf1DVariableWithSameBitOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitOf1DVariableWithOtherBitOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfOtherDimensionOfSameVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfOtherDimensionOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfSameDimensionOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfSameDimensionOfSameVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithOverlappingBitOfValueOfOtherDimensionOfSameVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeOf1DVariableWithStartSmallerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeOf1DVariableWithStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeOf1DVariableWithStartEqualToEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnValueOfDimensionOfVariableWithValueOfDimensionOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnValueOfDimensionOfVariableWithValueOfOtherDimensionOfSameVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithBitOfValueOfDimensionOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeWithStartSmallerThanEndOfValueOfDimensionOfVariableWithBitrangeOfValueOfDimensionOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeWithStartSmallerThanEndOfValueOfDimensionOfVariableWithOverlappingBitrangeOfValueOfOtherDimensionOfSameVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeWithStartSmallerThanEndOfValueOfDimensionOfVariableWithNotOverlappingBitrangeOfValueOfSameDimensionOfSameVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeWithStartLargerThanEndOfValueOfDimensionOfVariableWithBitrangeOfValueOfDimensionOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeWithStartLargerThanEndOfValueOfDimensionOfVariableWithOverlappingBitrangeOfValueOfOtherDimensionOfSameVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeWithStartLargerThanEndOfValueOfDimensionOfVariableWithNotOverlappingBitrangeOfValueOfSameDimensionOfSameVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeWithStartEqualToEndOfValueOfDimensionOfVariableWithBitrangeOfValueOfDimensionOfOtherVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeWithStartEqualToEndOfValueOfDimensionOfVariableWithOverlappingBitrangeOfValueOfOtherDimensionOfSameVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SwapWithLeftOperationBeingAccessOnBitrangeWithStartEqualToEndOfValueOfDimensionOfVariableWithNotOverlappingBitrangeOfValueOfSameDimensionOfSameVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+// END of tests for production SwapStatement
+
 // BEGIN of tests for production UncallStatement
 TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableOfTypeInAsValueForParameterOfTypeInOfUncalledModule) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
@@ -650,19 +1148,6 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             UserDefinedModuleIdentifierInSynthesisSettingsOnlyMatchingModulesWithSameIdentifierCharacterCasing,
                             // END of tests of synthesis settings features
 
-                            // BEGIN of tests for production UnaryExpression
-                            LogicalNegationOfConstantZero,
-                            LogicalNegationOfConstantOne,
-                            LogicalNegationOfNestedExpression,
-                            LogicalNegationOfUnaryExpression,
-                            LogicalNegationOfVariable,
-                            BitwiseNegationOfConstant,
-                            BitwiseNegationOfVariable,
-                            BitwiseNegationOfBinaryExpression,
-                            BitwiseNegationOfShiftExpression,
-                            BitwiseNegationOfUnaryExpression,
-                            // END of tests for production UnaryExpression
-
                             // BEGIN of tests for production BinaryExpression
                             BinaryOperationDivision,
                             BinaryOperationModulo,
@@ -702,6 +1187,43 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             RightShiftWithShiftedExpressionEqualToShiftExpression,
                             // END of tests for production ShiftExpression
 
+                            // BEGIN of tests for production UnaryExpression
+                            LogicalNegationOfConstantZero,
+                            LogicalNegationOfConstantOne,
+                            LogicalNegationOfNestedExpression,
+                            LogicalNegationOfUnaryExpression,
+                            LogicalNegationOfVariable,
+                            BitwiseNegationOfConstant,
+                            BitwiseNegationOfVariable,
+                            BitwiseNegationOfBinaryExpression,
+                            BitwiseNegationOfShiftExpression,
+                            BitwiseNegationOfUnaryExpression,
+                            // END of tests for production UnaryExpression
+
+                            // BEGIN of tests for production VariableExpression
+                            AccessOnBitUsingConstantAsIndexOf1DVariable,
+                            AccessOnBitUsingLoopVariableAsIndexOf1DVariable,
+                            AccessOnBitUsingConstantExpressionAsIndexOf1DVariable,
+                            AccessOnBitrangeUsingConstantAsIndexOfBitrangeStartAndConstantAsIndexOfBitrangeEndIndexOf1DVariable,
+                            AccessOnBitrangeUsingConstantAsIndexOfBitrangeStartAndLoopVariableAsIndexOfBitrangeEndIndexOf1DVariable,
+                            AccessOnBitrangeUsingConstantAsIndexOfBitrangeStartAndConstantExpressionAsIndexOfBitrangeEndIndexOf1DVariable,
+                            AccessOnBitrangeUsingLoopVariableAsIndexOfBitrangeStartAndConstantAsIndexOfBitrangeEndIndexOf1DVariable,
+                            AccessOnBitrangeUsingLoopVariableAsIndexOfBitrangeStartAndLoopVariableAsIndexOfBitrangeEndIndexOf1DVariable,
+                            AccessOnBitrangeUsingLoopVariableAsIndexOfBitrangeStartAndConstantExpressionAsIndexOfBitrangeEndIndexOf1DVariable,
+                            AccessOnBitrangeUsingConstantExpressionAsIndexOfBitrangeStartAndConstantAsIndexOfBitrangeEndIndexOf1DVariable,
+                            AccessOnBitrangeUsingConstantExpressionAsIndexOfBitrangeStartAndLoopVariableAsIndexOfBitrangeEndIndexOf1DVariable,
+                            AccessOnBitrangeUsingConstantExpressionAsIndexOfBitrangeStartAndConstantExpressionAsIndexOfBitrangeEndIndexOf1DVariable,
+                            AccessOnValueOfDimensionUsingConstantAsIndex,
+                            AccessOnValueOfDimensionUsingLoopVariableAsIndex,
+                            AccessOnValueOfDimensionUsingConstantExpressionAsIndex,
+                            AccessOnValueOfDimensionUsingVariableAccessAsIndex,
+                            AccessOnValueOfDimensionUsingBinaryExpressionAsIndex,
+                            AccessOnValueOfDimensionUsingShiftExpressionAsIndex,
+                            AccessOnValueOfDimensionUsingUnaryExpressionAsIndex,
+                            CombinationOfDimensionAndBitAccess,
+                            CombinationOfDimensionAndBitrangeAccess,
+                            // END of tests for production VariableExpression
+
                             // BEGIN of tests for production AssignStatement
                             AddAssignWithRightHandSideEqualToVariable,
                             AddAssignWithRightHandSideEqualToConstant,
@@ -716,15 +1238,62 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartSmallerThanEnd,
                             AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartLargerThanEnd,
                             AddAssignOfBitrangeOfValueOfDimensionOfVariableWithStartEqualToEnd,
+
+                            SubAssignWithRightHandSideEqualToVariable,
+                            SubAssignWithRightHandSideEqualToConstant,
+                            SubAssignWithRightHandSideEqualToShiftExpression,
+                            SubAssignWithRightHandSideEqualToUnaryExpression,
+                            SubAssignWithRightHandSideEqualToNestedExpression,
+                            SubAssignOfBitOfVariable,
+                            SubAssignOfBitrangeOfVariableWithStartSmallerThanEnd,
+                            SubAssignOfBitrangeOfVariableWithStartLargerThanEnd,
+                            SubAssignOfValueOfDimensionOfVariable,
+                            SubAssignOfBitOfValueOfDimensionOfVariable,
+                            SubAssignOfBitrangeOfValueOfDimensionOfVariableWithStartSmallerThanEnd,
+                            SubAssignOfBitrangeOfValueOfDimensionOfVariableWithStartLargerThanEnd,
+                            SubAssignOfBitrangeOfValueOfDimensionOfVariableWithStartEqualToEnd,
+                            XorAssignWithRightHandSideEqualToVariable,
+                            XorAssignWithRightHandSideEqualToConstant,
+                            XorAssignWithRightHandSideEqualToShiftExpression,
+                            XorAssignWithRightHandSideEqualToUnaryExpression,
+                            XorAssignWithRightHandSideEqualToNestedExpression,
+                            XorAssignOfBitOfVariable,
+                            XorAssignOfBitrangeOfVariableWithStartSmallerThanEnd,
+                            XorAssignOfBitrangeOfVariableWithStartLargerThanEnd,
+                            XorAssignOfValueOfDimensionOfVariable,
+                            XorAssignOfBitOfValueOfDimensionOfVariable,
+                            XorAssignOfBitrangeOfValueOfDimensionOfVariableWithStartSmallerThanEnd,
+                            XorAssignOfBitrangeOfValueOfDimensionOfVariableWithStartLargerThanEnd,
+                            XorAssignOfBitrangeOfValueOfDimensionOfVariableWithStartEqualToEnd,
+
                             IncrementAssignOfVariable,
                             IncrementAssignOfBitOfVariable,
                             IncrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd,
                             IncrementAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd,
-                            IncrementValueOfDimensionOfVariable,
-                            IncrementBitOfValueOfDimensionOfVariable,
-                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd,
-                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd,
-                            IncrementBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd,
+                            IncrementAssignValueOfDimensionOfVariable,
+                            IncrementAssignBitOfValueOfDimensionOfVariable,
+                            IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd,
+                            IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd,
+                            IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd,
+                            DecrementAssignOfVariable,
+                            DecrementAssignOfBitOfVariable,
+                            DecrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd,
+                            DecrementAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd,
+                            DecrementAssignValueOfDimensionOfVariable,
+                            DecrementAssignBitOfValueOfDimensionOfVariable,
+                            DecrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd,
+                            DecrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd,
+                            DecrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd,
+
+                            BitwiseNegateAssignOfVariable,
+                            BitwiseNegateAssignOfBitOfVariable,
+                            BitwiseNegateAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd,
+                            BitwiseNegateAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd,
+                            BitwiseNegateAssignValueOfDimensionOfVariable,
+                            BitwiseNegateAssignBitOfValueOfDimensionOfVariable,
+                            BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd,
+                            BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd,
+                            BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd,
 
                             AccessOnSameQubitOfGuardConditionPossibleOnLefthandSideOfAssignment,
                             OverlappingAccessOnQubitOfGuardConditionPossibleOnLefthandSideOfAssignment,
@@ -765,6 +1334,76 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             SynthesisOfRepeatedCallsOfSameModule,
                             SynthesisOfNestedModuleCallHierarchy,
                             // END of tests for production CallStatement
+
+                            // BEGIN of tests for production IfStatement
+                            IfStatementWithGuardConditionEqualToVariableAccessAccessingWholeBitwidthOfVariable,
+                            IfStatementWithGuardConditionEqualToVariableAccessAccessingBitOf1DVariable,
+                            IfStatementWithGuardConditionEqualToVariableAccessAccessingBitOfValueOfDimensionOfVariable,
+                            IfStatementWithGuardConditionEqualToUnaryExpression,
+                            IfStatementWithGuardConditionEqualToShiftExpression,
+                            IfStatementWithGuardConditionEqualToBinaryExpressionWithOperandsHavingBitwidthOfOne,
+                            IfStatementWithGuardConditionEqualToBinaryExpressionWithOperandsHavingBitwidthLargerThanOne,
+                            IfStatementWithGuardConditionEqualToIntegerConstant,
+                            IfStatementWithGuardConditionEqualToLoopVariable,
+                            IfStatementWithGuardConditionEqualToConstantExpression,
+
+                            IfStatementExecutionOfAssignStatementInTrueBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfUnaryAssignStatementInTrueBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfForStatementInTrueBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfCallStatementInTrueBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfUncallStatementInTrueBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfSwapStatementInTrueBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfMultipleStatementsInTrueBranchIfBranchIsExecuted,
+
+                            IfStatementExecutionOfAssignStatementInFalseBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfUnaryAssignStatementInFalseBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfForStatementInFalseBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfCallStatementInFalseBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfUncallStatementInFalseBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfSwapStatementInFalseBranchIfBranchIsExecuted,
+                            IfStatementExecutionOfMultipleStatementsInFalseBranchIfBranchIsExecuted,
+                            // END of tests for production IfStatement
+
+                            // BEGIN of tests for production SkipStatement
+                            SkipStatementInTrueBranchOfIfStatement,
+                            SkipStatementInFalseBranchOfIfStatement,
+                            SkipStatementInLoopBodyOfForStatement,
+                            SkipStatementInModuleBody,
+                            SkipStatementInModuleBodyOfCalledModule,
+                            SkipStatementInModuleBodyOfUncalledModule,
+                            // END of tests for production SkipStatement
+
+                            // BEGIN of tests for production SwapStatement
+                            SwapWithLeftOperationBeingAccessOn1DVariable,
+                            SwapWithLeftOperationBeingAccessOn1DVariableWithBitOfOtherVariable,
+                            SwapWithLeftOperationBeingAccessOn1DVariableWithBitrangeOfOtherVariable,
+                            SwapWithLeftOperationBeingAccessOn1DVariableWithValueOfDimensionOfOtherVariable,
+                            SwapWithLeftOperationBeingAccessOnBitOf1DVariableWithSameBitOfOtherVariable,
+                            SwapWithLeftOperationBeingAccessOnBitOf1DVariableWithOtherBitOfOtherVariable,
+
+                            SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfOtherDimensionOfSameVariable,
+                            SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfOtherDimensionOfOtherVariable,
+                            SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfSameDimensionOfOtherVariable,
+                            SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfSameDimensionOfSameVariable,
+                            SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithOverlappingBitOfValueOfOtherDimensionOfSameVariable,
+
+                            SwapWithLeftOperationBeingAccessOnBitrangeOf1DVariableWithStartSmallerThanEnd,
+                            SwapWithLeftOperationBeingAccessOnBitrangeOf1DVariableWithStartLargerThanEnd,
+                            SwapWithLeftOperationBeingAccessOnBitrangeOf1DVariableWithStartEqualToEnd,
+                            SwapWithLeftOperationBeingAccessOnValueOfDimensionOfVariableWithValueOfDimensionOfOtherVariable,
+                            SwapWithLeftOperationBeingAccessOnValueOfDimensionOfVariableWithValueOfOtherDimensionOfSameVariable,
+                            SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithBitOfValueOfDimensionOfOtherVariable,
+
+                            SwapWithLeftOperationBeingAccessOnBitrangeWithStartSmallerThanEndOfValueOfDimensionOfVariableWithBitrangeOfValueOfDimensionOfOtherVariable,
+                            SwapWithLeftOperationBeingAccessOnBitrangeWithStartSmallerThanEndOfValueOfDimensionOfVariableWithOverlappingBitrangeOfValueOfOtherDimensionOfSameVariable,
+                            SwapWithLeftOperationBeingAccessOnBitrangeWithStartSmallerThanEndOfValueOfDimensionOfVariableWithNotOverlappingBitrangeOfValueOfSameDimensionOfSameVariable,
+                            SwapWithLeftOperationBeingAccessOnBitrangeWithStartLargerThanEndOfValueOfDimensionOfVariableWithBitrangeOfValueOfDimensionOfOtherVariable,
+                            SwapWithLeftOperationBeingAccessOnBitrangeWithStartLargerThanEndOfValueOfDimensionOfVariableWithOverlappingBitrangeOfValueOfOtherDimensionOfSameVariable,
+                            SwapWithLeftOperationBeingAccessOnBitrangeWithStartLargerThanEndOfValueOfDimensionOfVariableWithNotOverlappingBitrangeOfValueOfSameDimensionOfSameVariable,
+                            SwapWithLeftOperationBeingAccessOnBitrangeWithStartEqualToEndOfValueOfDimensionOfVariableWithBitrangeOfValueOfDimensionOfOtherVariable,
+                            SwapWithLeftOperationBeingAccessOnBitrangeWithStartEqualToEndOfValueOfDimensionOfVariableWithOverlappingBitrangeOfValueOfOtherDimensionOfSameVariable,
+                            SwapWithLeftOperationBeingAccessOnBitrangeWithStartEqualToEndOfValueOfDimensionOfVariableWithNotOverlappingBitrangeOfValueOfSameDimensionOfSameVariable,
+                            // END of tests for production SwapStatement
 
                             // BEGIN of tests for production UncallStatement
                             UsageOfVariableOfTypeInAsValueForParameterOfTypeInOfUncalledModule,
