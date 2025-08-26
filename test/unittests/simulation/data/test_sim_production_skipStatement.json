@@ -1,0 +1,192 @@
+{
+  "SkipStatementInTrueBranchOfIfStatement": {
+    "inputCircuit": "module main(inout a(3)) if 1 then a.0 ^= 1; skip else a.1 ^= 1 fi 1",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "100"
+      },
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "101"
+      },
+      {
+        "in": "101",
+        "out": "001"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "SkipStatementInFalseBranchOfIfStatement": {
+    "inputCircuit": "module main(inout a(3)) if (1 > 2) then a.0 ^= 1 else skip; a.1 ^= 1 fi (1 > 2)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "010"
+      },
+      {
+        "in": "100",
+        "out": "110"
+      },
+      {
+        "in": "010",
+        "out": "000"
+      },
+      {
+        "in": "110",
+        "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "011"
+      },
+      {
+        "in": "101",
+        "out": "111"
+      },
+      {
+        "in": "011",
+        "out": "001"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "SkipStatementInLoopBodyOfForStatement": {
+    "inputCircuit": "module main(inout a(3)) for $i = 0 to 3 step 1 do skip rof",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "100"
+      },
+      {
+        "in": "010",
+        "out": "010"
+      },
+      {
+        "in": "110",
+        "out": "110"
+      },
+      {
+        "in": "001",
+        "out": "001"
+      },
+      {
+        "in": "101",
+        "out": "101"
+      },
+      {
+        "in": "011",
+        "out": "011"
+      },
+      {
+        "in": "111",
+        "out": "111"
+      }
+    ]
+  },
+  "SkipStatementInModuleBody": {
+    "inputCircuit": "module main(inout a(3)) skip; a.0 ^= 1; skip",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "100"
+      },
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "101"
+      },
+      {
+        "in": "101",
+        "out": "001"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "SkipStatementInModuleBodyOfCalledModule": {
+    "inputCircuit": "module xor(inout a(2)) skip; a.1 ^= 1; skip module main(inout a(2)) call xor(a)",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "01"
+      },
+      {
+        "in": "10",
+        "out": "11"
+      },
+      {
+        "in": "01",
+        "out": "00"
+      },
+      {
+        "in": "11",
+        "out": "10"
+      }
+    ]
+  },
+  "SkipStatementInModuleBodyOfUncalledModule": {
+    "inputCircuit": "module xor(inout a(2)) skip; a.1 ^= 1 module main(inout a(2)) uncall xor(a)",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "01"
+      },
+      {
+        "in": "10",
+        "out": "11"
+      },
+      {
+        "in": "01",
+        "out": "00"
+      },
+      {
+        "in": "11",
+        "out": "10"
+      }
+    ]
+  }
+}

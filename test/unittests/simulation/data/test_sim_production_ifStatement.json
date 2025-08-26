@@ -1,0 +1,1199 @@
+{
+  "IfStatementWithGuardConditionEqualToVariableAccessAccessingWholeBitwidthOfVariable": {
+    "inputCircuit": "module main(in b(1), inout a(2)) if b then ++= a.0 else ++= a.1 fi b",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "001"
+      },
+      {
+        "in": "100",
+        "out": "110"
+      },
+      {
+        "in": "010",
+        "out": "011"
+      },
+      {
+        "in": "110",
+        "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "000"
+      },
+      {
+        "in": "101",
+        "out": "111"
+      },
+      {
+        "in": "011",
+        "out": "010"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "IfStatementWithGuardConditionEqualToVariableAccessAccessingBitOf1DVariable": {
+    "inputCircuit": "module main(inout a(3)) if a.1 then ++= a.0 else ++= a.2 fi a.1",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "001"
+      },
+      {
+        "in": "100",
+        "out": "101"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "000"
+      },
+      {
+        "in": "101",
+        "out": "100"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "IfStatementWithGuardConditionEqualToVariableAccessAccessingBitOfValueOfDimensionOfVariable": {
+    "inputCircuit": "module main(inout a[2](2)) if a[1].1 then ++= a[0].0 else ++= a[1].0 fi a[1].1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0010"
+      },
+      {
+        "in": "1000",
+        "out": "1010"
+      },
+      {
+        "in": "0100",
+        "out": "0110"
+      },
+      {
+        "in": "1100",
+        "out": "1110"
+      },
+      {
+        "in": "0010",
+        "out": "0000"
+      },
+      {
+        "in": "1010",
+        "out": "1000"
+      },
+      {
+        "in": "0110",
+        "out": "0100"
+      },
+      {
+        "in": "1110",
+        "out": "1100"
+      },
+      {
+        "in": "0001",
+        "out": "1001"
+      },
+      {
+        "in": "1001",
+        "out": "0001"
+      },
+      {
+        "in": "0101",
+        "out": "1101"
+      },
+      {
+        "in": "1101",
+        "out": "0101"
+      },
+      {
+        "in": "0011",
+        "out": "1011"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1111"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "IfStatementWithGuardConditionEqualToVariableAccessAccessingBitrangeOf1DVariable": {
+    "inputCircuit": "module main(inout a(3)) if a.1:1 then ++= a.0 else ++= a.2 fi a.1:1",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "001"
+      },
+      {
+        "in": "100",
+        "out": "101"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "000"
+      },
+      {
+        "in": "101",
+        "out": "100"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "IfStatementWithGuardConditionEqualToUnaryExpression": {
+    "inputCircuit": "module main(inout a(4)) if !(a.0 = a.1) then ++= a.2 else ++= a.3 fi !(a.0 = a.1)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0001"
+      },
+      {
+        "in": "1000",
+        "out": "1010"
+      },
+      {
+        "in": "0100",
+        "out": "0110"
+      },
+      {
+        "in": "1100",
+        "out": "1101"
+      },
+      {
+        "in": "0010",
+        "out": "0011"
+      },
+      {
+        "in": "1010",
+        "out": "1000"
+      },
+      {
+        "in": "0110",
+        "out": "0100"
+      },
+      {
+        "in": "1110",
+        "out": "1111"
+      },
+      {
+        "in": "0001",
+        "out": "0000"
+      },
+      {
+        "in": "1001",
+        "out": "1011"
+      },
+      {
+        "in": "0101",
+        "out": "0111"
+      },
+      {
+        "in": "1101",
+        "out": "1100"
+      },
+      {
+        "in": "0011",
+        "out": "0010"
+      },
+      {
+        "in": "1011",
+        "out": "1001"
+      },
+      {
+        "in": "0111",
+        "out": "0101"
+      },
+      {
+        "in": "1111",
+        "out": "1110"
+      }
+    ]
+  },
+  "IfStatementWithGuardConditionEqualToShiftExpression": {
+    "inputCircuit": "module main(inout a(3)) for $i = 0 to 0 step 1 do if (a.0 << $i) then ++= a.1 else ++= a.2 fi (a.0 << $i) rof",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "001"
+      },
+      {
+        "in": "100",
+        "out": "110"
+      },
+      {
+        "in": "010",
+        "out": "011"
+      },
+      {
+        "in": "110",
+        "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "000"
+      },
+      {
+        "in": "101",
+        "out": "111"
+      },
+      {
+        "in": "011",
+        "out": "010"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "IfStatementWithGuardConditionEqualToBinaryExpressionWithOperandsHavingBitwidthOfOne": {
+    "inputCircuit": "module main(inout a(4)) if (a.0 != a.1) then ++= a.2 else ++= a.3 fi (a.0 != a.1)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0001"
+      },
+      {
+        "in": "1000",
+        "out": "1010"
+      },
+      {
+        "in": "0100",
+        "out": "0110"
+      },
+      {
+        "in": "1100",
+        "out": "1101"
+      },
+      {
+        "in": "0010",
+        "out": "0011"
+      },
+      {
+        "in": "1010",
+        "out": "1000"
+      },
+      {
+        "in": "0110",
+        "out": "0100"
+      },
+      {
+        "in": "1110",
+        "out": "1111"
+      },
+      {
+        "in": "0001",
+        "out": "0000"
+      },
+      {
+        "in": "1001",
+        "out": "1011"
+      },
+      {
+        "in": "0101",
+        "out": "0111"
+      },
+      {
+        "in": "1101",
+        "out": "1100"
+      },
+      {
+        "in": "0011",
+        "out": "0010"
+      },
+      {
+        "in": "1011",
+        "out": "1001"
+      },
+      {
+        "in": "0111",
+        "out": "0101"
+      },
+      {
+        "in": "1111",
+        "out": "1110"
+      }
+    ]
+  },
+  "IfStatementWithGuardConditionEqualToBinaryExpressionWithOperandsHavingBitwidthLargerThanOne": {
+    "inputCircuit": "module main(inout a(4)) if (a.0:1 = 0) then ++= a.2 else ++= a.3 fi (a.0:1 = 0)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0010"
+      },
+      {
+        "in": "1000",
+        "out": "1001"
+      },
+      {
+        "in": "0100",
+        "out": "0101"
+      },
+      {
+        "in": "1100",
+        "out": "1101"
+      },
+      {
+        "in": "0010",
+        "out": "0000"
+      },
+      {
+        "in": "1010",
+        "out": "1011"
+      },
+      {
+        "in": "0110",
+        "out": "0111"
+      },
+      {
+        "in": "1110",
+        "out": "1111"
+      },
+      {
+        "in": "0001",
+        "out": "0011"
+      },
+      {
+        "in": "1001",
+        "out": "1000"
+      },
+      {
+        "in": "0101",
+        "out": "0100"
+      },
+      {
+        "in": "1101",
+        "out": "1100"
+      },
+      {
+        "in": "0011",
+        "out": "0001"
+      },
+      {
+        "in": "1011",
+        "out": "1010"
+      },
+      {
+        "in": "0111",
+        "out": "0110"
+      },
+      {
+        "in": "1111",
+        "out": "1110"
+      }
+    ]
+  },
+  "IfStatementWithGuardConditionEqualToIntegerConstant": {
+    "inputCircuit": "module main(inout a(2)) if 2 then skip else ++= a.0 fi 2; if 3 then ++= a.1 else skip fi 3",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "11"
+      },
+      {
+        "in": "10",
+        "out": "01"
+      },
+      {
+        "in": "01",
+        "out": "10"
+      },
+      {
+        "in": "11",
+        "out": "00"
+      }
+    ]
+  },
+  "IfStatementWithGuardConditionEqualToLoopVariable": {
+    "inputCircuit": "module main(inout a(3)) for $i = 0 to 1 step 1 do if $i then ++= a.0 else ++= a.1 fi $i rof",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "110"
+      },
+      {
+        "in": "100",
+        "out": "010"
+      },
+      {
+        "in": "010",
+        "out": "100"
+      },
+      {
+        "in": "110",
+        "out": "000"
+      },
+      {
+        "in": "001",
+        "out": "111"
+      },
+      {
+        "in": "101",
+        "out": "011"
+      },
+      {
+        "in": "011",
+        "out": "101"
+      },
+      {
+        "in": "111",
+        "out": "001"
+      }
+    ]
+  },
+  "IfStatementWithGuardConditionEqualToConstantExpression": {
+    "inputCircuit": "module main(inout a(3)) for $i = 0 to 1 step 1 do if (#a - $i) then ++= a.0 else ++= a.1 fi (#a - $i) rof",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "110"
+      },
+      {
+        "in": "100",
+        "out": "010"
+      },
+      {
+        "in": "010",
+        "out": "100"
+      },
+      {
+        "in": "110",
+        "out": "000"
+      },
+      {
+        "in": "001",
+        "out": "111"
+      },
+      {
+        "in": "101",
+        "out": "011"
+      },
+      {
+        "in": "011",
+        "out": "101"
+      },
+      {
+        "in": "111",
+        "out": "001"
+      }
+    ]
+  },
+  "IfStatementExecutionOfAssignStatementInTrueBranchIfBranchIsExecuted": {
+    "inputCircuit": "module main(inout a[3](1)) if 1 then a[0] ^= 1 else a[1] ^= 1 fi 1",
+    "simulationRuns": [
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "101"
+      },
+      {
+        "in": "101",
+        "out": "001"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "IfStatementExecutionOfUnaryAssignStatementInTrueBranchIfBranchIsExecuted": {
+    "inputCircuit": "module main(inout a[3](1)) if 1 then ++= a[0] else ++= a[1] fi 1",
+    "simulationRuns": [
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "101"
+      },
+      {
+        "in": "101",
+        "out": "001"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "IfStatementExecutionOfForStatementInTrueBranchIfBranchIsExecuted": {
+    "inputCircuit": "module main(inout a(3)) if 1 then for $i = 0 to 1 step 1 do a.$i ^= 1 rof else a.2 ^= 1 fi 1",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "110"
+      },
+      {
+        "in": "100",
+        "out": "010"
+      },
+      {
+        "in": "010",
+        "out": "100"
+      },
+      {
+        "in": "110",
+        "out": "000"
+      },
+      {
+        "in": "001",
+        "out": "111"
+      },
+      {
+        "in": "101",
+        "out": "011"
+      },
+      {
+        "in": "011",
+        "out": "101"
+      },
+      {
+        "in": "111",
+        "out": "001"
+      }
+    ]
+  },
+  "IfStatementExecutionOfCallStatementInTrueBranchIfBranchIsExecuted": {
+    "inputCircuit": "module xor(inout x(1)) x ^= 1 module main(inout a(1), inout b(1), inout c(1)) call xor(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "100"
+      },
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "101"
+      },
+      {
+        "in": "101",
+        "out": "001"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "IfStatementExecutionOfUncallStatementInTrueBranchIfBranchIsExecuted": {
+    "inputCircuit": "module xor(inout x(1)) x ^= 1 module main(inout a(1), inout b(1), inout c(1)) uncall xor(a)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "100"
+      },
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "101"
+      },
+      {
+        "in": "101",
+        "out": "001"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "IfStatementExecutionOfSwapStatementInTrueBranchIfBranchIsExecuted": {
+    "inputCircuit": "module main(inout a(3)) if 1 then a.0 <=> a.1 else ++= a.2 fi 1",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "010"
+      },
+      {
+        "in": "010",
+        "out": "100"
+      },
+      {
+        "in": "110",
+        "out": "110"
+      },
+      {
+        "in": "001",
+        "out": "001"
+      },
+      {
+        "in": "101",
+        "out": "011"
+      },
+      {
+        "in": "011",
+        "out": "101"
+      },
+      {
+        "in": "111",
+        "out": "111"
+      }
+    ]
+  },
+  "IfStatementExecutionOfMultipleStatementsInTrueBranchIfBranchIsExecuted": {
+    "inputCircuit": "module main(inout a[2](2)) if 1 then a[0].0 ^= 1; a[0].1 ^= 1 else a[1].0 ^= 1; a[1].1 ^= 1 fi 1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "1100"
+      },
+      {
+        "in": "1000",
+        "out": "0100"
+      },
+      {
+        "in": "0100",
+        "out": "1000"
+      },
+      {
+        "in": "1100",
+        "out": "0000"
+      },
+      {
+        "in": "0010",
+        "out": "1110"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1010"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "1101"
+      },
+      {
+        "in": "1001",
+        "out": "0101"
+      },
+      {
+        "in": "0101",
+        "out": "1001"
+      },
+      {
+        "in": "1101",
+        "out": "0001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0111"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0011"
+      }
+    ]
+  },
+  "IfStatementExecutionOfAssignStatementInFalseBranchIfBranchIsExecuted": {
+    "inputCircuit": "module main(inout a(3)) if (1 > 2) then a ^= 1 else a ^= 2 fi (1 > 2)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "010"
+      },
+      {
+        "in": "100",
+        "out": "110"
+      },
+      {
+        "in": "010",
+        "out": "000"
+      },
+      {
+        "in": "110",
+        "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "011"
+      },
+      {
+        "in": "101",
+        "out": "111"
+      },
+      {
+        "in": "011",
+        "out": "001"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "IfStatementExecutionOfUnaryAssignStatementInFalseBranchIfBranchIsExecuted": {
+    "inputCircuit": "module main(inout a(3)) if (1 > 2) then a.0 ^= 1 else a.2 ^= 1 fi (1 > 2)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "001"
+      },
+      {
+        "in": "100",
+        "out": "101"
+      },
+      {
+        "in": "010",
+        "out": "011"
+      },
+      {
+        "in": "110",
+        "out": "111"
+      },
+      {
+        "in": "001",
+        "out": "000"
+      },
+      {
+        "in": "101",
+        "out": "100"
+      },
+      {
+        "in": "011",
+        "out": "010"
+      },
+      {
+        "in": "111",
+        "out": "110"
+      }
+    ]
+  },
+  "IfStatementExecutionOfForStatementInFalseBranchIfBranchIsExecuted": {
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 2 step 1 do if (1 > 2) then a.$i ^= 1 else a.($i + 2) ^= 1 fi (1 > 2) rof",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0011"
+      },
+      {
+        "in": "1000",
+        "out": "1011"
+      },
+      {
+        "in": "0100",
+        "out": "0111"
+      },
+      {
+        "in": "1100",
+        "out": "1111"
+      },
+      {
+        "in": "0010",
+        "out": "0001"
+      },
+      {
+        "in": "1010",
+        "out": "1001"
+      },
+      {
+        "in": "0110",
+        "out": "0101"
+      },
+      {
+        "in": "1110",
+        "out": "1101"
+      },
+      {
+        "in": "0001",
+        "out": "0010"
+      },
+      {
+        "in": "1001",
+        "out": "1010"
+      },
+      {
+        "in": "0101",
+        "out": "0110"
+      },
+      {
+        "in": "1101",
+        "out": "1110"
+      },
+      {
+        "in": "0011",
+        "out": "0000"
+      },
+      {
+        "in": "1011",
+        "out": "1000"
+      },
+      {
+        "in": "0111",
+        "out": "0100"
+      },
+      {
+        "in": "1111",
+        "out": "1100"
+      }
+    ]
+  },
+  "IfStatementExecutionOfCallStatementInFalseBranchIfBranchIsExecuted": {
+    "inputCircuit": "module xor(inout x(2)) x ^= 3 module main(inout a(2), inout b(2)) if (1 > 2) then call xor(a) else call xor(b) fi (1 > 2)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0011"
+      },
+      {
+        "in": "1000",
+        "out": "1011"
+      },
+      {
+        "in": "0100",
+        "out": "0111"
+      },
+      {
+        "in": "1100",
+        "out": "1111"
+      },
+      {
+        "in": "0010",
+        "out": "0001"
+      },
+      {
+        "in": "1010",
+        "out": "1001"
+      },
+      {
+        "in": "0110",
+        "out": "0101"
+      },
+      {
+        "in": "1110",
+        "out": "1101"
+      },
+      {
+        "in": "0001",
+        "out": "0010"
+      },
+      {
+        "in": "1001",
+        "out": "1010"
+      },
+      {
+        "in": "0101",
+        "out": "0110"
+      },
+      {
+        "in": "1101",
+        "out": "1110"
+      },
+      {
+        "in": "0011",
+        "out": "0000"
+      },
+      {
+        "in": "1011",
+        "out": "1000"
+      },
+      {
+        "in": "0111",
+        "out": "0100"
+      },
+      {
+        "in": "1111",
+        "out": "1100"
+      }
+    ]
+  },
+  "IfStatementExecutionOfUncallStatementInFalseBranchIfBranchIsExecuted": {
+    "inputCircuit": "module xor(inout x(2)) x ^= 3 module main(inout a(2), inout b(2)) if (1 > 2) then uncall xor(a) else uncall xor(b) fi (1 > 2)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0011"
+      },
+      {
+        "in": "1000",
+        "out": "1011"
+      },
+      {
+        "in": "0100",
+        "out": "0111"
+      },
+      {
+        "in": "1100",
+        "out": "1111"
+      },
+      {
+        "in": "0010",
+        "out": "0001"
+      },
+      {
+        "in": "1010",
+        "out": "1001"
+      },
+      {
+        "in": "0110",
+        "out": "0101"
+      },
+      {
+        "in": "1110",
+        "out": "1101"
+      },
+      {
+        "in": "0001",
+        "out": "0010"
+      },
+      {
+        "in": "1001",
+        "out": "1010"
+      },
+      {
+        "in": "0101",
+        "out": "0110"
+      },
+      {
+        "in": "1101",
+        "out": "1110"
+      },
+      {
+        "in": "0011",
+        "out": "0000"
+      },
+      {
+        "in": "1011",
+        "out": "1000"
+      },
+      {
+        "in": "0111",
+        "out": "0100"
+      },
+      {
+        "in": "1111",
+        "out": "1100"
+      }
+    ]
+  },
+  "IfStatementExecutionOfSwapStatementInFalseBranchIfBranchIsExecuted": {
+    "inputCircuit": "module main(inout a(3)) if (1 > 2) then a.0 <=> a.1 else a.1 <=> a.2 fi (1 > 2)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "100"
+      },
+      {
+        "in": "010",
+        "out": "001"
+      },
+      {
+        "in": "110",
+        "out": "101"
+      },
+      {
+        "in": "001",
+        "out": "010"
+      },
+      {
+        "in": "101",
+        "out": "110"
+      },
+      {
+        "in": "011",
+        "out": "011"
+      },
+      {
+        "in": "111",
+        "out": "111"
+      }
+    ]
+  },
+  "IfStatementExecutionOfMultipleStatementsInFalseBranchIfBranchIsExecuted": {
+    "inputCircuit": "module main(inout a(4)) if (1 > 2) then a.0 ^= 1; a.1 ^= 1 else a.2 ^= 1; a.3 ^= 1 fi (1 > 2)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0011"
+      },
+      {
+        "in": "1000",
+        "out": "1011"
+      },
+      {
+        "in": "0100",
+        "out": "0111"
+      },
+      {
+        "in": "1100",
+        "out": "1111"
+      },
+      {
+        "in": "0010",
+        "out": "0001"
+      },
+      {
+        "in": "1010",
+        "out": "1001"
+      },
+      {
+        "in": "0110",
+        "out": "0101"
+      },
+      {
+        "in": "1110",
+        "out": "1101"
+      },
+      {
+        "in": "0001",
+        "out": "0010"
+      },
+      {
+        "in": "1001",
+        "out": "1010"
+      },
+      {
+        "in": "0101",
+        "out": "0110"
+      },
+      {
+        "in": "1101",
+        "out": "1110"
+      },
+      {
+        "in": "0011",
+        "out": "0000"
+      },
+      {
+        "in": "1011",
+        "out": "1000"
+      },
+      {
+        "in": "0111",
+        "out": "0100"
+      },
+      {
+        "in": "1111",
+        "out": "1100"
+      }
+    ]
+  }
+}

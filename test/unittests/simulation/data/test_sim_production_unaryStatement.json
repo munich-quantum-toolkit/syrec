@@ -1,0 +1,1673 @@
+{
+  "IncrementAssignOfVariable": {
+    "inputCircuit": "module main(inout a(3)) ++= a",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "100"
+      },
+      {
+        "in": "100",
+        "out": "010"
+      },
+      {
+        "in": "010",
+        "out": "110"
+      },
+      {
+        "in": "110",
+        "out": "001"
+      },
+      {
+        "in": "001",
+        "out": "101"
+      },
+      {
+        "in": "101",
+        "out": "011"
+      },
+      {
+        "in": "011",
+        "out": "111"
+      },
+      {
+        "in": "111",
+        "out": "000"
+      }
+    ]
+  },
+  "IncrementAssignOfBitOfVariable": {
+    "inputCircuit": "module main(inout a(3)) ++= a.1",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "010"
+      },
+      {
+        "in": "100",
+        "out": "110"
+      },
+      {
+        "in": "010",
+        "out": "000"
+      },
+      {
+        "in": "110",
+        "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "011"
+      },
+      {
+        "in": "101",
+        "out": "111"
+      },
+      {
+        "in": "011",
+        "out": "001"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "IncrementAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd": {
+    "inputCircuit": "module main(inout a(4)) ++= a.2:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0010"
+      },
+      {
+        "in": "1000",
+        "out": "1010"
+      },
+      {
+        "in": "0100",
+        "out": "0110"
+      },
+      {
+        "in": "1100",
+        "out": "1110"
+      },
+      {
+        "in": "0010",
+        "out": "0100"
+      },
+      {
+        "in": "1010",
+        "out": "1100"
+      },
+      {
+        "in": "0110",
+        "out": "0000"
+      },
+      {
+        "in": "1110",
+        "out": "1000"
+      },
+      {
+        "in": "0001",
+        "out": "0011"
+      },
+      {
+        "in": "1001",
+        "out": "1011"
+      },
+      {
+        "in": "0101",
+        "out": "0111"
+      },
+      {
+        "in": "1101",
+        "out": "1111"
+      },
+      {
+        "in": "0011",
+        "out": "0101"
+      },
+      {
+        "in": "1011",
+        "out": "1101"
+      },
+      {
+        "in": "0111",
+        "out": "0001"
+      },
+      {
+        "in": "1111",
+        "out": "1001"
+      }
+    ]
+  },
+  "IncrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd": {
+    "inputCircuit": "module main(inout a(4)) ++= a.1:2",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0100"
+      },
+      {
+        "in": "1000",
+        "out": "1100"
+      },
+      {
+        "in": "0100",
+        "out": "0010"
+      },
+      {
+        "in": "1100",
+        "out": "1010"
+      },
+      {
+        "in": "0010",
+        "out": "0110"
+      },
+      {
+        "in": "1010",
+        "out": "1110"
+      },
+      {
+        "in": "0110",
+        "out": "0000"
+      },
+      {
+        "in": "1110",
+        "out": "1000"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0011"
+      },
+      {
+        "in": "1101",
+        "out": "1011"
+      },
+      {
+        "in": "0011",
+        "out": "0111"
+      },
+      {
+        "in": "1011",
+        "out": "1111"
+      },
+      {
+        "in": "0111",
+        "out": "0001"
+      },
+      {
+        "in": "1111",
+        "out": "1001"
+      }
+    ]
+  },
+  "IncrementAssignValueOfDimensionOfVariable": {
+    "inputCircuit": "module main(inout a[2](2)) ++= a[1]",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0010"
+      },
+      {
+        "in": "1000",
+        "out": "1010"
+      },
+      {
+        "in": "0100",
+        "out": "0110"
+      },
+      {
+        "in": "1100",
+        "out": "1110"
+      },
+      {
+        "in": "0010",
+        "out": "0001"
+      },
+      {
+        "in": "1010",
+        "out": "1001"
+      },
+      {
+        "in": "0110",
+        "out": "0101"
+      },
+      {
+        "in": "1110",
+        "out": "1101"
+      },
+      {
+        "in": "0001",
+        "out": "0011"
+      },
+      {
+        "in": "1001",
+        "out": "1011"
+      },
+      {
+        "in": "0101",
+        "out": "0111"
+      },
+      {
+        "in": "1101",
+        "out": "1111"
+      },
+      {
+        "in": "0011",
+        "out": "0000"
+      },
+      {
+        "in": "1011",
+        "out": "1000"
+      },
+      {
+        "in": "0111",
+        "out": "0100"
+      },
+      {
+        "in": "1111",
+        "out": "1100"
+      }
+    ]
+  },
+  "IncrementAssignBitOfValueOfDimensionOfVariable": {
+    "inputCircuit": "module main(inout a[2](2)) ++= a[0].1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0100"
+      },
+      {
+        "in": "1000",
+        "out": "1100"
+      },
+      {
+        "in": "0100",
+        "out": "0000"
+      },
+      {
+        "in": "1100",
+        "out": "1000"
+      },
+      {
+        "in": "0010",
+        "out": "0110"
+      },
+      {
+        "in": "1010",
+        "out": "1110"
+      },
+      {
+        "in": "0110",
+        "out": "0010"
+      },
+      {
+        "in": "1110",
+        "out": "1010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "0111"
+      },
+      {
+        "in": "1011",
+        "out": "1111"
+      },
+      {
+        "in": "0111",
+        "out": "0011"
+      },
+      {
+        "in": "1111",
+        "out": "1011"
+      }
+    ]
+  },
+  "IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd": {
+    "inputCircuit": "module main(inout a[2](2)) ++= a[1].1:0",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0001"
+      },
+      {
+        "in": "1000",
+        "out": "1001"
+      },
+      {
+        "in": "0100",
+        "out": "0101"
+      },
+      {
+        "in": "1100",
+        "out": "1101"
+      },
+      {
+        "in": "0010",
+        "out": "0011"
+      },
+      {
+        "in": "1010",
+        "out": "1011"
+      },
+      {
+        "in": "0110",
+        "out": "0111"
+      },
+      {
+        "in": "1110",
+        "out": "1111"
+      },
+      {
+        "in": "0001",
+        "out": "0010"
+      },
+      {
+        "in": "1001",
+        "out": "1010"
+      },
+      {
+        "in": "0101",
+        "out": "0110"
+      },
+      {
+        "in": "1101",
+        "out": "1110"
+      },
+      {
+        "in": "0011",
+        "out": "0000"
+      },
+      {
+        "in": "1011",
+        "out": "1000"
+      },
+      {
+        "in": "0111",
+        "out": "0100"
+      },
+      {
+        "in": "1111",
+        "out": "1100"
+      }
+    ]
+  },
+  "IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd": {
+    "inputCircuit": "module main(inout a[2](2)) ++= a[0].0:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "1000"
+      },
+      {
+        "in": "1000",
+        "out": "0100"
+      },
+      {
+        "in": "0100",
+        "out": "1100"
+      },
+      {
+        "in": "1100",
+        "out": "0000"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1110"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "1001"
+      },
+      {
+        "in": "1001",
+        "out": "0101"
+      },
+      {
+        "in": "0101",
+        "out": "1101"
+      },
+      {
+        "in": "1101",
+        "out": "0001"
+      },
+      {
+        "in": "0011",
+        "out": "1011"
+      },
+      {
+        "in": "1011",
+        "out": "0111"
+      },
+      {
+        "in": "0111",
+        "out": "1111"
+      },
+      {
+        "in": "1111",
+        "out": "0011"
+      }
+    ]
+  },
+  "IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd": {
+    "inputCircuit": "module main(inout a[2](2)) ++= a[0].1:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0100"
+      },
+      {
+        "in": "1000",
+        "out": "1100"
+      },
+      {
+        "in": "0100",
+        "out": "0000"
+      },
+      {
+        "in": "1100",
+        "out": "1000"
+      },
+      {
+        "in": "0010",
+        "out": "0110"
+      },
+      {
+        "in": "1010",
+        "out": "1110"
+      },
+      {
+        "in": "0110",
+        "out": "0010"
+      },
+      {
+        "in": "1110",
+        "out": "1010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "0111"
+      },
+      {
+        "in": "1011",
+        "out": "1111"
+      },
+      {
+        "in": "0111",
+        "out": "0011"
+      },
+      {
+        "in": "1111",
+        "out": "1011"
+      }
+    ]
+  },
+  "DecrementAssignOfVariable": {
+    "inputCircuit": "module main(inout a(3)) --= a",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "111"
+      },
+      {
+        "in": "100",
+        "out": "000"
+      },
+      {
+        "in": "010",
+        "out": "100"
+      },
+      {
+        "in": "110",
+        "out": "010"
+      },
+      {
+        "in": "001",
+        "out": "110"
+      },
+      {
+        "in": "101",
+        "out": "001"
+      },
+      {
+        "in": "011",
+        "out": "101"
+      },
+      {
+        "in": "111",
+        "out": "011"
+      }
+    ]
+  },
+  "DecrementAssignOfBitOfVariable": {
+    "inputCircuit": "module main(inout a(3)) --= a.1",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "010"
+      },
+      {
+        "in": "100",
+        "out": "110"
+      },
+      {
+        "in": "010",
+        "out": "000"
+      },
+      {
+        "in": "110",
+        "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "011"
+      },
+      {
+        "in": "101",
+        "out": "111"
+      },
+      {
+        "in": "011",
+        "out": "001"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "DecrementAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd": {
+    "inputCircuit": "module main(inout a(4)) --= a.2:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0110"
+      },
+      {
+        "in": "1000",
+        "out": "1110"
+      },
+      {
+        "in": "0100",
+        "out": "0010"
+      },
+      {
+        "in": "1100",
+        "out": "1010"
+      },
+      {
+        "in": "0010",
+        "out": "0000"
+      },
+      {
+        "in": "1010",
+        "out": "1000"
+      },
+      {
+        "in": "0110",
+        "out": "0100"
+      },
+      {
+        "in": "1110",
+        "out": "1100"
+      },
+      {
+        "in": "0001",
+        "out": "0111"
+      },
+      {
+        "in": "1001",
+        "out": "1111"
+      },
+      {
+        "in": "0101",
+        "out": "0011"
+      },
+      {
+        "in": "1101",
+        "out": "1011"
+      },
+      {
+        "in": "0011",
+        "out": "0001"
+      },
+      {
+        "in": "1011",
+        "out": "1001"
+      },
+      {
+        "in": "0111",
+        "out": "0101"
+      },
+      {
+        "in": "1111",
+        "out": "1101"
+      }
+    ]
+  },
+  "DecrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd": {
+    "inputCircuit": "module main(inout a(4)) --= a.1:2",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0110"
+      },
+      {
+        "in": "1000",
+        "out": "1110"
+      },
+      {
+        "in": "0100",
+        "out": "0000"
+      },
+      {
+        "in": "1100",
+        "out": "1000"
+      },
+      {
+        "in": "0010",
+        "out": "0100"
+      },
+      {
+        "in": "1010",
+        "out": "1100"
+      },
+      {
+        "in": "0110",
+        "out": "0010"
+      },
+      {
+        "in": "1110",
+        "out": "1010"
+      },
+      {
+        "in": "0001",
+        "out": "0111"
+      },
+      {
+        "in": "1001",
+        "out": "1111"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "0101"
+      },
+      {
+        "in": "1011",
+        "out": "1101"
+      },
+      {
+        "in": "0111",
+        "out": "0011"
+      },
+      {
+        "in": "1111",
+        "out": "1011"
+      }
+    ]
+  },
+  "DecrementAssignValueOfDimensionOfVariable": {
+    "inputCircuit": "module main(inout a[2](2)) --= a[1]",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0011"
+      },
+      {
+        "in": "1000",
+        "out": "1011"
+      },
+      {
+        "in": "0100",
+        "out": "0111"
+      },
+      {
+        "in": "1100",
+        "out": "1111"
+      },
+      {
+        "in": "0010",
+        "out": "0000"
+      },
+      {
+        "in": "1010",
+        "out": "1000"
+      },
+      {
+        "in": "0110",
+        "out": "0100"
+      },
+      {
+        "in": "1110",
+        "out": "1100"
+      },
+      {
+        "in": "0001",
+        "out": "0010"
+      },
+      {
+        "in": "1001",
+        "out": "1010"
+      },
+      {
+        "in": "0101",
+        "out": "0110"
+      },
+      {
+        "in": "1101",
+        "out": "1110"
+      },
+      {
+        "in": "0011",
+        "out": "0001"
+      },
+      {
+        "in": "1011",
+        "out": "1001"
+      },
+      {
+        "in": "0111",
+        "out": "0101"
+      },
+      {
+        "in": "1111",
+        "out": "1101"
+      }
+    ]
+  },
+  "DecrementAssignBitOfValueOfDimensionOfVariable": {
+    "inputCircuit": "module main(inout a[2](2)) --= a[0].1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0100"
+      },
+      {
+        "in": "1000",
+        "out": "1100"
+      },
+      {
+        "in": "0100",
+        "out": "0000"
+      },
+      {
+        "in": "1100",
+        "out": "1000"
+      },
+      {
+        "in": "0010",
+        "out": "0110"
+      },
+      {
+        "in": "1010",
+        "out": "1110"
+      },
+      {
+        "in": "0110",
+        "out": "0010"
+      },
+      {
+        "in": "1110",
+        "out": "1010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "0111"
+      },
+      {
+        "in": "1011",
+        "out": "1111"
+      },
+      {
+        "in": "0111",
+        "out": "0011"
+      },
+      {
+        "in": "1111",
+        "out": "1011"
+      }
+    ]
+  },
+  "DecrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd": {
+    "inputCircuit": "module main(inout a[2](2)) --= a[1].1:0",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0011"
+      },
+      {
+        "in": "1000",
+        "out": "1011"
+      },
+      {
+        "in": "0100",
+        "out": "0111"
+      },
+      {
+        "in": "1100",
+        "out": "1111"
+      },
+      {
+        "in": "0010",
+        "out": "0001"
+      },
+      {
+        "in": "1010",
+        "out": "1001"
+      },
+      {
+        "in": "0110",
+        "out": "0101"
+      },
+      {
+        "in": "1110",
+        "out": "1101"
+      },
+      {
+        "in": "0001",
+        "out": "0000"
+      },
+      {
+        "in": "1001",
+        "out": "1000"
+      },
+      {
+        "in": "0101",
+        "out": "0100"
+      },
+      {
+        "in": "1101",
+        "out": "1100"
+      },
+      {
+        "in": "0011",
+        "out": "0010"
+      },
+      {
+        "in": "1011",
+        "out": "1010"
+      },
+      {
+        "in": "0111",
+        "out": "0110"
+      },
+      {
+        "in": "1111",
+        "out": "1110"
+      }
+    ]
+  },
+  "DecrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd": {
+    "inputCircuit": "module main(inout a[2](2)) --= a[0].0:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "1100"
+      },
+      {
+        "in": "1000",
+        "out": "0000"
+      },
+      {
+        "in": "0100",
+        "out": "1000"
+      },
+      {
+        "in": "1100",
+        "out": "0100"
+      },
+      {
+        "in": "0010",
+        "out": "1110"
+      },
+      {
+        "in": "1010",
+        "out": "0010"
+      },
+      {
+        "in": "0110",
+        "out": "1010"
+      },
+      {
+        "in": "1110",
+        "out": "0110"
+      },
+      {
+        "in": "0001",
+        "out": "1101"
+      },
+      {
+        "in": "1001",
+        "out": "0001"
+      },
+      {
+        "in": "0101",
+        "out": "1001"
+      },
+      {
+        "in": "1101",
+        "out": "0101"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0011"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0111"
+      }
+    ]
+  },
+  "DecrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd": {
+    "inputCircuit": "module main(inout a[2](2)) --= a[0].1:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0100"
+      },
+      {
+        "in": "1000",
+        "out": "1100"
+      },
+      {
+        "in": "0100",
+        "out": "0000"
+      },
+      {
+        "in": "1100",
+        "out": "1000"
+      },
+      {
+        "in": "0010",
+        "out": "0110"
+      },
+      {
+        "in": "1010",
+        "out": "1110"
+      },
+      {
+        "in": "0110",
+        "out": "0010"
+      },
+      {
+        "in": "1110",
+        "out": "1010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "0111"
+      },
+      {
+        "in": "1011",
+        "out": "1111"
+      },
+      {
+        "in": "0111",
+        "out": "0011"
+      },
+      {
+        "in": "1111",
+        "out": "1011"
+      }
+    ]
+  },
+  "BitwiseNegateAssignOfVariable": {
+    "inputCircuit": "module main(inout a(3)) ~= a",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "111"
+      },
+      {
+        "in": "100",
+        "out": "011"
+      },
+      {
+        "in": "010",
+        "out": "101"
+      },
+      {
+        "in": "110",
+        "out": "001"
+      },
+      {
+        "in": "001",
+        "out": "110"
+      },
+      {
+        "in": "101",
+        "out": "010"
+      },
+      {
+        "in": "011",
+        "out": "100"
+      },
+      {
+        "in": "111",
+        "out": "000"
+      }
+    ]
+  },
+  "BitwiseNegateAssignOfBitOfVariable": {
+    "inputCircuit": "module main(inout a(3)) ~= a.1",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "010"
+      },
+      {
+        "in": "100",
+        "out": "110"
+      },
+      {
+        "in": "010",
+        "out": "000"
+      },
+      {
+        "in": "110",
+        "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "011"
+      },
+      {
+        "in": "101",
+        "out": "111"
+      },
+      {
+        "in": "011",
+        "out": "001"
+      },
+      {
+        "in": "111",
+        "out": "101"
+      }
+    ]
+  },
+  "BitwiseNegateAssignOfBitrangeOfVariableWithBitrangeStartLargerThanEnd": {
+    "inputCircuit": "module main(inout a(4)) ~= a.2:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0110"
+      },
+      {
+        "in": "1000",
+        "out": "1110"
+      },
+      {
+        "in": "0100",
+        "out": "0010"
+      },
+      {
+        "in": "1100",
+        "out": "1010"
+      },
+      {
+        "in": "0010",
+        "out": "0100"
+      },
+      {
+        "in": "1010",
+        "out": "1100"
+      },
+      {
+        "in": "0110",
+        "out": "0000"
+      },
+      {
+        "in": "1110",
+        "out": "1000"
+      },
+      {
+        "in": "0001",
+        "out": "0111"
+      },
+      {
+        "in": "1001",
+        "out": "1111"
+      },
+      {
+        "in": "0101",
+        "out": "0011"
+      },
+      {
+        "in": "1101",
+        "out": "1011"
+      },
+      {
+        "in": "0011",
+        "out": "0101"
+      },
+      {
+        "in": "1011",
+        "out": "1101"
+      },
+      {
+        "in": "0111",
+        "out": "0001"
+      },
+      {
+        "in": "1111",
+        "out": "1001"
+      }
+    ]
+  },
+  "BitwiseNegateAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd": {
+    "inputCircuit": "module main(inout a(4)) ~= a.1:2",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0110"
+      },
+      {
+        "in": "1000",
+        "out": "1110"
+      },
+      {
+        "in": "0100",
+        "out": "0010"
+      },
+      {
+        "in": "1100",
+        "out": "1010"
+      },
+      {
+        "in": "0010",
+        "out": "0100"
+      },
+      {
+        "in": "1010",
+        "out": "1100"
+      },
+      {
+        "in": "0110",
+        "out": "0000"
+      },
+      {
+        "in": "1110",
+        "out": "1000"
+      },
+      {
+        "in": "0001",
+        "out": "0111"
+      },
+      {
+        "in": "1001",
+        "out": "1111"
+      },
+      {
+        "in": "0101",
+        "out": "0011"
+      },
+      {
+        "in": "1101",
+        "out": "1011"
+      },
+      {
+        "in": "0011",
+        "out": "0101"
+      },
+      {
+        "in": "1011",
+        "out": "1101"
+      },
+      {
+        "in": "0111",
+        "out": "0001"
+      },
+      {
+        "in": "1111",
+        "out": "1001"
+      }
+    ]
+  },
+  "BitwiseNegateAssignValueOfDimensionOfVariable": {
+    "inputCircuit": "module main(inout a[2](2)) ~= a[1]",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0011"
+      },
+      {
+        "in": "1000",
+        "out": "1011"
+      },
+      {
+        "in": "0100",
+        "out": "0111"
+      },
+      {
+        "in": "1100",
+        "out": "1111"
+      },
+      {
+        "in": "0010",
+        "out": "0001"
+      },
+      {
+        "in": "1010",
+        "out": "1001"
+      },
+      {
+        "in": "0110",
+        "out": "0101"
+      },
+      {
+        "in": "1110",
+        "out": "1101"
+      },
+      {
+        "in": "0001",
+        "out": "0010"
+      },
+      {
+        "in": "1001",
+        "out": "1010"
+      },
+      {
+        "in": "0101",
+        "out": "0110"
+      },
+      {
+        "in": "1101",
+        "out": "1110"
+      },
+      {
+        "in": "0011",
+        "out": "0000"
+      },
+      {
+        "in": "1011",
+        "out": "1000"
+      },
+      {
+        "in": "0111",
+        "out": "0100"
+      },
+      {
+        "in": "1111",
+        "out": "1100"
+      }
+    ]
+  },
+  "BitwiseNegateAssignBitOfValueOfDimensionOfVariable": {
+    "inputCircuit": "module main(inout a[2](2)) ~= a[0].1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0100"
+      },
+      {
+        "in": "1000",
+        "out": "1100"
+      },
+      {
+        "in": "0100",
+        "out": "0000"
+      },
+      {
+        "in": "1100",
+        "out": "1000"
+      },
+      {
+        "in": "0010",
+        "out": "0110"
+      },
+      {
+        "in": "1010",
+        "out": "1110"
+      },
+      {
+        "in": "0110",
+        "out": "0010"
+      },
+      {
+        "in": "1110",
+        "out": "1010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "0111"
+      },
+      {
+        "in": "1011",
+        "out": "1111"
+      },
+      {
+        "in": "0111",
+        "out": "0011"
+      },
+      {
+        "in": "1111",
+        "out": "1011"
+      }
+    ]
+  },
+  "BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd": {
+    "inputCircuit": "module main(inout a[2](2)) ~= a[1].1:0",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0011"
+      },
+      {
+        "in": "1000",
+        "out": "1011"
+      },
+      {
+        "in": "0100",
+        "out": "0111"
+      },
+      {
+        "in": "1100",
+        "out": "1111"
+      },
+      {
+        "in": "0010",
+        "out": "0001"
+      },
+      {
+        "in": "1010",
+        "out": "1001"
+      },
+      {
+        "in": "0110",
+        "out": "0101"
+      },
+      {
+        "in": "1110",
+        "out": "1101"
+      },
+      {
+        "in": "0001",
+        "out": "0010"
+      },
+      {
+        "in": "1001",
+        "out": "1010"
+      },
+      {
+        "in": "0101",
+        "out": "0110"
+      },
+      {
+        "in": "1101",
+        "out": "1110"
+      },
+      {
+        "in": "0011",
+        "out": "0000"
+      },
+      {
+        "in": "1011",
+        "out": "1000"
+      },
+      {
+        "in": "0111",
+        "out": "0100"
+      },
+      {
+        "in": "1111",
+        "out": "1100"
+      }
+    ]
+  },
+  "BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd": {
+    "inputCircuit": "module main(inout a[2](2)) ~= a[0].0:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "1100"
+      },
+      {
+        "in": "1000",
+        "out": "0100"
+      },
+      {
+        "in": "0100",
+        "out": "1000"
+      },
+      {
+        "in": "1100",
+        "out": "0000"
+      },
+      {
+        "in": "0010",
+        "out": "1110"
+      },
+      {
+        "in": "1010",
+        "out": "0110"
+      },
+      {
+        "in": "0110",
+        "out": "1010"
+      },
+      {
+        "in": "1110",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "1101"
+      },
+      {
+        "in": "1001",
+        "out": "0101"
+      },
+      {
+        "in": "0101",
+        "out": "1001"
+      },
+      {
+        "in": "1101",
+        "out": "0001"
+      },
+      {
+        "in": "0011",
+        "out": "1111"
+      },
+      {
+        "in": "1011",
+        "out": "0111"
+      },
+      {
+        "in": "0111",
+        "out": "1011"
+      },
+      {
+        "in": "1111",
+        "out": "0011"
+      }
+    ]
+  },
+  "BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd": {
+    "inputCircuit": "module main(inout a[2](2)) ~= a[0].1:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0100"
+      },
+      {
+        "in": "1000",
+        "out": "1100"
+      },
+      {
+        "in": "0100",
+        "out": "0000"
+      },
+      {
+        "in": "1100",
+        "out": "1000"
+      },
+      {
+        "in": "0010",
+        "out": "0110"
+      },
+      {
+        "in": "1010",
+        "out": "1110"
+      },
+      {
+        "in": "0110",
+        "out": "0010"
+      },
+      {
+        "in": "1110",
+        "out": "1010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "1001",
+        "out": "1101"
+      },
+      {
+        "in": "0101",
+        "out": "0001"
+      },
+      {
+        "in": "1101",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "0111"
+      },
+      {
+        "in": "1011",
+        "out": "1111"
+      },
+      {
+        "in": "0111",
+        "out": "0011"
+      },
+      {
+        "in": "1111",
+        "out": "1011"
+      }
+    ]
+  }
+}

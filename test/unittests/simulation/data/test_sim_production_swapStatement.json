@@ -1,0 +1,1652 @@
+{
+  "SwapWithLeftOperationBeingAccessOn1DVariable": {
+    "inputCircuit": "module main(inout a(2), inout b(2)) a <=> b",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0010"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "0011"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "1001"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "0110"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "0111"
+      },
+      {
+        "in": "0011",
+        "out": "1100"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "1101"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOn1DVariableWithBitOfOtherVariable": {
+    "inputCircuit": "module main(inout a(1), inout b(2)) a <=> b.1",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "001"
+      },
+      {
+        "in": "010",
+        "out": "010"
+      },
+      {
+        "in": "110",
+        "out": "011"
+      },
+      {
+        "in": "001",
+        "out": "100"
+      },
+      {
+        "in": "101",
+        "out": "101"
+      },
+      {
+        "in": "011",
+        "out": "110"
+      },
+      {
+        "in": "111",
+        "out": "111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOn1DVariableWithBitrangeOfOtherVariable": {
+    "inputCircuit": "module main(inout a(2), inout b(3)) a <=> b.1:2",
+    "simulationRuns": [
+      {
+        "in": "00000",
+        "out": "00000"
+      },
+      {
+        "in": "10000",
+        "out": "00010"
+      },
+      {
+        "in": "01000",
+        "out": "00001"
+      },
+      {
+        "in": "11000",
+        "out": "00011"
+      },
+      {
+        "in": "00100",
+        "out": "00100"
+      },
+      {
+        "in": "10100",
+        "out": "00110"
+      },
+      {
+        "in": "01100",
+        "out": "00101"
+      },
+      {
+        "in": "11100",
+        "out": "00111"
+      },
+      {
+        "in": "00010",
+        "out": "10000"
+      },
+      {
+        "in": "10010",
+        "out": "10010"
+      },
+      {
+        "in": "01010",
+        "out": "10001"
+      },
+      {
+        "in": "11010",
+        "out": "10011"
+      },
+      {
+        "in": "00110",
+        "out": "10100"
+      },
+      {
+        "in": "10110",
+        "out": "10110"
+      },
+      {
+        "in": "01110",
+        "out": "10101"
+      },
+      {
+        "in": "11110",
+        "out": "10111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOn1DVariableWithValueOfDimensionOfOtherVariable": {
+    "inputCircuit": "module main(inout a(2), inout b[2](2)) a <=> b[0]",
+    "simulationRuns": [
+      {
+        "in": "000011",
+        "out": "000011"
+      },
+      {
+        "in": "100011",
+        "out": "001011"
+      },
+      {
+        "in": "010011",
+        "out": "000111"
+      },
+      {
+        "in": "110011",
+        "out": "001111"
+      },
+      {
+        "in": "001011",
+        "out": "100011"
+      },
+      {
+        "in": "101011",
+        "out": "101011"
+      },
+      {
+        "in": "011011",
+        "out": "100111"
+      },
+      {
+        "in": "111011",
+        "out": "101111"
+      },
+      {
+        "in": "000111",
+        "out": "010011"
+      },
+      {
+        "in": "100111",
+        "out": "011011"
+      },
+      {
+        "in": "010111",
+        "out": "010111"
+      },
+      {
+        "in": "110111",
+        "out": "011111"
+      },
+      {
+        "in": "001111",
+        "out": "110011"
+      },
+      {
+        "in": "101111",
+        "out": "111011"
+      },
+      {
+        "in": "011111",
+        "out": "110111"
+      },
+      {
+        "in": "111111",
+        "out": "111111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitOf1DVariableWithSameBitOfOtherVariable": {
+    "inputCircuit": "module main(inout a(2), inout b(2)) a.1 <=> b.1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "1001"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "0011"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "1100"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "1101"
+      },
+      {
+        "in": "0011",
+        "out": "0110"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "0111"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitOf1DVariableWithOtherBitOfOtherVariable": {
+    "inputCircuit": "module main(inout a(2), inout b(2)) a.0 <=> b.1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0001"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "0101"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "1010",
+        "out": "0011"
+      },
+      {
+        "in": "0110",
+        "out": "0110"
+      },
+      {
+        "in": "1110",
+        "out": "0111"
+      },
+      {
+        "in": "0001",
+        "out": "1000"
+      },
+      {
+        "in": "1001",
+        "out": "1001"
+      },
+      {
+        "in": "0101",
+        "out": "1100"
+      },
+      {
+        "in": "1101",
+        "out": "1101"
+      },
+      {
+        "in": "0011",
+        "out": "1010"
+      },
+      {
+        "in": "1011",
+        "out": "1011"
+      },
+      {
+        "in": "0111",
+        "out": "1110"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfOtherDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](2)) a[0].0 <=> a[1].1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0001"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "0101"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "1010",
+        "out": "0011"
+      },
+      {
+        "in": "0110",
+        "out": "0110"
+      },
+      {
+        "in": "1110",
+        "out": "0111"
+      },
+      {
+        "in": "0001",
+        "out": "1000"
+      },
+      {
+        "in": "1001",
+        "out": "1001"
+      },
+      {
+        "in": "0101",
+        "out": "1100"
+      },
+      {
+        "in": "1101",
+        "out": "1101"
+      },
+      {
+        "in": "0011",
+        "out": "1010"
+      },
+      {
+        "in": "1011",
+        "out": "1011"
+      },
+      {
+        "in": "0111",
+        "out": "1110"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfOtherDimensionOfOtherVariable": {
+    "inputCircuit": "module main(inout a(2), inout b[2](2)) a.1 <=> b[0].0",
+    "simulationRuns": [
+      {
+        "in": "000011",
+        "out": "000011"
+      },
+      {
+        "in": "100011",
+        "out": "100011"
+      },
+      {
+        "in": "010011",
+        "out": "001011"
+      },
+      {
+        "in": "110011",
+        "out": "101011"
+      },
+      {
+        "in": "001011",
+        "out": "010011"
+      },
+      {
+        "in": "101011",
+        "out": "110011"
+      },
+      {
+        "in": "011011",
+        "out": "011011"
+      },
+      {
+        "in": "111011",
+        "out": "111011"
+      },
+      {
+        "in": "000111",
+        "out": "000111"
+      },
+      {
+        "in": "100111",
+        "out": "100111"
+      },
+      {
+        "in": "010111",
+        "out": "001111"
+      },
+      {
+        "in": "110111",
+        "out": "101111"
+      },
+      {
+        "in": "001111",
+        "out": "010111"
+      },
+      {
+        "in": "101111",
+        "out": "110111"
+      },
+      {
+        "in": "011111",
+        "out": "011111"
+      },
+      {
+        "in": "111111",
+        "out": "111111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfSameDimensionOfOtherVariable": {
+    "inputCircuit": "module main(inout a(2), inout b[2](2)) a[0].1 <=> b[0].0",
+    "simulationRuns": [
+      {
+        "in": "000011",
+        "out": "000011"
+      },
+      {
+        "in": "100011",
+        "out": "100011"
+      },
+      {
+        "in": "010011",
+        "out": "001011"
+      },
+      {
+        "in": "110011",
+        "out": "101011"
+      },
+      {
+        "in": "001011",
+        "out": "010011"
+      },
+      {
+        "in": "101011",
+        "out": "110011"
+      },
+      {
+        "in": "011011",
+        "out": "011011"
+      },
+      {
+        "in": "111011",
+        "out": "111011"
+      },
+      {
+        "in": "000111",
+        "out": "000111"
+      },
+      {
+        "in": "100111",
+        "out": "100111"
+      },
+      {
+        "in": "010111",
+        "out": "001111"
+      },
+      {
+        "in": "110111",
+        "out": "101111"
+      },
+      {
+        "in": "001111",
+        "out": "010111"
+      },
+      {
+        "in": "101111",
+        "out": "110111"
+      },
+      {
+        "in": "011111",
+        "out": "011111"
+      },
+      {
+        "in": "111111",
+        "out": "111111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithNotOverlappingBitOfValueOfSameDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a(2)) a.0 <=> a.1",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "00"
+      },
+      {
+        "in": "10",
+        "out": "01"
+      },
+      {
+        "in": "01",
+        "out": "10"
+      },
+      {
+        "in": "11",
+        "out": "11"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithOverlappingBitOfValueOfOtherDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](2)) a[0].0 <=> a[1].0",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0010"
+      },
+      {
+        "in": "0100",
+        "out": "0100"
+      },
+      {
+        "in": "1100",
+        "out": "0110"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "1100"
+      },
+      {
+        "in": "1110",
+        "out": "1110"
+      },
+      {
+        "in": "0001",
+        "out": "0001"
+      },
+      {
+        "in": "1001",
+        "out": "0011"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "0111"
+      },
+      {
+        "in": "0011",
+        "out": "1001"
+      },
+      {
+        "in": "1011",
+        "out": "1011"
+      },
+      {
+        "in": "0111",
+        "out": "1101"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeOf1DVariableWithStartSmallerThanEnd": {
+    "inputCircuit": "module main(inout a(2), inout b(2)) a.0:1 <=> b",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0010"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "0011"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "1001"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "0110"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "0111"
+      },
+      {
+        "in": "0011",
+        "out": "1100"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "1101"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeOf1DVariableWithStartLargerThanEnd": {
+    "inputCircuit": "module main(inout a(2), inout b(2)) a.1:0 <=> b",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0001"
+      },
+      {
+        "in": "0100",
+        "out": "0010"
+      },
+      {
+        "in": "1100",
+        "out": "0011"
+      },
+      {
+        "in": "0010",
+        "out": "0100"
+      },
+      {
+        "in": "1010",
+        "out": "0101"
+      },
+      {
+        "in": "0110",
+        "out": "0110"
+      },
+      {
+        "in": "1110",
+        "out": "0111"
+      },
+      {
+        "in": "0001",
+        "out": "1000"
+      },
+      {
+        "in": "1001",
+        "out": "1001"
+      },
+      {
+        "in": "0101",
+        "out": "1010"
+      },
+      {
+        "in": "1101",
+        "out": "1011"
+      },
+      {
+        "in": "0011",
+        "out": "1100"
+      },
+      {
+        "in": "1011",
+        "out": "1101"
+      },
+      {
+        "in": "0111",
+        "out": "1110"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeOf1DVariableWithStartEqualToEnd": {
+    "inputCircuit": "module main(inout a(2), inout b(2)) a.1:1 <=> b.1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "1001"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "0011"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "1100"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "1101"
+      },
+      {
+        "in": "0011",
+        "out": "0110"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "0111"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnValueOfDimensionOfVariableWithValueOfDimensionOfOtherVariable": {
+    "inputCircuit": "module main(inout a[2](2), inout b[2](2)) a[1] <=> b[0]",
+    "simulationRuns": [
+      {
+        "in": "11000011",
+        "out": "11000011"
+      },
+      {
+        "in": "11100011",
+        "out": "11001011"
+      },
+      {
+        "in": "11010011",
+        "out": "11000111"
+      },
+      {
+        "in": "11110011",
+        "out": "11001111"
+      },
+      {
+        "in": "11001011",
+        "out": "11100011"
+      },
+      {
+        "in": "11101011",
+        "out": "11101011"
+      },
+      {
+        "in": "11011011",
+        "out": "11100111"
+      },
+      {
+        "in": "11111011",
+        "out": "11101111"
+      },
+      {
+        "in": "11000111",
+        "out": "11010011"
+      },
+      {
+        "in": "11100111",
+        "out": "11011011"
+      },
+      {
+        "in": "11010111",
+        "out": "11010111"
+      },
+      {
+        "in": "11110111",
+        "out": "11011111"
+      },
+      {
+        "in": "11001111",
+        "out": "11110011"
+      },
+      {
+        "in": "11101111",
+        "out": "11111011"
+      },
+      {
+        "in": "11011111",
+        "out": "11110111"
+      },
+      {
+        "in": "11111111",
+        "out": "11111111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnValueOfDimensionOfVariableWithValueOfOtherDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](2)) a[0] <=> a[1]",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0010"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "0011"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "1001"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "0110"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "0111"
+      },
+      {
+        "in": "0011",
+        "out": "1100"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "1101"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitOfValueOfDimensionOfVariableWithBitOfValueOfDimensionOfOtherVariable": {
+    "inputCircuit": "module main(inout a(2), inout b[2](2)) a[0].0 <=> b[0].0",
+    "simulationRuns": [
+      {
+        "in": "000011",
+        "out": "000011"
+      },
+      {
+        "in": "100011",
+        "out": "001011"
+      },
+      {
+        "in": "010011",
+        "out": "010011"
+      },
+      {
+        "in": "110011",
+        "out": "011011"
+      },
+      {
+        "in": "001011",
+        "out": "100011"
+      },
+      {
+        "in": "101011",
+        "out": "101011"
+      },
+      {
+        "in": "011011",
+        "out": "110011"
+      },
+      {
+        "in": "111011",
+        "out": "111011"
+      },
+      {
+        "in": "000111",
+        "out": "000111"
+      },
+      {
+        "in": "100111",
+        "out": "001111"
+      },
+      {
+        "in": "010111",
+        "out": "010111"
+      },
+      {
+        "in": "110111",
+        "out": "011111"
+      },
+      {
+        "in": "001111",
+        "out": "100111"
+      },
+      {
+        "in": "101111",
+        "out": "101111"
+      },
+      {
+        "in": "011111",
+        "out": "110111"
+      },
+      {
+        "in": "111111",
+        "out": "111111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeWithStartSmallerThanEndOfValueOfDimensionOfVariableWithBitrangeOfValueOfDimensionOfOtherVariable": {
+    "inputCircuit": "module main(inout a[2](2), inout b[2](2)) a[1].0:1 <=> b[0]",
+    "simulationRuns": [
+      {
+        "in": "11000011",
+        "out": "11000011"
+      },
+      {
+        "in": "11100011",
+        "out": "11001011"
+      },
+      {
+        "in": "11010011",
+        "out": "11000111"
+      },
+      {
+        "in": "11110011",
+        "out": "11001111"
+      },
+      {
+        "in": "11001011",
+        "out": "11100011"
+      },
+      {
+        "in": "11101011",
+        "out": "11101011"
+      },
+      {
+        "in": "11011011",
+        "out": "11100111"
+      },
+      {
+        "in": "11111011",
+        "out": "11101111"
+      },
+      {
+        "in": "11000111",
+        "out": "11010011"
+      },
+      {
+        "in": "11100111",
+        "out": "11011011"
+      },
+      {
+        "in": "11010111",
+        "out": "11010111"
+      },
+      {
+        "in": "11110111",
+        "out": "11011111"
+      },
+      {
+        "in": "11001111",
+        "out": "11110011"
+      },
+      {
+        "in": "11101111",
+        "out": "11111011"
+      },
+      {
+        "in": "11011111",
+        "out": "11110111"
+      },
+      {
+        "in": "11111111",
+        "out": "11111111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeWithStartSmallerThanEndOfValueOfDimensionOfVariableWithOverlappingBitrangeOfValueOfOtherDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](2)) a[0].0:1 <=> a[1].0:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0010"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "0011"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "1001"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "0110"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "0111"
+      },
+      {
+        "in": "0011",
+        "out": "1100"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "1101"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeWithStartSmallerThanEndOfValueOfDimensionOfVariableWithNotOverlappingBitrangeOfValueOfSameDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a(4)) a[0].0:1 <=> a[0].2:3",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0010"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "0011"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "1001"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "0110"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "0111"
+      },
+      {
+        "in": "0011",
+        "out": "1100"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "1101"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeWithStartLargerThanEndOfValueOfDimensionOfVariableWithBitrangeOfValueOfDimensionOfOtherVariable": {
+    "inputCircuit": "module main(inout a(2), inout b(2)) a.1:0 <=> b.1:0",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0010"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "0011"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "1001"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "0110"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "0111"
+      },
+      {
+        "in": "0011",
+        "out": "1100"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "1101"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeWithStartLargerThanEndOfValueOfDimensionOfVariableWithOverlappingBitrangeOfValueOfOtherDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](2)) a[0].1:0 <=> a[1].1:0",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0010"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "0011"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "1001"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "0110"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "0111"
+      },
+      {
+        "in": "0011",
+        "out": "1100"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "1101"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeWithStartLargerThanEndOfValueOfDimensionOfVariableWithNotOverlappingBitrangeOfValueOfSameDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a(4)) a[0].1:0 <=> a[0].3:2",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "0010"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "0011"
+      },
+      {
+        "in": "0010",
+        "out": "1000"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "1001"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "0110"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "0111"
+      },
+      {
+        "in": "0011",
+        "out": "1100"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "1101"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeWithStartEqualToEndOfValueOfDimensionOfVariableWithBitrangeOfValueOfDimensionOfOtherVariable": {
+    "inputCircuit": "module main(inout a(2), inout b(1)) a[0].1:1 <=> b[0].0",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "100"
+      },
+      {
+        "in": "010",
+        "out": "001"
+      },
+      {
+        "in": "110",
+        "out": "101"
+      },
+      {
+        "in": "001",
+        "out": "010"
+      },
+      {
+        "in": "101",
+        "out": "110"
+      },
+      {
+        "in": "011",
+        "out": "011"
+      },
+      {
+        "in": "111",
+        "out": "111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeWithStartEqualToEndOfValueOfDimensionOfVariableWithOverlappingBitrangeOfValueOfOtherDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a[2](2)) a[0].1:1 <=> a[1].1:1",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0000"
+      },
+      {
+        "in": "1000",
+        "out": "1000"
+      },
+      {
+        "in": "0100",
+        "out": "0001"
+      },
+      {
+        "in": "1100",
+        "out": "1001"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "1010",
+        "out": "1010"
+      },
+      {
+        "in": "0110",
+        "out": "0011"
+      },
+      {
+        "in": "1110",
+        "out": "1011"
+      },
+      {
+        "in": "0001",
+        "out": "0100"
+      },
+      {
+        "in": "1001",
+        "out": "1100"
+      },
+      {
+        "in": "0101",
+        "out": "0101"
+      },
+      {
+        "in": "1101",
+        "out": "1101"
+      },
+      {
+        "in": "0011",
+        "out": "0110"
+      },
+      {
+        "in": "1011",
+        "out": "1110"
+      },
+      {
+        "in": "0111",
+        "out": "0111"
+      },
+      {
+        "in": "1111",
+        "out": "1111"
+      }
+    ]
+  },
+  "SwapWithLeftOperationBeingAccessOnBitrangeWithStartEqualToEndOfValueOfDimensionOfVariableWithNotOverlappingBitrangeOfValueOfSameDimensionOfSameVariable": {
+    "inputCircuit": "module main(inout a(3)) a[0].0:0 <=> a[0].2:2",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "001"
+      },
+      {
+        "in": "010",
+        "out": "010"
+      },
+      {
+        "in": "110",
+        "out": "011"
+      },
+      {
+        "in": "001",
+        "out": "100"
+      },
+      {
+        "in": "101",
+        "out": "101"
+      },
+      {
+        "in": "011",
+        "out": "110"
+      },
+      {
+        "in": "111",
+        "out": "111"
+      }
+    ]
+  }
+}

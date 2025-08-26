@@ -1,0 +1,300 @@
+{
+  "LogicalNegationOfConstantZero": {
+    "inputCircuit": "module main(out a(1)) a ^= !0",
+    "simulationRuns": [
+      {
+        "in": "0",
+        "out": "1"
+      }
+    ]
+  },
+  "LogicalNegationOfConstantOne": {
+    "inputCircuit": "module main(out a(1)) a ^= !1",
+    "simulationRuns": [
+      {
+        "in": "0",
+        "out": "1"
+      }
+    ]
+  },
+  "LogicalNegationOfNestedExpression": {
+    "inputCircuit": "module main(in a(1), in b(1), out c(1)) c ^= !(a & b)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "001"
+      },
+      {
+        "in": "100",
+        "out": "101"
+      },
+      {
+        "in": "010",
+        "out": "011"
+      },
+      {
+        "in": "110",
+        "out": "110"
+      }
+    ]
+  },
+  "LogicalNegationOfUnaryExpression": {
+    "inputCircuit": "module main(in a(1), in b(1), out c(1)) c ^= !~(a | b)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "101"
+      },
+      {
+        "in": "010",
+        "out": "011"
+      },
+      {
+        "in": "110",
+        "out": "111"
+      }
+    ]
+  },
+  "LogicalNegationOfVariable": {
+    "inputCircuit": "module main(in a(2), out b(1)) b ^= !a.1",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "001"
+      },
+      {
+        "in": "100",
+        "out": "101"
+      },
+      {
+        "in": "010",
+        "out": "010"
+      },
+      {
+        "in": "110",
+        "out": "110"
+      },
+      {
+        "in": "001",
+        "out": "000"
+      },
+      {
+        "in": "101",
+        "out": "100"
+      },
+      {
+        "in": "011",
+        "out": "011"
+      },
+      {
+        "in": "111",
+        "out": "111"
+      }
+    ]
+  },
+  "BitwiseNegationOfConstant": {
+    "inputCircuit": "module main(out a(2)) a ^= ~2",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "10"
+      },
+      {
+        "in": "10",
+        "out": "00"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "01"
+      }
+    ]
+  },
+  "BitwiseNegationOfVariable": {
+    "inputCircuit": "module main(in a(2), out b(2)) b ^= ~a",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0011"
+      },
+      {
+        "in": "1000",
+        "out": "1001"
+      },
+      {
+        "in": "0100",
+        "out": "0110"
+      },
+      {
+        "in": "1100",
+        "out": "1100"
+      }
+    ]
+  },
+  "BitwiseNegationOfBinaryExpression": {
+    "inputCircuit": "module main(in a(2), in b(2), out c(2)) c ^= ~(a.1:0 & b.0:1)",
+    "simulationRuns": [
+      {
+        "in": "000000",
+        "out": "000011"
+      },
+      {
+        "in": "100000",
+        "out": "100011"
+      },
+      {
+        "in": "010000",
+        "out": "010011"
+      },
+      {
+        "in": "110000",
+        "out": "110011"
+      },
+      {
+        "in": "001000",
+        "out": "001011"
+      },
+      {
+        "in": "101000",
+        "out": "101011"
+      },
+      {
+        "in": "011000",
+        "out": "011001"
+      },
+      {
+        "in": "111000",
+        "out": "111001"
+      },
+      {
+        "in": "000100",
+        "out": "000111"
+      },
+      {
+        "in": "100100",
+        "out": "100110"
+      },
+      {
+        "in": "010100",
+        "out": "010111"
+      },
+      {
+        "in": "110100",
+        "out": "110110"
+      },
+      {
+        "in": "001100",
+        "out": "001111"
+      },
+      {
+        "in": "101100",
+        "out": "101110"
+      },
+      {
+        "in": "011100",
+        "out": "011101"
+      },
+      {
+        "in": "111100",
+        "out": "111100"
+      }
+    ]
+  },
+  "BitwiseNegationOfShiftExpression": {
+    "inputCircuit": "module main(in a(4), out b(4)) b ^= ~(a >> 2)",
+    "simulationRuns": [
+      {
+        "in": "00000000",
+        "out": "00001111"
+      },
+      {
+        "in": "10000000",
+        "out": "10001111"
+      },
+      {
+        "in": "01000000",
+        "out": "01001111"
+      },
+      {
+        "in": "11000000",
+        "out": "11001111"
+      },
+      {
+        "in": "00100000",
+        "out": "00100111"
+      },
+      {
+        "in": "10100000",
+        "out": "10100111"
+      },
+      {
+        "in": "01100000",
+        "out": "01100111"
+      },
+      {
+        "in": "11100000",
+        "out": "11100111"
+      },
+      {
+        "in": "00010000",
+        "out": "00011011"
+      },
+      {
+        "in": "10010000",
+        "out": "10011011"
+      },
+      {
+        "in": "01010000",
+        "out": "01011011"
+      },
+      {
+        "in": "11010000",
+        "out": "11011011"
+      },
+      {
+        "in": "00110000",
+        "out": "00110011"
+      },
+      {
+        "in": "10110000",
+        "out": "10110011"
+      },
+      {
+        "in": "01110000",
+        "out": "01110011"
+      },
+      {
+        "in": "11110000",
+        "out": "11110011"
+      }
+    ]
+  },
+  "BitwiseNegationOfUnaryExpression": {
+    "inputCircuit": "module main(in a(1), in b(1), out c(1)) c ^= ~!(a | b)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "000"
+      },
+      {
+        "in": "100",
+        "out": "101"
+      },
+      {
+        "in": "010",
+        "out": "011"
+      },
+      {
+        "in": "110",
+        "out": "111"
+      }
+    ]
+  }
+}

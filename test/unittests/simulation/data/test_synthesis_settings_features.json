@@ -1,0 +1,137 @@
+{
+  "OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesModuleWithMainIdentiferAsMainModule": {
+    "inputCircuit": "module incr(inout a(2)) ++= a module decr(inout a(2)) --= a module main(inout a(2)) a ^= 1",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "10"
+      },
+      {
+        "in": "10",
+        "out": "00"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "01"
+      }
+    ]
+  },
+  "OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMainExists": {
+    "inputCircuit": "module incr(inout a(2)) ++= a module decr(inout a(2)) --= a module xor(inout a(2)) a ^= 1",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "10"
+      },
+      {
+        "in": "10",
+        "out": "00"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "01"
+      }
+    ]
+  },
+  "OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMatchingMainExactlyExists": {
+    "inputCircuit": "module main_incr(inout a(2)) ++= a module decr_main(inout a(2)) --= a module MAIN(inout a(2)) ~= a module xor(inout a(2)) a ^= 1",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "10"
+      },
+      {
+        "in": "10",
+        "out": "00"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "01"
+      }
+    ]
+  },
+  "OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMatchingMainInSameCasingExists": {
+    "inputCircuit": "module incr(inout a(2)) ++= a module MAIN(inout a(2)) --= a module main(inout a(2)) call incr(a)",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "10"
+      },
+      {
+        "in": "10",
+        "out": "01"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "00"
+      }
+    ]
+  },
+  "UserDefinedMainModuleIdentifierInSynthesisSettingsChoosesMatchingModuleInsteadOfModuleWithIdentifierMain": {
+    "inputCircuit": "module incr(inout a(2)) ++= a module main(inout a(2)) --= a",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "10"
+      },
+      {
+        "in": "10",
+        "out": "01"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "00"
+      }
+    ]
+  },
+  "UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithFullMatchFoundSelectsLatterAsModuleModule": {
+    "inputCircuit": "module incr_4(inout a(4)) --= a module twoQubit_incr(inout a(2)) --= a module main(inout a(2)) --= a module incr(inout a(2)) ++= a",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "10"
+      },
+      {
+        "in": "10",
+        "out": "01"
+      },
+      {
+        "in": "01",
+        "out": "11"
+      },
+      {
+        "in": "11",
+        "out": "00"
+      }
+    ]
+  },
+  "UserDefinedModuleIdentifierInSynthesisSettingsOnlyMatchingModulesWithSameIdentifierCharacterCasing": {
+    "inputCircuit": "module incr(inout a(1)) ++= a module INCR(inout a(2)) ++= a.1 module incr(inout a(3)) ++= a.2",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "01"
+      }
+    ]
+  }
+}
