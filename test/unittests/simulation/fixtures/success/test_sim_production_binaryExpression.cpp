@@ -15,8 +15,6 @@
 #include <gtest/gtest.h>
 #include <string>
 
-constexpr int x = 2;
-
 const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_sim_production_binaryExpression.json";
 
 TYPED_TEST_SUITE_P(BaseSimulationTestFixture);

@@ -8,31 +8,133 @@
  * Licensed under the MIT License
  */
 
-//
-// #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
-// #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
-// #include "base_simulation_test_fixture.hpp"
-//
-// #include <gtest/gtest.h>
-// #include <string>
-//
-// const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_sim_production_forStatement.json";
-//
-// TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
-//
-// TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationDivision) {
-//     // Since the expected values in case of a division by zero are dependent on the used synthesis algorithm, all test cases in which the divisor is 0 are omitted.
-//     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-// }
-//
-// TYPED_TEST_P(BaseSimulationTestFixture, BinaryOperationModulo) {
-//     // Since the expected values in case of a modulo operation in which the modulus is zero are dependent on the used synthesis algorithm, all test cases in which the modulus is 0 are omitted.
-//     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-// }
-//
-// REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
-//                             BinaryOperationDivision,
-//                             BinaryOperationModulo);
-//
-// using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
-// INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
+#include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
+#include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
+#include "base_simulation_test_fixture.hpp"
+
+#include <gtest/gtest.h>
+#include <string>
+
+const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_sim_production_forStatement.json";
+
+TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
+
+// Our current assumption is that the stringified input circuit is used as the test case data and processed by the parser prior to synthesis instead
+// of the raw intermediate representation thus some test cases are prevented by the parser due to it adding defaults to not provided values (i.e. default values
+// for the iteration range start value or step size in a ForStatement). Future synthesis tests using the intermediate representation as test case data should check
+// the behaviour of the synthesis algorithms for the now omitted test cases.
+
+TYPED_TEST_P(BaseSimulationTestFixture, NoLoopVariableAndOnlyIterationRangeStartValueDefinedInForStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, NoLoopVariableAndOnlyIterationRangeStartValueAndStepSizeDefinedInForStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, NoLoopVariableAndIterationRangeStartAndEndValueDefinedInForStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, NoLoopVariableAndFullIterationRangeDefinedInForStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, NoLoopVariableAndIterationRangeWithStartLargerThanEndAndOnlyStartAndEndValueDefined) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, NoLoopVariableAndFullIterationRangeDefinitionWithStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LoopVariableAndIterationRangeStartAndEndValueDefinedInForStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LoopVariableAndFullIterationRangeDefinedInForStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LoopVariableAndIterationRangeWithStartLargerThanEndAndOnlyStartAndEndValueDefined) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LoopVariableAndFullIterationRangeDefinitionWithStartLargerThanEnd) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfCompileTimeConstantExpressionInIterationRangeStartDefinitionOfForStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfCompileTimeConstantExpressionInIterationRangeEndDefinitionOfForStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfCompileTimeConstantExpressionInStepsizeDefinitionOfForStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfLoopVariableOfCurrentForStatementInIterationRangeEndDefinition) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfLoopVariableOfCurrentForStatementInStepsizeDefinition) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfParentLoopVariableInIterationRangeStartDefinition) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfParentLoopVariableInIterationRangeEndDefinition) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfParentLoopVariableInStepSizeDefinition) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LoopIterationRangeWithStartEqualToEndAndNoStepsizeDefinitionPerformsOneIteration) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LoopIterationRangeWithStartEqualToEndAndStepsizeDefinitionPerformsOneIteration) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LoopIterationRangeWithStartEqualToEndDefinedUsingNotEqualConstantExpressionsAndNoStepsizeDefinitionPerformsOneIteration) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, ReuseOfSameLoopVariableIdentifierInNotNestedLoop) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
+                            NoLoopVariableAndOnlyIterationRangeStartValueDefinedInForStatement,
+                            NoLoopVariableAndOnlyIterationRangeStartValueAndStepSizeDefinedInForStatement,
+                            NoLoopVariableAndIterationRangeStartAndEndValueDefinedInForStatement,
+                            NoLoopVariableAndFullIterationRangeDefinedInForStatement,
+                            NoLoopVariableAndIterationRangeWithStartLargerThanEndAndOnlyStartAndEndValueDefined,
+                            NoLoopVariableAndFullIterationRangeDefinitionWithStartLargerThanEnd,
+                            LoopVariableAndIterationRangeStartAndEndValueDefinedInForStatement,
+                            LoopVariableAndFullIterationRangeDefinedInForStatement,
+                            LoopVariableAndIterationRangeWithStartLargerThanEndAndOnlyStartAndEndValueDefined,
+                            LoopVariableAndFullIterationRangeDefinitionWithStartLargerThanEnd,
+                            UsageOfCompileTimeConstantExpressionInIterationRangeStartDefinitionOfForStatement,
+                            UsageOfCompileTimeConstantExpressionInIterationRangeEndDefinitionOfForStatement,
+                            UsageOfCompileTimeConstantExpressionInStepsizeDefinitionOfForStatement,
+                            UsageOfLoopVariableOfCurrentForStatementInIterationRangeEndDefinition,
+                            UsageOfLoopVariableOfCurrentForStatementInStepsizeDefinition,
+                            UsageOfParentLoopVariableInIterationRangeStartDefinition,
+                            UsageOfParentLoopVariableInIterationRangeEndDefinition,
+                            UsageOfParentLoopVariableInStepSizeDefinition,
+                            LoopIterationRangeWithStartEqualToEndAndNoStepsizeDefinitionPerformsOneIteration,
+                            LoopIterationRangeWithStartEqualToEndAndStepsizeDefinitionPerformsOneIteration,
+                            LoopIterationRangeWithStartEqualToEndDefinedUsingNotEqualConstantExpressionsAndNoStepsizeDefinitionPerformsOneIteration,
+                            ReuseOfSameLoopVariableIdentifierInNotNestedLoop);
+
+using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
+INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
