@@ -57,7 +57,6 @@ project_copyright = "Chair for Design Automation, Technical University of Munich
 master_doc = "index"
 
 templates_path = ["_templates"]
-html_css_files = ["custom.css"]
 
 extensions = [
     "myst_nb",
