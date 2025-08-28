@@ -46,4 +46,3 @@ build:
         - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b dirhtml -d docs/_build/doctrees -D language=en docs docs/_build/dirhtml
         - mkdir -p $READTHEDOCS_OUTPUT/htmlzip
         - zip -r $READTHEDOCS_OUTPUT/htmlzip/html.zip docs/_build/dirhtml/*
-
