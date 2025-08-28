@@ -265,7 +265,7 @@ Working on the Documentation
 ############################
 
 The documentation is written in `reStructuredText <https://docutils.sourceforge.io/rst.html>`_ and built using `Sphinx <https://www.sphinx-doc.org/en/master/>`_.
-The documentation source files can be found in the :code:`docs/source` directory.
+The documentation source files can be found in the :code:`docs` directory.
 You can build the documentation using the :code:`nox` session :code:`docs`.
 
     .. code-block:: console
@@ -279,6 +279,6 @@ This will install all dependencies for building the documentation in an isolated
 
         .. code-block:: console
 
-            (venv) $ sphinx-build -b html docs/source docs/build
+            (venv) $ sphinx-build -b html docs docs/build
 
         The docs can then be found in the :code:`docs/build` directory.

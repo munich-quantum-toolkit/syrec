@@ -46,13 +46,21 @@ if TYPE_CHECKING:
     from pybtex.richtext import HRef
 
 # -- Project information -----------------------------------------------------
+
 project = "SyReC"
 author = "Lukas Burgholzer"
 language = "en"
 project_copyright = "Chair for Design Automation, Technical University of Munich"
 
 # -- General configuration ---------------------------------------------------
+
+master_doc = "index"
+
+templates_path = ["_templates"]
+html_css_files = ["custom.css"]
+
 extensions = [
+    "myst_nb",
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
@@ -67,6 +75,8 @@ extensions = [
     "sphinxext.opengraph",
     "sphinx_autodoc_typehints",
 ]
+
+source_suffix = [".rst", ".md"]
 
 pygments_style = "colorful"
 
@@ -125,13 +135,34 @@ napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 
 # -- Options for HTML output -------------------------------------------------
+
 html_theme = "furo"
 html_static_path = ["_static"]
+html_css_files = [
+    "custom.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/fontawesome.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/solid.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css",
+]
 html_theme_options = {
     "light_logo": "mqt_dark.png",
     "dark_logo": "mqt_light.png",
     "source_repository": "https://github.com/munich-quantum-toolkit/syrec/",
     "source_branch": "main",
-    "source_directory": "docs/source",
+    "source_directory": "docs/",
     "navigation_with_keys": True,
+    "footer_icons": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/munich-quantum-toolkit/syrec/",
+            "html": "",
+            "class": "fa-brands fa-solid fa-github fa-2x",
+        },
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/mqt-syrec/",
+            "html": "",
+            "class": "fa-brands fa-solid fa-python fa-2x",
+        },
+    ],
 }

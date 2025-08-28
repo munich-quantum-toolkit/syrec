@@ -1,8 +1,10 @@
 version: 2
 
 formats:
-  #  - pdf
   - htmlzip
+
+sphinx:
+  configuration: docs/conf.py
 
 build:
   os: ubuntu-24.04
@@ -39,16 +41,9 @@ build:
       - cd ~/boost_1_87_0 && ./bootstrap.sh --prefix=${HOME}/boost && ./b2 install --with-system --prefix=${HOME}/boost
     build:
       html:
-        - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b html -d docs/_build/doctrees -D language=en docs/source $READTHEDOCS_OUTPUT/html
+        - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b html -d docs/_build/doctrees -D language=en docs $READTHEDOCS_OUTPUT/html
       htmlzip:
-        - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b dirhtml -d docs/_build/doctrees -D language=en docs/source docs/_build/dirhtml
+        - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b dirhtml -d docs/_build/doctrees -D language=en docs docs/_build/dirhtml
         - mkdir -p $READTHEDOCS_OUTPUT/htmlzip
         - zip -r $READTHEDOCS_OUTPUT/htmlzip/html.zip docs/_build/dirhtml/*
-#        pdf:
-#            - Boost_DIR=${HOME}/boost uv run --frozen --no-dev --no-build-isolation-package mqt-syrec -m sphinx -T -b latex -d docs/_build/doctrees -D language=en docs/source docs/_build/latex
-#            - cd docs/_build/latex && latexmk -pdf -f -dvi- -ps- -interaction=nonstopmode -jobname=$READTHEDOCS_PROJECT
-#            - mkdir -p $READTHEDOCS_OUTPUT/pdf
-#            - cp docs/_build/latex/$READTHEDOCS_PROJECT.pdf $READTHEDOCS_OUTPUT/pdf/$READTHEDOCS_PROJECT.pdf
 
-sphinx:
-  configuration: docs/source/conf.py
