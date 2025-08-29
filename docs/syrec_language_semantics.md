@@ -63,7 +63,6 @@ We start by defining the semantics of the highest-level entity of a SyReC progra
       - The number of dimensions match
       - The number of values for each of the defined dimensions matches
       - The bitwidth of the parameters match
-    
 
   The signature of a module is expected to be unique in a SyReC program.
 
