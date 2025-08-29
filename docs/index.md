@@ -3,7 +3,7 @@
 MQT SyReC is a tool for HDL-based synthesis of reversible circuits.
 It is part of the _{doc}`Munich Quantum Toolkit (MQT) <mqt:index>`_.
 
-We recommend you to start with the {doc}`installation instructions <Installation>`.
+We recommend you to start with the {doc}`installation instructions <installation>`.
 Then proceed to read the {doc}`reference documentation <library/Library>`.
 If you are interested in the theory behind MQT SyReC, have a look at the publications in the {doc}`publication list <references>`.
 
@@ -23,8 +23,8 @@ self
 :maxdepth: 1
 
 installation
-DescriptionAndFeatures
-SyrecLanguageSemantics
+description_and_features
+syrec_language_semantics
 references
 ```
 
