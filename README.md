@@ -31,9 +31,13 @@ It is part of the [_Munich Quantum Toolkit (MQT)_](https://mqt.readthedocs.io).
 
 ## Key Features
 
-- TODO.
-- TODO.
-- TODO.
+- **Automatic synthesis of reversible circuits from high-level HDL**: Accepts any HDL description following the [SyReC grammar and syntax](https://mqt.readthedocs.io/projects/syrec/en/latest/SyrecLanguageSemantics.html), enabling rapid prototyping and design of reversible logic.
+- **Two complementary synthesis schemes**: Choose between [cost-aware synthesis](https://mqt.readthedocs.io/projects/syrec/en/latest/DescriptionAndFeatures.html#cost-aware-synthesis) (minimizing gate cost) and [line-aware synthesis](https://mqt.readthedocs.io/projects/syrec/en/latest/DescriptionAndFeatures.html#line-aware-synthesis) (minimizing circuit lines), each with distinct trade-offs for resource optimization.
+- **Graphical User Interface (GUI)**: Intuitive GUI for specifying SyReC programs, visualizing circuits, and running synthesis, simulation, and cost analysis at the click of a button.
+- **Simulation and cost analysis**: Simulate synthesized circuits and determine gate costs directly within the tool.
+- **Comprehensive SyReC language support**: Implements the full SyReC language, including modules, parameterized bitwidths, multi-dimensional variables, and advanced assignment semantics ([language reference](https://mqt.readthedocs.io/projects/syrec/en/latest/SyrecLanguageSemantics.html)).
+- **Python API and C++ core**: High-performance C++ backend with Python bindings for integration into research and teaching workflows.
+- **Cross-platform and easy to install**: Prebuilt Python wheels for Linux, macOS, and Windows via [PyPI](https://pypi.org/project/mqt.syrec/).
 
 If you have any questions, feel free to create a [discussion](https://github.com/munich-quantum-toolkit/syrec/discussions) or an [issue](https://github.com/munich-quantum-toolkit/syrec/issues) on [GitHub](https://github.com/munich-quantum-toolkit/syrec).
 
