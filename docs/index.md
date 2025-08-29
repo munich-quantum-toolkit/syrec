@@ -8,8 +8,8 @@ Then proceed to read the {doc}`reference documentation <library/Library>`.
 If you are interested in the theory behind MQT SyReC, have a look at the publications in the {doc}`publication list <references>`.
 
 We appreciate any feedback and contributions to the project.
-If you want to contribute, you can find more information in the {doc}`contribution guide <Contributing>`.
-If you are having trouble with the installation or the usage of MQT SyReC, please let us know on our {doc}`support page <Support>`.
+If you want to contribute, you can find more information in the {doc}`contribution guide <contributing>`.
+If you are having trouble with the installation or the usage of MQT SyReC, please let us know on our {doc}`support page <support>`.
 
 ```{toctree}
 :hidden:
@@ -19,10 +19,10 @@ self
 
 ```{toctree}
 :caption: User Guide
-:glob:
+:hidden:
 :maxdepth: 1
 
-Installation
+installation
 DescriptionAndFeatures
 SyrecLanguageSemantics
 references
@@ -32,11 +32,11 @@ references
 :caption: Developers
 :glob:
 :hidden:
-:maxdepth: 2
+:maxdepth: 1
 
-Contributing
+contributing
 DevelopmentGuide
-Support
+support
 ```
 
 ```{toctree}
