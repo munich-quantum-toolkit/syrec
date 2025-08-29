@@ -14,6 +14,8 @@ project(
   LANGUAGES C CXX
   DESCRIPTION "MQT SyReC Synthesizer: A Tool for HDL-based Synthesis of Reversible Circuits")
 
+set(CMAKE_CXX_STANDARD 20)
+
 option(BUILD_MQT_SYREC_BINDINGS "Build the MQT SYREC Python bindings" OFF)
 if(BUILD_MQT_SYREC_BINDINGS)
   # ensure that the BINDINGS option is set
