@@ -79,8 +79,8 @@ FetchContent_Declare(
   GIT_TAG ${FMT_VERSION})
 list(APPEND FETCH_PACKAGES fmt)
 
-if (TARGET fmt)
-    set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(TARGET fmt)
+  set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # The original CMake configuration in the ANTLR C++ git repository
