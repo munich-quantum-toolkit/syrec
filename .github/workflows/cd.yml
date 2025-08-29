@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: Deploy to PyPI
 
 on:
@@ -115,13 +116,61 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
     name: 🚀 Deploy to PyPI
+=======
+name: CD
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/cd.yml
+
+jobs:
+  build-sdist:
+    name: 🐍 Packaging
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-packaging-sdist.yml@v1.16
+
+  # Builds wheels on all supported platforms using cibuildwheel.
+  # The wheels are uploaded as GitHub artifacts `dev-cibw-*` or `cibw-*`, depending on whether
+  # the workflow is triggered from a PR or a release, respectively.
+  build-wheel:
+    name: 🐍 Packaging
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on:
+          [
+            ubuntu-24.04,
+            ubuntu-24.04-arm,
+            macos-13,
+            macos-14,
+            windows-2022,
+            windows-11-arm,
+          ]
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-packaging-wheel-cibuildwheel.yml@v1.16
+    with:
+      runs-on: ${{ matrix.runs-on }}
+
+  deploy:
+    if: github.event_name == 'release' && github.event.action == 'published'
+    name: 🚀 Deploy to PyPI
+    runs-on: ubuntu-latest
+>>>>>>> 3542248 (Update workflows)
     environment:
       name: pypi
       url: https://pypi.org/p/mqt.syrec
     permissions:
+<<<<<<< HEAD
       attestations: write
       contents: read
       id-token: write
+=======
+      id-token: write
+      attestations: write
+      contents: read
+    needs: [build-sdist, build-wheel]
+>>>>>>> 3542248 (Update workflows)
     steps:
       - uses: actions/download-artifact@v5
         with:
@@ -129,7 +178,11 @@ jobs:
           path: dist
           merge-multiple: true
       - name: Generate artifact attestation for sdist and wheel(s)
+<<<<<<< HEAD
         uses: actions/attest-build-provenance@v3
+=======
+        uses: actions/attest-build-provenance@v2.4.0
+>>>>>>> 3542248 (Update workflows)
         with:
           subject-path: "dist/*"
       - uses: pypa/gh-action-pypi-publish@release/v1
