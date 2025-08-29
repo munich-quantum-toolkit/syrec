@@ -125,7 +125,3 @@ if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-synthesis)
 
   add_library(MQT::SyReC-Synthesis ALIAS ${MQT_SYREC_TARGET_NAME}-synthesis)
 endif()
-
-if(BUILD_MQT_SYREC_BINDINGS)
-  add_subdirectory(python)
-endif()

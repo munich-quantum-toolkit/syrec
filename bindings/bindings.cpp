@@ -27,7 +27,7 @@ namespace py = pybind11;
 using namespace pybind11::literals;
 using namespace syrec;
 
-PYBIND11_MODULE(pysyrec, m) {
+PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) {
     py::module::import("mqt.core.ir");
     m.doc() = "Python interface for the SyReC programming language for the synthesis of reversible circuits";
 

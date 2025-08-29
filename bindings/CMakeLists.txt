@@ -25,19 +25,14 @@ list(
   ${BASEPOINT}/../../core/lib
   ${BASEPOINT}/../../core/lib64)
 
-pybind11_add_module(
+add_mqt_python_binding(
+  SYREC
+  ${MQT_SYREC_TARGET_NAME}-bindings
+  bindings.cpp
+  MODULE_NAME
   pysyrec
-  # Prefer thin LTO if available
-  THIN_LTO
-  # Optimize the bindings for size
-  OPT_SIZE
-  # Source code goes here
-  bindings.cpp)
-target_link_libraries(pysyrec PRIVATE MQT::SyReC-Antlr MQT::SyReC-Synthesis MQT::ProjectOptions
-                                      MQT::ProjectWarnings)
-
-# Install directive for scikit-build-core
-install(
-  TARGETS pysyrec
-  DESTINATION .
-  COMPONENT mqt-syrec_Python)
+  INSTALL_DIR
+  .
+  LINK_LIBS
+  MQT::SyReC-Antlr
+  MQT::SyReC-Synthesis)

@@ -16,6 +16,9 @@ project(
 
 set(CMAKE_CXX_STANDARD 20)
 
+# set prefix for all MQT SyReC targets
+set(MQT_SYREC_TARGET_NAME mqt-syrec)
+
 option(BUILD_MQT_SYREC_BINDINGS "Build the MQT SYREC Python bindings" OFF)
 if(BUILD_MQT_SYREC_BINDINGS)
   # ensure that the BINDINGS option is set
@@ -62,6 +65,10 @@ set(MQT_SYREC_INCLUDE_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # add main library code
 add_subdirectory(src)
+
+if(BUILD_MQT_SYREC_BINDINGS)
+  add_subdirectory(bindings)
+endif()
 
 # add test code
 if(BUILD_MQT_SYREC_TESTS)
