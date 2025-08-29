@@ -136,7 +136,6 @@ _skbuild/
 
 # Any build dirs in the tests
 test/**/build/
-python/mqt/syrec/_version.py
 
 # Common editor files
 *~
