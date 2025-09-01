@@ -142,7 +142,7 @@ std::optional<syrec::Module::ptr> CustomModuleVisitor::visitModuleTyped(const TS
         if (moduleIdentifier == mainModuleIdentifier && symbolTable->existsModuleForName(*moduleIdentifier)) {
             recordSemanticError<SemanticError::DuplicateMainModuleDefinition>(mapTokenPositionToMessagePosition(*context->literalIdent()->getSymbol()), *moduleIdentifier);
         }
-        if (moduleIdentifier->rfind(RESERVED_IDENTIFIER_PREFIX, 0) == 0) {
+        if (moduleIdentifier->starts_with(RESERVED_IDENTIFIER_PREFIX)) {
             recordSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(mapTokenPositionToMessagePosition(*context->literalIdent()->getSymbol()), *moduleIdentifier, RESERVED_IDENTIFIER_PREFIX);
         }
     }
@@ -259,7 +259,7 @@ std::optional<syrec::Variable::ptr> CustomModuleVisitor::visitSignalDeclarationT
     const std::optional<utils::TemporaryVariableScope::ptr> activeSymbolTableScope = symbolTable->getActiveTemporaryScope();
     const std::optional<std::string>                        variableIdentifier     = context->literalIdent() != nullptr ? std::make_optional(context->literalIdent()->getText()) : std::nullopt;
     if (variableIdentifier.has_value()) {
-        if (variableIdentifier->rfind(RESERVED_IDENTIFIER_PREFIX, 0) == 0) {
+        if (variableIdentifier->starts_with(RESERVED_IDENTIFIER_PREFIX)) {
             recordSemanticError<SemanticError::ReservedIdentifierPrefixUsed>(mapTokenPositionToMessagePosition(*context->literalIdent()->getSymbol()), *variableIdentifier, RESERVED_IDENTIFIER_PREFIX);
         }
         if (activeSymbolTableScope.has_value() && activeSymbolTableScope->get()->existsVariableForName(*variableIdentifier)) {

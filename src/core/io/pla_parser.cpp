@@ -37,18 +37,18 @@ namespace syrec {
         while (in.good() && getline(in, line)) {
             trim(line);
             line = std::regex_replace(line, whitespace, " ");
-            if ((line.empty()) || (line.rfind('#', 0) == 0) || (line.rfind(".ilb", 0) == 0) || (line.rfind(".ob", 0) == 0) || (line.rfind(".p", 0) == 0) || (line.rfind(".type ", 0) == 0)) {
+            if ((line.empty()) || (line.starts_with('#')) || (line.starts_with(".ilb")) || (line.starts_with(".ob")) || (line.starts_with(".p")) || (line.starts_with(".type "))) {
                 continue;
             }
 
-            if (line.rfind(".i", 0) == 0) {
-                nInputs = std::stoi(line.substr(3));
+            if (line.starts_with(".i")) {
+                nInputs = static_cast<std::size_t>(std::stoi(line.substr(3)));
                 // resize the tt constants.
                 tt.getConstants().resize(nInputs);
             }
 
-            else if (line.rfind(".o", 0) == 0) {
-                nOutputs = std::stoi(line.substr(3));
+            else if (line.starts_with(".o")) {
+                nOutputs = static_cast<std::size_t>(std::stoi(line.substr(3)));
                 // resize the tt garbage.
                 tt.getGarbage().resize(nOutputs);
             }
