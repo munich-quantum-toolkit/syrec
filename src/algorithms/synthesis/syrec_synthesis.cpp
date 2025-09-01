@@ -457,7 +457,7 @@ namespace syrec {
         }
 
         else if (from > to) {
-            for (auto i = static_cast<int>(from); i >= static_cast<int>(to); i -= static_cast<int>(step)) {
+            for (auto i = static_cast<int>(from); std::cmp_greater_equal(i, to); i -= static_cast<int>(step)) {
                 // adjust loop variable if necessary
 
                 if (!loopVariable.empty()) {
@@ -1055,7 +1055,7 @@ namespace syrec {
         const std::size_t numDeclaredDimensionsOfVariable = referencedVariable.dimensions.size();
         if (!variableAccess->indexes.empty()) {
             // check if it is all numeric_expressions
-            if (static_cast<std::size_t>(std::count_if(variableAccess->indexes.cbegin(), variableAccess->indexes.cend(), [&](const auto& p) { return dynamic_cast<NumericExpression*>(p.get()); })) == numDeclaredDimensionsOfVariable) {
+            if (std::cmp_equal(std::count_if(variableAccess->indexes.cbegin(), variableAccess->indexes.cend(), [&](const auto& p) { return dynamic_cast<NumericExpression*>(p.get()); }), numDeclaredDimensionsOfVariable)) {
                 for (std::size_t i = 0U; i < numDeclaredDimensionsOfVariable; ++i) {
                     const auto evaluatedDimensionIndexValue = dynamic_cast<NumericExpression*>(variableAccess->indexes.at(i).get())->value->evaluate(loopMap);
                     qc::Qubit  aggregateValue               = evaluatedDimensionIndexValue;
@@ -1078,7 +1078,7 @@ namespace syrec {
                     lines.emplace_back(offsetToFirstQubitOfVariable + i);
                 }
             } else {
-                for (auto i = static_cast<int>(first); i >= static_cast<int>(second); --i) {
+                for (auto i = static_cast<int>(first); std::cmp_greater_equal(i, second); --i) {
                     lines.emplace_back(offsetToFirstQubitOfVariable + static_cast<qc::Qubit>(i));
                 }
             }
