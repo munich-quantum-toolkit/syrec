@@ -262,7 +262,6 @@ test-skip = [
   "cp*-win_arm64", # no numpy, qiskit, ... wheels
   # TODO(denialhaag): Remove when all dependencies support Python 3.14
   "cp314-*",
-  "cp3*_aarch64",
 ]
 
 # The mqt-core shared libraries are provided by the mqt-core Python package.
