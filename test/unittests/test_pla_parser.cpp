@@ -9,8 +9,10 @@
  */
 
 #include "core/io/pla_parser.hpp"
+#include "core/truthTable/truth_table.hpp"
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+#include <string>
 
 using namespace syrec;
 

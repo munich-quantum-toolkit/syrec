@@ -10,8 +10,8 @@
 
 #include "core/syrec/program.hpp"
 
-#include "gtest/gtest.h"
 #include <algorithm>
+#include <gtest/gtest.h>
 #include <string>
 
 using namespace syrec;

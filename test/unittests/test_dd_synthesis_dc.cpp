@@ -10,10 +10,13 @@
 
 #include "algorithms/simulation/circuit_to_truthtable.hpp"
 #include "algorithms/synthesis/dd_synthesis.hpp"
-#include "algorithms/synthesis/encoding.hpp"
 #include "core/io/pla_parser.hpp"
+#include "core/truthTable/truth_table.hpp"
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+#include <iostream>
+#include <ranges>
+#include <string>
 
 using namespace qc::literals;
 using namespace syrec;
