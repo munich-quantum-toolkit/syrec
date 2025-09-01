@@ -65,7 +65,7 @@ protected:
         ASSERT_TRUE(indexOfQuantumOperationInQuantumComputation < annotatedQuantumComputation.getNindividualOps());
         const auto& actualAnnotationsOfQuantumOperation = annotatedQuantumComputation.getAnnotationsOfQuantumOperation(indexOfQuantumOperationInQuantumComputation);
         for (const auto& [expectedAnnotationKey, expectedAnnotationValue]: expectedAnnotationsOfQuantumComputation) {
-            ASSERT_TRUE(actualAnnotationsOfQuantumOperation.count(expectedAnnotationKey) != 0) << "Expected annotation with key '" << expectedAnnotationKey << "' was not found";
+            ASSERT_TRUE(actualAnnotationsOfQuantumOperation.contains(expectedAnnotationKey)) << "Expected annotation with key '" << expectedAnnotationKey << "' was not found";
             const auto& actualAnnotationValue = actualAnnotationsOfQuantumOperation.at(expectedAnnotationKey);
             ASSERT_EQ(expectedAnnotationValue, actualAnnotationValue) << "Value for annotation with key '" << expectedAnnotationKey << "' did not match, expected: " << expectedAnnotationValue << " but was actually " << actualAnnotationValue;
         }
