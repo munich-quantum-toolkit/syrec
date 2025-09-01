@@ -13,7 +13,7 @@
 
 #include <cstdint>
 #include <gtest/gtest.h>
-#include <string.h>
+#include <string>
 #include <vector>
 
 using namespace qc::literals;

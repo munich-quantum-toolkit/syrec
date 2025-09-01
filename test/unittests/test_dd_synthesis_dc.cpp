@@ -13,9 +13,9 @@
 #include "core/io/pla_parser.hpp"
 #include "core/truthTable/truth_table.hpp"
 
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <iostream>
-#include <ranges>
 #include <string>
 
 using namespace qc::literals;
