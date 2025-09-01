@@ -184,13 +184,13 @@ namespace {
 
             auto expectedOverlapCheckResultUsingLhsOperandAsBase = utils::VariableAccessOverlapCheckResult(getExpectedVariableAccessOverlapCheckResult());
             if (optionalExpectedOverlapData.has_value()) {
-                expectedOverlapCheckResultUsingLhsOperandAsBase.overlappingIndicesInformation = utils::VariableAccessOverlapCheckResult::OverlappingIndicesContainer({optionalExpectedOverlapData->accessedValuePerDimension, optionalExpectedOverlapData->overlappingBitForLhsOperand});
+                expectedOverlapCheckResultUsingLhsOperandAsBase.overlappingIndicesInformation = utils::VariableAccessOverlapCheckResult::OverlappingIndicesContainer({.knownValueOfAccessedValuePerDimension = optionalExpectedOverlapData->accessedValuePerDimension, .overlappingBit = optionalExpectedOverlapData->overlappingBitForLhsOperand});
             }
             ASSERT_NO_FATAL_FAILURE(assertEquivalenceBetweenVariableAccessOverlapOperands(lVarAccessInstance, rVarAccessInstance, expectedOverlapCheckResultUsingLhsOperandAsBase));
 
             auto expectedOverlapCheckResultUsingRhsOperandAsBase = utils::VariableAccessOverlapCheckResult(getExpectedVariableAccessOverlapCheckResult());
             if (optionalExpectedOverlapData.has_value()) {
-                expectedOverlapCheckResultUsingRhsOperandAsBase.overlappingIndicesInformation = utils::VariableAccessOverlapCheckResult::OverlappingIndicesContainer({optionalExpectedOverlapData->accessedValuePerDimension, optionalExpectedOverlapData->overlappingBitForRhsOperand});
+                expectedOverlapCheckResultUsingRhsOperandAsBase.overlappingIndicesInformation = utils::VariableAccessOverlapCheckResult::OverlappingIndicesContainer({.knownValueOfAccessedValuePerDimension = optionalExpectedOverlapData->accessedValuePerDimension, .overlappingBit = optionalExpectedOverlapData->overlappingBitForRhsOperand});
             }
             ASSERT_NO_FATAL_FAILURE(assertEquivalenceBetweenVariableAccessOverlapOperands(rVarAccessInstance, lVarAccessInstance, expectedOverlapCheckResultUsingRhsOperandAsBase));
         }
