@@ -79,10 +79,6 @@ FetchContent_Declare(
   GIT_TAG ${FMT_VERSION})
 list(APPEND FETCH_PACKAGES fmt)
 
-if(TARGET fmt)
-  set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
-endif()
-
 # The original CMake configuration in the ANTLR C++ git repository
 # (https://github.com/antlr/antlr4/blob/master/runtime/Cpp/cmake/ExternalAntlr4Cpp.cmake) uses the
 # ExternalProject_XX functions to configure the built of the ANTLR runtime and serves as a reference
