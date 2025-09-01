@@ -78,7 +78,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingToffoliGate(const q
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubits, const qc::Qubit targetQubit) {
-    if (!isQubitWithinRange(targetQubit) || std::any_of(controlQubits.cbegin(), controlQubits.cend(), [&](const qc::Control& control) { return !isQubitWithinRange(control.qubit) || control.qubit == targetQubit; }) || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
+    if (!isQubitWithinRange(targetQubit) || std::ranges::any_of(controlQubits, [&](const qc::Control& control) { return !isQubitWithinRange(control.qubit) || control.qubit == targetQubit; }) || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
         return false;
     }
 

@@ -102,7 +102,7 @@ namespace syrec {
         }
 
         /// Assignment operations
-        std::reverse(statAssignOp.begin(), statAssignOp.end());
+        std::ranges::reverse(statAssignOp);
 
         /// If reversible assignment is "-", the assignment operations must negated appropriately
         if (assignmentStmt.assignOperation == AssignStatement::AssignOperation::Subtract) {

@@ -111,7 +111,7 @@ namespace syrec {
             outputFreq[output]++;
         }
 
-        const auto maxPair = std::max_element(outputFreq.begin(), outputFreq.end(), [](const std::pair<TruthTable::Cube, std::size_t>& p1, const std::pair<TruthTable::Cube, std::size_t>& p2) { return p1.second < p2.second; });
+        const auto maxPair = std::ranges::max_element(outputFreq, [](const std::pair<TruthTable::Cube, std::size_t>& p1, const std::pair<TruthTable::Cube, std::size_t>& p2) { return p1.second < p2.second; });
 
         return static_cast<std::size_t>(std::ceil(std::log2(maxPair->second)));
     }

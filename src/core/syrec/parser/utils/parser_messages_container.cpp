@@ -49,7 +49,7 @@ void ParserMessagesContainer::sortRecordedMessagesOfTypeInAscendingOrder(Message
     }
 
     std::vector<Message::ptr>& messagesOfType = messagesPerType[messageType];
-    std::stable_sort(messagesOfType.begin(), messagesOfType.end(), [](const Message::ptr& lMsg, const Message::ptr& rMsg) {
+    std::ranges::stable_sort(messagesOfType, [](const Message::ptr& lMsg, const Message::ptr& rMsg) {
         return lMsg->position.line < rMsg->position.line ? true : (lMsg->position.line == rMsg->position.line && lMsg->position.column < rMsg->position.column);
     });
 }

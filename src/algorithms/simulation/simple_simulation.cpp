@@ -32,7 +32,7 @@ namespace {
     using TimeStamp = std::chrono::time_point<std::chrono::steady_clock>;
 
     bool areAllControlQubitsSetInState(const qc::Controls& controlQubits, const NBitValuesContainer& state) {
-        return controlQubits.empty() || std::all_of(controlQubits.cbegin(), controlQubits.cend(), [&state](const qc::Control& controlQubit) { return state.test(controlQubit.qubit).value_or(false); });
+        return controlQubits.empty() || std::ranges::all_of(controlQubits, [&state](const qc::Control& controlQubit) { return state.test(controlQubit.qubit).value_or(false); });
     }
 } // namespace
 

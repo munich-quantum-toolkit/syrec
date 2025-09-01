@@ -29,9 +29,8 @@ namespace {
 } // namespace
 
 bool VariableAccessIndicesValidity::isValid() const {
-    return std::all_of(
-                   accessedValuePerDimensionValidity.cbegin(),
-                   accessedValuePerDimensionValidity.cend(),
+    return std::ranges::all_of(
+                   accessedValuePerDimensionValidity,
                    [](const IndexValidationResult& validityOfAccessedValueOfDimension) {
                        return validityOfAccessedValueOfDimension.indexValidity == IndexValidationResult::IndexValidity::Ok;
                    }) &&

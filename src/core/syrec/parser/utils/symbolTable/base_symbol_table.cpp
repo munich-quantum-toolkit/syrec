@@ -33,9 +33,8 @@ bool utils::BaseSymbolTable::insertModule(const syrec::Module::ptr& module) {
     // * (inout, in) and vice versa
     //
     const syrec::Module::vec& modulesMatchingIdentifier = getModulesByName(module->name);
-    if (std::any_of(
-                modulesMatchingIdentifier.cbegin(),
-                modulesMatchingIdentifier.cend(),
+    if (std::ranges::any_of(
+                modulesMatchingIdentifier,
                 [&module](const syrec::Module::ptr& existingModuleMatchingIdentifier) {
                     return existingModuleMatchingIdentifier->parameters.size() == module->parameters.size() && std::equal(
                                                                                                                        existingModuleMatchingIdentifier->parameters.cbegin(),
@@ -92,9 +91,8 @@ std::optional<utils::TemporaryVariableScope::ptr> utils::BaseSymbolTable::closeT
 // NON-PUBLIC FUNCTIONALITY
 utils::BaseSymbolTable::ModuleOverloadResolutionResult utils::BaseSymbolTable::getModulesMatchingSignature(const std::string_view& accessedModuleIdentifier, const syrec::Variable::vec& callerArguments, bool validateCallerArguments) const {
     if (validateCallerArguments) {
-        if (std::any_of(
-                    callerArguments.cbegin(),
-                    callerArguments.cend(),
+        if (std::ranges::any_of(
+                    callerArguments,
                     [](const syrec::Variable::ptr& callerArgument) {
                         return !callerArgument || callerArgument->name.empty();
                     })) {
@@ -103,21 +101,16 @@ utils::BaseSymbolTable::ModuleOverloadResolutionResult utils::BaseSymbolTable::g
     }
 
     syrec::Module::vec modulesMatchingIdentifier = getModulesByName(accessedModuleIdentifier);
-    modulesMatchingIdentifier.erase(
-            std::remove_if(
-                    modulesMatchingIdentifier.begin(),
-                    modulesMatchingIdentifier.end(),
-                    [&callerArguments](const syrec::Module::ptr& moduleMatchingIdentifier) {
-                        return moduleMatchingIdentifier->parameters.size() != callerArguments.size() || !std::equal(
-                                                                                                                moduleMatchingIdentifier->parameters.cbegin(),
-                                                                                                                moduleMatchingIdentifier->parameters.cend(),
-                                                                                                                callerArguments.cbegin(),
-                                                                                                                callerArguments.cend(),
-                                                                                                                [](const syrec::Variable::ptr& moduleParameter, const syrec::Variable::ptr& callerArgument) {
-                                                                                                                    return variable_assignability_check::doesModuleParameterTypeAllowAssignmentFromVariableType(moduleParameter->type, callerArgument->type) && doVariableStructuresMatch(*moduleParameter, *callerArgument);
-                                                                                                                });
-                    }),
-            modulesMatchingIdentifier.end());
+    std::erase_if(
+            modulesMatchingIdentifier,
+            [&callerArguments](const syrec::Module::ptr& moduleMatchingIdentifier) {
+                return moduleMatchingIdentifier->parameters.size() != callerArguments.size() || !std::ranges::equal(
+                                                                                                        moduleMatchingIdentifier->parameters,
+                                                                                                        callerArguments,
+                                                                                                        [](const syrec::Variable::ptr& moduleParameter, const syrec::Variable::ptr& callerArgument) {
+                                                                                                            return variable_assignability_check::doesModuleParameterTypeAllowAssignmentFromVariableType(moduleParameter->type, callerArgument->type) && doVariableStructuresMatch(*moduleParameter, *callerArgument);
+                                                                                                        });
+            });
 
     if (modulesMatchingIdentifier.empty()) {
         return ModuleOverloadResolutionResult(ModuleOverloadResolutionResult::Result::NoMatchFound, std::nullopt);

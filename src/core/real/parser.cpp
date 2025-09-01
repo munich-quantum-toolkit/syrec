@@ -64,8 +64,8 @@ namespace syrec {
         /// @return Whether the given io name is valid
         bool isValidIoName(const std::string_view& ioName) noexcept {
             return !ioName.empty() &&
-                   std::all_of(
-                           ioName.cbegin(), ioName.cend(), [](const char ioNameCharacter) {
+                   std::ranges::all_of(
+                           ioName, [](const char ioNameCharacter) {
                                return static_cast<bool>(std::isalnum(
                                               static_cast<unsigned char>(ioNameCharacter))) ||
                                       ioNameCharacter == '_';
@@ -337,7 +337,7 @@ namespace syrec {
                 throw std::runtime_error("[real parser] l:" + std::to_string(line) +
                                          " msg: Invalid file header");
             }
-            std::transform(cmd.begin(), cmd.end(), cmd.begin(), [](unsigned char ch) {
+            std::ranges::transform(cmd, cmd.begin(), [](unsigned char ch) {
                 return static_cast<char>(toupper(ch));
             });
             ++line;
@@ -649,10 +649,10 @@ namespace syrec {
                 while (cmd != ".ENDDEFINE") {
                     is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
                     is >> cmd;
-                    std::transform(cmd.begin(), cmd.end(), cmd.begin(),
-                                   [](const unsigned char c) {
-                                       return static_cast<char>(toupper(c));
-                                   });
+                    std::ranges::transform(cmd, cmd.begin(),
+                                           [](const unsigned char c) {
+                                               return static_cast<char>(toupper(c));
+                                           });
                 }
             } else {
                 throw std::runtime_error("[real parser] l:" + std::to_string(line) +
@@ -677,8 +677,8 @@ namespace syrec {
                 throw std::runtime_error("[real parser] l:" + std::to_string(line) +
                                          " msg: Failed to read command");
             }
-            std::transform(
-                    cmd.begin(), cmd.end(), cmd.begin(),
+            std::ranges::transform(
+                    cmd, cmd.begin(),
                     [](const unsigned char c) { return static_cast<char>(tolower(c)); });
             ++line;
 
