@@ -76,7 +76,8 @@ set(FMT_VERSION
 FetchContent_Declare(
   fmt
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG ${FMT_VERSION})
+  GIT_TAG ${FMT_VERSION}
+  CMAKE_ARGS -DBUILD_SHARED_LIBS=ON)
 list(APPEND FETCH_PACKAGES fmt)
 
 # The original CMake configuration in the ANTLR C++ git repository
