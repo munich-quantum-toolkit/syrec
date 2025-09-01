@@ -6,8 +6,6 @@
 #
 # Licensed under the MIT License
 
-set(MQT_SYREC_TARGET_NAME "mqt-syrec")
-
 if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-ir)
   add_library(${MQT_SYREC_TARGET_NAME}-ir)
   target_sources(
