@@ -211,11 +211,11 @@ namespace minbool {
             }
         }
         for (std::uint64_t i = (1 << n) - 1; i > 0U; --i) {
-            if (onValues.count(i) == 0 && evalBoolean(solution, i, n)) {
+            if (!onValues.contains(i) && evalBoolean(solution, i, n)) {
                 return false;
             }
         }
-        return onValues.count(0) != 0U || !evalBoolean(solution, 0U, n);
+        return onValues.contains(0) || !evalBoolean(solution, 0U, n);
     }
 
     syrec::TruthTable::Cube::Set minimizeBoolean(syrec::TruthTable::Cube::Set const& sigVec) {

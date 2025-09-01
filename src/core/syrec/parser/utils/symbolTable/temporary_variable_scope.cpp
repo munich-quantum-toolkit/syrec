@@ -86,7 +86,7 @@ std::vector<utils::TemporaryVariableScope::ScopeEntry::readOnlyPtr> utils::Tempo
     const auto endSignalIterator = signalIdentifierLookup.end();
     while (signalsIterator != endSignalIterator) {
         if (const std::shared_ptr<const syrec::Variable> variableData = signalsIterator->second->getVariableData().value_or(nullptr);
-            variableData != nullptr && lookedForVariableTypes.count(variableData->type) != 0) {
+            variableData != nullptr && lookedForVariableTypes.contains(variableData->type)) {
             variablesMatchingType.emplace_back(signalsIterator->second);
         }
         ++signalsIterator;

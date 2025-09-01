@@ -587,7 +587,7 @@ namespace syrec {
 
         // to preserve the `src` DD throughout the synthesis, its reference count has to be at least 2.
         const auto& rootSet = dd->getRootSet<dd::mNode>();
-        if (rootSet.find(src) == rootSet.end()) {
+        if (!rootSet.contains(src)) {
             dd->incRef(src);
             dd->incRef(src);
         } else if (rootSet.at(src) == 1U) {
@@ -648,7 +648,7 @@ namespace syrec {
 
             // if no paths have been shifted, the children of the current node need to be processed.
             for (const auto& e: current.p->e) {
-                if (!e.isTerminal() && !dcNodeCondition(e) && visited.find(e) == visited.end()) {
+                if (!e.isTerminal() && !dcNodeCondition(e) && !visited.contains(e)) {
                     queue.emplace(e);
                     visited.emplace(e);
                 }

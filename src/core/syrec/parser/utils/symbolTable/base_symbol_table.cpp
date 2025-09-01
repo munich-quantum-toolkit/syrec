@@ -48,7 +48,7 @@ bool utils::BaseSymbolTable::insertModule(const syrec::Module::ptr& module) {
         return false;
     }
 
-    if (declaredModules.find(module->name) == declaredModules.end()) {
+    if (!declaredModules.contains(module->name)) {
         declaredModules.insert({module->name, syrec::Module::vec()});
     }
     declaredModules.at(module->name).emplace_back(module);

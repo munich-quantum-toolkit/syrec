@@ -34,7 +34,7 @@ namespace {
 using namespace syrec;
 
 bool AnnotatableQuantumComputation::addOperationsImplementingNotGate(const qc::Qubit targetQubit) {
-    if (!isQubitWithinRange(targetQubit) || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
+    if (!isQubitWithinRange(targetQubit) || aggregateOfPropagatedControlQubits.contains(targetQubit)) {
         return false;
     }
 
@@ -47,7 +47,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingNotGate(const qc::Q
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingCnotGate(const qc::Qubit controlQubit, const qc::Qubit targetQubit) {
-    if (!isQubitWithinRange(controlQubit) || !isQubitWithinRange(targetQubit) || controlQubit == targetQubit || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
+    if (!isQubitWithinRange(controlQubit) || !isQubitWithinRange(targetQubit) || controlQubit == targetQubit || aggregateOfPropagatedControlQubits.contains(targetQubit)) {
         return false;
     }
 
@@ -62,7 +62,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingCnotGate(const qc::
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingToffoliGate(const qc::Qubit controlQubitOne, const qc::Qubit controlQubitTwo, const qc::Qubit targetQubit) {
-    if (!isQubitWithinRange(controlQubitOne) || !isQubitWithinRange(controlQubitTwo) || !isQubitWithinRange(targetQubit) || controlQubitOne == targetQubit || controlQubitTwo == targetQubit || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
+    if (!isQubitWithinRange(controlQubitOne) || !isQubitWithinRange(controlQubitTwo) || !isQubitWithinRange(targetQubit) || controlQubitOne == targetQubit || controlQubitTwo == targetQubit || aggregateOfPropagatedControlQubits.contains(targetQubit)) {
         return false;
     }
 
@@ -78,7 +78,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingToffoliGate(const q
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubits, const qc::Qubit targetQubit) {
-    if (!isQubitWithinRange(targetQubit) || std::ranges::any_of(controlQubits, [&](const qc::Control& control) { return !isQubitWithinRange(control.qubit) || control.qubit == targetQubit; }) || aggregateOfPropagatedControlQubits.count(targetQubit) != 0) {
+    if (!isQubitWithinRange(targetQubit) || std::ranges::any_of(controlQubits, [&](const qc::Control& control) { return !isQubitWithinRange(control.qubit) || control.qubit == targetQubit; }) || aggregateOfPropagatedControlQubits.contains(targetQubit)) {
         return false;
     }
 
@@ -96,7 +96,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoli
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const qc::Qubit targetQubitOne, const qc::Qubit targetQubitTwo) {
-    if (!isQubitWithinRange(targetQubitOne) || !isQubitWithinRange(targetQubitTwo) || targetQubitOne == targetQubitTwo || aggregateOfPropagatedControlQubits.count(targetQubitOne) != 0 || aggregateOfPropagatedControlQubits.count(targetQubitTwo) != 0) {
+    if (!isQubitWithinRange(targetQubitOne) || !isQubitWithinRange(targetQubitTwo) || targetQubitOne == targetQubitTwo || aggregateOfPropagatedControlQubits.contains(targetQubitOne) || aggregateOfPropagatedControlQubits.contains(targetQubitTwo)) {
         return false;
     }
     const qc::Controls gateControlQubits(aggregateOfPropagatedControlQubits.cbegin(), aggregateOfPropagatedControlQubits.cend());
@@ -109,7 +109,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
 }
 
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
-    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().count(qubitLabel) != 0 || inlinedQubitsInformationLookup.count(qubitLabel) != 0 || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && isInlineStackNotSetOrEmpty(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
+    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().contains(qubitLabel) || inlinedQubitsInformationLookup.contains(qubitLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && isInlineStackNotSetOrEmpty(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
         return std::nullopt;
     }
 
@@ -126,7 +126,7 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(con
 }
 
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit, const InlinedQubitInformation& inliningInformation) {
-    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().count(qubitLabel) != 0 || inlinedQubitsInformationLookup.count(qubitLabel) != 0 || inliningInformation.userDeclaredQubitLabel.has_value() || (inliningInformation.inlineStack.has_value() && isInlineStackNotSetOrEmpty(inliningInformation.inlineStack.value()))) {
+    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().contains(qubitLabel) || inlinedQubitsInformationLookup.contains(qubitLabel) || inliningInformation.userDeclaredQubitLabel.has_value() || (inliningInformation.inlineStack.has_value() && isInlineStackNotSetOrEmpty(inliningInformation.inlineStack.value()))) {
         return std::nullopt;
     }
 
@@ -283,7 +283,7 @@ bool AnnotatableQuantumComputation::deregisterControlQubitFromPropagationInCurre
     }
 
     auto& localControlLineScope = controlQubitPropgationScopes.back();
-    if (localControlLineScope.count(controlQubit) == 0) {
+    if (!localControlLineScope.contains(controlQubit)) {
         return false;
     }
 
@@ -304,8 +304,8 @@ bool AnnotatableQuantumComputation::registerControlQubitForPropagationInCurrentA
     // If an entry for the to be registered control line already exists in the current scope then the previously determine value of the flag indicating whether the control line existed in the parent scope
     // should have the same value that it had when the control line was initially added to the current scope
 
-    if (localControlLineScope.count(controlQubit) == 0) {
-        localControlLineScope.emplace(std::make_pair(controlQubit, aggregateOfPropagatedControlQubits.count(controlQubit) != 0));
+    if (!localControlLineScope.contains(controlQubit)) {
+        localControlLineScope.emplace(std::make_pair(controlQubit, aggregateOfPropagatedControlQubits.contains(controlQubit)));
     }
     aggregateOfPropagatedControlQubits.emplace(controlQubit);
     return true;
@@ -349,7 +349,7 @@ bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std:
 }
 
 const AnnotatableQuantumComputation::InlinedQubitInformation* AnnotatableQuantumComputation::getInliningInformationOfQubit(const std::string& qubitLabel) const {
-    if (inlinedQubitsInformationLookup.count(qubitLabel) == 0) {
+    if (!inlinedQubitsInformationLookup.contains(qubitLabel)) {
         return nullptr;
     }
     return &inlinedQubitsInformationLookup.at(qubitLabel);

@@ -118,14 +118,14 @@ namespace syrec {
                             " msg: invalid variable name: " + variableIdent);
                 }
 
-                if (processedVariableIdents.count(variableIdent) > 0) {
+                if (processedVariableIdents.contains(variableIdent)) {
                     throw std::runtime_error(
                             "[real parser] l: " + std::to_string(processedLineNumberInRealFile) +
                             " msg: duplicate variable name: " + variableIdent);
                 }
 
                 if (!variableIdentsLookup.empty() &&
-                    variableIdentsLookup.count(variableIdent) == 0) {
+                    !variableIdentsLookup.contains(variableIdent)) {
                     throw std::runtime_error(
                             "[real parser] l: " + std::to_string(processedLineNumberInRealFile) +
                             " msg: given variable name " + variableIdent +
@@ -219,7 +219,7 @@ namespace syrec {
                             " msg: invalid io name: " + ioName);
                 }
 
-                if (variableIdentLookup.count(ioName) > 0) {
+                if (variableIdentLookup.contains(ioName)) {
                     throw std::runtime_error(
                             "[real parser] l: " + std::to_string(lineInRealFileDefiningIoNames) +
                             " msg: IO ident matched already declared variable with name " +
@@ -354,7 +354,7 @@ namespace syrec {
                                          " msg: Invalid file header");
             }
 
-            if (definedHeaderComponents.count(cmd) != 0) {
+            if (definedHeaderComponents.contains(cmd)) {
                 throw std::runtime_error("[real parser] l:" + std::to_string(line) +
                                          " msg: Duplicate definition of header component " +
                                          cmd);
@@ -604,10 +604,10 @@ namespace syrec {
                     // with the output qubit being used as the key while the input qubit
                     // serves as the map entries value.
                     //
-                    if (userDefinedInputIdents.count(outputIoIdent) == 0) {
+                    if (!userDefinedInputIdents.contains(outputIoIdent)) {
                         // The current implementation requires that the .garbage definition is
                         // define prior to the .output one.
-                        if (outputQubitsMarkedAsGarbage.count(outputIoQubit) == 0) {
+                        if (!outputQubitsMarkedAsGarbage.contains(outputIoQubit)) {
                             throw std::runtime_error("[real parser] l:" + std::to_string(line) +
                                                      " msg: outputs without matching inputs are "
                                                      "expected to be marked as garbage");
