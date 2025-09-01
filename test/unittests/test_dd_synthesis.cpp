@@ -65,7 +65,7 @@ INSTANTIATE_TEST_SUITE_P(TestDDSynth, TestDDSynth,
                                  "urf5"),
                          [](const testing::TestParamInfo<TestDDSynth::ParamType>& info) {
                              auto s = info.param;
-                             std::replace( s.begin(), s.end(), '-', '_');
+                             std::ranges::replace(s, '-', '_');
                              return s; });
 
 TEST_P(TestDDSynth, GenericDDSynthesisTest) {

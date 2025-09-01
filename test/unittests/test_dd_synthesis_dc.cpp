@@ -61,7 +61,7 @@ INSTANTIATE_TEST_SUITE_P(TestDDSynth, TestDDSynthDc,
                                  "z4ml"),
                          [](const testing::TestParamInfo<TestDDSynthDc::ParamType>& info) {
                              auto s = info.param;
-                             std::replace( s.begin(), s.end(), '-', '_');
+                             std::ranges::replace(s, '-', '_');
                              return s; });
 
 TEST_P(TestDDSynthDc, GenericDDSynthesisDcTest) {

@@ -80,7 +80,7 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecCostAwareSynthesisTest,
                                  "swap_2"),
                          [](const testing::TestParamInfo<SyrecCostAwareSynthesisTest::ParamType>& info) {
                              auto s = info.param;
-                             std::replace( s.begin(), s.end(), '-', '_');
+                             std::ranges::replace(s, '-', '_');
                              return s; });
 
 TEST_P(SyrecCostAwareSynthesisTest, GenericSynthesisTest) {

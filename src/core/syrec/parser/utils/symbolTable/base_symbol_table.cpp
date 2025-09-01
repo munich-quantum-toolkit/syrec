@@ -120,11 +120,9 @@ utils::BaseSymbolTable::ModuleOverloadResolutionResult utils::BaseSymbolTable::g
 }
 
 bool utils::BaseSymbolTable::doVariableStructuresMatch(const syrec::Variable& lVariable, const syrec::Variable& rVariable) noexcept {
-    return lVariable.bitwidth == rVariable.bitwidth && std::equal(
-                                                               lVariable.dimensions.cbegin(),
-                                                               lVariable.dimensions.cend(),
-                                                               rVariable.dimensions.cbegin(),
-                                                               rVariable.dimensions.cend(),
+    return lVariable.bitwidth == rVariable.bitwidth && std::ranges::equal(
+                                                               lVariable.dimensions,
+                                                               rVariable.dimensions,
                                                                [](const auto moduleParameterNumValuesOfDimension, const auto callerArgumentNumValuesOfDimension) {
                                                                    return moduleParameterNumValuesOfDimension == callerArgumentNumValuesOfDimension;
                                                                });

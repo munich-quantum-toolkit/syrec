@@ -65,9 +65,8 @@ namespace syrec_parser_test_utils {
      * see https://google.github.io/googletest/advanced.html#specifying-names-for-value-parameterized-test-parameters
      */
     inline bool doesStringContainOnlyAsciiCharactersOrUnderscores(const std::string_view& stringToCheck) {
-        return std::all_of(
-                stringToCheck.cbegin(),
-                stringToCheck.cend(),
+        return std::ranges::all_of(
+                stringToCheck,
                 [](const char characterToCheck) {
                     return std::isalnum(characterToCheck) != 0 || characterToCheck == TEST_NAME_COMPONENT_DELIMITER_SYMBOL;
                 });
@@ -159,9 +158,8 @@ namespace syrec_parser_test_utils {
                 continue;
             }
 
-            std::transform(
-                    loadedTestCaseNamesFromFile.cbegin(),
-                    loadedTestCaseNamesFromFile.cend(),
+            std::ranges::transform(
+                    loadedTestCaseNamesFromFile,
                     std::back_inserter(loadedTestCases),
                     [&inputFileNameData](const std::string& keyOfTestCaseInJsonFile) {
                         return TestFromJsonConfig(

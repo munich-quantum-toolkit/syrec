@@ -108,11 +108,9 @@ namespace {
 
     void assertVariableCollectionsMatchInOrder(const syrec::Variable::vec& expected, const syrec::Variable::vec& actual) {
         ASSERT_EQ(expected.size(), actual.size());
-        ASSERT_TRUE(std::equal(
-                expected.cbegin(),
-                expected.cend(),
-                actual.cbegin(),
-                actual.cend(),
+        ASSERT_TRUE(std::ranges::equal(
+                expected,
+                actual,
                 [](const syrec::Variable::ptr& expectedVariable, const syrec::Variable::ptr& actualVariable) {
                     return expectedVariable->name == actualVariable->name && expectedVariable->bitwidth == actualVariable->bitwidth && std::equal(expectedVariable->dimensions.cbegin(), expectedVariable->dimensions.cend(), actualVariable->dimensions.cbegin(), actualVariable->dimensions.cend(), [](const unsigned int expectedValuesForDimension, const unsigned int actualValuesForDimension) {
                                return expectedValuesForDimension == actualValuesForDimension;

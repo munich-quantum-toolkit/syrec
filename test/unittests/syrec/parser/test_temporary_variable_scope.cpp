@@ -149,12 +149,12 @@ namespace {
 
     void assertFetchedEntriesFromSymbolTableMatchExpectedOnes(const std::vector<ExpectedSymbolTableEntry>& expectedEntries, const std::vector<ExpectedSymbolTableEntry>& actualEntries) {
         ASSERT_EQ(expectedEntries.size(), actualEntries.size());
-        ASSERT_TRUE(std::all_of(expectedEntries.cbegin(), expectedEntries.cend(), [](const ExpectedSymbolTableEntry& entry) { return entry != nullptr; }));
-        ASSERT_TRUE(std::all_of(actualEntries.cbegin(), actualEntries.cend(), [](const ExpectedSymbolTableEntry& entry) { return entry != nullptr; }));
+        ASSERT_TRUE(std::ranges::all_of(expectedEntries, [](const ExpectedSymbolTableEntry& entry) { return entry != nullptr; }));
+        ASSERT_TRUE(std::ranges::all_of(actualEntries, [](const ExpectedSymbolTableEntry& entry) { return entry != nullptr; }));
 
         for (const auto& expectedEntry: expectedEntries) {
-            ASSERT_TRUE(std::any_of(
-                    actualEntries.cbegin(), actualEntries.cend(),
+            ASSERT_TRUE(std::ranges::any_of(
+                    actualEntries,
                     [&expectedEntry](const ExpectedSymbolTableEntry& actualEntry) {
                         return expectedEntry == actualEntry;
                     }))
@@ -206,9 +206,8 @@ namespace {
 
     [[nodiscard]] std::vector<ExpectedSymbolTableEntry> createdExpectedSymbolTableEntriesFrom(const std::vector<syrec::Variable::ptr>& variableInstances) {
         std::vector<ExpectedSymbolTableEntry> resultContainer;
-        std::transform(
-                variableInstances.cbegin(),
-                variableInstances.cend(),
+        std::ranges::transform(
+                variableInstances,
                 std::back_inserter(resultContainer),
                 [](const syrec::Variable::ptr& variableInstance) {
                     return createExpectedSymbolTableEntryFrom(variableInstance);
@@ -400,19 +399,17 @@ TEST(TemporaryVariableScopeTests, SearchForVariablesOfDifferentTypesWithOnlySome
     }
 
     std::vector<ExpectedSymbolTableEntry> expectedSymbolTableEntriesMatchingTypes;
-    std::transform(variableInstancesOfTypeIn.cbegin(),
-                   variableInstancesOfTypeIn.cend(),
-                   std::back_inserter(expectedSymbolTableEntriesMatchingTypes),
-                   [](const syrec::Variable::ptr& variableInstance) {
-                       return createExpectedSymbolTableEntryFrom(variableInstance);
-                   });
+    std::ranges::transform(variableInstancesOfTypeIn,
+                           std::back_inserter(expectedSymbolTableEntriesMatchingTypes),
+                           [](const syrec::Variable::ptr& variableInstance) {
+                               return createExpectedSymbolTableEntryFrom(variableInstance);
+                           });
 
-    std::transform(variableInstancesOfTypeWire.cbegin(),
-                   variableInstancesOfTypeWire.cend(),
-                   std::back_inserter(expectedSymbolTableEntriesMatchingTypes),
-                   [](const syrec::Variable::ptr& variableInstance) {
-                       return createExpectedSymbolTableEntryFrom(variableInstance);
-                   });
+    std::ranges::transform(variableInstancesOfTypeWire,
+                           std::back_inserter(expectedSymbolTableEntriesMatchingTypes),
+                           [](const syrec::Variable::ptr& variableInstance) {
+                               return createExpectedSymbolTableEntryFrom(variableInstance);
+                           });
 
     std::vector<ExpectedSymbolTableEntry> actualSymbolTableEntriesMatchingTypes;
     ASSERT_NO_FATAL_FAILURE(actualSymbolTableEntriesMatchingTypes = variableScope->getVariablesMatchingType({syrec::Variable::Type::In, syrec::Variable::Type::Wire, syrec::Variable::Type::Out}));

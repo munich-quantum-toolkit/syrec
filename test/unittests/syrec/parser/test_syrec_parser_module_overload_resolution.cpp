@@ -112,9 +112,8 @@ protected:
     }
 
     [[nodiscard]] static std::optional<syrec::Module::ptr> findFirstModuleMatchingSignature(const syrec::Module::vec& modules, const syrec::Module& moduleSignatureToSearchFor) {
-        const auto& moduleMatchingSignature = std::find_if(
-                modules.cbegin(),
-                modules.cend(),
+        const auto& moduleMatchingSignature = std::ranges::find_if(
+                modules,
                 [&moduleSignatureToSearchFor](const syrec::Module::ptr& module) {
                     return doModuleSignaturesMatch(moduleSignatureToSearchFor, *module);
                 });
