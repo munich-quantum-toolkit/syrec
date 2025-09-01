@@ -250,6 +250,7 @@ ignore = ["GH200"]
 
 [tool.cibuildwheel]
 build = "cp3*"
+manylinux-aarch64-image = "quay.io/pypa/manylinux_2_39_aarch64:latest"
 skip = "*-musllinux_*"
 archs = "auto64"
 test-groups = ["test"]
