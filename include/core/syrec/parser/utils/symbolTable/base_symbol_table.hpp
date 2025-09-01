@@ -51,7 +51,6 @@ namespace utils {
         [[maybe_unused]] std::optional<TemporaryVariableScope::ptr> closeTemporaryScope();
 
     protected:
-        // To be able to perform heterogeneous lookup using std::string_view in a STL set/dictionary container in C++17 only std::map and std::set can be used. C++20 supports this functionality also for the unordered STL container variants.
         std::map<std::string, syrec::Module::vec, std::less<>> declaredModules;
         std::vector<TemporaryVariableScope::ptr>               temporaryVariableScopes;
 

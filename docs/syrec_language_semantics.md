@@ -247,7 +247,7 @@ The parser will not report an overlap in the assignment due to the index of the 
     rof
   ```
 
-- Due to the assumption that all variable values can be represented by unsigned integer values, negative step size values are converted to their unsigned value using the C++17 value conversion semantics (see `chapter 7.8 <https://open-std.org/JTC1/SC22/WG21/docs/standards>`\_). The same conversion is applied to all negative values determined at compile time.
+- Due to the assumption that all variable values can be represented by unsigned integer values, negative step size values are converted to their unsigned value using the C++17 value conversion semantics (see [chapter 7.8 of document N4659](https://open-std.org/JTC1/SC22/WG21/docs/standards)). The same conversion is applied to all negative values determined at compile time.
 - Semantic/Syntax errors in the statements of the body of a loop performing no iterations are reported due to the parser not implementing the dead code elimination technique.
 - The iteration range of SyReC loops can be determined as shown in the following example:
 

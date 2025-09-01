@@ -97,7 +97,7 @@ Once installed, start the MQT SyReC GUI by running:
 
 ## System Requirements
 
-Building the project requires a C++ compiler with support for C++17 and CMake 3.24 or newer.
+Building the project requires a C++ compiler with support for C++20 and CMake 3.24 or newer.
 For detail on how to build the project, please refer to the [documentation](https://mqt.readthedocs.io/projects/syrec).
 Building (and running) is continuously tested under Linux, macOS, and Windows using the [latest available system versions for GitHub Actions](https://github.com/actions/runner-images).
 MQT SyReC is compatible with all supported Python versions.

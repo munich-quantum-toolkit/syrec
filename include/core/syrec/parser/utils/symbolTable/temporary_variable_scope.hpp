@@ -59,7 +59,6 @@ namespace utils {
         [[nodiscard]] std::optional<unsigned int>            getValueOfLoopVariable(const std::string_view& loopVariableIdentifier);
 
     protected:
-        // To be able to perform heterogeneous lookup using std::string_view in a STL set/dictionary container in C++17 only std::map and std::set can be used. C++20 supports this functionality also for the unordered STL container variants.
         std::map<std::string, ScopeEntry::ptr, std::less<>> signalIdentifierLookup;
         std::map<std::string, unsigned int, std::less<>>    knownLoopVariableValues;
     };

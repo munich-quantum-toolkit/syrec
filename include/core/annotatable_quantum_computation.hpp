@@ -185,9 +185,6 @@ namespace syrec {
         std::vector<std::unordered_map<qc::Qubit, bool>> controlQubitPropgationScopes;
         bool                                             canQubitsBeAddedToQuantumComputation = true;
 
-        // To be able to use a std::string_view key lookup (heterogeneous lookup) in a std::map/std::unordered_set
-        // we need to define the transparent comparator (std::less<>). This feature is only available starting with C++17
-        // For further information, see: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3465.pdf
         QuantumOperationAnnotationsLookup activateGlobalQuantumOperationAnnotations;
 
         // We are assuming that no operations in the qc::QuantumComputation are removed (i.e. by applying qc::CircuitOptimizer) and will thus use the index of the quantum operation
