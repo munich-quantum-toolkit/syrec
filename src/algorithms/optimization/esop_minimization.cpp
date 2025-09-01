@@ -23,6 +23,10 @@
 
 namespace minbool {
 
+    const auto MIN_TERM_LESS = [](const MinTerm& a, const MinTerm& b) {
+        return a.value < b.value || (a.value == b.value && a.dash < b.dash);
+    };
+
     void ImplicantTable::fill(const std::vector<MinTerm>& minterms) {
         groups.resize(nBits + 2U, 0U);
         for (const auto& term: minterms) {
@@ -61,7 +65,7 @@ namespace minbool {
                                nBits);
         }
         for (auto& [first, second]: columns) {
-            std::sort(second.begin(), second.end());
+            std::ranges::sort(second, MIN_TERM_LESS);
         }
     }
 
@@ -115,14 +119,15 @@ namespace minbool {
     bool PrimeChart::simplify() {
         bool change = false;
 
-        for (const auto& [pair1First, pair1Second]: columns) {
-            for (const auto& [pair2First, pair2Second]: columns) {
+        for (auto& [pair1First, pair1Second]: columns) {
+            for (auto& [pair2First, pair2Second]: columns) {
                 if (pair1First == pair2First) {
                     continue;
                 }
                 // Dominating columns are eliminated
-                if (std::includes(pair2Second.begin(), pair2Second.end(),
-                                  pair1Second.begin(), pair1Second.end())) {
+                std::ranges::sort(pair1Second, MIN_TERM_LESS);
+                std::ranges::sort(pair2Second, MIN_TERM_LESS);
+                if (std::ranges::includes(pair2Second, pair1Second, MIN_TERM_LESS)) {
                     columns.erase(pair2First);
                     change = true;
                     break;
@@ -138,7 +143,7 @@ namespace minbool {
             second.clear();
         }
         for (auto& [first, second]: rows) {
-            std::sort(second.begin(), second.end());
+            std::ranges::sort(second);
         }
 
         for (const auto& [pair1First, pair1Second]: rows) {
@@ -147,8 +152,7 @@ namespace minbool {
                     continue;
                 }
                 // Dominated rows are eliminated
-                if (std::includes(pair1Second.begin(), pair1Second.end(),
-                                  pair2Second.begin(), pair2Second.end())) {
+                if (std::ranges::includes(pair1Second, pair2Second)) {
                     rows.erase(pair2First);
                     change = true;
                     break;
@@ -163,7 +167,7 @@ namespace minbool {
             }
         }
         for (auto& [first, second]: columns) {
-            std::sort(second.begin(), second.end());
+            std::ranges::sort(second, MIN_TERM_LESS);
         }
 
         return change;
@@ -178,8 +182,8 @@ namespace minbool {
             terms.clear();
             table.combine(terms);
             // Remove duplicates
-            std::sort(terms.begin(), terms.end());
-            terms.erase(std::unique(terms.begin(), terms.end()), terms.end());
+            std::ranges::sort(terms, MIN_TERM_LESS);
+            terms.erase(std::ranges::unique(terms).begin(), terms.end());
             table.primes(primes);
         }
         return primes;
