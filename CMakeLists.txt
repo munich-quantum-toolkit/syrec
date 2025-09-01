@@ -14,6 +14,7 @@ project(
   LANGUAGES C CXX
   DESCRIPTION "MQT SyReC Synthesizer: A Tool for HDL-based Synthesis of Reversible Circuits")
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 20)
 
 # set prefix for all MQT SyReC targets
