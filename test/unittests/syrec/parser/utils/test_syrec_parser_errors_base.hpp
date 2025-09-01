@@ -113,7 +113,7 @@ namespace syrec_parser_error_tests {
 
         [[nodiscard]] static utils::VariableAccessOverlapCheckResult generateVariableAccessOverlappingIndicesDataContainer(const std::initializer_list<unsigned int>& accessedValuePerOverlappingDimension, unsigned int overlappingBit) {
             auto resultContainer                          = utils::VariableAccessOverlapCheckResult(utils::VariableAccessOverlapCheckResult::OverlapState::Overlapping);
-            resultContainer.overlappingIndicesInformation = utils::VariableAccessOverlapCheckResult::OverlappingIndicesContainer({accessedValuePerOverlappingDimension, overlappingBit});
+            resultContainer.overlappingIndicesInformation = utils::VariableAccessOverlapCheckResult::OverlappingIndicesContainer({.knownValueOfAccessedValuePerDimension = accessedValuePerOverlappingDimension, .overlappingBit = overlappingBit});
             return resultContainer;
         }
 

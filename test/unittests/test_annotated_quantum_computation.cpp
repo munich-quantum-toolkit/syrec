@@ -440,7 +440,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithUserDefined
     const auto defaultModule = std::make_shared<Module>("defaultModule");
 
     auto validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
-    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = 1, .isTargetModuleAccessedViaCallStmt = true, .targetModule = defaultModule}));
 
     const std::string              validAncillaryQubitLabel             = "anc_1";
     const auto                     validAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
@@ -476,7 +476,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithEmptyUserDe
 
     const auto defaultModule                  = std::make_shared<Module>("defaultModule");
     auto       validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
-    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = 1, .isTargetModuleAccessedViaCallStmt = true, .targetModule = defaultModule}));
 
     const std::string              validAncillaryQubitLabel             = "anc_1";
     const auto                     validAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
@@ -512,7 +512,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithEmptyInline
 
     const auto defaultModule                  = std::make_shared<Module>("defaultModule");
     auto       validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
-    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = 1, .isTargetModuleAccessedViaCallStmt = true, .targetModule = defaultModule}));
 
     const std::string              validAncillaryQubitLabel             = "anc_1";
     const auto                     validAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
@@ -548,7 +548,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitWithInvalidInli
 
     const auto defaultModule                  = std::make_shared<Module>("defaultModule");
     auto       validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
-    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = 1, .isTargetModuleAccessedViaCallStmt = true, .targetModule = defaultModule}));
 
     const std::string              validAncillaryQubitLabel             = "anc_1";
     const auto                     validAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
@@ -586,7 +586,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, AddAncillaryQubitAndOmittingInli
 
     const auto defaultModule                  = std::make_shared<Module>("defaultModule");
     auto       validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
-    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = 1, .isTargetModuleAccessedViaCallStmt = true, .targetModule = defaultModule}));
 
     const std::string              firstAncillaryQubitLabel             = "anc_1";
     const auto                     firstAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
@@ -2804,7 +2804,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetInlineInformationOfAncillaryQ
 
     const auto defaultModule                  = std::make_shared<Module>("defaultModule");
     auto       validAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
-    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+    validAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = 1, .isTargetModuleAccessedViaCallStmt = true, .targetModule = defaultModule}));
 
     const std::string              ancillaryQubitLabel             = "anc_1";
     const auto                     ancillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, validAncillaryQubitInlineStack);
@@ -2827,7 +2827,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetInlineInformationOfAncillaryQ
 TEST_F(AnnotatedQuantumComputationTestsFixture, GetInlineInformationOfNonAncillaryQubit) {
     const auto defaultModule                = std::make_shared<Module>("defaultModule");
     auto       nonAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
-    nonAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+    nonAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = 1, .isTargetModuleAccessedViaCallStmt = true, .targetModule = defaultModule}));
 
     const std::string              nonAncillaryQubitLabel             = "nonAnc";
     const auto                     nonAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation("user_label", nonAncillaryQubitInlineStack);
@@ -2858,7 +2858,7 @@ TEST_F(AnnotatedQuantumComputationTestsFixture, GetInlineInformationOfNonAncilla
 TEST_F(AnnotatedQuantumComputationTestsFixture, GetInlineInformationOfNotExistingQubit) {
     const auto defaultModule                = std::make_shared<Module>("defaultModule");
     auto       nonAncillaryQubitInlineStack = std::make_shared<QubitInliningStack>();
-    nonAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({1, true, defaultModule}));
+    nonAncillaryQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = 1, .isTargetModuleAccessedViaCallStmt = true, .targetModule = defaultModule}));
 
     const std::string              nonAncillaryQubitLabel             = "nonAnc";
     const auto                     nonAncillaryQubitInlineInformation = AnnotatableQuantumComputation::InlinedQubitInformation("user_label", nonAncillaryQubitInlineStack);

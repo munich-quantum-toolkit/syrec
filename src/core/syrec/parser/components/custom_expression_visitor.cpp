@@ -690,8 +690,8 @@ std::optional<syrec::VariableAccess::ptr> CustomExpressionVisitor::visitSignalTy
     }
 
     if (userAccessedBitrangeLength.has_value() && optionalDeterminedOperandBitwidth != nullptr) {
-        *optionalDeterminedOperandBitwidth = DeterminedExpressionOperandBitwidthInformation({*userAccessedBitrangeLength,
-                                                                                             context->literalIdent()->getSymbol() != nullptr ? std::make_optional(mapTokenPositionToMessagePosition(*context->literalIdent()->getSymbol())) : std::nullopt});
+        *optionalDeterminedOperandBitwidth = DeterminedExpressionOperandBitwidthInformation({.operandBitwidth                    = *userAccessedBitrangeLength,
+                                                                                             .positionOfOperandWithKnownBitwidth = context->literalIdent()->getSymbol() != nullptr ? std::make_optional(mapTokenPositionToMessagePosition(*context->literalIdent()->getSymbol())) : std::nullopt});
     }
     return generatedVariableAccess;
 }

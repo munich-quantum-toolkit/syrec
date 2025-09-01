@@ -310,7 +310,7 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
     firstInlineStackEntry->lineNumberOfCallOfTargetModule    = 1U;
     firstInlineStackEntry->isTargetModuleAccessedViaCallStmt = true;
 
-    const auto calledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, calledModuleReference});
+    const auto calledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = std::nullopt, .isTargetModuleAccessedViaCallStmt = std::nullopt, .targetModule = calledModuleReference});
     ASSERT_TRUE(sharedInlineStack->push(calledModuleInlineStackEntry));
 
     constexpr unsigned int calledModuleLocalVariablesBitwidth            = 3U;
@@ -387,7 +387,7 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
     firstInlineStackEntry->lineNumberOfCallOfTargetModule    = 1U;
     firstInlineStackEntry->isTargetModuleAccessedViaCallStmt = false;
 
-    const auto uncalledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, uncalledModuleReference});
+    const auto uncalledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = std::nullopt, .isTargetModuleAccessedViaCallStmt = std::nullopt, .targetModule = uncalledModuleReference});
     ASSERT_TRUE(sharedInlineStack->push(uncalledModuleInlineStackEntry));
 
     constexpr unsigned int uncalledModuleLocalVariablesBitwidth            = 3U;
@@ -701,7 +701,7 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
     mainModuleInlineStackEntry->lineNumberOfCallOfTargetModule    = 1U;
     mainModuleInlineStackEntry->isTargetModuleAccessedViaCallStmt = true;
 
-    const auto calledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, calledModuleReference});
+    const auto calledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = std::nullopt, .isTargetModuleAccessedViaCallStmt = std::nullopt, .targetModule = calledModuleReference});
     ASSERT_TRUE(sharedInlineStack->push(calledModuleInlineStackEntry));
 
     constexpr unsigned int indexOfFirstQubitOfCalledModuleLocalVariables = (2 * mainModuleParametersBitwidth) + (2 * bitwidthOfMainModuleLocalVariables);
@@ -765,7 +765,7 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
     mainModuleInlineStackEntry->lineNumberOfCallOfTargetModule    = 1U;
     mainModuleInlineStackEntry->isTargetModuleAccessedViaCallStmt = false;
 
-    const auto uncalledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, uncalledModuleReference});
+    const auto uncalledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = std::nullopt, .isTargetModuleAccessedViaCallStmt = std::nullopt, .targetModule = uncalledModuleReference});
     ASSERT_TRUE(sharedInlineStack->push(uncalledModuleInlineStackEntry));
 
     constexpr unsigned int indexOfFirstQubitOfUncalledModuleLocalVariables = (2 * mainModuleParametersBitwidth) + (2 * bitwidthOfMainModuleLocalVariables);
@@ -1134,7 +1134,7 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitsInformat
     mainModuleInlineStackEntry->lineNumberOfCallOfTargetModule    = 1U;
     mainModuleInlineStackEntry->isTargetModuleAccessedViaCallStmt = true;
 
-    const auto calledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, calledModuleReference});
+    const auto calledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = std::nullopt, .isTargetModuleAccessedViaCallStmt = std::nullopt, .targetModule = calledModuleReference});
     ASSERT_TRUE(sharedInlineStack->push(calledModuleInlineStackEntry));
 
     constexpr unsigned int indexOfFirstQubitOfCalledModuleLocalVariables = (2 * mainModuleParametersBitwidth) + (2 * bitwidthOfMainModuleLocalVariables);
@@ -1199,7 +1199,7 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitsInformat
     mainModuleInlineStackEntry->lineNumberOfCallOfTargetModule    = 1U;
     mainModuleInlineStackEntry->isTargetModuleAccessedViaCallStmt = false;
 
-    const auto uncalledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, uncalledModuleReference});
+    const auto uncalledModuleInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = std::nullopt, .isTargetModuleAccessedViaCallStmt = std::nullopt, .targetModule = uncalledModuleReference});
     ASSERT_TRUE(sharedInlineStack->push(uncalledModuleInlineStackEntry));
 
     constexpr unsigned int indexOfFirstQubitOfUncalledModuleLocalVariables = (2 * mainModuleParametersBitwidth) + (2 * bitwidthOfMainModuleLocalVariables);

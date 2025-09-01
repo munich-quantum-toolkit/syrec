@@ -277,7 +277,7 @@ namespace syrec {
                     if (auto* lastPushedEntryOnInlineStack = copyOfLastCreatedQubitInlineStack->getStackEntryAt(lastCreatedQubitInlineStack.value()->size() - 1); lastPushedEntryOnInlineStack != nullptr) {
                         lastPushedEntryOnInlineStack->lineNumberOfCallOfTargetModule    = statement->lineNumber;
                         lastPushedEntryOnInlineStack->isTargetModuleAccessedViaCallStmt = true;
-                        okay                                                            = copyOfLastCreatedQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, callStat->target})) && onStatement(*callStat);
+                        okay                                                            = copyOfLastCreatedQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = std::nullopt, .isTargetModuleAccessedViaCallStmt = std::nullopt, .targetModule = callStat->target})) && onStatement(*callStat);
                     } else {
                         // There must be at least one entry on the stack for the main module of the currently synthesized SyReC program
                         okay = false;
@@ -299,7 +299,7 @@ namespace syrec {
                     if (auto* lastPushedEntryOnInlineStack = copyOfLastCreatedQubitInlineStack->getStackEntryAt(lastCreatedQubitInlineStack.value()->size() - 1); lastPushedEntryOnInlineStack != nullptr) {
                         lastPushedEntryOnInlineStack->lineNumberOfCallOfTargetModule    = statement->lineNumber;
                         lastPushedEntryOnInlineStack->isTargetModuleAccessedViaCallStmt = false;
-                        okay                                                            = copyOfLastCreatedQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({std::nullopt, std::nullopt, uncallStat->target})) && onStatement(*uncallStat);
+                        okay                                                            = copyOfLastCreatedQubitInlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = std::nullopt, .isTargetModuleAccessedViaCallStmt = std::nullopt, .targetModule = uncallStat->target})) && onStatement(*uncallStat);
                     } else {
                         // There must be at least one entry on the stack for the main module of the currently synthesized SyReC program
                         okay = false;

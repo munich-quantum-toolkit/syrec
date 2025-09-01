@@ -189,6 +189,6 @@ std::string VariableAccessOverlapCheckResult::stringifyOverlappingIndicesInforma
     }
 
     auto overlapCheckResultContainer                          = VariableAccessOverlapCheckResult(VariableAccessOverlapCheckResult::OverlapState::Overlapping);
-    overlapCheckResultContainer.overlappingIndicesInformation = VariableAccessOverlapCheckResult::OverlappingIndicesContainer({constantIndicesOfAccessedValuesPerDimension, *overlappingBit});
+    overlapCheckResultContainer.overlappingIndicesInformation = VariableAccessOverlapCheckResult::OverlappingIndicesContainer({.knownValueOfAccessedValuePerDimension = constantIndicesOfAccessedValuesPerDimension, .overlappingBit = *overlappingBit});
     return overlapCheckResultContainer;
 }

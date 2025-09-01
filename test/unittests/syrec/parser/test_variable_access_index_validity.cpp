@@ -153,7 +153,7 @@ TEST_P(VariableAccessSuccessTestFixture, SuccessCase) {
     }
 
     if (variableAccessData.accessedBitRange.has_value()) {
-        expectedValidationResult.bitRangeAccessValidity = VariableAccessIndicesValidity::BitRangeValidityResult({createValidIndexValidationResult(variableAccessData.accessedBitRange->first), createValidIndexValidationResult(variableAccessData.accessedBitRange->second)});
+        expectedValidationResult.bitRangeAccessValidity = VariableAccessIndicesValidity::BitRangeValidityResult({.bitRangeStartValidity = createValidIndexValidationResult(variableAccessData.accessedBitRange->first), .bitRangeEndValidity = createValidIndexValidationResult(variableAccessData.accessedBitRange->second)});
     }
     ASSERT_NO_FATAL_FAILURE(assertValidationResultsMatch(expectedValidationResult, actualValidationResult));
 }
@@ -390,7 +390,7 @@ TEST(VariableAccessIndexValidityTests, BitrangeStartOutOfRangeIsNotValid) {
 
     VariableAccessIndicesValidity expectedValidationResult = buildExpectedResult(
             {createValidIndexValidationResult(0)},
-            VariableAccessIndicesValidity::BitRangeValidityResult({createOutOfRangeIndexValidationResult(bitRangeStartBit), createOutOfRangeIndexValidationResult(bitRangeEndBit)}));
+            VariableAccessIndicesValidity::BitRangeValidityResult({.bitRangeStartValidity = createOutOfRangeIndexValidationResult(bitRangeStartBit), .bitRangeEndValidity = createOutOfRangeIndexValidationResult(bitRangeEndBit)}));
     std::optional<VariableAccessIndicesValidity> actualValidationResult;
     ASSERT_NO_FATAL_FAILURE(actualValidationResult = validateVariableAccessIndices(variableAccess));
     ASSERT_NO_FATAL_FAILURE(assertValidationResultsMatch(expectedValidationResult, actualValidationResult));
