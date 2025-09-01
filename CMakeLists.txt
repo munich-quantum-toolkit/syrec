@@ -68,7 +68,6 @@ set(MQT_SYREC_INCLUDE_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 add_subdirectory(src)
 
 if(BUILD_MQT_SYREC_BINDINGS)
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
   add_subdirectory(bindings)
 endif()
 
