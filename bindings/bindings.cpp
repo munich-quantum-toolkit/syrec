@@ -11,17 +11,24 @@
 #include "algorithms/simulation/simple_simulation.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
+#include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
+#include "core/n_bit_values_container.hpp"
 #include "core/properties.hpp"
 #include "core/qubit_inlining_stack.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
 
-#include <functional>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <optional>
+#include <pybind11/cast.h>
+#include <pybind11/common.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <pybind11/stl.h> // NOLINT(misc-include-cleaner)
+#include <string>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
