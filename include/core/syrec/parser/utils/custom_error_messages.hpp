@@ -118,8 +118,6 @@ namespace syrec_parser {
     /// @return The format of the error message or an empty string if none exists.
     template<SemanticError semanticError>
     [[nodiscard]] constexpr std::string_view getFormatForSemanticErrorMessage() {
-        // Note: This function can only be implemented as a constexpr if the semantic error is provided as a template argument and not as a function parameter.
-        // It seems that we cannot use named arguments in the format string due to them not being supported in combination with the compile time format string checks (https://github.com/fmtlib/fmt/blob/master/doc/api.md#named-arguments)
         switch (semanticError) {
             case SemanticError::NoVariableMatchingIdentifier:
                 return "No variable matching identifier '{:s}'";

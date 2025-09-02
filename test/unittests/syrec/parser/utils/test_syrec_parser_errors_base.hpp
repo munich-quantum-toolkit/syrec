@@ -17,7 +17,7 @@
 #include "core/syrec/program.hpp"
 
 #include <cstddef>
-#include <fmt/format.h>
+#include <format>
 #include <gtest/gtest.h>
 #include <initializer_list>
 #include <optional>
@@ -42,7 +42,7 @@ namespace syrec_parser_error_tests {
                     Message::Type::Error,
                     std::string(syrec_parser::getIdentifierForSemanticError<semanticError>()),
                     messagePosition,
-                    fmt::format(FMT_STRING(syrec_parser::getFormatForSemanticErrorMessage<semanticError>()), std::forward<T>(args)...)));
+                    std::format(syrec_parser::getFormatForSemanticErrorMessage<semanticError>(), std::forward<T>(args)...)));
         }
 
         void recordSyntaxError(Message::Position messagePosition, const std::string& messageText) {

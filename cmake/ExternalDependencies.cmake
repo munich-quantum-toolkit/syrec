@@ -69,17 +69,6 @@ if(BUILD_MQT_SYREC_TESTS)
   list(APPEND FETCH_PACKAGES googletest)
 endif()
 
-set(FMT_VERSION
-    11.2.0
-    CACHE STRING "FMT library version")
-
-FetchContent_Declare(
-  fmt
-  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG ${FMT_VERSION}
-  CMAKE_ARGS -DBUILD_SHARED_LIBS=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON)
-list(APPEND FETCH_PACKAGES fmt)
-
 # The original CMake configuration in the ANTLR C++ git repository
 # (https://github.com/antlr/antlr4/blob/master/runtime/Cpp/cmake/ExternalAntlr4Cpp.cmake) uses the
 # ExternalProject_XX functions to configure the built of the ANTLR runtime and serves as a reference

@@ -52,7 +52,7 @@ if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-antlr-parser)
   target_link_libraries(
     ${MQT_SYREC_TARGET_NAME}-antlr-parser
     PUBLIC ${MQT_SYREC_TARGET_NAME}-ir
-    PRIVATE MQT::ProjectWarnings MQT::ProjectOptions fmt::fmt)
+    PRIVATE MQT::ProjectWarnings MQT::ProjectOptions)
 
   if(ANTLR4_BUILD_AS_STATIC_LIBRARY)
     target_link_libraries(${MQT_SYREC_TARGET_NAME}-antlr-parser PRIVATE antlr4_static)
