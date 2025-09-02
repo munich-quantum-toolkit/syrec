@@ -35,4 +35,5 @@ add_mqt_python_binding(
   .
   LINK_LIBS
   MQT::SyReC-Antlr
-  MQT::SyReC-Synthesis)
+  MQT::SyReC-Synthesis
+  fmt::fmt)
