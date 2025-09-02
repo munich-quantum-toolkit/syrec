@@ -23,10 +23,6 @@
 
 namespace minbool {
 
-    const auto MIN_TERM_LESS = [](const MinTerm& a, const MinTerm& b) {
-        return a.value < b.value || (a.value == b.value && a.dash < b.dash);
-    };
-
     void ImplicantTable::fill(const std::vector<MinTerm>& minterms) {
         groups.resize(nBits + 2U, 0U);
         for (const auto& term: minterms) {
@@ -65,7 +61,7 @@ namespace minbool {
                                nBits);
         }
         for (auto& [first, second]: columns) {
-            std::ranges::sort(second, MIN_TERM_LESS);
+            std::ranges::sort(second, std::less{});
         }
     }
 
@@ -125,9 +121,9 @@ namespace minbool {
                     continue;
                 }
                 // Dominating columns are eliminated
-                std::ranges::sort(pair1Second, MIN_TERM_LESS);
-                std::ranges::sort(pair2Second, MIN_TERM_LESS);
-                if (std::ranges::includes(pair2Second, pair1Second, MIN_TERM_LESS)) {
+                std::ranges::sort(pair1Second, std::less{});
+                std::ranges::sort(pair2Second, std::less{});
+                if (std::ranges::includes(pair2Second, pair1Second, std::less{})) {
                     columns.erase(pair2First);
                     change = true;
                     break;
@@ -167,7 +163,7 @@ namespace minbool {
             }
         }
         for (auto& [first, second]: columns) {
-            std::ranges::sort(second, MIN_TERM_LESS);
+            std::ranges::sort(second, std::less{});
         }
 
         return change;
@@ -182,7 +178,7 @@ namespace minbool {
             terms.clear();
             table.combine(terms);
             // Remove duplicates
-            std::ranges::sort(terms, MIN_TERM_LESS);
+            std::ranges::sort(terms, std::less{});
             terms.erase(std::ranges::unique(terms).begin(), terms.end());
             table.primes(primes);
         }
