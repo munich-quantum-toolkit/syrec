@@ -284,7 +284,7 @@ repair-wheel-command = """auditwheel repair -w {dest_dir} {wheel} \
 --exclude libmqt-core-dd.so.3.2"""
 
 [tool.cibuildwheel.macos]
-environment = { MACOSX_DEPLOYMENT_TARGET = "10.15" }
+environment = { MACOSX_DEPLOYMENT_TARGET = "13.3" }
 repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel} --ignore-missing-dependencies"
 
 [tool.cibuildwheel.windows]
@@ -297,7 +297,7 @@ environment = { CMAKE_ARGS = "-T ClangCL" }
 
 [[tool.cibuildwheel.overrides]]
 select = "*-macosx_arm64"
-environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
+environment = { MACOSX_DEPLOYMENT_TARGET = "13.3" }
 
 
 [tool.uv]
