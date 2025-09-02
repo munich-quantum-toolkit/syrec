@@ -45,11 +45,7 @@ jobs:
       matrix:
         runs-on: [macos-14]
         compiler: [clang]
-        config: [Release]
-        include:
-          - runs-on: macos-14
-            compiler: clang
-            config: Debug
+        config: [Release, Debug]
     uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-cpp-tests-macos.yml@v1.16
     with:
       runs-on: ${{ matrix.runs-on }}
