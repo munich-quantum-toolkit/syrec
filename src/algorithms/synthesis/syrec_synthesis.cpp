@@ -47,8 +47,157 @@ namespace {
      */
     using TimeStamp = std::chrono::time_point<std::chrono::steady_clock>;
 
+    struct EvaluatedBitrangeAccess {
+        unsigned bitrangeStart;
+        unsigned bitrangeEnd;
+    };
+
+    struct EvaluatedDimensionAccess {
+        bool                  containedOnlyNumericExpressions;
+        std::vector<unsigned> accessedValuePerDimension;
+    };
+
     [[nodiscard]] bool isMoreThanOneModuleMatchingIdentifierDeclared(const syrec::Module::vec& modulesToCheck, const std::string_view& moduleIdentifierToFind) {
-        return std::count_if(modulesToCheck.cbegin(), modulesToCheck.cend(), [moduleIdentifierToFind](const syrec::Module::ptr& moduleToCheck) { return moduleToCheck->name == moduleIdentifierToFind; }) > 1;
+        return std::ranges::count_if(modulesToCheck, [moduleIdentifierToFind](const syrec::Module::ptr& moduleToCheck) { return moduleToCheck->name == moduleIdentifierToFind; }) > 1;
+    }
+
+    [[nodiscard]] std::optional<EvaluatedBitrangeAccess> evaluateAndValidateBitrangeAccess(const syrec::VariableAccess& userDefinedVariableAccess, const syrec::Number::LoopVariableMapping& loopVariableValueLookup) {
+        if (userDefinedVariableAccess.var == nullptr) {
+            std::cerr << "Failed to validate variable access due to reference variable not being set\n";
+            return std::nullopt;
+        }
+
+        const unsigned          accessedVariableBitwidth   = userDefinedVariableAccess.var->bitwidth;
+        const std::string_view& accessedVariableIdentifier = userDefinedVariableAccess.var->name;
+
+        unsigned evaluatedBitrangeStartValue = 0U;
+        unsigned evaluatedBitrangeEndValue   = accessedVariableBitwidth - 1;
+        if (!userDefinedVariableAccess.range.has_value()) {
+            return EvaluatedBitrangeAccess({.bitrangeStart = evaluatedBitrangeStartValue, .bitrangeEnd = evaluatedBitrangeEndValue});
+        }
+
+        if (const std::optional<unsigned> evaluationResultOfBitrangeStart = userDefinedVariableAccess.range->first->tryEvaluate(loopVariableValueLookup); evaluationResultOfBitrangeStart.has_value()) {
+            evaluatedBitrangeStartValue = *evaluationResultOfBitrangeStart;
+        } else {
+            std::cerr << "Failed to determine value of bitrange start in access on variable " << accessedVariableIdentifier << "\n";
+            return std::nullopt;
+        }
+
+        if (evaluatedBitrangeStartValue >= accessedVariableBitwidth) {
+            std::cerr << "User defined bitrange start value '" << std::to_string(evaluatedBitrangeStartValue) << "' was not within the valid range [0, " << std::to_string(accessedVariableBitwidth) << "] in access on variable " << accessedVariableIdentifier << "\n";
+            return std::nullopt;
+        }
+
+        if (const std::optional<unsigned> evaluationResultOfBitrangeEnd = userDefinedVariableAccess.range->second->tryEvaluate(loopVariableValueLookup); evaluationResultOfBitrangeEnd.has_value()) {
+            evaluatedBitrangeEndValue = *evaluationResultOfBitrangeEnd;
+        } else {
+            std::cerr << "Failed to determine value of bitrange start in access on variable " << accessedVariableIdentifier << "\n";
+            return std::nullopt;
+        }
+
+        if (evaluatedBitrangeEndValue >= accessedVariableBitwidth) {
+            std::cerr << "User defined bitrange end value '" << std::to_string(evaluatedBitrangeEndValue) << "' was not within the valid range [0, " << std::to_string(accessedVariableBitwidth) << "] in access on variable " << accessedVariableIdentifier << "\n";
+            return std::nullopt;
+        }
+        return EvaluatedBitrangeAccess({.bitrangeStart = evaluatedBitrangeStartValue, .bitrangeEnd = evaluatedBitrangeEndValue});
+    }
+
+    /**
+     * Evaluate and validate the value of the indices evaluable at compile time defined in the dimension access of a variable access.
+     * @param userDefinedVariableAccess The variable access to validate.
+     * @param loopVariableValueLookup A lookup containing the current value of the activate loop variables.
+     * @return A container storing the evaluated values of each dimension, if the number of accessed dimensions is equal to the number of defined dimensions of the accessed variable and if all numeric expressions in the dimension access could be evaluated and defined a value within the range [0, number of values in dimension at same index in accessed variable - 1]. If the validation failed, std::nullopt is returned.
+     * @remark Note that only numeric expressions are evaluated while all other expressions types are ignored. A flag in the returned container can be used to distinguish between the two cases.
+     */
+    [[nodiscard]] std::optional<EvaluatedDimensionAccess> evaluateAndValidateDimensionAccess(const syrec::VariableAccess& userDefinedVariableAccess, const syrec::Number::LoopVariableMapping& loopVariableValueLookup) {
+        if (userDefinedVariableAccess.var == nullptr) {
+            std::cerr << "Failed to validate variable access due to reference variable not being set\n";
+            return std::nullopt;
+        }
+
+        const std::string_view& accessedVariableIdentifier = userDefinedVariableAccess.var->name;
+        if (userDefinedVariableAccess.indexes.size() != userDefinedVariableAccess.var->dimensions.size()) {
+            std::cerr << "The number of indices (" << std::to_string(userDefinedVariableAccess.indexes.size()) << ") defined in a variable access must match the number of dimensions (" << std::to_string(userDefinedVariableAccess.var->dimensions.size()) << ") of the accessed variable " << accessedVariableIdentifier << "\n";
+            return std::nullopt;
+        }
+
+        std::size_t              dimensionIdx             = 0;
+        EvaluatedDimensionAccess evaluatedDimensionAccess = {.containedOnlyNumericExpressions = true, .accessedValuePerDimension = std::vector(userDefinedVariableAccess.var->dimensions.size(), 0U)};
+
+        for (const auto& dimensionExpr: userDefinedVariableAccess.indexes) {
+            if (dimensionExpr == nullptr) {
+                std::cerr << "Expression defining index for dimension " << std::to_string(dimensionIdx) << " in variable access on " << accessedVariableIdentifier << " cannot be NULL\n";
+                return std::nullopt;
+            }
+            if (const auto& dimensionExprAsNumericExpr = std::dynamic_pointer_cast<syrec::NumericExpression>(dimensionExpr); dimensionExprAsNumericExpr != nullptr) {
+                if (const std::optional<unsigned> evaluatedDimensionExpr = dimensionExprAsNumericExpr->value != nullptr ? dimensionExprAsNumericExpr->value->tryEvaluate(loopVariableValueLookup) : std::nullopt; evaluatedDimensionExpr.has_value()) {
+                    if (*evaluatedDimensionExpr >= userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) {
+                        std::cerr << "Access on value " << std::to_string(*evaluatedDimensionExpr) << " of dimension " << std::to_string(dimensionIdx) << " was not within the valid range [0, " << std::to_string(userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) << " in access on variable " << accessedVariableIdentifier << "\n";
+                    } else {
+                        evaluatedDimensionAccess.accessedValuePerDimension[dimensionIdx] = *evaluatedDimensionExpr;
+                    }
+                } else {
+                    std::cerr << "Failed to evaluate defined value for numeric expression defined in dimension " << std::to_string(dimensionIdx) << " in variable access on " << accessedVariableIdentifier << "\n";
+                    return std::nullopt;
+                }
+            } else {
+                evaluatedDimensionAccess.containedOnlyNumericExpressions = false;
+                evaluatedDimensionAccess.accessedValuePerDimension.clear();
+            }
+            ++dimensionIdx;
+        }
+        return evaluatedDimensionAccess;
+    }
+
+    [[nodiscard]] bool getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(const syrec::FirstVariableQubitOffsetLookup* firstVariableQubitOffsetLookup, const syrec::Variable& accessedVariable, const EvaluatedBitrangeAccess& evaluatedBitRangeAccess, const EvaluatedDimensionAccess& evaluatedDimensionAccess, std::vector<qc::Qubit>& containerForAccessedQubits) {
+        if (!evaluatedDimensionAccess.containedOnlyNumericExpressions) {
+            std::cerr << "Synthesis of variable access containing only indices evaluable at compile time could not be performed due to internal container for evaluated index values was in an invalid state\n";
+            return false;
+        }
+
+        qc::Qubit offsetToFirstQubitOfVariable = 0;
+        if (const std::optional<qc::Qubit> optionalOffsetToFirstQubitOfVariable = firstVariableQubitOffsetLookup != nullptr ? firstVariableQubitOffsetLookup->getOffsetToFirstQubitOfVariableInCurrentScope(accessedVariable.name) : std::nullopt; optionalOffsetToFirstQubitOfVariable.has_value()) {
+            offsetToFirstQubitOfVariable = *optionalOffsetToFirstQubitOfVariable;
+        } else {
+            std::cerr << "Failed to determine first qubit for variable with identifier " << accessedVariable.name << "\n";
+            return false;
+        }
+
+        // Add dimension access offset to first qubit of variable
+        // TODO: Rework code or better document it
+        const std::vector<unsigned> accessedValuePerDimension       = evaluatedDimensionAccess.accessedValuePerDimension;
+        auto                        numElementsAfterDimensionLookup = std::vector<std::size_t>(accessedValuePerDimension.size(), 1U);
+
+        std::size_t numDimensionOfAccessedVariableIdx = accessedValuePerDimension.size() - 1U;
+        for (std::size_t i = 0; i < numElementsAfterDimensionLookup.size() - 1; ++i) {
+            numElementsAfterDimensionLookup[numDimensionOfAccessedVariableIdx] = numElementsAfterDimensionLookup[numDimensionOfAccessedVariableIdx + 1] * accessedVariable.dimensions.at(numDimensionOfAccessedVariableIdx);
+            --numDimensionOfAccessedVariableIdx;
+        }
+
+        unsigned offsetToAccessedValue = 0U;
+        for (std::size_t i = 0; i < evaluatedDimensionAccess.accessedValuePerDimension.size(); ++i) {
+            offsetToAccessedValue += evaluatedDimensionAccess.accessedValuePerDimension[i] * numElementsAfterDimensionLookup[i];
+        }
+        offsetToFirstQubitOfVariable = offsetToAccessedValue * accessedVariable.bitwidth;
+
+        // Determine final offset to first accessed qubit by adding offset from bitrange start
+        // TODO: Rework code or better document it, might even use the previous version
+        qc::Qubit   currQubitIdx                     = offsetToFirstQubitOfVariable + evaluatedBitRangeAccess.bitrangeStart;
+        std::size_t bitrangeStartAndEndIdxDifference = 0;
+        bool        bitrangeStartIdxLargerThanEnd    = false;
+        if (evaluatedBitRangeAccess.bitrangeStart > evaluatedBitRangeAccess.bitrangeEnd) {
+            bitrangeStartAndEndIdxDifference = evaluatedBitRangeAccess.bitrangeStart - evaluatedBitRangeAccess.bitrangeEnd;
+            bitrangeStartIdxLargerThanEnd    = true;
+        } else {
+            bitrangeStartAndEndIdxDifference = evaluatedBitRangeAccess.bitrangeEnd - evaluatedBitRangeAccess.bitrangeStart;
+        }
+
+        containerForAccessedQubits.resize(bitrangeStartAndEndIdxDifference + 1U);
+        for (qc::Qubit& line: containerForAccessedQubits) {
+            line         = currQubitIdx;
+            currQubitIdx = bitrangeStartIdxLargerThanEnd ? currQubitIdx - 1U : currQubitIdx + 1U;
+        }
+        return true;
     }
 } // namespace
 
@@ -1038,58 +1187,29 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::getVariables(const VariableAccess::ptr& variableAccess, std::vector<qc::Qubit>& lines) {
-        if (variableAccess->var == nullptr) {
-            std::cerr << "Failed to determine qubits for variable access due to referenced variable being null\n";
+        assert(lines.empty());
+        if (variableAccess == nullptr) {
+            std::cerr << "Cannot determine which qubits where access for a variable access that is null\n";
             return false;
         }
 
-        const Variable& referencedVariable           = *variableAccess->var.get();
-        qc::Qubit       offsetToFirstQubitOfVariable = 0;
-        if (const std::optional<qc::Qubit> optionalOffsetToFirstQubitOfVariable = firstVariableQubitOffsetLookup != nullptr ? firstVariableQubitOffsetLookup->getOffsetToFirstQubitOfVariableInCurrentScope(referencedVariable.name) : std::nullopt; optionalOffsetToFirstQubitOfVariable.has_value()) {
-            offsetToFirstQubitOfVariable = *optionalOffsetToFirstQubitOfVariable;
-        } else {
-            std::cerr << "Failed to determine first qubit for variable with identifier " << referencedVariable.name << "\n";
+        const std::optional<EvaluatedBitrangeAccess>  evaluatedBitRangeAccess  = evaluateAndValidateBitrangeAccess(*variableAccess, loopMap);
+        const std::optional<EvaluatedDimensionAccess> evaluatedDimensionAccess = evaluateAndValidateDimensionAccess(*variableAccess, loopMap);
+        if (!evaluatedBitRangeAccess.has_value() || !evaluatedDimensionAccess.has_value()) {
             return false;
         }
 
-        const std::size_t numDeclaredDimensionsOfVariable = referencedVariable.dimensions.size();
-        if (!variableAccess->indexes.empty()) {
-            // check if it is all numeric_expressions
-            if (std::cmp_equal(std::count_if(variableAccess->indexes.cbegin(), variableAccess->indexes.cend(), [&](const auto& p) { return dynamic_cast<NumericExpression*>(p.get()); }), numDeclaredDimensionsOfVariable)) {
-                for (std::size_t i = 0U; i < numDeclaredDimensionsOfVariable; ++i) {
-                    const auto evaluatedDimensionIndexValue = dynamic_cast<NumericExpression*>(variableAccess->indexes.at(i).get())->value->evaluate(loopMap);
-                    qc::Qubit  aggregateValue               = evaluatedDimensionIndexValue;
-                    for (std::size_t j = i + 1; j < numDeclaredDimensionsOfVariable; ++j) {
-                        aggregateValue *= referencedVariable.dimensions[i];
-                    }
-                    offsetToFirstQubitOfVariable += aggregateValue * referencedVariable.bitwidth;
-                }
-            }
-        }
-
-        if (variableAccess->range) {
-            auto [nfirst, nsecond] = *variableAccess->range;
-
-            const unsigned first  = nfirst->evaluate(loopMap);
-            const unsigned second = nsecond->evaluate(loopMap);
-
-            if (first < second) {
-                for (unsigned i = first; i <= second; ++i) {
-                    lines.emplace_back(offsetToFirstQubitOfVariable + i);
-                }
-            } else {
-                for (auto i = static_cast<int>(first); std::cmp_greater_equal(i, second); --i) {
-                    lines.emplace_back(offsetToFirstQubitOfVariable + static_cast<qc::Qubit>(i));
-                }
-            }
+        // Bitrange and dimension access only contained expressions that could be evaluated at compile time.
+        if (evaluatedDimensionAccess->containedOnlyNumericExpressions) {
+            return getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(firstVariableQubitOffsetLookup != nullptr ? firstVariableQubitOffsetLookup.get() : nullptr, *variableAccess->var, *evaluatedBitRangeAccess, *evaluatedDimensionAccess, lines);
         } else {
-            for (unsigned i = 0U; i < referencedVariable.bitwidth; ++i) {
-                lines.emplace_back(offsetToFirstQubitOfVariable + i);
-            }
+            // TODO: Synthesis of dynamic expressions
+            return false;
         }
 
+        // Check post condition that any qubit for variable access was fetched
         if (lines.empty()) {
-            std::cerr << "Failed to determine accessed qubits for variable access on variable with identifier " << referencedVariable.name << "\n";
+            std::cerr << "Failed to determine accessed qubits for variable access on variable with identifier " << variableAccess->var->name << "\n";
             return false;
         }
         return true;
