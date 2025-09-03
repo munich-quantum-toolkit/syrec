@@ -1,6 +1,6 @@
 # Welcome to the documentation of MQT SyReC!
 
-MQT SyReC is a tool for HDL-based synthesis of reversible circuits.
+MQT SyReC Synthesizer is a tool for HDL-based synthesis of reversible circuits.
 It is part of the _{doc}`Munich Quantum Toolkit (MQT) <mqt:index>`_.
 
 We recommend you to start with the {doc}`installation instructions <installation>`.
@@ -62,7 +62,7 @@ Among others, it is part of the [Munich Quantum Software Stack (MQSS)](https://w
 </div>
 </div>
 
-Thank you to all the contributors who have helped make MQT SyReC a reality!
+Thank you to all the contributors who have helped make MQT SyReC Synthesizer a reality!
 
 <p align="center">
 <a href="https://github.com/munich-quantum-toolkit/syrec/graphs/contributors">

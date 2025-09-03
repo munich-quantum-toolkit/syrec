@@ -18,9 +18,9 @@
   </a>
 </p>
 
-# MQT SyReC - A Tool for HDL-based Synthesis of Reversible Circuits
+# MQT SyReC Synthesizer - A Tool for HDL-based Synthesis of Reversible Circuits
 
-MQT SyReC is a tool for HDL-based synthesis of reversible circuits.
+MQT SyReC Synthesizer is a tool for HDL-based synthesis of reversible circuits.
 It is part of the [_Munich Quantum Toolkit (MQT)_](https://mqt.readthedocs.io).
 
 <p align="center">
@@ -53,7 +53,7 @@ Among others, it is part of the [Munich Quantum Software Stack (MQSS)](https://w
   </picture>
 </p>
 
-Thank you to all the contributors who have helped make MQT SyReC a reality!
+Thank you to all the contributors who have helped make MQT SyReC Synthesizer a reality!
 
 <p align="center">
   <a href="https://github.com/munich-quantum-toolkit/syrec/graphs/contributors">
@@ -87,7 +87,7 @@ To support this endeavor, please consider:
 (.venv) $ pip install mqt.syrec
 ```
 
-Once installed, start the MQT SyReC GUI by running:
+Once installed, start the GUI by running:
 
 ```console
 (.venv) $ syrec-editor
@@ -100,15 +100,15 @@ Once installed, start the MQT SyReC GUI by running:
 Building the project requires a C++ compiler with support for C++20 and CMake 3.24 or newer.
 For detail on how to build the project, please refer to the [documentation](https://mqt.readthedocs.io/projects/syrec).
 Building (and running) is continuously tested under Linux, macOS, and Windows using the [latest available system versions for GitHub Actions](https://github.com/actions/runner-images).
-MQT SyReC is compatible with all supported Python versions.
+MQT SyReC Synthesizer is compatible with all supported Python versions.
 
 ## Cite This
 
 Please cite the work that best fits your use case.
 
-### MQT SyReC (the tool)
+### MQT SyReC Synthesizer (the tool)
 
-When citing the software itself or results produced with it, cite the MQT SyReC paper:
+When citing the software itself or results produced with it, cite the MQT SyReC Synthesizer paper:
 
 ```bibtex
 @article{adarsh2022syrecSynthesizer,

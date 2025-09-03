@@ -21,7 +21,7 @@ jobs:
       - uses: munich-quantum-toolkit/templates@79179b743b3909010c5df4073cbb110eb6e0167b # v1.1.5
         with:
           token: ${{ steps.create-token.outputs.token }}
-          name: SyReC
+          name: SyReC Synthesizer
           organization: ${{ github.repository_owner }}
           project-type: c++-python
           repository: ${{ github.event.repository.name }}
