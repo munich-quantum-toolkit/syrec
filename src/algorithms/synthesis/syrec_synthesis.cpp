@@ -84,7 +84,7 @@ namespace {
         }
 
         if (evaluatedBitrangeStartValue >= accessedVariableBitwidth) {
-            std::cerr << "User defined bitrange start value '" << std::to_string(evaluatedBitrangeStartValue) << "' was not within the valid range [0, " << std::to_string(accessedVariableBitwidth) << "] in access on variable " << accessedVariableIdentifier << "\n";
+            std::cerr << "User defined bitrange start value '" << std::to_string(evaluatedBitrangeStartValue) << "' was not within the valid range [0, " << std::to_string(accessedVariableBitwidth) << "] in bitrange access on variable " << accessedVariableIdentifier << "\n";
             return std::nullopt;
         }
 
@@ -96,7 +96,7 @@ namespace {
         }
 
         if (evaluatedBitrangeEndValue >= accessedVariableBitwidth) {
-            std::cerr << "User defined bitrange end value '" << std::to_string(evaluatedBitrangeEndValue) << "' was not within the valid range [0, " << std::to_string(accessedVariableBitwidth) << "] in access on variable " << accessedVariableIdentifier << "\n";
+            std::cerr << "User defined bitrange end value '" << std::to_string(evaluatedBitrangeEndValue) << "' was not within the valid range [0, " << std::to_string(accessedVariableBitwidth) << "] in bitrange access on variable " << accessedVariableIdentifier << "\n";
             return std::nullopt;
         }
         return EvaluatedBitrangeAccess({.bitrangeStart = evaluatedBitrangeStartValue, .bitrangeEnd = evaluatedBitrangeEndValue});
@@ -178,7 +178,7 @@ namespace {
         for (std::size_t i = 0; i < evaluatedDimensionAccess.accessedValuePerDimension.size(); ++i) {
             offsetToAccessedValue += evaluatedDimensionAccess.accessedValuePerDimension[i] * numElementsAfterDimensionLookup[i];
         }
-        offsetToFirstQubitOfVariable = offsetToAccessedValue * accessedVariable.bitwidth;
+        offsetToFirstQubitOfVariable += offsetToAccessedValue * accessedVariable.bitwidth;
 
         // Determine final offset to first accessed qubit by adding offset from bitrange start
         // TODO: Rework code or better document it, might even use the previous version

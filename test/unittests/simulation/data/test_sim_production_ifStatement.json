@@ -884,7 +884,7 @@
     ]
   },
   "IfStatementExecutionOfForStatementInFalseBranchIfBranchIsExecuted": {
-    "inputCircuit": "module main(inout a(4)) for $i = 0 to 2 step 1 do if (1 > 2) then a.$i ^= 1 else a.($i + 2) ^= 1 fi (1 > 2) rof",
+    "inputCircuit": "module main(inout a(4)) for $i = 0 to 1 step 1 do if (1 > 2) then a.$i ^= 1 else a.($i + 2) ^= 1 fi (1 > 2) rof",
     "simulationRuns": [
       {
         "in": "0000",

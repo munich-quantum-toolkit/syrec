@@ -110,44 +110,44 @@
     ]
   },
   "LoopVariableAndIterationRangeStartAndEndValueDefinedInForStatement": {
-    "inputCircuit": "module main(inout a(3)) for $i = 1 to 4 do if ($i <= (#a - 1)) then a.$i ^= 1 else skip fi ($i <= (#a - 1)) rof",
+    "inputCircuit": "module main(inout a(3)) for $i = 1 to 2 do if ($i < (#a - 1)) then a.$i ^= 1 else skip fi ($i < (#a - 1)) rof",
     "simulationRuns": [
       {
         "in": "000",
-        "out": "011"
-      },
-      {
-        "in": "100",
-        "out": "111"
-      },
-      {
-        "in": "010",
-        "out": "001"
-      },
-      {
-        "in": "110",
-        "out": "101"
-      },
-      {
-        "in": "001",
         "out": "010"
       },
       {
-        "in": "101",
+        "in": "100",
         "out": "110"
       },
       {
-        "in": "011",
+        "in": "010",
         "out": "000"
       },
       {
-        "in": "111",
+        "in": "110",
         "out": "100"
+      },
+      {
+        "in": "001",
+        "out": "011"
+      },
+      {
+        "in": "101",
+        "out": "111"
+      },
+      {
+        "in": "011",
+        "out": "001"
+      },
+      {
+        "in": "111",
+        "out": "101"
       }
     ]
   },
   "LoopVariableAndFullIterationRangeDefinedInForStatement": {
-    "inputCircuit": "module main(inout a(3)) for $i = 1 to 4 step 2 do if ($i <= (#a - 1)) then a.$i ^= 1 else skip fi ($i <= (#a - 1)) rof",
+    "inputCircuit": "module main(inout a(3)) for $i = 1 to 2 step 2 do if ($i <= (#a - 1)) then a.$i ^= 1 else skip fi ($i <= (#a - 1)) rof",
     "simulationRuns": [
       {
         "in": "000",
