@@ -295,10 +295,6 @@ repair-wheel-command = """delvewheel repair -w {dest_dir} {wheel} --namespace-pk
 --exclude mqt-core-dd.dll"""
 environment = { CMAKE_ARGS = "-T ClangCL" }
 
-[[tool.cibuildwheel.overrides]]
-select = "*-macosx_arm64"
-environment = { MACOSX_DEPLOYMENT_TARGET = "13.3" }
-
 
 [tool.uv]
 required-version = ">=0.5.20"
