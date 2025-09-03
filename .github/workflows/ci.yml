@@ -14,7 +14,7 @@ concurrency:
 jobs:
   change-detection:
     name: 🔍 Change
-    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-change-detection.yml@v1.16.1
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-change-detection.yml@v1.16.2
 
   cpp-tests-ubuntu:
     name: 🇨‌ Test 🐧
@@ -72,7 +72,7 @@ jobs:
     name: 🇨‌ Lint
     needs: change-detection
     if: fromJSON(needs.change-detection.outputs.run-cpp-linter)
-    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-cpp-linter.yml@v1.16.1
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-cpp-linter.yml@v1.16.2
     with:
       build-project: true
       clang-version: 20
@@ -107,7 +107,7 @@ jobs:
     name: 📝 CodeQL
     needs: change-detection
     if: fromJSON(needs.change-detection.outputs.run-code-ql)
-    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-code-ql.yml@v1.16.1
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-code-ql.yml@v1.16.2
 
   build-sdist:
     name: 🚀 CD
