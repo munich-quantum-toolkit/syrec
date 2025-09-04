@@ -1092,7 +1092,6 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::getVariables(const VariableAccess::ptr& variableAccess, std::vector<qc::Qubit>& lines) {
-        assert(lines.empty());
         if (variableAccess == nullptr) {
             std::cerr << "Cannot synthesis variable access that is null\n";
             return false;
@@ -1505,7 +1504,7 @@ namespace syrec {
         // Determine final offset to first accessed qubit by adding offset from bitrange start
         const qc::Qubit currQubitIdx = offsetToFirstQubitOfAccessedVariable + (offsetToAccessedValue * accessedVariable.bitwidth) + evaluatedBitRangeAccess.bitrangeStart;
         containerForAccessedQubits   = evaluatedBitRangeAccess.getIndicesOfAccessedBits();
-        std::ranges::for_each(containerForAccessedQubits, [currQubitIdx](const qc::Qubit qubitIdx) { return currQubitIdx + qubitIdx; });
+        std::ranges::for_each(containerForAccessedQubits, [currQubitIdx](qc::Qubit& qubitIdx) { return qubitIdx += currQubitIdx; });
         return true;
     }
 
@@ -1523,8 +1522,8 @@ namespace syrec {
         }
 
         // Determine how many qubits are necessary to store the unrolled index to any element in the accessed variable
-        const unsigned numElementsInAccessedVariable                               = std::accumulate(accessedVariable.dimensions.cbegin(), accessedVariable.dimensions.cend(), 1U, std::multiplies());
-        const auto     numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable = static_cast<unsigned>(std::bit_width(numElementsInAccessedVariable)); // static_cast<unsigned>(std::ceil(std::log2(numElementsInAccessedVariable)));
+        const auto numElementsInAccessedVariable                               = static_cast<std::size_t>(std::accumulate(accessedVariable.dimensions.cbegin(), accessedVariable.dimensions.cend(), 1U, std::multiplies()));
+        const auto numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable = static_cast<unsigned>(std::bit_width(numElementsInAccessedVariable)); // static_cast<unsigned>(std::ceil(std::log2(numElementsInAccessedVariable)));
 
         // Generate ancillary qubits storing unrolled index
         std::vector<qc::Qubit> ancillaryQubitsStoringUnrolledIndex;
@@ -1541,14 +1540,17 @@ namespace syrec {
             }
 
             std::vector<qc::Qubit> qubitsStoringSummandOfDimensionForUnrolledIndex;
-            if (i != numElementsInAccessedVariable - 1) {
-                synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSummandOfDimensionForUnrolledIndex);
-
-                if (const unsigned offsetToNextElementOfDimensionInNumberOfArrayElements = containerForOffsetsToNextElementOfDimensionInNumberOfArrayElements.at(i); std::has_single_bit(offsetToNextElementOfDimensionInNumberOfArrayElements)) {
-                    synthesisOk &= leftShift(annotatableQuantumComputation, qubitsStoringSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, offsetToNextElementOfDimensionInNumberOfArrayElements / 2);
+            if (i != numDimensionsOfAccessedVariable - 1) {
+                if (const unsigned offsetToNextElementOfDimensionInNumberOfArrayElements = containerForOffsetsToNextElementOfDimensionInNumberOfArrayElements.at(i); offsetToNextElementOfDimensionInNumberOfArrayElements == 1) {
+                    synthesisOk &= increment(annotatableQuantumComputation, qubitsStoringSynthesizedExprOfDimension);
                 } else {
-                    std::vector<qc::Qubit> qubitsStoringNumberOfValuesOfDimension;
-                    synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringNumberOfValuesOfDimension) && moveIntegerValueToAncillaryQubits(annotatableQuantumComputation, qubitsStoringNumberOfValuesOfDimension, accessedVariable.dimensions.at(i)) && multiplication(annotatableQuantumComputation, qubitsStoringSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, qubitsStoringNumberOfValuesOfDimension) && clearIntegerValueFromAncillaryQubits(annotatableQuantumComputation, qubitsStoringNumberOfValuesOfDimension, accessedVariable.dimensions.at(i));
+                    synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSummandOfDimensionForUnrolledIndex);
+                    if (std::has_single_bit(offsetToNextElementOfDimensionInNumberOfArrayElements)) {
+                        synthesisOk &= leftShift(annotatableQuantumComputation, qubitsStoringSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, offsetToNextElementOfDimensionInNumberOfArrayElements / 2);
+                    } else {
+                        std::vector<qc::Qubit> qubitsStoringNumberOfValuesOfDimension;
+                        synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringNumberOfValuesOfDimension) && moveIntegerValueToAncillaryQubits(annotatableQuantumComputation, qubitsStoringNumberOfValuesOfDimension, accessedVariable.dimensions.at(i)) && multiplication(annotatableQuantumComputation, qubitsStoringSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, qubitsStoringNumberOfValuesOfDimension) && clearIntegerValueFromAncillaryQubits(annotatableQuantumComputation, qubitsStoringNumberOfValuesOfDimension, accessedVariable.dimensions.at(i));
+                    }
                 }
             }
             synthesisOk &= assignAdd(ancillaryQubitsStoringUnrolledIndex, qubitsStoringSummandOfDimensionForUnrolledIndex.empty() ? qubitsStoringSynthesizedExprOfDimension : qubitsStoringSummandOfDimensionForUnrolledIndex, AssignStatement::AssignOperation::Add);
@@ -1567,25 +1569,24 @@ namespace syrec {
         // 'Allocate' the required ancillary qubits to store the qubits of the accessed variable
         synthesisOk &= getConstantLines(static_cast<unsigned>(relativeQubitOffsetForAccessedQubitsInElement.size()), 0U, containerForAccessedQubits);
 
-        for (unsigned i = 0; i < numElementsInAccessedVariable && synthesisOk; ++i) {
+        for (std::size_t i = 0; i < numElementsInAccessedVariable && synthesisOk; ++i) {
             // Move current index to ancillary qubits and compare with unrolled index with the result of the operation being stored in the qubits storing the current index.
             // The latter qubits are then used as control qubits to perform the qubit-wise transfer of the qubits of the currently accessed element to the result qubits.
             synthesisOk &= checkIfQubitsMatchAndStoreResultInRhsOperandQubits(annotatableQuantumComputation, ancillaryQubitsStoringUnrolledIndex, ancillaryQubitsStoringCurrentIndex, false);
 
             qc::Controls controlQubitsFromCompareOperation(ancillaryQubitsStoringCurrentIndex.cbegin(), ancillaryQubitsStoringCurrentIndex.cend());
             for (std::size_t j = 0; j < relativeQubitOffsetForAccessedQubitsInElement.size() && synthesisOk; ++j) {
-                const qc::Qubit currAccessedQubitOfVariable = qubitOffsetToCurrentElementInAccessedVariable + relativeQubitOffsetForAccessedQubitsInElement.at(i);
+                const qc::Qubit currAccessedQubitOfVariable = qubitOffsetToCurrentElementInAccessedVariable + relativeQubitOffsetForAccessedQubitsInElement.at(j);
                 synthesisOk &= controlQubitsFromCompareOperation.emplace(currAccessedQubitOfVariable).second && annotatableQuantumComputation.addOperationsImplementingMultiControlToffoliGate(controlQubitsFromCompareOperation, containerForAccessedQubits.at(j)) && controlQubitsFromCompareOperation.erase(currAccessedQubitOfVariable) == 1U;
             }
             qubitOffsetToCurrentElementInAccessedVariable += accessedVariable.bitwidth;
 
             // We reset the qubits originally storing the value of the accessed element in the variable by first reverting the operations used to compare the unrolled index to the index of the accessed element and then incrementing it
-            // to advance the index to the next element
-            // Reset qubits storing current index to original value by inverting gates of equal operation
+            // to advance the index to the next element.
             synthesisOk &= checkIfQubitsMatchAndStoreResultInRhsOperandQubits(annotatableQuantumComputation, ancillaryQubitsStoringUnrolledIndex, ancillaryQubitsStoringCurrentIndex, true) && increment(annotatableQuantumComputation, ancillaryQubitsStoringCurrentIndex);
         }
         // Clear the ancillary qubits storing the current index of the accessed element in the variable back to their initial state (i.e. zero them).
-        synthesisOk &= clearIntegerValueFromAncillaryQubits(annotatableQuantumComputation, ancillaryQubitsStoringCurrentIndex, numElementsInAccessedVariable);
+        synthesisOk &= clearIntegerValueFromAncillaryQubits(annotatableQuantumComputation, ancillaryQubitsStoringCurrentIndex, static_cast<unsigned>(numElementsInAccessedVariable));
         return synthesisOk;
     }
 
