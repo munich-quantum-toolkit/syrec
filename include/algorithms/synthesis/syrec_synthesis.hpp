@@ -149,6 +149,22 @@ namespace syrec {
     private:
         std::map<bool, std::vector<qc::Qubit>> freeConstLinesMap;
 
-        [[nodiscard]] bool synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant);
+        struct EvaluatedBitrangeAccess {
+            unsigned bitrangeStart;
+            unsigned bitrangeEnd;
+
+            [[nodiscard]] std::vector<unsigned> getIndicesOfAccessedBits() const;
+        };
+
+        struct EvaluatedDimensionAccess {
+            bool                  containedOnlyNumericExpressions;
+            std::vector<unsigned> accessedValuePerDimension;
+        };
+
+        [[nodiscard]] bool                                           synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant);
+        [[nodiscard]] static std::optional<EvaluatedBitrangeAccess>  evaluateAndValidateBitrangeAccess(const VariableAccess& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup);
+        [[nodiscard]] static std::optional<EvaluatedDimensionAccess> evaluateAndValidateDimensionAccess(const VariableAccess& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup);
+        [[nodiscard]] static bool                                    getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(qc::Qubit offsetToFirstQubitOfAccessedVariable, const Variable& accessedVariable, const EvaluatedBitrangeAccess& evaluatedBitRangeAccess, const EvaluatedDimensionAccess& evaluatedDimensionAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
+        [[nodiscard]] bool                                           getQubitsForVariableAccessContainingIndicesNotEvaluableAtCompileTime(qc::Qubit offsetToFirstQubitOfAccessedVariable, const Variable& accessedVariable, const std::vector<Expression::ptr>& accessedIndexPerDimension, const EvaluatedBitrangeAccess& evaluatedbitRangeAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
     };
 } // namespace syrec
