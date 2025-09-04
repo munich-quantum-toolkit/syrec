@@ -124,7 +124,9 @@ namespace syrec {
         static bool rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount); // >>
 
         [[nodiscard]] static std::optional<qc::Qubit> addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const std::optional<QubitInliningStack::ptr>& currentModuleCallStack);
-        [[nodiscard]] bool                            getVariables(const VariableAccess::ptr& variableAccess, std::vector<qc::Qubit>& lines);
+
+        // TODO: Add comment that this function should only be used to synthesize a variable access of an expression or the variable access on the left hand side of an assignment if said variable access only contains compile time constant indices.
+        [[nodiscard]] bool getVariables(const VariableAccess::ptr& variableAccess, std::vector<qc::Qubit>& lines);
 
         [[nodiscard]] std::optional<qc::Qubit> getConstantLine(bool value, const std::optional<QubitInliningStack::ptr>& inlinedQubitModuleCallStack);
         [[nodiscard]] bool                     getConstantLines(unsigned bitwidth, unsigned value, std::vector<qc::Qubit>& lines);
@@ -161,10 +163,23 @@ namespace syrec {
             std::vector<unsigned> accessedValuePerDimension;
         };
 
+        struct EvaluatedVariableAccess {
+            qc::Qubit                        offsetToFirstQubitOfVariable;
+            std::reference_wrapper<Variable> accessedVariable;
+            EvaluatedBitrangeAccess          evaluatedBitrangeAccess;
+            EvaluatedDimensionAccess         evaluatedDimensionAccess;
+            Expression::vec                  userDefinedDimensionAccess;
+        };
+
         [[nodiscard]] bool                                           synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant);
         [[nodiscard]] static std::optional<EvaluatedBitrangeAccess>  evaluateAndValidateBitrangeAccess(const VariableAccess& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup);
         [[nodiscard]] static std::optional<EvaluatedDimensionAccess> evaluateAndValidateDimensionAccess(const VariableAccess& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup);
-        [[nodiscard]] static bool                                    getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(qc::Qubit offsetToFirstQubitOfAccessedVariable, const Variable& accessedVariable, const EvaluatedBitrangeAccess& evaluatedBitRangeAccess, const EvaluatedDimensionAccess& evaluatedDimensionAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
-        [[nodiscard]] bool                                           getQubitsForVariableAccessContainingIndicesNotEvaluableAtCompileTime(qc::Qubit offsetToFirstQubitOfAccessedVariable, const Variable& accessedVariable, const std::vector<Expression::ptr>& accessedIndexPerDimension, const EvaluatedBitrangeAccess& evaluatedbitRangeAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
+        [[nodiscard]] static std::optional<EvaluatedVariableAccess>  evaluateAndValidateVariableAccess(const VariableAccess::ptr& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup, const std::unique_ptr<FirstVariableQubitOffsetLookup>& firstVariableQubitOffsetLookup);
+
+        [[nodiscard]] static bool getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
+        [[nodiscard]] bool        getQubitsForVariableAccessContainingIndicesNotEvaluableAtCompileTime(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
+
+        [[nodiscard]] bool calculateSymbolicUnrolledIndexForElementInVariable(const Variable& accessedVariable, const Expression::vec& accessedIndexPerDimension, std::vector<qc::Qubit>& containerToStoreUnrolledIndex);
+        [[nodiscard]] bool performConditionalSwapOfQubitsForElementAtIndexInVariable(qc::Qubit offsetToFirstQubitOfAccessedVariable, const Variable& accessedVariable, const EvaluatedBitrangeAccess& evaluatedBitrangeAccess, const std::vector<qc::Qubit>& qubitsStoringUnrolledIndexOfElementToSelect, const std::vector<qc::Qubit>& qubitsThatWillReplaceSelectedElementInVariable);
     };
 } // namespace syrec
