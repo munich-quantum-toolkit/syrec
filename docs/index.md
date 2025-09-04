@@ -1,15 +1,15 @@
-# Welcome to the documentation of MQT SyReC!
+# Welcome to the documentation of MQT SyReC Synthesizer!
 
 MQT SyReC Synthesizer is a tool for HDL-based synthesis of reversible circuits.
 It is part of the _{doc}`Munich Quantum Toolkit (MQT) <mqt:index>`_.
 
 We recommend you to start with the {doc}`installation instructions <installation>`.
 Then proceed to read the {doc}`reference documentation <library/Library>`.
-If you are interested in the theory behind MQT SyReC, have a look at the publications in the {doc}`publication list <references>`.
+If you are interested in the theory behind MQT SyReC Synthesizer, have a look at the publications in the {doc}`publication list <references>`.
 
 We appreciate any feedback and contributions to the project.
 If you want to contribute, you can find more information in the {doc}`contribution guide <contributing>`.
-If you are having trouble with the installation or the usage of MQT SyReC, please let us know on our {doc}`support page <support>`.
+If you are having trouble with the installation or the usage of MQT SyReC Synthesizer, please let us know on our {doc}`support page <support>`.
 
 ```{toctree}
 :hidden:

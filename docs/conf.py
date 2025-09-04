@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 
 # -- Project information -----------------------------------------------------
 
-project = "SyReC"
+project = "MQT SyReC Synthesizer"
 author = "Lukas Burgholzer"
 language = "en"
 project_copyright = "Chair for Design Automation, Technical University of Munich"
