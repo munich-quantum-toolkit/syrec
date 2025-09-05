@@ -766,6 +766,131 @@
       }
     ]
   },
+  "DimensionAccessDefiningMultipleNonCompileTimeConstantExpressionsAsIndex": {
+    "inputCircuit": "module main(inout a[2][3][2](2)) wire b(2), c(2) a[((b + 1) - 1)][(b + c)][1].1 ^= 1",
+    "simulationRuns": [
+      {
+        "debugHelper": "First 24 qubits are var 'a', a[0][0][1].1 ^= 1",
+        "in": "0000000000000000000000000000",
+        "out": "0001000000000000000000000000"
+      },
+      {
+        "debugHelper": "First 24 qubits are var 'a', a[0][1][1].1 ^= 1",
+        "in": "0000000100000000000000000010",
+        "out": "0000000000000000000000000010"
+      },
+      {
+        "debugHelper": "First 24 qubits are var 'a', a[0][2][1].1 ^= 1",
+        "in": "0000000000000000000000000001",
+        "out": "0000000000010000000000000001"
+      },
+      {
+        "debugHelper": "First 24 qubits are var 'a', a[1][1][1].1 ^= 1",
+        "in": "0000000000000000000000001000",
+        "out": "0000000000000000000100001000"
+      },
+      {
+        "debugHelper": "First 24 qubits are var 'a', a[1][2][1].1 ^= 1",
+        "in": "0000000000000000000000001010",
+        "out": "0000000000000000000000011010"
+      }
+    ]
+  },
+  "IndexExpressionInDimensionAccessContainingVariableAccessWithNonCompileTimeConstantExpressionIndex": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b[2](2), c(2) a[0][b[c]] ^= 2",
+    "simulationRuns": [
+      {
+        "debugHelper": "First 12 qubits are var 'a', c=0, b[0]=2, a[0][2] ^= 2",
+        "in": "000000000000010000",
+        "out": "000001000000010000"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', c=1, b[0]=1, a[0][1] ^= 2",
+        "in": "000000000000001010",
+        "out": "000100000000001010"
+      }
+    ]
+  },
+  "AccessOnEveryElementOfVariableUsingNonCompileTimeConstantExpressionInDimensionAccess": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2), c(2) a[b][c] ^= 2",
+    "simulationRuns": [
+      {
+        "debugHelper": "First 12 qubits are var 'a', c=0, b=0, a[0][0] ^= 2",
+        "in": "0000000000000000",
+        "out": "0100000000000000"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', c=1, b=0, a[0][1] ^= 2",
+        "in": "0000000000000010",
+        "out": "0001000000000010"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', c=2, b=0, a[0][2] ^= 2",
+        "in": "0000000000000001",
+        "out": "0000010000000001"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', c=0, b=1, a[1][0] ^= 2",
+        "in": "0000000000001000",
+        "out": "0000000100001000"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', c=1, b=1, a[1][1] ^= 2",
+        "in": "0000000000001010",
+        "out": "0000000001001010"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', c=2, b=1, a[1][2] ^= 2",
+        "in": "0000000000001001",
+        "out": "0000000000011001"
+      }
+    ]
+  },
+  "AccessOnBitInNonCompileTimeConstantExpressionInDimensionAccessOfVariableAccess": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2) for $i = 0 to (#b - 1) do a[b.$i][1].$i ^= b.$i rof",
+    "simulationRuns": [
+      {
+        "debugHelper": "First 12 qubits are var 'a', a[0][0].0 ^= 0; a[0][0].1 ^= 0",
+        "in": "11001100110000",
+        "out": "11001100110000"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', a[0][1].0 ^= 1; a[0][1].1 ^= 0",
+        "in": "11001100110010",
+        "out": "11101100110010"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', a[0][1].0 ^= 0; a[1][1].1 ^= 1",
+        "in": "11001100110001",
+        "out": "11001100100001"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', a[1][1].0 ^= 1; a[1][1].1 ^= 1",
+        "in": "11000110110011",
+        "out": "11000110000011"
+      }
+    ]
+  },
+  "AccessOnBitrangeInNonCompileTimeConstantExpressionInDimensionAccessOfVariableAccess": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2) for $i = 0 to (#b - 1) do a[0][b.0:$i].$i ^= b.$i rof",
+    "simulationRuns": [
+      {
+        "debugHelper": "First 12 qubits are var 'a', a[0][0].0 ^= 0; a[0][0].1 ^= 0",
+        "in": "11001100110000",
+        "out": "11001100110000"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', a[0][1].0 ^= 1; a[0][1].1 ^= 0",
+        "in": "11001100110010",
+        "out": "11101100110010"
+      },
+      {
+        "debugHelper": "First 12 qubits are var 'a', a[0][0].0 ^= 0; a[0][2].1 ^= 1",
+        "in": "11001100110001",
+        "out": "11001000110001"
+      }
+    ]
+  },
   "CombinationOfDimensionAndBitAccess": {
     "inputCircuit": "module main(inout a[2](2)) a[1].1 ^= 1",
     "simulationRuns": [

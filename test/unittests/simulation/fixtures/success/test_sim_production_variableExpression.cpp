@@ -48,7 +48,6 @@ TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingLoopVariableAsIndex
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingLoopVariableAsIndexOfBitrangeStartAndLoopVariableAsIndexOfBitrangeEndIndexOf1DVariable) {
-    GTEST_SKIP() << "Test disabled due to issue #294 (non-compile time constant expression not usable as index in dimension access)";
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
@@ -61,7 +60,6 @@ TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingConstantExpressionA
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingConstantExpressionAsIndexOfBitrangeStartAndLoopVariableAsIndexOfBitrangeEndIndexOf1DVariable) {
-    GTEST_SKIP() << "Test disabled due to issue #294 (non-compile time constant expression not usable as index in dimension access)";
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
@@ -82,22 +80,43 @@ TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingConstantExp
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingVariableAccessAsIndex) {
-    GTEST_SKIP() << "Test disabled due to issue #294 (non-compile time constant expression not usable as index in dimension access)";
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingBinaryExpressionAsIndex) {
-    GTEST_SKIP() << "Test disabled due to issue #294 (non-compile time constant expression not usable as index in dimension access)";
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingShiftExpressionAsIndex) {
-    GTEST_SKIP() << "Test disabled due to issue #294 (non-compile time constant expression not usable as index in dimension access)";
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingUnaryExpressionAsIndex) {
-    GTEST_SKIP() << "Test disabled due to issue #294 (non-compile time constant expression not usable as index in dimension access)";
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, DimensionAccessDefiningMultipleNonCompileTimeConstantExpressionsAsIndex) {
+    GTEST_SKIP();
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IndexExpressionInDimensionAccessContainingVariableAccessWithNonCompileTimeConstantExpressionIndex) {
+    GTEST_SKIP();
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnEveryElementOfVariableUsingNonCompileTimeConstantExpressionInDimensionAccess) {
+    GTEST_SKIP();
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitInNonCompileTimeConstantExpressionInDimensionAccessOfVariableAccess) {
+    GTEST_SKIP();
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeInNonCompileTimeConstantExpressionInDimensionAccessOfVariableAccess) {
+    GTEST_SKIP();
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
@@ -129,6 +148,11 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             AccessOnValueOfDimensionUsingBinaryExpressionAsIndex,
                             AccessOnValueOfDimensionUsingShiftExpressionAsIndex,
                             AccessOnValueOfDimensionUsingUnaryExpressionAsIndex,
+                            DimensionAccessDefiningMultipleNonCompileTimeConstantExpressionsAsIndex,
+                            IndexExpressionInDimensionAccessContainingVariableAccessWithNonCompileTimeConstantExpressionIndex,
+                            AccessOnEveryElementOfVariableUsingNonCompileTimeConstantExpressionInDimensionAccess,
+                            AccessOnBitInNonCompileTimeConstantExpressionInDimensionAccessOfVariableAccess,
+                            AccessOnBitrangeInNonCompileTimeConstantExpressionInDimensionAccessOfVariableAccess,
                             CombinationOfDimensionAndBitAccess,
                             CombinationOfDimensionAndBitrangeAccess);
 
