@@ -414,18 +414,15 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::onStatement(const AssignStatement& statement) {
-        std::vector<qc::Qubit> lhs;
-        std::vector<qc::Qubit> rhs;
-        std::vector<qc::Qubit> d;
-
         const std::optional<EvaluatedVariableAccess> evaluatedLhsOperand = evaluateAndValidateVariableAccess(statement.lhs, loopMap, firstVariableQubitOffsetLookup);
         if (!evaluatedLhsOperand.has_value()) {
             return false;
         }
 
-        bool                   synthesisOfAssignmentOk = true;
-        std::vector<qc::Qubit> qubitsStoringIndexInUnrolledVariable;
-        std::vector<qc::Qubit> qubitsStoringSelectedValueOfVariable;
+        bool                           synthesisOfAssignmentOk   = true;
+        const EvaluatedVariableAccess& dataOfEvaluatedLhsOperand = evaluatedLhsOperand.value();
+        std::vector<qc::Qubit>         qubitsStoringIndexInUnrolledVariable;
+        std::vector<qc::Qubit>         qubitsStoringSelectedValueOfVariable;
         // TODO: Comment as to we rework was necessary for a variable access containing non-compile time constant expressions
         // TODO: Why is the procedure below not necessary for a variable access containing only compile time constant expressions
         // a[b] ^= 1
@@ -436,15 +433,18 @@ namespace syrec {
         // IV.  'Copy' back the value ancillary qubits back the selected element in the variable with the help of SWAP gates.
         //
         if (evaluatedLhsOperand->evaluatedDimensionAccess.containedOnlyNumericExpressions) {
-            synthesisOfAssignmentOk = getVariables(statement.lhs, qubitsStoringSelectedValueOfVariable);
+            synthesisOfAssignmentOk = getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(dataOfEvaluatedLhsOperand, qubitsStoringSelectedValueOfVariable);
         } else {
-            synthesisOfAssignmentOk &= calculateSymbolicUnrolledIndexForElementInVariable(evaluatedLhsOperand->accessedVariable, evaluatedLhsOperand->userDefinedDimensionAccess, qubitsStoringIndexInUnrolledVariable) && getConstantLines(static_cast<unsigned>(evaluatedLhsOperand->evaluatedBitrangeAccess.getIndicesOfAccessedBits().size()), 0U, qubitsStoringSelectedValueOfVariable) && performConditionalSwapOfQubitsForElementAtIndexInVariable(evaluatedLhsOperand->offsetToFirstQubitOfVariable, evaluatedLhsOperand->accessedVariable, evaluatedLhsOperand->evaluatedBitrangeAccess, qubitsStoringIndexInUnrolledVariable, qubitsStoringSelectedValueOfVariable);
+            synthesisOfAssignmentOk &= calculateSymbolicUnrolledIndexForElementInVariable(dataOfEvaluatedLhsOperand.accessedVariable, dataOfEvaluatedLhsOperand.userDefinedDimensionAccess, qubitsStoringIndexInUnrolledVariable) && getConstantLines(static_cast<unsigned>(dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess.getIndicesOfAccessedBits().size()), 0U, qubitsStoringSelectedValueOfVariable) && performConditionalSwapOfQubitsForElementAtIndexInVariable(evaluatedLhsOperand->offsetToFirstQubitOfVariable, dataOfEvaluatedLhsOperand.accessedVariable, dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess, qubitsStoringIndexInUnrolledVariable, qubitsStoringSelectedValueOfVariable);
         }
 
         // While a derviced class can fall back to the base class implementation to synthesis AssignStatements, the opRhsLhsExpression(...) call
         // of the derived class might not be able to handle the expression on the right-hand side of the assignment but since we are already using the base class
         // to synthesis the assignment (which should be able to handle all SyReC expression types) the return value of opRhsLhsExpression can be ignored.
+        std::vector<qc::Qubit> d;
         opRhsLhsExpression(statement.rhs, d);
+
+        std::vector<qc::Qubit> rhs;
         synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, rhs, qubitsStoringSelectedValueOfVariable, statement.assignOperation);
         opVec.clear();
 
@@ -1553,7 +1553,7 @@ namespace syrec {
             offsetToAccessedValue += accessedValuePerDimension.at(i) * containerForOffsetsToNextElementOfDimensionInNumberOfArrayElements.at(i);
         }
         // Determine final offset to first accessed qubit by adding offset from bitrange start
-        const qc::Qubit currQubitIdx = evaluatedVariableAccess.offsetToFirstQubitOfVariable + (offsetToAccessedValue * accessedVariable.bitwidth) + evaluatedBitrangeAccess.bitrangeStart;
+        const qc::Qubit currQubitIdx = evaluatedVariableAccess.offsetToFirstQubitOfVariable + (offsetToAccessedValue * accessedVariable.bitwidth);
         containerForAccessedQubits   = evaluatedBitrangeAccess.getIndicesOfAccessedBits();
         std::ranges::for_each(containerForAccessedQubits, [currQubitIdx](qc::Qubit& qubitIdx) { return qubitIdx += currQubitIdx; });
         return true;

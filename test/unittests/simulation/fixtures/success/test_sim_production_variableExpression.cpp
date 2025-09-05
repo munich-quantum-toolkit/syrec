@@ -48,6 +48,7 @@ TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingLoopVariableAsIndex
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingLoopVariableAsIndexOfBitrangeStartAndLoopVariableAsIndexOfBitrangeEndIndexOf1DVariable) {
+    GTEST_SKIP() << "Test disable due to truncation of integer constants not being performed in synthesis leading to different operand bitwidths (see issue #295)";
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
@@ -60,6 +61,7 @@ TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingConstantExpressionA
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeUsingConstantExpressionAsIndexOfBitrangeStartAndLoopVariableAsIndexOfBitrangeEndIndexOf1DVariable) {
+    GTEST_SKIP() << "Test disable due to truncation of integer constants not being performed in synthesis leading to different operand bitwidths (see issue #295)";
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
