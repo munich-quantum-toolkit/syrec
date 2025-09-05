@@ -159,8 +159,8 @@ namespace syrec {
         };
 
         struct EvaluatedDimensionAccess {
-            bool                  containedOnlyNumericExpressions;
-            std::vector<unsigned> accessedValuePerDimension;
+            bool                                 containedOnlyNumericExpressions;
+            std::vector<std::optional<unsigned>> accessedValuePerDimension;
         };
 
         struct EvaluatedVariableAccess {
@@ -179,7 +179,7 @@ namespace syrec {
         [[nodiscard]] static bool getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
         [[nodiscard]] bool        getQubitsForVariableAccessContainingIndicesNotEvaluableAtCompileTime(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
 
-        [[nodiscard]] bool calculateSymbolicUnrolledIndexForElementInVariable(const Variable& accessedVariable, const Expression::vec& accessedIndexPerDimension, std::vector<qc::Qubit>& containerToStoreUnrolledIndex);
+        [[nodiscard]] bool calculateSymbolicUnrolledIndexForElementInVariable(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerToStoreUnrolledIndex);
         [[nodiscard]] bool performConditionalSwapOfQubitsForElementAtIndexInVariable(qc::Qubit offsetToFirstQubitOfAccessedVariable, const Variable& accessedVariable, const EvaluatedBitrangeAccess& evaluatedBitrangeAccess, const std::vector<qc::Qubit>& qubitsStoringUnrolledIndexOfElementToSelect, const std::vector<qc::Qubit>& qubitsThatWillReplaceSelectedElementInVariable);
     };
 } // namespace syrec

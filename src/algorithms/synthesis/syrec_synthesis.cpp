@@ -436,7 +436,7 @@ namespace syrec {
         if (evaluatedLhsOperand->evaluatedDimensionAccess.containedOnlyNumericExpressions) {
             synthesisOfAssignmentOk = getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(dataOfEvaluatedLhsOperand, qubitsStoringSelectedValueOfVariable);
         } else {
-            synthesisOfAssignmentOk &= calculateSymbolicUnrolledIndexForElementInVariable(dataOfEvaluatedLhsOperand.accessedVariable, dataOfEvaluatedLhsOperand.userDefinedDimensionAccess, qubitsStoringIndexInUnrolledVariable) && getConstantLines(static_cast<unsigned>(dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess.getIndicesOfAccessedBits().size()), 0U, qubitsStoringSelectedValueOfVariable) && performConditionalSwapOfQubitsForElementAtIndexInVariable(evaluatedLhsOperand->offsetToFirstQubitOfVariable, dataOfEvaluatedLhsOperand.accessedVariable, dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess, qubitsStoringIndexInUnrolledVariable, qubitsStoringSelectedValueOfVariable);
+            synthesisOfAssignmentOk &= calculateSymbolicUnrolledIndexForElementInVariable(dataOfEvaluatedLhsOperand, qubitsStoringIndexInUnrolledVariable) && getConstantLines(static_cast<unsigned>(dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess.getIndicesOfAccessedBits().size()), 0U, qubitsStoringSelectedValueOfVariable) && performConditionalSwapOfQubitsForElementAtIndexInVariable(evaluatedLhsOperand->offsetToFirstQubitOfVariable, dataOfEvaluatedLhsOperand.accessedVariable, dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess, qubitsStoringIndexInUnrolledVariable, qubitsStoringSelectedValueOfVariable);
         }
 
         // While a derviced class can fall back to the base class implementation to synthesis AssignStatements, the opRhsLhsExpression(...) call
@@ -1469,7 +1469,7 @@ namespace syrec {
         }
 
         std::size_t              dimensionIdx             = 0;
-        EvaluatedDimensionAccess evaluatedDimensionAccess = {.containedOnlyNumericExpressions = true, .accessedValuePerDimension = std::vector(userDefinedVariableAccess.var->dimensions.size(), 0U)};
+        EvaluatedDimensionAccess evaluatedDimensionAccess = {.containedOnlyNumericExpressions = true, .accessedValuePerDimension = std::vector<std::optional<unsigned>>(userDefinedVariableAccess.var->dimensions.size(), std::nullopt)};
 
         for (const auto& dimensionExpr: userDefinedVariableAccess.indexes) {
             if (dimensionExpr == nullptr) {
@@ -1480,7 +1480,7 @@ namespace syrec {
                 if (const std::optional<unsigned> evaluatedDimensionExpr = dimensionExprAsNumericExpr->value != nullptr ? dimensionExprAsNumericExpr->value->tryEvaluate(loopVariableValueLookup) : std::nullopt; evaluatedDimensionExpr.has_value()) {
                     if (*evaluatedDimensionExpr >= userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) {
                         std::cerr << "Access on value " << std::to_string(*evaluatedDimensionExpr) << " of dimension " << std::to_string(dimensionIdx) << " was not within the valid range [0, " << std::to_string(userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) << " in access on variable " << accessedVariableIdentifier << "\n";
-                    } else {
+                    } else if (evaluatedDimensionAccess.containedOnlyNumericExpressions) {
                         evaluatedDimensionAccess.accessedValuePerDimension[dimensionIdx] = *evaluatedDimensionExpr;
                     }
                 } else {
@@ -1489,7 +1489,6 @@ namespace syrec {
                 }
             } else {
                 evaluatedDimensionAccess.containedOnlyNumericExpressions = false;
-                evaluatedDimensionAccess.accessedValuePerDimension.clear();
             }
             ++dimensionIdx;
         }
@@ -1546,7 +1545,11 @@ namespace syrec {
 
         unsigned offsetToAccessedValue = 0U;
         for (std::size_t i = 0; i < accessedValuePerDimension.size(); ++i) {
-            offsetToAccessedValue += accessedValuePerDimension.at(i) * containerForOffsetsToNextElementOfDimensionInNumberOfArrayElements.at(i);
+            if (!accessedValuePerDimension.at(i).has_value()) {
+                std::cerr << "Failed to fetch accessed value of dimension " << std::to_string(i) << " in evaluated variable access that only contained compile time constant indices, this should not happen\n";
+                return false;
+            }
+            offsetToAccessedValue += *accessedValuePerDimension.at(i) * containerForOffsetsToNextElementOfDimensionInNumberOfArrayElements.at(i);
         }
         // Determine final offset to first accessed qubit by adding offset from bitrange start
         const qc::Qubit currQubitIdx = evaluatedVariableAccess.offsetToFirstQubitOfVariable + (offsetToAccessedValue * accessedVariable.bitwidth);
@@ -1564,13 +1567,15 @@ namespace syrec {
 
         // Generate ancillary qubits storing unrolled index
         std::vector<qc::Qubit> ancillaryQubitsStoringUnrolledIndex;
-        synthesisOk &= calculateSymbolicUnrolledIndexForElementInVariable(accessedVariable, evaluatedVariableAccess.userDefinedDimensionAccess, ancillaryQubitsStoringUnrolledIndex);
+        synthesisOk &= calculateSymbolicUnrolledIndexForElementInVariable(evaluatedVariableAccess, ancillaryQubitsStoringUnrolledIndex);
 
         synthesisOk &= performConditionalSwapOfQubitsForElementAtIndexInVariable(evaluatedVariableAccess.offsetToFirstQubitOfVariable, accessedVariable, evaluatedBitrangeAccess, ancillaryQubitsStoringUnrolledIndex, containerForAccessedQubits);
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::calculateSymbolicUnrolledIndexForElementInVariable(const Variable& accessedVariable, const Expression::vec& accessedIndexPerDimension, std::vector<qc::Qubit>& containerToStoreUnrolledIndex) {
+    bool SyrecSynthesis::calculateSymbolicUnrolledIndexForElementInVariable(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerToStoreUnrolledIndex) {
+        const Variable&        accessedVariable          = evaluatedVariableAccess.accessedVariable;
+        const Expression::vec& accessedIndexPerDimension = evaluatedVariableAccess.userDefinedDimensionAccess;
         assert(accessedIndexPerDimension.size() == accessedVariable.dimensions.size());
 
         const std::size_t numDimensionsOfAccessedVariable                                    = accessedVariable.dimensions.size();
@@ -1593,12 +1598,38 @@ namespace syrec {
         // Calculate unrolled index
         for (std::size_t i = 0; i < numDimensionsOfAccessedVariable && synthesisOk; ++i) {
             std::vector<qc::Qubit> qubitsStoringSynthesizedExprOfDimension;
-            // We do not need to manually generate ancillary qubits here since they are generated during the synthesis of the expression (or qubits of a variable simply copied to our container in case of a variable access with only compile time constant expressions)
-            synthesisOk &= onExpression(accessedIndexPerDimension.at(i), qubitsStoringSynthesizedExprOfDimension, {}, BinaryExpression::BinaryOperation::Add);
+
+            // TODO: Explanaition as to why this distinction is necessary?
+            if (auto* userDefinedIndexExprAsNumericOne = dynamic_cast<NumericExpression*>(accessedIndexPerDimension.at(i).get()); userDefinedIndexExprAsNumericOne != nullptr && userDefinedIndexExprAsNumericOne->bitwidth() > numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) {
+                const std::optional<unsigned> constantValueOfExprEvaluatedToCompileTime = evaluatedVariableAccess.evaluatedDimensionAccess.accessedValuePerDimension.at(i);
+                assert(constantValueOfExprEvaluatedToCompileTime.has_value());
+
+                // TODO: Integer truncation operation is currently hard coded but option from synthesis settings should be use if available in the future
+                const unsigned truncatedConstantValue = utils::truncateConstantValueToExpectedBitwidth(*constantValueOfExprEvaluatedToCompileTime, numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, utils::IntegerConstantTruncationOperation::BitwiseAnd);
+                synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, truncatedConstantValue, qubitsStoringSynthesizedExprOfDimension);
+            } else {
+                // We do not need to manually generate ancillary qubits here since they are generated during the synthesis of the expression (or qubits of a variable simply copied to our container in case of a variable access with only compile time constant expressions)
+                synthesisOk &= onExpression(accessedIndexPerDimension.at(i), qubitsStoringSynthesizedExprOfDimension, {}, BinaryExpression::BinaryOperation::Add);
+            }
 
             if (!synthesisOk) {
                 std::cerr << "Failed to synthesis index expression for dimension " << std::to_string(i) << " of dimension access for variable access on variable " << accessedVariable.name << "\n";
                 return false;
+            }
+
+            // The bitwidth of synthesized expression could be smaller/larger than the one storing the unrolled index with the former needing to be truncated/enlarged so that the subsequent addition operation can be synthesized
+            // with the addition operation requiring the same operand bitwidth. Due to this condition, we think that bitwidth of the index expression should not be larger than the bitwidth required to store the unrolled index.
+            // A smaller bitwidth should be allowed but needs to be padded to the required bitwidth.
+            if (qubitsStoringSynthesizedExprOfDimension.size() > numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) { // An index out of range value should have been already detected during the evaluation and validation of the dimension access that is assumed to have been performed prior to this call.
+                std::cerr << "Bitwidth of expression (" << std::to_string(qubitsStoringSynthesizedExprOfDimension.size()) << ") can be at most be as large as the number of qubits (" << std::to_string(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) << ") required to store the maximum possible unrolled index in the accessed variable " << accessedVariable.name << "\n";
+                return false;
+            }
+
+            if (qubitsStoringSynthesizedExprOfDimension.size() < numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) {
+                const unsigned         qubitContainersSizeDifference = numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable - static_cast<unsigned>(qubitsStoringSynthesizedExprOfDimension.size());
+                std::vector<qc::Qubit> paddingQubits;
+                synthesisOk &= getConstantLines(qubitContainersSizeDifference, 0U, paddingQubits);
+                qubitsStoringSynthesizedExprOfDimension.insert(qubitsStoringSynthesizedExprOfDimension.end(), paddingQubits.cbegin(), paddingQubits.cend());
             }
 
             std::vector<qc::Qubit> qubitsStoringSummandOfDimensionForUnrolledIndex;
@@ -1618,23 +1649,7 @@ namespace syrec {
                     }
                 }
             }
-            // The bitwidth of synthesized expression could be smaller/larger than the one storing the unrolled index with the former needing to be truncated/enlarged so that the subsequent addition operation can be synthesized
-            // with the addition operation requiring the same operand bitwidth. Due to this condition, we think that bitwidth of the index expression should not be larger than the bitwidth required to store the unrolled index.
-            // A smaller bitwidth should be allowed but needs to be padded to the required bitwidth.
-            std::vector<qc::Qubit>& qubitsStoringSymbolicValueOfIndexForDimension = qubitsStoringSummandOfDimensionForUnrolledIndex.empty() ? qubitsStoringSynthesizedExprOfDimension : qubitsStoringSummandOfDimensionForUnrolledIndex;
-            if (qubitsStoringSymbolicValueOfIndexForDimension.size() > numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) {
-                std::cerr << "Bitwidth of expression (" << std::to_string(qubitsStoringSymbolicValueOfIndexForDimension.size()) << ") can be at most be as large as the number of qubits (" << std::to_string(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) << ") required to store the maximum possible unrolled index in the accessed variable " << accessedVariable.name << "\n";
-                return false;
-            }
-
-            if (synthesisOk && qubitsStoringSymbolicValueOfIndexForDimension.size() < numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) {
-                const unsigned         qubitContainersSizeDifference = numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable - static_cast<unsigned>(qubitsStoringSymbolicValueOfIndexForDimension.size());
-                std::vector<qc::Qubit> paddingQubits;
-                synthesisOk &= getConstantLines(qubitContainersSizeDifference, 0U, paddingQubits);
-                qubitsStoringSymbolicValueOfIndexForDimension.insert(qubitsStoringSymbolicValueOfIndexForDimension.end(), paddingQubits.cbegin(), paddingQubits.cend());
-            }
-
-            synthesisOk &= assignAdd(containerToStoreUnrolledIndex, qubitsStoringSymbolicValueOfIndexForDimension, AssignStatement::AssignOperation::Add);
+            synthesisOk &= assignAdd(containerToStoreUnrolledIndex, qubitsStoringSummandOfDimensionForUnrolledIndex.empty() ? qubitsStoringSynthesizedExprOfDimension : qubitsStoringSummandOfDimensionForUnrolledIndex, AssignStatement::AssignOperation::Add);
             // TODO: We will only need to generate the ancillary qubits storing the result of the synthesized expression/summand component of the dimension once if the gates generated during the synthesis of either of the components are inverted.
             // While this would increase the number of quantum gates considerably, the number of ancillary qubits would be constant with the latter being a more valuable resource in a quantum computation.
         }
