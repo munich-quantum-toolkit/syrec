@@ -19,14 +19,25 @@
 #include <vector>
 
 namespace syrec {
-    bool CostAwareSynthesis::expAdd(const unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) {
-        return getConstantLines(bitwidth, 0U, rhs) && bitwiseCnot(annotatableQuantumComputation, rhs, lhs) // duplicate lhs
-            && increase(annotatableQuantumComputation, rhs, lines);
+    // TODO: Temporary replacement
+    // bool CostAwareSynthesis::expAdd(const unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) {
+    //     return getConstantLines(bitwidth, 0U, rhs) && bitwiseCnot(annotatableQuantumComputation, rhs, lhs) // duplicate lhs
+    //         && increase(annotatableQuantumComputation, rhs, lines);
+    // }
+    //
+    // bool CostAwareSynthesis::expSubtract(const unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) {
+    //     return getConstantLines(bitwidth, 0U, rhs) && bitwiseCnot(annotatableQuantumComputation, rhs, lhs) // duplicate lhs
+    //         && decrease(annotatableQuantumComputation, rhs, lines);
+    // }
+
+    bool CostAwareSynthesis::expAdd(const unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
+        return getConstantLines(bitwidth, 0U, lines) && bitwiseCnot(annotatableQuantumComputation, lines, lhs) // duplicate lhs
+            && increase(annotatableQuantumComputation, lines, rhs);
     }
 
-    bool CostAwareSynthesis::expSubtract(const unsigned bitwidth, std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& lines) {
-        return getConstantLines(bitwidth, 0U, rhs) && bitwiseCnot(annotatableQuantumComputation, rhs, lhs) // duplicate lhs
-            && decrease(annotatableQuantumComputation, rhs, lines);
+    bool CostAwareSynthesis::expSubtract(const unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
+        return getConstantLines(bitwidth, 0U, lines) && bitwiseCnot(annotatableQuantumComputation, lines, lhs) // duplicate lhs
+            && decrease(annotatableQuantumComputation, lines, rhs);
     }
 
     bool CostAwareSynthesis::expExor(const unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
