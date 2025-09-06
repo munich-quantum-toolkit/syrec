@@ -171,8 +171,23 @@ namespace syrec {
             Expression::vec                  userDefinedDimensionAccess;
         };
 
-        [[nodiscard]] bool                                           synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant);
-        [[nodiscard]] static std::optional<EvaluatedBitrangeAccess>  evaluateAndValidateBitrangeAccess(const VariableAccess& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup);
+        enum class QubitTransferOperation : std::uint8_t {
+            CopyValue,
+            SwapQubits
+        };
+
+        [[nodiscard]] bool synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant);
+
+        // TODO: All remaining functions below this point should probably be protected and not private members of the class.
+        [[nodiscard]] static std::optional<EvaluatedBitrangeAccess> evaluateAndValidateBitrangeAccess(const VariableAccess& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup);
+
+        /**
+         * Evaluate and validate the value of the indices evaluable at compile time defined in the dimension access of a variable access.
+         * @param userDefinedVariableAccess The variable access to validate, accessed variable must not be null.
+         * @param loopVariableValueLookup A lookup containing the current value of the activate loop variables.
+         * @return A container storing the evaluated values of each dimension, if the number of accessed dimensions is equal to the number of defined dimensions of the accessed variable and if all numeric expressions in the dimension access could be evaluated and defined a value within the range [0, number of values in dimension at same index in accessed variable - 1]. If the validation failed, std::nullopt is returned.
+         * @remark Note that only numeric expressions are evaluated while all other expressions types are ignored. A flag in the returned container can be used to distinguish between the two cases.
+         */
         [[nodiscard]] static std::optional<EvaluatedDimensionAccess> evaluateAndValidateDimensionAccess(const VariableAccess& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup);
         [[nodiscard]] static std::optional<EvaluatedVariableAccess>  evaluateAndValidateVariableAccess(const VariableAccess::ptr& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup, const std::unique_ptr<FirstVariableQubitOffsetLookup>& firstVariableQubitOffsetLookup);
 
@@ -180,6 +195,6 @@ namespace syrec {
         [[nodiscard]] bool        getQubitsForVariableAccessContainingIndicesNotEvaluableAtCompileTime(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
 
         [[nodiscard]] bool calculateSymbolicUnrolledIndexForElementInVariable(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerToStoreUnrolledIndex);
-        [[nodiscard]] bool performConditionalSwapOfQubitsForElementAtIndexInVariable(qc::Qubit offsetToFirstQubitOfAccessedVariable, const Variable& accessedVariable, const EvaluatedBitrangeAccess& evaluatedBitrangeAccess, const std::vector<qc::Qubit>& qubitsStoringUnrolledIndexOfElementToSelect, const std::vector<qc::Qubit>& qubitsThatWillReplaceSelectedElementInVariable);
+        [[nodiscard]] bool transferQubitsOfElementAtIndexInVariableToOtherQubits(const EvaluatedVariableAccess& evaluatedVariableAccess, const std::vector<qc::Qubit>& qubitsStoringUnrolledIndexOfElementToSelect, const std::vector<qc::Qubit>& qubitsStoringResultOfTransferOperation, QubitTransferOperation qubitTransferOperation);
     };
 } // namespace syrec

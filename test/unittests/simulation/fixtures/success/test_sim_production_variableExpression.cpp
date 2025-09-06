@@ -98,27 +98,22 @@ TYPED_TEST_P(BaseSimulationTestFixture, AccessOnValueOfDimensionUsingUnaryExpres
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, DimensionAccessDefiningMultipleNonCompileTimeConstantExpressionsAsIndex) {
-    GTEST_SKIP();
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, IndexExpressionInDimensionAccessContainingVariableAccessWithNonCompileTimeConstantExpressionIndex) {
-    GTEST_SKIP();
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnEveryElementOfVariableUsingNonCompileTimeConstantExpressionInDimensionAccess) {
-    GTEST_SKIP();
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitInNonCompileTimeConstantExpressionInDimensionAccessOfVariableAccess) {
-    GTEST_SKIP();
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, AccessOnBitrangeInNonCompileTimeConstantExpressionInDimensionAccessOfVariableAccess) {
-    GTEST_SKIP();
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
