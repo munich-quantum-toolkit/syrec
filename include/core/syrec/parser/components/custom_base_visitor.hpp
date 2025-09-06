@@ -138,7 +138,7 @@ namespace syrec_parser {
          * @tparam ...T The types of the arguments provided to the template parameter pack
          * @tparam semanticError The kind of semantic error to create
          * @param messagePosition The origin of the semantic error in the SyReC program
-         * @param ...args User-provided arguments that will be used to replace the placeholds in the message template of the semantic error
+         * @param ...args User-provided arguments that will be used to replace the placeholders in the message template of the semantic error
          */
         template<SemanticError semanticError, typename... T>
         void recordSemanticError(Message::Position messagePosition, T&&... args) const {
