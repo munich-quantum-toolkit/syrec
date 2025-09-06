@@ -191,6 +191,18 @@ TYPED_TEST_P(BaseSimulationTestFixture, OverlappingAccessOnQubitOfGuardCondition
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableAccessWithNonCompileTimeConstantExpressionsInDimensionAccessOnBothSidesOfAssignment) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AssignmentToBitWithNonCompileTimeConstantIndicesInDimensionAccessOfVariableAccessDefiningAssignedToVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, AssignmentToBitrangeWithNonCompileTimeConstantIndicesInDimensionAccessOfVariableAccessDefiningAssignedToVariable) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             AddAssignWithRightHandSideEqualToVariable,
                             AddAssignWithRightHandSideEqualToConstant,
@@ -236,7 +248,10 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             AccessOnSameQubitOfGuardConditionPossibleOnLefthandSideOfAssignment,
                             OverlappingAccessOnQubitOfGuardConditionPossibleOnLefthandSideOfAssignment,
                             AccessOnSameQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand,
-                            OverlappingAccessOnQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand);
+                            OverlappingAccessOnQubitOfGuardConditionPossibleOnRighthandSideOfAssignmentUsingPrefixAssignmentOperand,
+                            UsageOfVariableAccessWithNonCompileTimeConstantExpressionsInDimensionAccessOnBothSidesOfAssignment,
+                            AssignmentToBitWithNonCompileTimeConstantIndicesInDimensionAccessOfVariableAccessDefiningAssignedToVariable,
+                            AssignmentToBitrangeWithNonCompileTimeConstantIndicesInDimensionAccessOfVariableAccessDefiningAssignedToVariable);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );

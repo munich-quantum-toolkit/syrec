@@ -1537,7 +1537,6 @@
       }
     ]
   },
-
   "XorAssignWithRightHandSideEqualToVariable": {
     "inputCircuit": "module main(inout a(4), in b(4)) a ^= b",
     "simulationRuns": [
@@ -2388,6 +2387,81 @@
       {
         "in": "11",
         "out": "00"
+      }
+    ]
+  },
+  "UsageOfVariableAccessWithNonCompileTimeConstantExpressionsInDimensionAccessOnBothSidesOfAssignment": {
+    "inputCircuit": "module main(inout a[3][2](2), in b[2](2)) wire c(2) a[b[c]][1] ^= a[b[(c + 1)]][0]",
+    "simulationRuns": [
+      {
+        "debugHelper": "c = 0, b[0] = 0, b[1] = 0, a[0][1] ^= a[0][0]",
+        "in": "110000110011000000",
+        "out": "111100110011000000"
+      },
+      {
+        "debugHelper": "c = 0, b[0] = 1, b[1] = 0, a[1][1] ^= a[0][0]",
+        "in": "110000110011100000",
+        "out": "110000000011100000"
+      },
+      {
+        "debugHelper": "c = 0, b[0] = 2, b[1] = 0, a[2][1] ^= a[0][0]",
+        "in": "110000110011010000",
+        "out": "110000110000010000"
+      },
+      {
+        "debugHelper": "c = 0, b[0] = 0, b[1] = 1, a[0][1] ^= a[1][0]",
+        "in": "110110110011001000",
+        "out": "111110110011001000"
+      },
+      {
+        "debugHelper": "c = 0, b[0] = 0, b[1] = 2, a[0][1] ^= a[2][0]",
+        "in": "110000111011000100",
+        "out": "111000111011000100"
+      },
+      {
+        "debugHelper": "c = 0, b[0] = 1, b[1] = 2, a[1][1] ^= a[2][0]",
+        "in": "110000110110100100",
+        "out": "110000100110100100"
+      }
+    ]
+  },
+  "AssignmentToBitWithNonCompileTimeConstantIndicesInDimensionAccessOfVariableAccessDefiningAssignedToVariable": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2) a[0][b].1 ^= 1",
+    "simulationRuns": [
+      {
+        "debugHelper": "a[0][0].1 ^= 1",
+        "in": "00100100110000",
+        "out": "01100100110000"
+      },
+      {
+        "debugHelper": "a[0][1].1 ^= 1",
+        "in": "00100100110010",
+        "out": "00110100110010"
+      },
+      {
+        "debugHelper": "a[0][2].1 ^= 1",
+        "in": "00100100110001",
+        "out": "00100000110001"
+      }
+    ]
+  },
+  "AssignmentToBitrangeWithNonCompileTimeConstantIndicesInDimensionAccessOfVariableAccessDefiningAssignedToVariable": {
+    "inputCircuit": "module main(inout a[3](4)) wire b(2) a[b].1:2 ^= 3",
+    "simulationRuns": [
+      {
+        "debugHelper": "a[0].1:2 ^= 3",
+        "in": "01101001011000",
+        "out": "00001001011000"
+      },
+      {
+        "debugHelper": "a[1].1:2 ^= 3",
+        "in": "01101001011010",
+        "out": "01101111011010"
+      },
+      {
+        "debugHelper": "a[2].1:2 ^= 3",
+        "in": "01101001011001",
+        "out": "01101001000001"
       }
     ]
   }
