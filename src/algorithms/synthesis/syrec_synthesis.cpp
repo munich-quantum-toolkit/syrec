@@ -382,13 +382,72 @@ namespace syrec {
         return okay;
     }
 
+    // TODO: Using non-compile time constant expression would allow for the swap of the same qubits of a variable i.e. a[b][0] <=> a[c][0] with b=0 and c=0
     bool SyrecSynthesis::onStatement(const SwapStatement& statement) {
-        std::vector<qc::Qubit> lhs;
-        std::vector<qc::Qubit> rhs;
+        const std::optional<EvaluatedVariableAccess> evaluatedLhsOperand = evaluateAndValidateVariableAccess(statement.lhs, loopMap, firstVariableQubitOffsetLookup);
+        const std::optional<EvaluatedVariableAccess> evaluatedRhsOperand = evaluateAndValidateVariableAccess(statement.rhs, loopMap, firstVariableQubitOffsetLookup);
+        if (!evaluatedLhsOperand.has_value() || !evaluatedRhsOperand.has_value()) {
+            return false;
+        }
 
-        const bool synthesisOk = getVariables(statement.lhs, lhs) && getVariables(statement.rhs, rhs);
-        assert(lhs.size() == rhs.size());
-        return synthesisOk && swap(annotatableQuantumComputation, lhs, rhs);
+        const EvaluatedVariableAccess& dataOfEvaluatedLhsOperand = *evaluatedLhsOperand;
+        const EvaluatedVariableAccess& dataOfEvaluatedRhsOperand = *evaluatedRhsOperand;
+
+        const std::size_t     aggregateOfWhetherOperandsContainedOnlyNumericExpressions                = static_cast<std::size_t>(dataOfEvaluatedLhsOperand.evaluatedDimensionAccess.containedOnlyNumericExpressions) + (static_cast<std::size_t>(dataOfEvaluatedRhsOperand.evaluatedDimensionAccess.containedOnlyNumericExpressions) << 2);
+        constexpr std::size_t onlyLhsOperandContainedCompileTimeConstantExpressionsInDimensionAccess   = 1U;
+        constexpr std::size_t onlyRhsOperandContainedCompileTimeConstantExpressionsInDimensionAccess   = 4U;
+        constexpr std::size_t noOperandContainedOnlyCompileTimeConstantExpressionsInDimensionAccess    = 0U;
+        constexpr std::size_t bothOperandsContainedOnlyCompileTimeConstantExpressionsInDimensionAccess = 5U;
+
+        bool           synthesisOk      = true;
+        const unsigned numQubitsSwapped = static_cast<unsigned>(dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess.getIndicesOfAccessedBits().size());
+        switch (aggregateOfWhetherOperandsContainedOnlyNumericExpressions) {
+            case bothOperandsContainedOnlyCompileTimeConstantExpressionsInDimensionAccess: {
+                std::vector<qc::Qubit> qubitsOfLhsOperand;
+                std::vector<qc::Qubit> qubitsOfRhsOperand;
+                synthesisOk = getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(dataOfEvaluatedLhsOperand, qubitsOfLhsOperand) && getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(dataOfEvaluatedRhsOperand, qubitsOfRhsOperand) && swap(annotatableQuantumComputation, qubitsOfLhsOperand, qubitsOfRhsOperand);
+                break;
+            }
+            case onlyRhsOperandContainedCompileTimeConstantExpressionsInDimensionAccess: {
+                std::vector<qc::Qubit> qubitsStoringUnrolledIndexOfLhsOperand;
+                std::vector<qc::Qubit> qubitsOfRhsOperand;
+                synthesisOk = calculateSymbolicUnrolledIndexForElementInVariable(dataOfEvaluatedLhsOperand, qubitsStoringUnrolledIndexOfLhsOperand);
+
+                std::vector<qc::Qubit> containerStoringExtractedQubitsOfLhsOperand;
+                synthesisOk &= getConstantLines(numQubitsSwapped, 0U, containerStoringExtractedQubitsOfLhsOperand) && transferQubitsOfElementAtIndexInVariableToOtherQubits(dataOfEvaluatedLhsOperand, qubitsStoringUnrolledIndexOfLhsOperand, containerStoringExtractedQubitsOfLhsOperand, QubitTransferOperation::SwapQubits) && getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(dataOfEvaluatedRhsOperand, qubitsOfRhsOperand) && swap(annotatableQuantumComputation, containerStoringExtractedQubitsOfLhsOperand, qubitsOfRhsOperand) && transferQubitsOfElementAtIndexInVariableToOtherQubits(dataOfEvaluatedLhsOperand, qubitsStoringUnrolledIndexOfLhsOperand, containerStoringExtractedQubitsOfLhsOperand, QubitTransferOperation::SwapQubits);
+                break;
+            }
+            case onlyLhsOperandContainedCompileTimeConstantExpressionsInDimensionAccess: {
+                std::vector<qc::Qubit> qubitsOfLhsOperand;
+                synthesisOk = getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(dataOfEvaluatedLhsOperand, qubitsOfLhsOperand);
+
+                std::vector<qc::Qubit> qubitsStoringUnrolledIndexOfRhsOperand;
+                synthesisOk &= calculateSymbolicUnrolledIndexForElementInVariable(dataOfEvaluatedRhsOperand, qubitsStoringUnrolledIndexOfRhsOperand);
+
+                std::vector<qc::Qubit> containerStoringExtractedQubitsOfRhsOperand;
+                synthesisOk &= getConstantLines(numQubitsSwapped, 0U, containerStoringExtractedQubitsOfRhsOperand) && transferQubitsOfElementAtIndexInVariableToOtherQubits(dataOfEvaluatedRhsOperand, qubitsStoringUnrolledIndexOfRhsOperand, containerStoringExtractedQubitsOfRhsOperand, QubitTransferOperation::SwapQubits) && swap(annotatableQuantumComputation, qubitsOfLhsOperand, containerStoringExtractedQubitsOfRhsOperand) && transferQubitsOfElementAtIndexInVariableToOtherQubits(dataOfEvaluatedRhsOperand, qubitsStoringUnrolledIndexOfRhsOperand, containerStoringExtractedQubitsOfRhsOperand, QubitTransferOperation::SwapQubits);
+                break;
+            }
+            case noOperandContainedOnlyCompileTimeConstantExpressionsInDimensionAccess: {
+                std::vector<qc::Qubit> qubitsStoringUnrolledIndexOfLhsOperand;
+                synthesisOk = calculateSymbolicUnrolledIndexForElementInVariable(dataOfEvaluatedLhsOperand, qubitsStoringUnrolledIndexOfLhsOperand);
+
+                std::vector<qc::Qubit> containerStoringExtractedQubitsOfLhsOperand;
+                synthesisOk &= getConstantLines(numQubitsSwapped, 0U, containerStoringExtractedQubitsOfLhsOperand) && transferQubitsOfElementAtIndexInVariableToOtherQubits(dataOfEvaluatedLhsOperand, qubitsStoringUnrolledIndexOfLhsOperand, containerStoringExtractedQubitsOfLhsOperand, QubitTransferOperation::SwapQubits);
+
+                std::vector<qc::Qubit> qubitsStoringUnrolledIndexOfRhsOperand;
+                synthesisOk &= calculateSymbolicUnrolledIndexForElementInVariable(dataOfEvaluatedRhsOperand, qubitsStoringUnrolledIndexOfRhsOperand);
+
+                std::vector<qc::Qubit> containerStoringExtractedQubitsOfRhsOperand;
+                synthesisOk &= getConstantLines(numQubitsSwapped, 0U, containerStoringExtractedQubitsOfRhsOperand) && transferQubitsOfElementAtIndexInVariableToOtherQubits(dataOfEvaluatedRhsOperand, qubitsStoringUnrolledIndexOfRhsOperand, containerStoringExtractedQubitsOfRhsOperand, QubitTransferOperation::SwapQubits);
+
+                synthesisOk &= swap(annotatableQuantumComputation, containerStoringExtractedQubitsOfLhsOperand, containerStoringExtractedQubitsOfRhsOperand) && transferQubitsOfElementAtIndexInVariableToOtherQubits(dataOfEvaluatedLhsOperand, qubitsStoringUnrolledIndexOfLhsOperand, containerStoringExtractedQubitsOfLhsOperand, QubitTransferOperation::SwapQubits) && transferQubitsOfElementAtIndexInVariableToOtherQubits(dataOfEvaluatedRhsOperand, qubitsStoringUnrolledIndexOfRhsOperand, containerStoringExtractedQubitsOfRhsOperand, QubitTransferOperation::SwapQubits);
+                break;
+            }
+            default:
+                return false;
+        }
+        return synthesisOk;
     }
 
     bool SyrecSynthesis::onStatement(const UnaryStatement& statement) {
@@ -1519,7 +1578,7 @@ namespace syrec {
 
     [[nodiscard]] bool SyrecSynthesis::getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerForAccessedQubits) {
         if (!evaluatedVariableAccess.evaluatedDimensionAccess.containedOnlyNumericExpressions) {
-            std::cerr << "Synthesis of variable access containing only indices evaluable at compile time could not be performed due to internal container for evaluated index values was in an invalid state\n";
+            std::cerr << "Synthesis of variable access containing only indices evaluable at compile time could not be performed due to evaluated variable access indicating that not all indices could be evaluated at compile time\n";
             return false;
         }
 
@@ -1662,7 +1721,7 @@ namespace syrec {
         const unsigned                 offsetToFirstQubitOfAccessedVariable = evaluatedVariableAccess.offsetToFirstQubitOfVariable;
 
         if (const std::size_t numQubitsAccessedByBitrange = evaluatedBitrangeAccess.getIndicesOfAccessedBits().size(); numQubitsAccessedByBitrange != qubitsStoringResultOfTransferOperation.size()) {
-            std::cerr << "Tried to perform a conditional swap of the " << std::to_string(numQubitsAccessedByBitrange) << " qubits of the accessed bitrange with the provided " << std::to_string(qubitsStoringResultOfTransferOperation.size()) << "qubits\n";
+            std::cerr << "Tried to perform a conditional swap of the " << std::to_string(numQubitsAccessedByBitrange) << " qubits of the accessed bitrange with the provided " << std::to_string(qubitsStoringResultOfTransferOperation.size()) << " qubits\n";
             return false;
         }
 

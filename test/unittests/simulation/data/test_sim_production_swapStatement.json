@@ -1648,5 +1648,145 @@
         "out": "111"
       }
     ]
+  },
+  "UsageOfVariableAccessWithNonCompileTimeConstantExpressionInDimensionAccessOnLhsOfSwapStatement": {
+    "inputCircuit": "module main(inout a[2][2](2), inout b[2](2)) a[0][b[0]] <=> b[1]",
+    "simulationRuns": [
+      {
+        "debugHelper": "b[0]=0,b[1]=0, a[0][0] <=> b[1]",
+        "in": "110011000000",
+        "out": "000011000011"
+      },
+      {
+        "debugHelper": "b[0]=1,b[1]=0, a[0][1] <=> b[1]",
+        "in": "110011001000",
+        "out": "110011001000"
+      },
+      {
+        "debugHelper": "b[0]=0,b[1]=1, a[0][0] <=> b[1]",
+        "in": "110011000010",
+        "out": "100011000011"
+      },
+      {
+        "debugHelper": "b[0]=1,b[1]=1, a[0][1] <=> b[1]",
+        "in": "110011001010",
+        "out": "111011001000"
+      }
+    ]
+  },
+  "UsageOfVariableAccessWithNonCompileTimeConstantExpressionInDimensionAccessOnRhsOfSwapStatement": {
+    "inputCircuit": "module main(inout a[2][2](2), inout b[2](2)) b[1] <=> a[0][b[0]]",
+    "simulationRuns": [
+      {
+        "debugHelper": "b[0]=0,b[1]=0, b[1] <=> a[0][0]",
+        "in": "110011000000",
+        "out": "000011000011"
+      },
+      {
+        "debugHelper": "b[0]=1,b[1]=0, b[1] <=> a[0][1]",
+        "in": "110011001000",
+        "out": "110011001000"
+      },
+      {
+        "debugHelper": "b[0]=0,b[1]=1, b[1] <=> a[0][0]",
+        "in": "110011000010",
+        "out": "100011000011"
+      },
+      {
+        "debugHelper": "b[0]=1,b[1]=1, b[1] <=> a[0][1]",
+        "in": "110011001010",
+        "out": "111011001000"
+      }
+    ]
+  },
+  "UsageOfVariableAccessWithNonCompileTimeConstantExpressionInDimensionAccessOfBothOperandsOfSwapStatementAccessingFullBitwidth": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2), c(2) a[0][b] <=> a[c][0]",
+    "simulationRuns": [
+      {
+        "debugHelper": "1=0, c=0, a[0][1] <=> a[0][0]",
+        "in": "1111000011111000",
+        "out": "1111000011111000"
+      },
+      {
+        "debugHelper": "b=2, c=0, a[0][2] <=> a[0][0]",
+        "in": "1111000011110100",
+        "out": "0011110011110100"
+      },
+      {
+        "debugHelper": "b=0, c=1, a[0][0] <=> a[1][0]",
+        "in": "1111000011110010",
+        "out": "0011001111110010"
+      },
+      {
+        "debugHelper": "b=1, c=1, a[0][1] <=> a[1][0]",
+        "in": "1111000011111010",
+        "out": "1100001111111010"
+      },
+      {
+        "debugHelper": "b=2, c=1, a[0][2] <=> a[1][0]",
+        "in": "1111000011110110",
+        "out": "1111000011110110"
+      }
+    ]
+  },
+  "UsageOfVariableAccessWithNonCompileTimeConstantExpressionInDimensionAccessOfBothOperandsOfSwapStatementAccessingBit": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2), c(2) a[0][b].1 <=> a[c][0].1",
+    "simulationRuns": [
+      {
+        "debugHelper": "b=1, c=0, a[0][1].1 <=> a[0][0].1",
+        "in": "1111000011111000",
+        "out": "1111000011111000"
+      },
+      {
+        "debugHelper": "b=2, c=0, a[0][2].1 <=> a[0][0].1",
+        "in": "1111000011110100",
+        "out": "1011010011110100"
+      },
+      {
+        "debugHelper": "b=0, c=1, a[0][0].1 <=> a[1][0].1",
+        "in": "1111000011110010",
+        "out": "1011000111110010"
+      },
+      {
+        "debugHelper": "b=1, c=1, a[0][1].1 <=> a[1][0].1",
+        "in": "1111000011111010",
+        "out": "1110000111111010"
+      },
+      {
+        "debugHelper": "b=2, c=1, a[0][2].1 <=> a[1][0].1",
+        "in": "1111000011110110",
+        "out": "1111000011110110"
+      }
+    ]
+  },
+  "UsageOfVariableAccessWithNonCompileTimeConstantExpressionInDimensionAccessOfBothOperandsOfSwapStatementAccessingBitrange": {
+    "inputCircuit": "module main(inout a[2][3](4)) wire b(2), c(2) a[0][b].1:2 <=> a[c][0].3:2",
+    "simulationRuns": [
+      {
+        "debugHelper": "b=1, c=0, a[0][1].1:2 <=> a[0][0].3:2",
+        "in": "1101000011110000111100001000",
+        "out": "1100010011110000111100001000"
+      },
+      {
+        "debugHelper": "b=2, c=0, a[0][2].1:2 <=> a[0][0].3:2",
+        "in": "1111000011110000111100000100",
+        "out": "1111000011110000111100000100"
+      },
+      {
+        "debugHelper": "b=0, c=1, a[0][0].1:2 <=> a[1][0].3:2",
+        "in": "1101000011110000111100000010",
+        "out": "1001000011110001111100000010"
+      },
+      {
+        "debugHelper": "b=1, c=1, a[0][1].1:2 <=> a[1][0].3:2",
+        "in": "1111000011110000111100001010",
+        "out": "1111000011110000111100001010"
+      },
+      {
+        "debugHelper": "b=2, c=1, a[0][2].1:2 <=> a[1][0].3:2",
+        "in": "1111000011110000111100000110",
+        "out": "1111000010010011111100000110"
+      }
+    ]
   }
 }
