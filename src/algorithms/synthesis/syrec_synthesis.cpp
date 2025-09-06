@@ -1480,7 +1480,7 @@ namespace syrec {
                 if (const std::optional<unsigned> evaluatedDimensionExpr = dimensionExprAsNumericExpr->value != nullptr ? dimensionExprAsNumericExpr->value->tryEvaluate(loopVariableValueLookup) : std::nullopt; evaluatedDimensionExpr.has_value()) {
                     if (*evaluatedDimensionExpr >= userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) {
                         std::cerr << "Access on value " << std::to_string(*evaluatedDimensionExpr) << " of dimension " << std::to_string(dimensionIdx) << " was not within the valid range [0, " << std::to_string(userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) << " in access on variable " << accessedVariableIdentifier << "\n";
-                    } else if (evaluatedDimensionAccess.containedOnlyNumericExpressions) {
+                    } else {
                         evaluatedDimensionAccess.accessedValuePerDimension[dimensionIdx] = *evaluatedDimensionExpr;
                     }
                 } else {
@@ -1599,7 +1599,10 @@ namespace syrec {
         for (std::size_t i = 0; i < numDimensionsOfAccessedVariable && synthesisOk; ++i) {
             std::vector<qc::Qubit> qubitsStoringSynthesizedExprOfDimension;
 
-            // TODO: Explanaition as to why this distinction is necessary?
+            // Integer constants (compile time constant expressions defined in the dimension access are assumed to have been evaluated during the validation of the dimension access) are assumed to have a default bitwidth of 32
+            // if no bitwidth restriction exists (i.e. defined by the bitwidth of the assigned to variable of an assignment). However, to calculate the unrolled index one or more addition/multiplication operations need to be synthesized
+            // with the addition operation requiring that both summands have the same bitwidth thus we need to truncate the bitwidth and value of the integer constant to the required bitwidth which is equal to the bitwidth required to
+            // store the index to any value of the accessed variable (i.e. for a variable a[2][3](<BITWIDTH>) one would need 3 bits to store the maximum possible index value 5 [assuming zero-based indexing]).
             if (auto* userDefinedIndexExprAsNumericOne = dynamic_cast<NumericExpression*>(accessedIndexPerDimension.at(i).get()); userDefinedIndexExprAsNumericOne != nullptr && userDefinedIndexExprAsNumericOne->bitwidth() > numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) {
                 const std::optional<unsigned> constantValueOfExprEvaluatedToCompileTime = evaluatedVariableAccess.evaluatedDimensionAccess.accessedValuePerDimension.at(i);
                 assert(constantValueOfExprEvaluatedToCompileTime.has_value());
@@ -1645,7 +1648,7 @@ namespace syrec {
                         // We need to determine whether a resize of any of the operands for the multiplication operation is required, one check defined in the multiplication is that
                         // lhs.size() >= dest.size() && rhs.size() >= dest.size()
                         std::vector<qc::Qubit> qubitsStoringNumberOfValuesOfDimension;
-                        synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringNumberOfValuesOfDimension) && moveIntegerValueToAncillaryQubits(annotatableQuantumComputation, qubitsStoringNumberOfValuesOfDimension, accessedVariable.dimensions.at(i)) && multiplication(annotatableQuantumComputation, qubitsStoringSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, qubitsStoringNumberOfValuesOfDimension) && clearIntegerValueFromAncillaryQubits(annotatableQuantumComputation, qubitsStoringNumberOfValuesOfDimension, accessedVariable.dimensions.at(i));
+                        synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringNumberOfValuesOfDimension) && moveIntegerValueToAncillaryQubits(annotatableQuantumComputation, qubitsStoringNumberOfValuesOfDimension, offsetToNextElementOfDimensionInNumberOfArrayElements) && multiplication(annotatableQuantumComputation, qubitsStoringSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, qubitsStoringNumberOfValuesOfDimension) && clearIntegerValueFromAncillaryQubits(annotatableQuantumComputation, qubitsStoringNumberOfValuesOfDimension, offsetToNextElementOfDimensionInNumberOfArrayElements);
                     }
                 }
             }
