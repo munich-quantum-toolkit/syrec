@@ -96,7 +96,6 @@ namespace {
                 synthesisOk = annotatableQuantumComputation.addOperationsImplementingCnotGate(lhsOperand.at(i), rhsOperand.at(i)) && annotatableQuantumComputation.addOperationsImplementingNotGate(rhsOperand.at(i));
             }
         } else {
-            // TODO: Is the order of the generated gates correct
             for (std::size_t i = 0; i < lhsOperand.size() && synthesisOk; ++i) {
                 synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(rhsOperand.at(i)) &&
                               annotatableQuantumComputation.addOperationsImplementingCnotGate(lhsOperand.at(i), rhsOperand.at(i));
@@ -382,8 +381,36 @@ namespace syrec {
         return okay;
     }
 
-    // TODO: Using non-compile time constant expression would allow for the swap of the same qubits of a variable i.e. a[b][0] <=> a[c][0] with b=0 and c=0
-    // TODO: Add clarifying comments as to why qubit swaps are necessary
+    // TODO: Using non-compile time constant expression would allow for the swap of the same qubits of a variable i.e. a[b][0] <=> a[c][0] with b=0 and c=0.
+    // Update documentation that user is responsible to prevent such cases.
+
+    // If both variable accesses of the SwapStatement contained only expressions evaluable at compile time in its dimension access component
+    // then the accessed qubits of the both variables can be determined a compile time and the procedure below can be ignored for the synthesis of the swap statement.
+    //
+    // Otherwise, the following steps need to be performed for both parts of the swap statement (the same procedure with small changes is also used for the synthesis of Unary- and AssignStatements):
+    // However, instead of two potential cases (a variable access with non-compile time constant expressions [CTCEs] and one without) we have to consider four different cases
+    // The four different cases are:
+    //   I.   Both operands of the SwapStatement contained only compile time constant expressions in the accessed variable parts.
+    //   II.  The left hand operand of the SwapStatement contained only both CTCEs and non-CTCEs while the right hand side operand contained only CTCEs.
+    //   III. The left hand operand of the SwapStatement contained only CTCEs while the right hand side operand contained both CTCEs and non-CTCEs.
+    //   IV.  Both operands of the SwapStatement contained both CTCEs and non-CTCEs in their accessed variable parts.
+    // and need to update the procedure below accordingly.
+    //
+    // The procedure applied for the cases II-II involves the following steps:
+    // I.   Calculate the index of the accessed index in the unrolled variable and store the value in ancillary qubits (note that the calculated value is not available at compile time).
+    // II.  Iterate through all possible index values and compare them to the index calculated in I. Use the result of this operation as control qubits to perform a conditional swap of the
+    //      qubits at the current index in the accessed variable. A swap needs to be performed since the assignment needs to update the qubits that store the current value of the accessed element and not on the
+    //      current value itself. Note that for a variable access containing non-compile time constant expressions in its dimension access component that is used as an operand in an expression it is sufficient
+    //      to copy the value of the qubits of the accessed element of the variable to the ancillary qubits storing the "extracted" qubits of the variable since we are only interesting in the value of the qubits of
+    //      the accessed element and not the qubits themself.
+    //
+    //      module main(inout a[2][3](2)) wire b(2)
+    //        a[b][0] += (a[(b + 1)][0] + 2)
+    //      In this example it is sufficient to determine the value of the qubits accessed by a[(b + 1)][0] to synthesize the expression on the right hand side of the expression while to correctly update the value of the
+    //      qubits of a[b][0] the assignment operation '+=' needs to operate on the qubits of a[b][0] and not only the value of a[b][0].
+    //
+    // III. After the accessed qubits of both variable were determined, perform the synthesis of the swap operation.
+    // IV.  Swap the qubits storing the accessed qubits of the variables back to the qubits of the accessed element in the variable for both operands of the swap operation.
     bool SyrecSynthesis::onStatement(const SwapStatement& statement) {
         const std::optional<EvaluatedVariableAccess> evaluatedLhsOperand = evaluateAndValidateVariableAccess(statement.lhs, loopMap, firstVariableQubitOffsetLookup);
         const std::optional<EvaluatedVariableAccess> evaluatedRhsOperand = evaluateAndValidateVariableAccess(statement.rhs, loopMap, firstVariableQubitOffsetLookup);
@@ -451,7 +478,6 @@ namespace syrec {
         return synthesisOk;
     }
 
-    // TODO: Add tests and clarifying comments as to why qubit swaps are necessary
     bool SyrecSynthesis::onStatement(const UnaryStatement& statement) {
         const std::optional<EvaluatedVariableAccess> evaluatedVariableAccess = evaluateAndValidateVariableAccess(statement.var, loopMap, firstVariableQubitOffsetLookup);
         if (!evaluatedVariableAccess.has_value()) {
@@ -462,6 +488,24 @@ namespace syrec {
         const EvaluatedVariableAccess& dataOfEvaluatedVariableAccess = *evaluatedVariableAccess;
         const unsigned                 numAccessedQubits             = static_cast<unsigned>(dataOfEvaluatedVariableAccess.evaluatedBitrangeAccess.getIndicesOfAccessedBits().size());
 
+        // If the variable access defining the assigned to variable parts of the UnaryStatement contains only expressions evaluable at compile time in its dimension access component
+        // then the accessed qubits of the variable can be determined a compile time and the procedure below can be ignored for the synthesis of the assignment.
+        //
+        // Otherwise, the following steps need to be performed and are almost identical to the ones performed for a syrec::AssignStatement with the difference that for an syrec::UnaryStatement no extra expression needs to be handled:
+        // I.   Calculate the index of the accessed index in the unrolled variable and store the value in ancillary qubits (note that the calculated value is not available at compile time).
+        // II.  Iterate through all possible index values and compare them to the index calculated in I. Use the result of this operation as control qubits to perform a conditional swap of the
+        //      qubits at the current index in the accessed variable. A swap needs to be performed since the assignment needs to update the qubits that store the current value of the accessed element and not on the
+        //      current value itself. Note that for a variable access containing non-compile time constant expressions in its dimension access component that is used as an operand in an expression it is sufficient
+        //      to copy the value of the qubits of the accessed element of the variable to the ancillary qubits storing the "extracted" qubits of the variable since we are only interesting in the value of the qubits of
+        //      the accessed element and not the qubits themself.
+        //
+        //      module main(inout a[2][3](2)) wire b(2)
+        //        a[b][0] += (a[(b + 1)][0] + 2)
+        //      In this example it is sufficient to determine the value of the qubits accessed by a[(b + 1)][0] to synthesize the expression on the right hand side of the expression while to correctly update the value of the
+        //      qubits of a[b][0] the assignment operation '+=' needs to operate on the qubits of a[b][0] and not only the value of a[b][0].
+        //
+        // III. Perform the synthesis of the assignment operation.
+        // IV.  Swap the qubits storing the result of the assignment back to the qubits of the accessed element in the variable.
         std::vector<qc::Qubit> qubitsStoringUnrolledIndex;
         std::vector<qc::Qubit> qubitsStoringAccessedValueOfVariable;
         if (dataOfEvaluatedVariableAccess.evaluatedDimensionAccess.containedOnlyNumericExpressions) {
@@ -500,15 +544,25 @@ namespace syrec {
         const EvaluatedVariableAccess& dataOfEvaluatedLhsOperand = evaluatedLhsOperand.value();
         std::vector<qc::Qubit>         qubitsStoringIndexInUnrolledVariable;
         std::vector<qc::Qubit>         qubitsStoringSelectedValueOfVariable;
-        // TODO: Comment as to we rework was necessary for a variable access containing non-compile time constant expressions
-        // TODO: Why is the procedure below not necessary for a variable access containing only compile time constant expressions
-        // a[b] ^= 1
-        // Requires:
-        // I.  Calculation of unrolled index 'b' and storage in ancillary qubits
-        // II. 'Copying' the elements in the variable at the unrolled index to a second set of ancillary qubits (a_2) with the help of SWAP gates.
-        // III. Perform the synthesis of the assignment operation on the ancillary qubits (a_2) of II.
-        // IV.  'Copy' back the value ancillary qubits back the selected element in the variable with the help of SWAP gates.
+
+        // If the variable access on the left hand side of the assignment contains only expressions evaluable at compile time in its dimension access component
+        // then the accessed qubits of the variable can be determined a compile time and the procedure below can be ignored for the synthesis of the assignment.
         //
+        // Otherwise, the following steps need to be performed.
+        // I.   Calculate the index of the accessed index in the unrolled variable and store the value in ancillary qubits (note that the calculated value is not available at compile time).
+        // II.  Iterate through all possible index values and compare them to the index calculated in I. Use the result of this operation as control qubits to perform a conditional swap of the
+        //      qubits at the current index in the accessed variable. A swap needs to be performed since the assignment needs to update the qubits that store the current value of the accessed element and not on the
+        //      current value itself. Note that for a variable access containing non-compile time constant expressions in its dimension access component that is used as an operand in an expression it is sufficient
+        //      to copy the value of the qubits of the accessed element of the variable to the ancillary qubits storing the "extracted" qubits of the variable since we are only interesting in the value of the qubits of
+        //      the accessed element and not the qubits themself.
+        //
+        //      module main(inout a[2][3](2)) wire b(2)
+        //        a[b][0] += (a[(b + 1)][0] + 2)
+        //      In this example it is sufficient to determine the value of the qubits accessed by a[(b + 1)][0] to synthesize the expression on the right hand side of the expression while to correctly update the value of the
+        //      qubits of a[b][0] the assignment operation '+=' needs to operate on the qubits of a[b][0] and not only the value of a[b][0].
+        //
+        // III. Perform the synthesis of the assignment operation.
+        // IV.  Swap the qubits storing the result of the assignment back to the qubits of the accessed element in the variable.
         if (evaluatedLhsOperand->evaluatedDimensionAccess.containedOnlyNumericExpressions) {
             synthesisOfAssignmentOk = getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(dataOfEvaluatedLhsOperand, qubitsStoringSelectedValueOfVariable);
         } else {
@@ -525,7 +579,6 @@ namespace syrec {
         synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, rhs, qubitsStoringSelectedValueOfVariable, statement.assignOperation);
         opVec.clear();
 
-        // TODO: Update of line aware overloads required to consider variable accesses with non-compile time constant expressions
         switch (statement.assignOperation) {
             case AssignStatement::AssignOperation::Add: {
                 synthesisOfAssignmentOk &= assignAdd(qubitsStoringSelectedValueOfVariable, rhs, statement.assignOperation);
@@ -1635,12 +1688,13 @@ namespace syrec {
         std::vector<qc::Qubit> ancillaryQubitsStoringUnrolledIndex;
         synthesisOk &= calculateSymbolicUnrolledIndexForElementInVariable(evaluatedVariableAccess, ancillaryQubitsStoringUnrolledIndex);
 
-        // TODO: Use copy operation if only value of qubits is required, if actual qubits are necessary then perform swap instead.
         synthesisOk &= transferQubitsOfElementAtIndexInVariableToOtherQubits(evaluatedVariableAccess, ancillaryQubitsStoringUnrolledIndex, containerForAccessedQubits, QubitTransferOperation::CopyValue);
         return synthesisOk;
     }
 
     bool SyrecSynthesis::calculateSymbolicUnrolledIndexForElementInVariable(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerToStoreUnrolledIndex) {
+        assert(containerToStoreUnrolledIndex.empty());
+
         const Variable&        accessedVariable          = evaluatedVariableAccess.accessedVariable;
         const Expression::vec& accessedIndexPerDimension = evaluatedVariableAccess.userDefinedDimensionAccess;
         assert(accessedIndexPerDimension.size() == accessedVariable.dimensions.size());
