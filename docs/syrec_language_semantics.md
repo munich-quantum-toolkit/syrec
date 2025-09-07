@@ -300,12 +300,21 @@ The parser will not report an overlap in the assignment due to the index of the 
 - Both operands of the swap operation must have the same bitwidth.
 - Whether the access on the assigned to variable parts in the dimension access of any _VariableAccess_ on the opposite side of the SwapStatement is allowed depends on the value of the corresponding flag in the parser configuration (see {doc}`flag <library/Settings>`).
 - Assignments to the same variable parts between the two sides of the SwapStatement are not allowed and a semantic error is reported if the parser can detect such an overlap.
+- Since the indices of the accessed dimension of a variable can be defined as a non-compile time constant expression and due to the inability to evaluate said expressions one is able to define a SwapStatement that operates on the same qubits in both operands as shown in the following example:
+
+  ```text
+  module main(inout a[2](4), in b(2))
+    a[b] <=> a[b]
+  ```
+
+  Undefined or implementation specific behaviour will occur if such a _SwapStatement_ is synthesized, and it is the responsibility of the user to prevent such constructs.
 
 ## VariableAccess
 
 - All indices defined in the dimension or bit/bitrange access of a variable access are zero-based.
 - The dimension access can be omitted for variables with a single dimension containing only a single value (i.e., _module main(inout a(4)) ++= a_).
-- If the accessed bit/bitrange is omitted then an access on the full bitwidth of the referenced variable is assumed.
+- It is the responsibility of the user to guarantee that the value of an expression not evaluable at compile time that is used to define the accessed index of a dimension in the dimension access component of the variable access to be within the valid value range for the accessed dimension. Otherwise, undefined or implementation specific behaviour can occur during synthesis.
+- If the accessed bit/bitrange is omitted then access on the full bitwidth of the referenced variable is assumed.
 - If the value of an index in either the dimension or bit/bitrange access evaluates to a constant at compile time, a validation of whether it is within the defined bounds of the accessed variable is performed and an error reported in case of an out-of-range value.
 - Each expression defining the accessed value of the dimension will use an expected operand bitwidth for its operands that is only valid until the expression was processed. Any already existing expected operand bitwidth from outside of the expression is ignored (i.e. set in the parent expression of the currently processed _VariableAccess_). Assuming that the expression of the first accessed dimension of the _VariableAccess_ on the right-hand side of the assignment in the following example is processed:
 
