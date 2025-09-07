@@ -23,6 +23,8 @@
 #include "core/syrec/variable.hpp"
 #include "ir/Definitions.hpp"
 
+#include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>

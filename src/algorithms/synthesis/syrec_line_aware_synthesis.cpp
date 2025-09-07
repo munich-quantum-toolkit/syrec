@@ -16,10 +16,13 @@
 #include "core/syrec/expression.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
+#include "core/syrec/variable.hpp"
 #include "ir/Definitions.hpp"
 
 #include <algorithm>
 #include <cstddef>
+#include <iostream>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>

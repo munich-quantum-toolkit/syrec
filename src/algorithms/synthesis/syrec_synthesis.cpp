@@ -17,6 +17,7 @@
 #include "core/properties.hpp"
 #include "core/qubit_inlining_stack.hpp"
 #include "core/syrec/expression.hpp"
+#include "core/syrec/parser/utils/syrec_operation_utils.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
 #include "core/syrec/variable.hpp"
@@ -28,9 +29,11 @@
 #include <cassert>
 #include <chrono>
 #include <cstddef>
+#include <functional>
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <ranges>
 #include <regex>
@@ -52,7 +55,7 @@ namespace {
         return std::ranges::count_if(modulesToCheck, [moduleIdentifierToFind](const syrec::Module::ptr& moduleToCheck) { return moduleToCheck->name == moduleIdentifierToFind; }) > 1;
     }
 
-    [[nodiscard]] constexpr std::optional<std::vector<bool>> convertIntegerToBinary(const std::size_t resultBitwidth, unsigned integerToConvert) {
+    [[nodiscard]] std::optional<std::vector<bool>> convertIntegerToBinary(const std::size_t resultBitwidth, unsigned integerToConvert) {
         if (resultBitwidth == 0) {
             return std::nullopt;
         }
@@ -1724,7 +1727,7 @@ namespace syrec {
             // if no bitwidth restriction exists (i.e. defined by the bitwidth of the assigned to variable of an assignment). However, to calculate the unrolled index one or more addition/multiplication operations need to be synthesized
             // with the addition operation requiring that both summands have the same bitwidth thus we need to truncate the bitwidth and value of the integer constant to the required bitwidth which is equal to the bitwidth required to
             // store the index to any value of the accessed variable (i.e. for a variable a[2][3](<BITWIDTH>) one would need 3 bits to store the maximum possible index value 5 [assuming zero-based indexing]).
-            if (auto* userDefinedIndexExprAsNumericOne = dynamic_cast<NumericExpression*>(accessedIndexPerDimension.at(i).get()); userDefinedIndexExprAsNumericOne != nullptr && userDefinedIndexExprAsNumericOne->bitwidth() > numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) {
+            if (const auto* userDefinedIndexExprAsNumericOne = dynamic_cast<NumericExpression*>(accessedIndexPerDimension.at(i).get()); userDefinedIndexExprAsNumericOne != nullptr && userDefinedIndexExprAsNumericOne->bitwidth() > numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) {
                 const std::optional<unsigned> constantValueOfExprEvaluatedToCompileTime = evaluatedVariableAccess.evaluatedDimensionAccess.accessedValuePerDimension.at(i);
                 assert(constantValueOfExprEvaluatedToCompileTime.has_value());
 
@@ -1776,6 +1779,7 @@ namespace syrec {
             synthesisOk &= assignAdd(containerToStoreUnrolledIndex, qubitsStoringSummandOfDimensionForUnrolledIndex.empty() ? qubitsStoringSynthesizedExprOfDimension : qubitsStoringSummandOfDimensionForUnrolledIndex, AssignStatement::AssignOperation::Add);
             // TODO: We will only need to generate the ancillary qubits storing the result of the synthesized expression/summand component of the dimension once if the gates generated during the synthesis of either of the components are inverted.
             // While this would increase the number of quantum gates considerably, the number of ancillary qubits would be constant with the latter being a more valuable resource in a quantum computation.
+            // TODO: We are not sure whether such a replay could be successfully be performed since the previously used ancillary qubits could have already been used again.
         }
         return synthesisOk;
     }
