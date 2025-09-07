@@ -1940,5 +1940,35 @@
         "out": "0111"
       }
     ]
+  },
+  "UsageOfVariableAccessWithNonCompileTimeConstantExpressionIndicesInShiftExpressionPerformingLeftShift": {
+    "inputCircuit": "module main(inout a[2][3](3)) wire b(2) a[0][2] += (a[0][b] << 1)",
+    "simulationRuns": [
+      {
+        "debugHelper": "b=0, a[0][2] += (a[0][0] << 1)",
+        "in": "11101000011100011100",
+        "out": "11101001111100011100"
+      },
+      {
+        "debugHelper": "b=1, a[0][2] += (a[0][1] << 1)",
+        "in": "11101000111100011110",
+        "out": "11101000011100011110"
+      }
+    ]
+  },
+  "UsageOfVariableAccessWithNonCompileTimeConstantExpressionIndicesInShiftExpressionPerformingRightShift": {
+    "inputCircuit": "module main(inout a[2][3](3)) wire b(2) a[0][2] += (a[0][b] >> 1)",
+    "simulationRuns": [
+      {
+        "debugHelper": "b=0, a[0][2] += (a[0][0] >> 1)",
+        "in": "11101000011100011100",
+        "out": "11101011011100011100"
+      },
+      {
+        "debugHelper": "b=1, a[0][2] += (a[0][1] >> 1)",
+        "in": "11101000111100011110",
+        "out": "11101010111100011110"
+      }
+    ]
   }
 }

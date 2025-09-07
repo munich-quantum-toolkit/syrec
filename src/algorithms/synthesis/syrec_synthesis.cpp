@@ -383,6 +383,7 @@ namespace syrec {
     }
 
     // TODO: Using non-compile time constant expression would allow for the swap of the same qubits of a variable i.e. a[b][0] <=> a[c][0] with b=0 and c=0
+    // TODO: Add clarifying comments as to why qubit swaps are necessary
     bool SyrecSynthesis::onStatement(const SwapStatement& statement) {
         const std::optional<EvaluatedVariableAccess> evaluatedLhsOperand = evaluateAndValidateVariableAccess(statement.lhs, loopMap, firstVariableQubitOffsetLookup);
         const std::optional<EvaluatedVariableAccess> evaluatedRhsOperand = evaluateAndValidateVariableAccess(statement.rhs, loopMap, firstVariableQubitOffsetLookup);
@@ -450,30 +451,45 @@ namespace syrec {
         return synthesisOk;
     }
 
+    // TODO: Add tests and clarifying comments as to why qubit swaps are necessary
     bool SyrecSynthesis::onStatement(const UnaryStatement& statement) {
-        // load variable
-        std::vector<qc::Qubit> var;
-        bool                   synthesisOk = getVariables(statement.var, var);
+        const std::optional<EvaluatedVariableAccess> evaluatedVariableAccess = evaluateAndValidateVariableAccess(statement.var, loopMap, firstVariableQubitOffsetLookup);
+        if (!evaluatedVariableAccess.has_value()) {
+            return false;
+        }
 
+        bool                           synthesisOk                   = true;
+        const EvaluatedVariableAccess& dataOfEvaluatedVariableAccess = *evaluatedVariableAccess;
+        const unsigned                 numAccessedQubits             = static_cast<unsigned>(dataOfEvaluatedVariableAccess.evaluatedBitrangeAccess.getIndicesOfAccessedBits().size());
+
+        std::vector<qc::Qubit> qubitsStoringUnrolledIndex;
+        std::vector<qc::Qubit> qubitsStoringAccessedValueOfVariable;
+        if (dataOfEvaluatedVariableAccess.evaluatedDimensionAccess.containedOnlyNumericExpressions) {
+            synthesisOk = getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(dataOfEvaluatedVariableAccess, qubitsStoringAccessedValueOfVariable);
+        } else {
+            synthesisOk = calculateSymbolicUnrolledIndexForElementInVariable(dataOfEvaluatedVariableAccess, qubitsStoringUnrolledIndex) && getConstantLines(numAccessedQubits, 0U, qubitsStoringAccessedValueOfVariable) && transferQubitsOfElementAtIndexInVariableToOtherQubits(dataOfEvaluatedVariableAccess, qubitsStoringUnrolledIndex, qubitsStoringAccessedValueOfVariable, QubitTransferOperation::SwapQubits);
+        }
         switch (statement.unaryOperation) {
             case UnaryStatement::UnaryOperation::Invert:
-                synthesisOk &= bitwiseNegation(annotatableQuantumComputation, var);
+                synthesisOk &= bitwiseNegation(annotatableQuantumComputation, qubitsStoringAccessedValueOfVariable);
                 break;
             case UnaryStatement::UnaryOperation::Increment:
-                synthesisOk &= increment(annotatableQuantumComputation, var);
+                synthesisOk &= increment(annotatableQuantumComputation, qubitsStoringAccessedValueOfVariable);
                 break;
             case UnaryStatement::UnaryOperation::Decrement:
-                synthesisOk &= decrement(annotatableQuantumComputation, var);
+                synthesisOk &= decrement(annotatableQuantumComputation, qubitsStoringAccessedValueOfVariable);
                 break;
             default:
                 synthesisOk = false;
                 break;
         }
+
+        if (synthesisOk && !dataOfEvaluatedVariableAccess.evaluatedDimensionAccess.containedOnlyNumericExpressions) {
+            synthesisOk &= transferQubitsOfElementAtIndexInVariableToOtherQubits(dataOfEvaluatedVariableAccess, qubitsStoringUnrolledIndex, qubitsStoringAccessedValueOfVariable, QubitTransferOperation::SwapQubits);
+        }
         return synthesisOk;
     }
 
-    // TODO: Tests for variable access with non-compile time constant expressions in SwapStatement and UnaryStatement as well as right-hand side of assignment.
-    // TODO: Tests for variable access with non-compile time constant expressions in all expression types and usage in IfStatement.
     bool SyrecSynthesis::onStatement(const AssignStatement& statement) {
         const std::optional<EvaluatedVariableAccess> evaluatedLhsOperand = evaluateAndValidateVariableAccess(statement.lhs, loopMap, firstVariableQubitOffsetLookup);
         if (!evaluatedLhsOperand.has_value()) {

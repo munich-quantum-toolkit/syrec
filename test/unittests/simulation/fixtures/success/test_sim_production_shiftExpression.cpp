@@ -139,6 +139,14 @@ TYPED_TEST_P(BaseSimulationTestFixture, RightShiftWithShiftedExpressionEqualToSh
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableAccessWithNonCompileTimeConstantExpressionIndicesInShiftExpressionPerformingLeftShift) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UsageOfVariableAccessWithNonCompileTimeConstantExpressionIndicesInShiftExpressionPerformingRightShift) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             LeftShiftWithShiftAmountEqualToIntegerConstant,
                             LeftShiftWithShiftAmountEqualToLoopVariable,
@@ -170,7 +178,10 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             RightShiftWithShiftedExpressionEqualToVariableAccess,
                             RightShiftWithShiftedExpressionEqualToBinaryExpression,
                             RightShiftWithShiftedExpressionEqualToUnaryExpression,
-                            RightShiftWithShiftedExpressionEqualToShiftExpression);
+                            RightShiftWithShiftedExpressionEqualToShiftExpression,
+
+                            UsageOfVariableAccessWithNonCompileTimeConstantExpressionIndicesInShiftExpressionPerformingLeftShift,
+                            UsageOfVariableAccessWithNonCompileTimeConstantExpressionIndicesInShiftExpressionPerformingRightShift);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );

@@ -1195,5 +1195,25 @@
         "out": "1100"
       }
     ]
+  },
+  "UsageOfVariableAccessContainingNonCompileTimeConstantExpressionAsGuardExpressionOfIfStatement": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2) if (a[0][b] > 0) then ++= a[0][b] else ~= a[0][b] fi (a[0][b] > 0)",
+    "simulationRuns": [
+      {
+        "debugHelper": "b=0, a[0][0]=3 => ++= a[0][0]",
+        "in": "11000100110000",
+        "out": "00000100110000"
+      },
+      {
+        "debugHelper": "b=1, a[0][1]=0 => ~= a[0][1]",
+        "in": "11000100110010",
+        "out": "11110100110010"
+      },
+      {
+        "debugHelper": "b=2, a[0][2]=2 => ++= a[0][2]",
+        "in": "11000100110001",
+        "out": "11001100110001"
+      }
+    ]
   }
 }

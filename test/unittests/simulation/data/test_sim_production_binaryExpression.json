@@ -1781,5 +1781,35 @@
         "out": "111100"
       }
     ]
+  },
+  "UsageOfVariableAccessWithNonCompileTimeConstantExpressionIndicesInLhsOperandOfBinaryExpression": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2) a[0][2] += ((a[0][b] + 1) + a[b][0])",
+    "simulationRuns": [
+      {
+        "debugHelper": "b=0, a[0][2] += ((a[0][0] + 1) + a[0][0])",
+        "in": "10001111001100",
+        "out": "10000111001100"
+      },
+      {
+        "debugHelper": "b=1, a[0][2] += ((a[0][1] + 1) + a[1][0])",
+        "in": "11010111001110",
+        "out": "11010011001110"
+      }
+    ]
+  },
+  "UsageOfVariableAccessWithNonCompileTimeConstantExpressionIndicesInRhsOperandOfBinaryExpression": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2) a[0][2] += (a[b][0] + (a[0][b] + 1))",
+    "simulationRuns": [
+      {
+        "debugHelper": "b=0, a[0][2] += (a[0][0] + (a[0][0] + 1))",
+        "in": "10001111001100",
+        "out": "10000111001100"
+      },
+      {
+        "debugHelper": "b=1, a[0][2] += (a[1][0] + (a[0][1] + 1))",
+        "in": "11010111001110",
+        "out": "11010011001110"
+      }
+    ]
   }
 }

@@ -1669,5 +1669,60 @@
         "out": "1011"
       }
     ]
+  },
+  "UnaryAssignmentToFullBitwidthWithDimensionAccessOfAssignedToVariableContainingNonCompileTimeConstantExpressions": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2) ++= a[0][b]",
+    "simulationRuns": [
+      {
+        "debugHelper": "b=0, ++= a[0][0]",
+        "in": "11000011001100",
+        "out": "00000011001100"
+      },
+      {
+        "debugHelper": "b=1, ++= a[0][1]",
+        "in": "11000011001110",
+        "out": "11100011001110"
+      },
+      {
+        "debugHelper": "b=2, ++= a[0][2]",
+        "in": "11000011001101",
+        "out": "11001011001101"
+      }
+    ]
+  },
+  "UnaryAssignmentToBitWithDimensionAccessOfAssignedToVariableContainingNonCompileTimeConstantExpressions": {
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(2) ++= a[0][b].1",
+    "simulationRuns": [
+      {
+        "debugHelper": "b=0, ++= a[0][0].1",
+        "in": "11000011001100",
+        "out": "10000011001100"
+      },
+      {
+        "debugHelper": "b=1, ++= a[0][1].1",
+        "in": "11000011001110",
+        "out": "11010011001110"
+      },
+      {
+        "debugHelper": "b=2, ++= a[0][2].1",
+        "in": "11000011001101",
+        "out": "11000111001101"
+      }
+    ]
+  },
+  "UnaryAssignmentToBitrangeWithDimensionAccessOfAssignedToVariableContainingNonCompileTimeConstantExpressions": {
+    "inputCircuit": "module main(inout a[2][2](4)) wire b(2) ++= a[b][b].1:2",
+    "simulationRuns": [
+      {
+        "debugHelper": "b=0, ++= a[0][0].1:2",
+        "in": "111100001111000000",
+        "out": "100100001111000000"
+      },
+      {
+        "debugHelper": "b=1, ++= a[1][1].1:2",
+        "in": "111100001111000010",
+        "out": "111100001111010010"
+      }
+    ]
   }
 }

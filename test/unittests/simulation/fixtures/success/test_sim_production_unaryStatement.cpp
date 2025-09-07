@@ -127,6 +127,17 @@ TYPED_TEST_P(BaseSimulationTestFixture, IncrementAssignOfBitrangeOfVariableWithB
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, UnaryAssignmentToFullBitwidthWithDimensionAccessOfAssignedToVariableContainingNonCompileTimeConstantExpressions) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UnaryAssignmentToBitWithDimensionAccessOfAssignedToVariableContainingNonCompileTimeConstantExpressions) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, UnaryAssignmentToBitrangeWithDimensionAccessOfAssignedToVariableContainingNonCompileTimeConstantExpressions) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             IncrementAssignOfVariable,
                             IncrementAssignOfBitOfVariable,
@@ -137,6 +148,7 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd,
                             IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd,
                             IncrementAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd,
+
                             DecrementAssignOfVariable,
                             DecrementAssignOfBitOfVariable,
                             DecrementAssignOfBitrangeOfVariableWithBitrangeStartSmallerThanEnd,
@@ -155,7 +167,11 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             BitwiseNegateAssignBitOfValueOfDimensionOfVariable,
                             BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartSmallerThanEnd,
                             BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartLargerThanEnd,
-                            BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd);
+                            BitwiseNegateAssignBitrangeOfValueOfDimensionOfVariableWithBitrangeStartEqualToEnd,
+
+                            UnaryAssignmentToFullBitwidthWithDimensionAccessOfAssignedToVariableContainingNonCompileTimeConstantExpressions,
+                            UnaryAssignmentToBitWithDimensionAccessOfAssignedToVariableContainingNonCompileTimeConstantExpressions,
+                            UnaryAssignmentToBitrangeWithDimensionAccessOfAssignedToVariableContainingNonCompileTimeConstantExpressions);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
