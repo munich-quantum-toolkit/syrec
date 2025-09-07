@@ -1,6 +1,9 @@
+<!--- This file has been generated from an external template. Please do not modify it directly. -->
+<!--- Changes should be contributed to https://github.com/munich-quantum-toolkit/templates. -->
+
 # Support
 
-If you are stuck with a problem using MQT SyReC or have questions, please get in touch at our [Issues] or [Discussions].
+If you are stuck with a problem using MQT SyReC Synthesizer or have questions, please get in touch at our [Issues] or [Discussions].
 We'd love to help.
 
 You can save time by following this procedure when reporting a problem:
