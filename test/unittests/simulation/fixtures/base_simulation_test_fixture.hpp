@@ -57,6 +57,10 @@ public:
     syrec::AnnotatableQuantumComputation annotatableQuantumComputation;
     syrec::Program                       syrecProgramInstance;
 
+    [[nodiscard]] static constexpr bool isTestingLineAwareSynthesis() noexcept {
+        return std::is_same_v<T, syrec::LineAwareSynthesis>;
+    }
+
     void performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(const std::string_view& circuitToParseAndSynthesis, const std::optional<syrec::Properties::ptr>& optionalSynthesisSettings = std::nullopt) {
         ASSERT_NO_FATAL_FAILURE(parseInputCircuitFromString(circuitToParseAndSynthesis, syrecProgramInstance));
         ASSERT_FALSE(performProgramSynthesis(syrecProgramInstance, annotatableQuantumComputation, optionalSynthesisSettings)) << "Expected synthesis of input circuit to fail";

@@ -26,8 +26,43 @@
 
 namespace syrec {
     bool LineAwareSynthesis::processStatement(const Statement::ptr& statement) {
+        if (statement == nullptr) {
+            return false;
+        }
+
+        // TODO: This might require testing but we need to check with the maintainers of this project if this should be done in a separate PR since the error reporting of the synthesis classes probably changes in the future.
+        // TODO: At the time (07.09.2025) that this comment was written, bugs in the line aware synthesis algorithm existed (see issue #280) that might not only changes of the public/internal line aware synthesis interface but also its implementation.
+        // Additionally, since a variable access that uses non-compile time constant expressions (CTCE) in the dimension access requires special handling when used on the left-hand side of an assignment the required
+        // changes to fix the existing bugs in the synthesis algorithm as well as to add support for the "special" variable accesses should be combined in a future rework. For now we do not support the synthesis of statements
+        // that contain a variable access using a CTCE as index in its dimension access.
+        std::optional    didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex = true;
+        const Statement* stmtReference                                                               = statement.get();
+        if (const auto* const stmtCastedAsUnaryStmt = dynamic_cast<const UnaryStatement*>(stmtReference); stmtCastedAsUnaryStmt != nullptr) {
+            didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex = doesVariableAccessNotContainCompileTimeconstantExpressions(stmtCastedAsUnaryStmt->var);
+        } else if (const auto* const stmtCastedAsIfStmt = dynamic_cast<const IfStatement*>(stmtReference); stmtCastedAsIfStmt != nullptr) {
+            didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex = doesExpressionNotContainVariableAccessWithCompileTimeConstantExpressions(stmtCastedAsIfStmt->condition);
+        } else if (const auto* const stmtCastedAsSwapStmt = dynamic_cast<const SwapStatement*>(stmtReference); stmtCastedAsSwapStmt != nullptr) {
+            didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex = doesVariableAccessNotContainCompileTimeconstantExpressions(stmtCastedAsSwapStmt->lhs);
+            if (didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex.has_value() && !*didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex) {
+                didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex = doesVariableAccessNotContainCompileTimeconstantExpressions(stmtCastedAsSwapStmt->rhs);
+            }
+        }
+
         const auto* const stmtCastedAsAssignmentStmt = dynamic_cast<const AssignStatement*>(statement.get());
-        if (stmtCastedAsAssignmentStmt == nullptr) {
+        if (stmtCastedAsAssignmentStmt != nullptr) {
+            didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex = doesVariableAccessNotContainCompileTimeconstantExpressions(stmtCastedAsAssignmentStmt->lhs);
+            if (didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex.has_value() && *didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex) {
+                didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex = doesExpressionNotContainVariableAccessWithCompileTimeConstantExpressions(stmtCastedAsAssignmentStmt->rhs);
+            }
+        }
+
+        if (didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex.has_value() && !*didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex) {
+            std::cerr << "Line aware synthesis cannot synthesis a statement that contains a variable access that uses a non-compile time constant expression as index in its dimension access component\n";
+            return false;
+        }
+        // If we cannot determine whether the statement did not contain a variable access that used a non-compile time constant expression then either an error during the validation of an variable access used in the statement occurred
+        // or no checks for the given statement type were defined which in turn means that the line aware synthesis can probably not handle the statement type and we delegate the synthesis to the base class.
+        if (!didStmtNotContainVariableAccessUsingNonCompileTimeConstantExpressionAsIndex.has_value() || stmtCastedAsAssignmentStmt == nullptr) {
             return SyrecSynthesis::onStatement(statement);
         }
 
@@ -392,5 +427,35 @@ namespace syrec {
     bool LineAwareSynthesis::synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
         LineAwareSynthesis synthesizer(annotatableQuantumComputation);
         return SyrecSynthesis::synthesize(&synthesizer, program, settings, statistics);
+    }
+
+    std::optional<bool> LineAwareSynthesis::doesVariableAccessNotContainCompileTimeconstantExpressions(const VariableAccess::ptr& variableAccess) const {
+        const std::optional<EvaluatedVariableAccess> evaluatedVariableAccess = evaluateAndValidateVariableAccess(variableAccess, loopMap, firstVariableQubitOffsetLookup);
+        return evaluatedVariableAccess.has_value() ? std::make_optional(evaluatedVariableAccess->evaluatedDimensionAccess.containedOnlyNumericExpressions) : std::nullopt;
+    }
+
+    std::optional<bool> LineAwareSynthesis::doesExpressionNotContainVariableAccessWithCompileTimeConstantExpressions(const Expression::ptr& expr) const {
+        if (expr == nullptr) {
+            return std::nullopt;
+        }
+
+        if (const auto& exprCastedAsBinaryOne = std::dynamic_pointer_cast<BinaryExpression>(expr); exprCastedAsBinaryOne != nullptr) {
+            const std::optional<bool> doesLhsOperandNotContainVariableAccessWithCompileTimeConstantExpression = doesExpressionNotContainVariableAccessWithCompileTimeConstantExpressions(exprCastedAsBinaryOne->lhs);
+            const std::optional<bool> doesRhsOperandNotContainVariableAccessWithCompileTimeConstantExpression = doesLhsOperandNotContainVariableAccessWithCompileTimeConstantExpression.has_value() ? doesExpressionNotContainVariableAccessWithCompileTimeConstantExpressions(exprCastedAsBinaryOne->rhs) : std::nullopt;
+            return doesLhsOperandNotContainVariableAccessWithCompileTimeConstantExpression.has_value() && doesRhsOperandNotContainVariableAccessWithCompileTimeConstantExpression ? std::make_optional(*doesLhsOperandNotContainVariableAccessWithCompileTimeConstantExpression && *doesRhsOperandNotContainVariableAccessWithCompileTimeConstantExpression) : std::nullopt;
+        }
+        if (const auto& exprCastedAsUnaryOne = std::dynamic_pointer_cast<UnaryExpression>(expr); exprCastedAsUnaryOne != nullptr) {
+            return doesExpressionNotContainVariableAccessWithCompileTimeConstantExpressions(exprCastedAsUnaryOne->expr);
+        }
+        if (const auto& exprCastedAsShiftOne = std::dynamic_pointer_cast<ShiftExpression>(expr); exprCastedAsShiftOne != nullptr) {
+            return doesExpressionNotContainVariableAccessWithCompileTimeConstantExpressions(exprCastedAsShiftOne->lhs);
+        }
+        if (const auto& exprCastedAsVariableOne = std::dynamic_pointer_cast<VariableExpression>(expr); exprCastedAsVariableOne != nullptr) {
+            return doesVariableAccessNotContainCompileTimeconstantExpressions(exprCastedAsVariableOne->var);
+        }
+        if (const auto& exprAsNumericOne = std::dynamic_pointer_cast<NumericExpression>(expr); exprAsNumericOne != nullptr) {
+            return true;
+        }
+        return false;
     }
 } // namespace syrec

@@ -138,19 +138,6 @@ namespace syrec {
         [[nodiscard]] bool                                                    shouldQubitInlineInformationBeRecorded() const;
         void                                                                  discardLastCreateModuleCallStackInstance();
 
-        std::stack<Statement::ptr>  stmts;
-        Number::LoopVariableMapping loopMap;
-        std::stack<Module::ptr>     modules;
-
-        AnnotatableQuantumComputation&                      annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
-        std::optional<std::vector<QubitInliningStack::ptr>> moduleCallStackInstances;
-        std::unique_ptr<StatementExecutionOrderStack>       statementExecutionOrderStack;
-        // TODO: Clarifying comment as to why we are storing the variable identifiers as std::string_view instead of std::string
-        std::unique_ptr<FirstVariableQubitOffsetLookup> firstVariableQubitOffsetLookup;
-
-    private:
-        std::map<bool, std::vector<qc::Qubit>> freeConstLinesMap;
-
         struct EvaluatedBitrangeAccess {
             unsigned bitrangeStart;
             unsigned bitrangeEnd;
@@ -178,7 +165,6 @@ namespace syrec {
 
         [[nodiscard]] bool synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant);
 
-        // TODO: All remaining functions below this point should probably be protected and not private members of the class.
         [[nodiscard]] static std::optional<EvaluatedBitrangeAccess> evaluateAndValidateBitrangeAccess(const VariableAccess& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup);
 
         /**
@@ -196,5 +182,17 @@ namespace syrec {
 
         [[nodiscard]] bool calculateSymbolicUnrolledIndexForElementInVariable(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerToStoreUnrolledIndex);
         [[nodiscard]] bool transferQubitsOfElementAtIndexInVariableToOtherQubits(const EvaluatedVariableAccess& evaluatedVariableAccess, const std::vector<qc::Qubit>& qubitsStoringUnrolledIndexOfElementToSelect, const std::vector<qc::Qubit>& qubitsStoringResultOfTransferOperation, QubitTransferOperation qubitTransferOperation);
+
+        std::stack<Statement::ptr>  stmts;
+        Number::LoopVariableMapping loopMap;
+        std::stack<Module::ptr>     modules;
+
+        AnnotatableQuantumComputation&                      annotatableQuantumComputation; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+        std::optional<std::vector<QubitInliningStack::ptr>> moduleCallStackInstances;
+        std::unique_ptr<StatementExecutionOrderStack>       statementExecutionOrderStack;
+        std::unique_ptr<FirstVariableQubitOffsetLookup>     firstVariableQubitOffsetLookup;
+
+    private:
+        std::map<bool, std::vector<qc::Qubit>> freeConstLinesMap;
     };
 } // namespace syrec

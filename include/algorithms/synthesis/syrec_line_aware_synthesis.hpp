@@ -19,6 +19,7 @@
 #include "ir/Definitions.hpp"
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace syrec {
@@ -78,5 +79,8 @@ namespace syrec {
         static bool decreaseNewAssign(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs);
 
         bool expressionOpInverse([[maybe_unused]] BinaryExpression::BinaryOperation binaryOperation, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs) override;
+
+        [[nodiscard]] std::optional<bool> doesVariableAccessNotContainCompileTimeconstantExpressions(const VariableAccess::ptr& variableAccess) const;
+        [[nodiscard]] std::optional<bool> doesExpressionNotContainVariableAccessWithCompileTimeConstantExpressions(const Expression::ptr& expr) const;
     };
 } // namespace syrec
