@@ -35,7 +35,6 @@ references
 :maxdepth: 1
 
 contributing
-DevelopmentGuide
 support
 ```
 
