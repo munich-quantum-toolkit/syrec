@@ -127,8 +127,6 @@ namespace syrec {
 
         [[nodiscard]] static std::optional<qc::Qubit> addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const std::optional<QubitInliningStack::ptr>& currentModuleCallStack);
 
-        // TODO: Add comment that this function should only be used to synthesize a variable access of an expression or the variable access on the left hand side of an assignment if said variable access only contains compile time constant indices.
-
         /**
          * Get the qubits accessed by the defined variable access.
          * @param variableAccess The variable access to evaluate.
@@ -192,6 +190,7 @@ namespace syrec {
          * @param loopVariableValueLookup A lookup containing the current value of the activate loop variables.
          * @return A container storing the evaluated values of each dimension, if the number of accessed dimensions is equal to the number of defined dimensions of the accessed variable and if all numeric expressions in the dimension access could be evaluated and defined a value within the range [0, number of values in dimension at same index in accessed variable - 1]. If the validation failed, std::nullopt is returned.
          * @remark Note that only numeric expressions are evaluated while all other expressions types are ignored. A flag in the returned container can be used to distinguish between the two cases.
+         * @remark No arithmetic or logical simplifications are performed at the moment which could enable the evaluation of other expression types at compile time.
          */
         [[nodiscard]] static std::optional<EvaluatedDimensionAccess> evaluateAndValidateDimensionAccess(const VariableAccess& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup);
         [[nodiscard]] static std::optional<EvaluatedVariableAccess>  evaluateAndValidateVariableAccess(const VariableAccess::ptr& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup, const std::unique_ptr<FirstVariableQubitOffsetLookup>& firstVariableQubitOffsetLookup);

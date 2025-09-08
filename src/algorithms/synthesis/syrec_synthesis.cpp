@@ -384,7 +384,6 @@ namespace syrec {
         return okay;
     }
 
-    // TODO: Using non-compile time constant expression would allow for the swap of the same qubits of a variable i.e. a[b][0] <=> a[c][0] with b=0 and c=0.
     // Update documentation that user is responsible to prevent such cases.
 
     // If both variable accesses of the SwapStatement contained only expressions evaluable at compile time in its dimension access component
@@ -1638,10 +1637,8 @@ namespace syrec {
             return std::nullopt;
         }
 
-        // TODO: No evaluation of non-numeric expressions that could be simplified due to arithmetic/logical simplifications. No logging of division by zero errors during evaluation of compile time constant expressions.
         const std::optional<EvaluatedDimensionAccess> evaluatedDimensionAccess = evaluateAndValidateDimensionAccess(*userDefinedVariableAccess, loopVariableValueLookup);
-        // TODO: No logging of division by zero errors during evaluation of compile time constant expressions.
-        const std::optional<EvaluatedBitrangeAccess> evaluatedBitrangeAccess = evaluateAndValidateBitrangeAccess(*userDefinedVariableAccess, loopVariableValueLookup);
+        const std::optional<EvaluatedBitrangeAccess>  evaluatedBitrangeAccess  = evaluateAndValidateBitrangeAccess(*userDefinedVariableAccess, loopVariableValueLookup);
         if (evaluatedBitrangeAccess.has_value() && evaluatedDimensionAccess.has_value()) {
             return EvaluatedVariableAccess({.offsetToFirstQubitOfVariable = offsetToFirstQubitOfVariable, .accessedVariable = *userDefinedVariableAccess->var, .evaluatedBitrangeAccess = *evaluatedBitrangeAccess, .evaluatedDimensionAccess = *evaluatedDimensionAccess, .userDefinedDimensionAccess = userDefinedVariableAccess->indexes});
         }
@@ -1775,9 +1772,6 @@ namespace syrec {
                     if (std::has_single_bit(offsetToNextElementOfDimensionInNumberOfArrayElements) && offsetToNextElementOfDimensionInNumberOfArrayElements != 1) {
                         synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) && leftShift(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, offsetToNextElementOfDimensionInNumberOfArrayElements / 2);
                     } else {
-                        // TODO: Bitwidth of synthesized expression could be smaller/larger than the container storing the ancillary qubits storing the number of values of the dimension.
-                        // We need to determine whether a resize of any of the operands for the multiplication operation is required, one check defined in the multiplication is that
-                        // lhs.size() >= dest.size() && rhs.size() >= dest.size()
                         std::vector<qc::Qubit> qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements;
                         synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) && getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements) && moveIntegerValueToAncillaryQubits(annotatableQuantumComputation, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements, offsetToNextElementOfDimensionInNumberOfArrayElements) && multiplication(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements) && clearIntegerValueFromAncillaryQubits(annotatableQuantumComputation, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements, offsetToNextElementOfDimensionInNumberOfArrayElements);
                     }

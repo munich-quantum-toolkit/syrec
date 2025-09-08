@@ -780,9 +780,6 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, qubitLabelOfFirstLocalVariableOfUncalledModule, qubitLabelOfSecondLocalVariableOfUncalledModule));
 }
 
-// TODO: Tests that local module variables and ancillary qubits use the same inline stack
-// TODO: Tests for inline information of N-D signal
-
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedLocalModuleVariablesAndAncillaryQubitsOfCalledModuleOnSameDepthOfInlineStackShareSameInlineStack) {
     Properties::ptr synthesisSettings = std::make_shared<Properties>();
     synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
