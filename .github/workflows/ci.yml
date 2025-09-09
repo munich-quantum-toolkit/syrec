@@ -68,6 +68,15 @@ jobs:
       compiler: ${{ matrix.compiler }}
       config: ${{ matrix.config }}
 
+  cpp-coverage:
+    name: 🇨‌ Coverage
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-cpp-tests)
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-cpp-coverage.yml@v1.16
+    permissions:
+      contents: read
+      id-token: write
+
   cpp-linter:
     name: 🇨‌ Lint
     needs: change-detection
@@ -143,6 +152,7 @@ jobs:
       - cpp-tests-ubuntu
       - cpp-tests-macos
       - cpp-tests-windows
+      - cpp-coverage
       - cpp-linter
       - python-tests
       - python-coverage
@@ -158,6 +168,10 @@ jobs:
             ${{
               fromJSON(needs.change-detection.outputs.run-cpp-tests)
               && '' || 'cpp-tests-ubuntu,cpp-tests-macos,cpp-tests-windows,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-cpp-tests)
+              && '' || 'cpp-coverage,'
             }}
             ${{
               fromJSON(needs.change-detection.outputs.run-cpp-linter)
