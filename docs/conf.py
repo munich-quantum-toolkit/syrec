@@ -70,6 +70,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinxcontrib.bibtex",
     "sphinx_copybutton",
+    "sphinx_design",
     "nbsphinx",
     "sphinxext.opengraph",
     "sphinx_autodoc_typehints",
