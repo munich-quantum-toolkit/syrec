@@ -95,6 +95,18 @@ intersphinx_mapping = {
     "qmap": ("https://mqt.readthedocs.io/projects/qmap/en/latest/", None),
 }
 
+myst_enable_extensions = [
+    "amsmath",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "substitution",
+]
+myst_substitutions = {
+    "version": version,
+}
+myst_heading_anchors = 3
+
 nbsphinx_execute = "auto"
 highlight_language = "python3"
 nbsphinx_execute_arguments = [
@@ -102,6 +114,7 @@ nbsphinx_execute_arguments = [
     "--InlineBackend.rc=figure.dpi=200",
 ]
 nbsphinx_kernel_name = "python3"
+nb_execution_raise_on_error = True
 
 autosectionlabel_prefix_document = True
 
