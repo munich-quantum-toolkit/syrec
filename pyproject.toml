@@ -30,14 +30,13 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Development Status :: 4 - Beta",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "mqt.core~=3.2.1",
     "PyQt6>=6.8",
@@ -136,7 +135,7 @@ report.exclude_also = [
 [tool.mypy]
 files = ["python/mqt", "test/python", "noxfile.py"]
 mypy_path = ["$MYPY_CONFIG_FILE_DIR/python"]
-python_version = "3.9"
+python_version = "3.10"
 warn_unused_configs = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 strict = true
