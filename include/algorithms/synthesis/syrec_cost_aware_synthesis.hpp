@@ -32,12 +32,12 @@ namespace syrec {
             return SyrecSynthesis::onStatement(statement);
         }
 
-        bool assignAdd(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override {
-            return increase(annotatableQuantumComputation, rhs, lhs);
+        bool assignAdd(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override {
+            return increase(annotatableQuantumComputation, lhs, rhs); // NOLINT(readability-suspicious-call-argument)
         }
 
-        bool assignSubtract(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override {
-            return decrease(annotatableQuantumComputation, rhs, lhs);
+        bool assignSubtract(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override {
+            return decrease(annotatableQuantumComputation, lhs, rhs); // NOLINT(readability-suspicious-call-argument)
         }
 
         bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override {

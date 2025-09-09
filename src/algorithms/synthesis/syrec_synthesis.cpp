@@ -17,6 +17,7 @@
 #include "core/properties.hpp"
 #include "core/qubit_inlining_stack.hpp"
 #include "core/syrec/expression.hpp"
+#include "core/syrec/number.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
@@ -1604,9 +1605,9 @@ namespace syrec {
                 if (const std::optional<unsigned> evaluatedDimensionExpr = dimensionExprAsNumericExpr->value != nullptr ? dimensionExprAsNumericExpr->value->tryEvaluate(loopVariableValueLookup) : std::nullopt; evaluatedDimensionExpr.has_value()) {
                     if (*evaluatedDimensionExpr >= userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) {
                         std::cerr << "Access on value " << std::to_string(*evaluatedDimensionExpr) << " of dimension " << std::to_string(dimensionIdx) << " was not within the valid range [0, " << std::to_string(userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) << " in access on variable " << accessedVariableIdentifier << "\n";
-                    } else {
-                        evaluatedDimensionAccess.accessedValuePerDimension[dimensionIdx] = *evaluatedDimensionExpr;
+                        return std::nullopt;
                     }
+                    evaluatedDimensionAccess.accessedValuePerDimension[dimensionIdx] = evaluatedDimensionExpr;
                 } else {
                     std::cerr << "Failed to evaluate defined value for numeric expression defined in dimension " << std::to_string(dimensionIdx) << " in variable access on " << accessedVariableIdentifier << "\n";
                     return std::nullopt;
