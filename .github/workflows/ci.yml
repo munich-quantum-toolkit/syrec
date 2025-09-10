@@ -68,6 +68,15 @@ jobs:
       compiler: ${{ matrix.compiler }}
       config: ${{ matrix.config }}
 
+  cpp-coverage:
+    name: 🇨‌ Coverage
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-cpp-tests)
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-cpp-coverage.yml@v1.16
+    permissions:
+      contents: read
+      id-token: write
+
   cpp-linter:
     name: 🇨‌ Lint
     needs: change-detection
@@ -103,11 +112,11 @@ jobs:
       contents: read
       id-token: write
 
-  code-ql:
-    name: 📝 CodeQL
+  python-linter:
+    name: 🐍 Lint
     needs: change-detection
-    if: fromJSON(needs.change-detection.outputs.run-code-ql)
-    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-code-ql.yml@v1.16.2
+    if: fromJSON(needs.change-detection.outputs.run-python-tests)
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@v1.16
 
   build-sdist:
     name: 🚀 CD
@@ -143,10 +152,11 @@ jobs:
       - cpp-tests-ubuntu
       - cpp-tests-macos
       - cpp-tests-windows
+      - cpp-coverage
       - cpp-linter
       - python-tests
       - python-coverage
-      - code-ql
+      - python-linter
       - build-sdist
       - build-wheel
     runs-on: ubuntu-latest
@@ -157,7 +167,7 @@ jobs:
           allowed-skips: >-
             ${{
               fromJSON(needs.change-detection.outputs.run-cpp-tests)
-              && '' || 'cpp-tests-ubuntu,cpp-tests-macos,cpp-tests-windows,'
+              && '' || 'cpp-tests-ubuntu,cpp-tests-macos,cpp-tests-windows,cpp-coverage,'
             }}
             ${{
               fromJSON(needs.change-detection.outputs.run-cpp-linter)
@@ -166,6 +176,10 @@ jobs:
             ${{
               fromJSON(needs.change-detection.outputs.run-python-tests)
               && '' || 'python-tests,python-coverage,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-python-tests)
+              && '' || 'python-linter,'
             }}
             ${{
               fromJSON(needs.change-detection.outputs.run-code-ql)

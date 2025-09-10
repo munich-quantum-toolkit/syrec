@@ -9,7 +9,7 @@
 """MQT SyReC library.
 
 This file is part of the MQT SyReC library released under the MIT license.
-See README.md or go to https://github.com/cda-tum/syrec for more information.
+See README.md or go to https://github.com/munich-quantum-toolkit/syrec for more information.
 """
 
 from __future__ import annotations

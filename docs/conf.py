@@ -71,7 +71,6 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx_copybutton",
     "sphinx_design",
-    "nbsphinx",
     "sphinxext.opengraph",
     "sphinx_autodoc_typehints",
 ]
@@ -108,13 +107,7 @@ myst_substitutions = {
 }
 myst_heading_anchors = 3
 
-nbsphinx_execute = "auto"
-highlight_language = "python3"
-nbsphinx_execute_arguments = [
-    "--InlineBackend.figure_formats={'svg', 'pdf'}",
-    "--InlineBackend.rc=figure.dpi=200",
-]
-nbsphinx_kernel_name = "python3"
+nb_execution_mode = "cache"
 nb_execution_raise_on_error = True
 
 autosectionlabel_prefix_document = True
