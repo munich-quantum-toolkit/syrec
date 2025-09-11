@@ -174,6 +174,40 @@ qc::Operation* AnnotatableQuantumComputation::getQuantumOperation(std::size_t in
     return at(indexOfQuantumOperationInQuantumComputation).get();
 }
 
+// TODO: Tests
+bool AnnotatableQuantumComputation::replayOperationsAtGivenIndexRange(std::size_t indexOfFirstQuantumOperationToReplayInQuantumComputation, std::size_t indexOfLastQuantumOperationToReplayInQuantumComputation) {
+    if (indexOfFirstQuantumOperationToReplayInQuantumComputation >= getNops() || indexOfLastQuantumOperationToReplayInQuantumComputation >= getNops()) {
+        return false;
+    }
+
+    std::size_t idxOfFirstQuantumOperationToAnnotateAfterReplay = indexOfFirstQuantumOperationToReplayInQuantumComputation;
+    std::size_t idxOfLastQuantumOperationToAnnotateAfterReplay  = indexOfLastQuantumOperationToReplayInQuantumComputation;
+    std::size_t numQuantumOperationsToReplay                    = 0U;
+    // Since we have already validated that the provided indices are within range and under the assumption that only valid quantum operations are stored in the quantum computation (i.e. no nullptrs)
+    // then the result of the at(...) should return a valid quantum operation instance.
+    // After the operations were replayed with the emplace_back(..) call of qc::QuantumComputation, the number of operations will be larger than the number of gate annotations since the annotations for the replayed operations are only
+    // recorded in this derived class.
+    if (indexOfFirstQuantumOperationToReplayInQuantumComputation > indexOfLastQuantumOperationToReplayInQuantumComputation) {
+        numQuantumOperationsToReplay = (indexOfFirstQuantumOperationToReplayInQuantumComputation - indexOfLastQuantumOperationToReplayInQuantumComputation) + 1U;
+        for (std::size_t quantumOperationIdxOffset = 0; quantumOperationIdxOffset < numQuantumOperationsToReplay; ++quantumOperationIdxOffset) {
+            emplace_back(at(indexOfFirstQuantumOperationToReplayInQuantumComputation - quantumOperationIdxOffset)->clone());
+        }
+
+        idxOfFirstQuantumOperationToAnnotateAfterReplay += numQuantumOperationsToReplay;
+        idxOfLastQuantumOperationToAnnotateAfterReplay += numQuantumOperationsToReplay;
+        return annotateAllQuantumOperationsAtPositions(idxOfLastQuantumOperationToAnnotateAfterReplay, idxOfFirstQuantumOperationToAnnotateAfterReplay, {});
+    }
+
+    numQuantumOperationsToReplay = (indexOfLastQuantumOperationToReplayInQuantumComputation - indexOfFirstQuantumOperationToReplayInQuantumComputation) + 1U;
+    for (std::size_t quantumOperationIdxOffset = 0; quantumOperationIdxOffset < numQuantumOperationsToReplay; ++quantumOperationIdxOffset) {
+        emplace_back(at(indexOfFirstQuantumOperationToReplayInQuantumComputation + quantumOperationIdxOffset)->clone());
+    }
+
+    idxOfFirstQuantumOperationToAnnotateAfterReplay += numQuantumOperationsToReplay;
+    idxOfLastQuantumOperationToAnnotateAfterReplay += numQuantumOperationsToReplay;
+    return annotateAllQuantumOperationsAtPositions(idxOfFirstQuantumOperationToAnnotateAfterReplay, idxOfLastQuantumOperationToAnnotateAfterReplay, {});
+}
+
 AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
     if (indexOfQuantumOperationInQuantumComputation >= annotationsPerQuantumOperation.size()) {
         return {};
@@ -361,7 +395,7 @@ bool AnnotatableQuantumComputation::isQubitWithinRange(const qc::Qubit qubit) co
 }
 
 bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation) {
-    if (fromQuantumOperationIndex > annotationsPerQuantumOperation.size() || fromQuantumOperationIndex > toQuantumOperationIndex) {
+    if (fromQuantumOperationIndex > getNops() || fromQuantumOperationIndex > toQuantumOperationIndex) {
         return false;
     }
     annotationsPerQuantumOperation.resize(toQuantumOperationIndex);

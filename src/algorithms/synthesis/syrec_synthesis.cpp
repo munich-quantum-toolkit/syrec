@@ -385,8 +385,6 @@ namespace syrec {
         return okay;
     }
 
-    // Update documentation that user is responsible to prevent such cases.
-
     // If both variable accesses of the SwapStatement contained only expressions evaluable at compile time in its dimension access component
     // then the accessed qubits of the both variables can be determined a compile time and the procedure below can be ignored for the synthesis of the swap statement.
     //
@@ -1743,6 +1741,7 @@ namespace syrec {
             } else {
                 compileTimeValueOfUnrolledIndex.reset();
 
+                const std::size_t      numOperationsPriorToSynthesisOfExpr = annotatableQuantumComputation.getNops();
                 std::vector<qc::Qubit> qubitsStoringSynthesizedExprOfDimension;
                 // We do not need to manually generate ancillary qubits here since they are generated during the synthesis of the expression (or qubits of a variable simply copied to our container in case of a variable access with only compile time constant expressions)
                 if (!onExpression(accessedIndexPerDimension.at(i), qubitsStoringSynthesizedExprOfDimension, {}, BinaryExpression::BinaryOperation::Add)) {
@@ -1750,6 +1749,7 @@ namespace syrec {
                     return false;
                 }
 
+                const std::size_t numOperationsAfterSynthesisOfExpr = annotatableQuantumComputation.getNops();
                 // The bitwidth of synthesized expression could be smaller/larger than the one storing the unrolled index with the former needing to be truncated/enlarged so that the subsequent addition operation can be synthesized
                 // with the addition operation requiring the same operand bitwidth. Due to this condition, we think that bitwidth of the index expression should not be larger than the bitwidth required to store the unrolled index.
                 // A smaller bitwidth should be allowed but needs to be padded to the required bitwidth.
@@ -1765,29 +1765,45 @@ namespace syrec {
                     qubitsStoringSynthesizedExprOfDimension.insert(qubitsStoringSynthesizedExprOfDimension.end(), paddingQubits.cbegin(), paddingQubits.cend());
                 }
 
-                if (i != numDimensionsOfAccessedVariable - 1) {
-                    std::vector<qc::Qubit> qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex;
-                    if (offsetToNextElementOfDimensionInNumberOfArrayElements == 1) {
-                        qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex = qubitsStoringSynthesizedExprOfDimension;
-                    }
-                    if (std::has_single_bit(offsetToNextElementOfDimensionInNumberOfArrayElements) && offsetToNextElementOfDimensionInNumberOfArrayElements != 1) {
-                        synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) && leftShift(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, offsetToNextElementOfDimensionInNumberOfArrayElements / 2);
-                    } else {
-                        std::vector<qc::Qubit> qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements;
-                        synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) && getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements) && moveIntegerValueToAncillaryQubits(annotatableQuantumComputation, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements, offsetToNextElementOfDimensionInNumberOfArrayElements) && multiplication(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements) && clearIntegerValueFromAncillaryQubits(annotatableQuantumComputation, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements, offsetToNextElementOfDimensionInNumberOfArrayElements);
-                    }
-                    synthesisOk &= assignAdd(containerToStoreUnrolledIndex, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, AssignStatement::AssignOperation::Add);
+                std::optional<std::size_t> numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum;
+                std::optional<std::size_t> numOperationsAfterSynthesisOfSummandInUnrolledIndexSum;
 
-                    // We can reset the state of the ancillary qubits used to calculate the summand S = <offset_to_next_element> * <index_of_dimension> back to their initial state since they are no longer needed after the summand was added
-                    // to the unrolled index by simply replaying the used operations in reverse order. This reset would allow for the ancillary qubits to be reused in future operation. However, as of the time this comment was written (09.09.2025)
-                    // ancillary qubits are not reused. Additionally, we would need to add "arbitrary" qc::Operations to the annotatable quantum operation via a wrapped call to is emplace_back() function (to validate the qubits of the operation as well as to
-                    // add the quantum gate annotations to the added gates that otherwise would not be added via the qc::QuantumComputation::emplace_back() call) which could allow the user, since this operation is available in the public interface of the class,
-                    // to add operations not generated by the public functions of the syrec::AnnotatableQuantumComputation class which in turn could lead to the addition of not simulatable gates in the syrec::simple_simulation.
+                std::vector<qc::Qubit> qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex;
+                if (offsetToNextElementOfDimensionInNumberOfArrayElements == 1) {
+                    qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex = qubitsStoringSynthesizedExprOfDimension;
+                } else if (std::has_single_bit(offsetToNextElementOfDimensionInNumberOfArrayElements)) {
+                    numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
+                    synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) && leftShift(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, offsetToNextElementOfDimensionInNumberOfArrayElements / 2);
+                    numOperationsAfterSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
                 } else {
-                    synthesisOk &= assignAdd(containerToStoreUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, AssignStatement::AssignOperation::Add);
+                    numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
+                    std::vector<qc::Qubit> qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements;
+                    synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) && getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements) && moveIntegerValueToAncillaryQubits(annotatableQuantumComputation, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements, offsetToNextElementOfDimensionInNumberOfArrayElements) && multiplication(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, qubitsStoringOffsetToNextElementOfDimensionInNumberOfArrayElements);
+                    numOperationsAfterSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
                 }
-                // After the summand generated for the current dimension is added to the unrolled index (and the operations for the summand assumed to be reset at this point) one could also undo the operations required to synthesize the user-defined expression
-                // for the current dimension to reset the used ancillary qubits back to their initial state using the same procedure as for the summand with the same problems described also applying here.
+                synthesisOk &= assignAdd(containerToStoreUnrolledIndex, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, AssignStatement::AssignOperation::Add);
+
+                // We can reset the state of the ancillary qubits used to calculate the summand S = <offset_to_next_element> * <index_of_dimension> back to their initial state since they are no longer needed after the summand was added
+                // to the unrolled index by simply replaying the used operations in reverse order. This reset would allow for the ancillary qubits to be reused in future operation. We need to use the syrec::AnnotatableQuantumComputation::replayOperationsAtGivenIndexRange(...) to replay the
+                // operations instead of manually adding the qc::Operation via the qc::QuantumComputation base class since the former will add the required gate annotations to the replayed operations which the latter will not.
+                if (numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum.has_value() && numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum > 0) {
+                    if (!numOperationsAfterSynthesisOfSummandInUnrolledIndexSum.has_value()) {
+                        std::cerr << "Failed to undo quantum operations required to calculate summand of dimension " << std::to_string(i) << "for unrolled index sum\n";
+                        return false;
+                    }
+
+                    const std::size_t idxOfFirstRelevantOperation = *numOperationsAfterSynthesisOfSummandInUnrolledIndexSum - 1;
+                    const std::size_t idxOfLastRelevantOperation  = *numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum;
+                    synthesisOk &= annotatableQuantumComputation.replayOperationsAtGivenIndexRange(idxOfFirstRelevantOperation, idxOfLastRelevantOperation);
+                }
+
+                if (numOperationsPriorToSynthesisOfExpr > 0 && numOperationsPriorToSynthesisOfExpr != numOperationsAfterSynthesisOfExpr) {
+                    // After the summand generated for the current dimension is added to the unrolled index (and the operations for the summand assumed to be reset at this point) one can also undo the operations required to synthesize the user-defined expression
+                    // for the current dimension to reset the used ancillary qubits back to their initial state using the same procedure as for the summand.
+                    const std::size_t idxOfFirstRelevantOperation = numOperationsAfterSynthesisOfExpr - 1;
+                    const std::size_t idxOfLastRelevantOperation  = numOperationsPriorToSynthesisOfExpr;
+                    synthesisOk &= annotatableQuantumComputation.replayOperationsAtGivenIndexRange(idxOfFirstRelevantOperation, idxOfLastRelevantOperation);
+                }
             }
         }
         return synthesisOk;
