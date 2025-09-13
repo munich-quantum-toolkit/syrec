@@ -68,6 +68,7 @@ We start by defining the semantics of the highest-level entity of a SyReC progra
 
 - The maximum number of values storable in a dimension is equal to {math}`2^{32}`.
 - A variable can have at most {math}`2^{32}` dimensions.
+- The total number of elements storable in a variable is equal to {math}`2^{32}`, with 'an element' referring to _n_ consecutive qubits of the variable with _n_ being equal to the declared bitwidth of the variable (e.g. a variable declared as {math}`in \ a[2][3][4](6)` contains 24 6-qubit sized elements).
 - The bitwidth of a variable must be larger than zero.
 - The number of values for any dimension of a variable must be larger than zero.
 - Variables of type 'state' require special handling and are treated as read-only in a SyReC program with the initial state being set during synthesis.
@@ -314,7 +315,7 @@ The parser will not report an overlap in the assignment due to the index of the 
 - All indices defined in the dimension or bit/bitrange access of a variable access are zero-based.
 - The dimension access can be omitted for variables with a single dimension containing only a single value (i.e., _module main(inout a(4)) ++= a_).
 - It is the responsibility of the user to guarantee that the value of an expression not evaluable at compile time that is used to define the accessed index of a dimension in the dimension access component of the variable access to be within the valid value range for the accessed dimension. Otherwise, undefined or implementation specific behaviour can occur during synthesis.
-- If a non-compile time constant expression is used to define the accessed value of a dimension then the bitwidth of the expression cannot be larger than the number of bits required store the index to the last element in the unrolled variable, e.g. the variable _in a[2][3](2)_ contains 6 elements with 3 bits being required to store the largest index (5) required to address any element in _a_.
+- If a non-compile time constant expression is used to define the accessed value of a dimension then the bitwidth of the expression cannot be larger than the number of bits required store the index to the last element in the unrolled variable, e.g. the variable {math}`in \ a[2][3](2)` contains 6 elements with 3 bits being required to store the largest index (5) required to address any element in _a_.
 - If the value of an index in either the dimension or bit/bitrange access evaluates to a constant at compile time, a validation of whether it is within the defined bounds of the accessed variable is performed and an error reported in case of an out-of-range value.
 - Each expression defining the accessed value of the dimension will use an expected operand bitwidth for its operands that is only valid until the expression was processed. Any already existing expected operand bitwidth from outside the expression is ignored (i.e. set in the parent expression of the currently processed _VariableAccess_). Assuming that the expression of the first accessed dimension of the _VariableAccess_ on the right-hand side of the assignment in the following example is processed:
 

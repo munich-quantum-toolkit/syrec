@@ -294,6 +294,21 @@ std::optional<syrec::Variable::ptr> CustomModuleVisitor::visitSignalDeclarationT
         }
     }
 
+    if (!declaredNumberOfValuesPerDimension.empty() && variableIdentifier.has_value()) {
+        unsigned    numDeclaredElementsInVariable = 1;
+        std::size_t currDimensionIdx              = declaredNumberOfValuesPerDimension.size() - 1;
+        bool        detectedOverflow              = false;
+        for (std::size_t i = 0; i < declaredNumberOfValuesPerDimension.size() && !detectedOverflow; ++i) {
+            const unsigned declaredNumberOfValuesOfDimension = declaredNumberOfValuesPerDimension.at(currDimensionIdx--);
+            detectedOverflow                                 = declaredNumberOfValuesOfDimension != 0U && UINT_MAX / declaredNumberOfValuesOfDimension < numDeclaredElementsInVariable;
+            numDeclaredElementsInVariable *= declaredNumberOfValuesOfDimension;
+        }
+
+        if (detectedOverflow) {
+            recordSemanticError<SemanticError::DeclaredNumberOfElementsInVariableTooLarge>(mapTokenPositionToMessagePosition(*context->literalIdent()->getSymbol()), UINT_MAX);
+        }
+    }
+
     unsigned int variableBitwidth = defaultVariableBitwidth;
     if (context->signalWidthToken != nullptr) {
         bool                              didIntegerConstantDeserializationFailToDueOverflow = false;

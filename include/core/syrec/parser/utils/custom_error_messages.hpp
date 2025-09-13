@@ -42,7 +42,8 @@ namespace syrec_parser {
         NumberOfValuesOfDimensionEqualToZero,
         NoModuleMatchingUserDefinedProgramEntryPoint,
         ReservedIdentifierPrefixUsed,
-        InvalidUserDefinedProgramEntryPointModuleIdentifier
+        InvalidUserDefinedProgramEntryPointModuleIdentifier,
+        DeclaredNumberOfElementsInVariableTooLarge
     };
 
     /// Get the identifier associated with a given semantic error
@@ -95,7 +96,7 @@ namespace syrec_parser {
             case SemanticError::DeclaredVariableBitwidthTooLarge:
                 return "SEM21";
             case SemanticError::InfiniteLoopDetected:
-                return "SEM22";
+                return "SEM23";
             case SemanticError::UnhandledOperationFromGrammarInParser:
                 return "SEM23";
             case SemanticError::VariableBitwidthEqualToZero:
@@ -108,6 +109,8 @@ namespace syrec_parser {
                 return "SEM28";
             case SemanticError::InvalidUserDefinedProgramEntryPointModuleIdentifier:
                 return "SEM29";
+            case SemanticError::DeclaredNumberOfElementsInVariableTooLarge:
+                return "SEM30";
             default:
                 return "";
         }
@@ -175,6 +178,8 @@ namespace syrec_parser {
                 return "Identifier '{:s}' cannot start with '{:s}' since this prefix is reserved for internal use";
             case SemanticError::InvalidUserDefinedProgramEntryPointModuleIdentifier:
                 return "User defined program entry point defined as module identifier '{:s}' was not valid!";
+            case SemanticError::DeclaredNumberOfElementsInVariableTooLarge:
+                return "A variable can at most contain {:d} elements";
             default:
                 return "";
         }

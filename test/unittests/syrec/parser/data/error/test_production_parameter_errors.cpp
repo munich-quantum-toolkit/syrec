@@ -13,7 +13,9 @@
 #include "core/syrec/program.hpp"
 #include "test_syrec_parser_errors_base.hpp"
 
+#include <cstdint>
 #include <gtest/gtest.h>
+#include <string>
 
 using namespace syrec_parser_error_tests;
 
@@ -169,4 +171,14 @@ TEST_F(SyrecParserErrorTestsFixture, ModuleLocalVariableDeclarationWithExplicitl
     buildAndRecordExpectedSemanticError<SemanticError::IndexOfAccessedValueForDimensionOutOfRange>(Message::Position(1, 46), 1, 0, 0);
     buildAndRecordExpectedSemanticError<SemanticError::IndexOfAccessedValueForDimensionOutOfRange>(Message::Position(1, 52), 0, 2, 0);
     performTestExecution("module main(in b(2)) wire a[0][2][0](4) ++= a[1][1][0]");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, NumberOfElementsOfModuleParameterTooLargeWithParameterBeingDeclaredWithNDimensionsCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::DeclaredNumberOfElementsInVariableTooLarge>(Message::Position(1, 27), UINT_MAX);
+    performTestExecution("module main(in b(4), inout a[" + std::to_string(UINT_MAX / 2) + "][" + std::to_string(UINT_MAX / 2) + "][2](4)) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, NumberOfElementsOfLocalModuleVariableTooLargeWithVariableBeingDeclaredWithNDimensionsCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::DeclaredNumberOfElementsInVariableTooLarge>(Message::Position(1, 51), UINT_MAX);
+    performTestExecution("module main(in b(4), inout a[2](4)) wire c(4) wire d[" + std::to_string(UINT_MAX / 2) + "][" + std::to_string(UINT_MAX / 2) + "][2](4), e(4) skip");
 }
