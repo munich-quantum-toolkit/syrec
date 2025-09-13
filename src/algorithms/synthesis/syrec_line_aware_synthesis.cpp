@@ -33,7 +33,6 @@ namespace syrec {
             return false;
         }
 
-        // TODO: This might require testing but we need to check with the maintainers of this project if this should be done in a separate PR since the error reporting of the synthesis classes probably changes in the future.
         // TODO: At the time (07.09.2025) that this comment was written, bugs in the line aware synthesis algorithm existed (see issue #280) that might not only changes of the public/internal line aware synthesis interface but also its implementation.
         // Additionally, since a variable access that uses non-compile time constant expressions (CTCE) in the dimension access requires special handling when used on the left-hand side of an assignment the required
         // changes to fix the existing bugs in the synthesis algorithm as well as to add support for the "special" variable accesses should be combined in a future rework. For now we do not support the synthesis of statements
