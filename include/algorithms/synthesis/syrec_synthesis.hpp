@@ -195,10 +195,33 @@ namespace syrec {
          * @remark No arithmetic or logical simplifications are performed at the moment which could enable the evaluation of other expression types at compile time.
          */
         [[nodiscard]] static std::optional<EvaluatedDimensionAccess> evaluateAndValidateDimensionAccess(const VariableAccess& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup);
-        [[nodiscard]] static std::optional<EvaluatedVariableAccess>  evaluateAndValidateVariableAccess(const VariableAccess::ptr& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup, const std::unique_ptr<FirstVariableQubitOffsetLookup>& firstVariableQubitOffsetLookup);
 
+        /**
+         * Determine and validate compile time information for a given syrec::VariableAccess.
+         * @param userDefinedVariableAccess The variable access to validate, accessed variable must not be null.
+         * @param loopVariableValueLookup A lookup containing the current value of the activate loop variables.
+         * @param firstVariableQubitOffsetLookup A lookup usable to determine the first qubit of every variable using its identifier.
+         * @return A container storing information about the evaluated syrec::VariableAccess known at compile time including its bitrange as well as dimension access component. If the syrec::VariableAccess contained invalid indices (e.g. nullptr, loop variables for which no value could be determined) then std::nullopt is returned.
+         */
+        [[nodiscard]] static std::optional<EvaluatedVariableAccess> evaluateAndValidateVariableAccess(const VariableAccess::ptr& userDefinedVariableAccess, const Number::LoopVariableMapping& loopVariableValueLookup, const std::unique_ptr<FirstVariableQubitOffsetLookup>& firstVariableQubitOffsetLookup);
+
+        /**
+         * Determine the qubits accessed by a syrec::VariableAccess.
+         * @param evaluatedVariableAccess The evaluated variable access to be used to determine the accessed qubits, all defined indices in the dimension access as well as bit range must be evaluable at compile time.
+         * @param containerForAccessedQubits The container storing the accessed qubits that needs to be passed as an empty container to this function.
+         * @return Whether one could determine the accessed qubits by the \p evaluatedVariableAccess.
+         */
         [[nodiscard]] static bool getQubitsForVariableAccessContainingOnlyIndicesEvaluableAtCompileTime(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
-        [[nodiscard]] bool        getQubitsForVariableAccessContainingIndicesNotEvaluableAtCompileTime(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
+
+        /**
+         * Determine the qubits accessed by a syrec::VariableAccess using a combination of compile-time as well as non-compile time constant indices.
+         * @param evaluatedVariableAccess The evaluated variable access that is used to the determine the accessed qubits.
+         * @param containerForAccessedQubits The container storing the accessed qubits that needs to be passed as an empty container to this function.
+         * @return Whether one could determine the accessed qubits by the \p evaluatedVariableAccess as well as whether all required quantum operations could be added to the internal annotatable quantum operation.
+         * @remark Note that the qubits of the accessed element of the syrec::VariableAccess are copied to ancillary qubits and returned in the \p containerForAccessedQubits and are not the qubits of the element itself.
+         *         To operate on the qubits of the accessed element one needs repeat both the SyrecSynthesis::calculateSymbolicUnrolledIndexForElementInVariable(...) and SyrecSynthesis::transferQubitsOfElementAtIndexInVariableToOtherQubits with the latter using the QubitTransferOperation::SwapQubits instead of QubitTransferOperation::CopyValue.
+         */
+        [[nodiscard]] bool getQubitsForVariableAccessContainingIndicesNotEvaluableAtCompileTime(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerForAccessedQubits);
 
         /**
          * Calculate the index of the accessed value in the unrolled variable if the evaluated variable access contained a non-compile time constant expression in any of its accessed dimensions.
