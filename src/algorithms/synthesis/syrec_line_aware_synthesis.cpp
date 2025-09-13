@@ -303,11 +303,11 @@ namespace syrec {
         return synthesisOfInversionOk;
     }
 
-    bool LineAwareSynthesis::assignAdd(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, const AssignStatement::AssignOperation assignOperation) {
+    bool LineAwareSynthesis::assignAdd(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, const AssignStatement::AssignOperation assignOperation) {
         bool synthesisOfAssignmentOk = true;
         if (const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = !expOpp.empty() ? tryMapAssignmentToBinaryOperation(assignOperation) : std::nullopt;
             mappedToBinaryOperation.has_value() && *mappedToBinaryOperation == expOpp.top()) {
-            synthesisOfAssignmentOk = increase(annotatableQuantumComputation, rhs, expLhss.top()) && increase(annotatableQuantumComputation, rhs, expRhss.top());
+            synthesisOfAssignmentOk = increase(annotatableQuantumComputation, expLhss.top(), rhs) && increase(annotatableQuantumComputation, expRhss.top(), rhs);
             popExp();
         } else {
             synthesisOfAssignmentOk = increase(annotatableQuantumComputation, rhs, lhs);
@@ -319,12 +319,12 @@ namespace syrec {
         return synthesisOfAssignmentOk;
     }
 
-    bool LineAwareSynthesis::assignSubtract(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, const AssignStatement::AssignOperation assignOperation) {
+    bool LineAwareSynthesis::assignSubtract(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, const AssignStatement::AssignOperation assignOperation) {
         bool synthesisOfAssignmentOk = true;
         if (const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = !expOpp.empty() ? tryMapAssignmentToBinaryOperation(assignOperation) : std::nullopt;
             mappedToBinaryOperation.has_value() && *mappedToBinaryOperation == expOpp.top()) {
-            synthesisOfAssignmentOk = decrease(annotatableQuantumComputation, rhs, expLhss.top()) &&
-                                      increase(annotatableQuantumComputation, rhs, expRhss.top());
+            synthesisOfAssignmentOk = decrease(annotatableQuantumComputation, expLhss.top(), rhs) &&
+                                      increase(annotatableQuantumComputation, expRhss.top(), rhs);
             popExp();
         } else {
             synthesisOfAssignmentOk = decrease(annotatableQuantumComputation, rhs, lhs);
@@ -357,15 +357,15 @@ namespace syrec {
         bool synthesisOk = true;
         switch (binaryOperation) {
             case BinaryExpression::BinaryOperation::Add: // +
-                synthesisOk = increase(annotatableQuantumComputation, rhs, lhs);
+                synthesisOk = increase(annotatableQuantumComputation, lhs, rhs);
                 lines       = rhs;
                 break;
             case BinaryExpression::BinaryOperation::Subtract: // -
                 if (subFlag) {
-                    synthesisOk = decreaseNewAssign(annotatableQuantumComputation, rhs, lhs);
+                    synthesisOk = decreaseNewAssign(annotatableQuantumComputation, lhs, rhs);
                     lines       = rhs;
                 } else {
-                    synthesisOk = decrease(annotatableQuantumComputation, rhs, lhs);
+                    synthesisOk = decrease(annotatableQuantumComputation, lhs, rhs);
                     lines       = rhs;
                 }
                 break;
@@ -379,13 +379,13 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool LineAwareSynthesis::decreaseNewAssign(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs) {
+    bool LineAwareSynthesis::decreaseNewAssign(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
         const std::size_t nQbitsOfOperation      = lhs.size();
         bool              synthesisOfOperationOk = lhs.size() == rhs.size();
         for (std::size_t i = 0; i < nQbitsOfOperation && synthesisOfOperationOk; ++i) {
             synthesisOfOperationOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(lhs[i]);
         }
-        synthesisOfOperationOk &= increase(annotatableQuantumComputation, rhs, lhs);
+        synthesisOfOperationOk &= increase(annotatableQuantumComputation, lhs, rhs);
 
         for (std::size_t i = 0; i < nQbitsOfOperation && synthesisOfOperationOk; ++i) {
             synthesisOfOperationOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(lhs[i]);
@@ -401,9 +401,9 @@ namespace syrec {
         // no synthesis should be performed and simply return OK.
         switch (binaryOperation) {
             case BinaryExpression::BinaryOperation::Add: // +
-                return increase(annotatableQuantumComputation, expRhs, expLhs);
+                return increase(annotatableQuantumComputation, expLhs, expRhs);
             case BinaryExpression::BinaryOperation::Subtract: // -
-                return subFlag ? decreaseNewAssign(annotatableQuantumComputation, expRhs, expLhs) : decrease(annotatableQuantumComputation, expRhs, expLhs);
+                return subFlag ? decreaseNewAssign(annotatableQuantumComputation, expLhs, expRhs) : decrease(annotatableQuantumComputation, expLhs, expRhs);
             case BinaryExpression::BinaryOperation::Exor: // ^
                 return bitwiseCnot(annotatableQuantumComputation, expRhs, expLhs);
             default:
@@ -416,9 +416,9 @@ namespace syrec {
         // no synthesis should be performed and simply return OK.
         switch (binaryOperation) {
             case BinaryExpression::BinaryOperation::Add: // +
-                return decrease(annotatableQuantumComputation, expRhs, expLhs);
+                return decrease(annotatableQuantumComputation, expLhs, expRhs);
             case BinaryExpression::BinaryOperation::Subtract: // -
-                return decreaseNewAssign(annotatableQuantumComputation, expRhs, expLhs);
+                return decreaseNewAssign(annotatableQuantumComputation, expLhs, expRhs);
             case BinaryExpression::BinaryOperation::Exor: // ^
                 return bitwiseCnot(annotatableQuantumComputation, expRhs, expLhs);
             default:

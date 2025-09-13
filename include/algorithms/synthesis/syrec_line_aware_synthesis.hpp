@@ -43,10 +43,8 @@ namespace syrec {
 
         bool inverse();
 
-        // TODO: Rework function signature to use parameter order lhs, rhs instead of the reverse to match the signature used for all other binary, unary and shift operations (if possible).
-        bool assignAdd(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
-        // TODO: Rework function signature to use parameter order lhs, rhs instead of the reverse to match the signature used for all other binary, unary and shift operations (if possible).
-        bool assignSubtract(std::vector<qc::Qubit>& rhs, std::vector<qc::Qubit>& lhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
+        bool assignAdd(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
+        bool assignSubtract(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
 
         bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override;
 
@@ -57,13 +55,13 @@ namespace syrec {
         bool flow(const BinaryExpression& expression, const std::vector<qc::Qubit>& v);
 
         bool expAdd([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) override {
-            const bool synthesisOfExprOk = increase(annotatableQuantumComputation, rhs, lhs);
+            const bool synthesisOfExprOk = increase(annotatableQuantumComputation, lhs, rhs);
             lines                        = rhs;
             return synthesisOfExprOk;
         }
 
         bool expSubtract([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) override {
-            const bool synthesisOfExprOk = decreaseNewAssign(annotatableQuantumComputation, rhs, lhs);
+            const bool synthesisOfExprOk = decreaseNewAssign(annotatableQuantumComputation, lhs, rhs);
             lines                        = rhs;
             return synthesisOfExprOk;
         }
@@ -77,8 +75,7 @@ namespace syrec {
         bool expEvaluate(std::vector<qc::Qubit>& lines, BinaryExpression::BinaryOperation binaryOperation, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) const;
 
         [[nodiscard]] bool expressionSingleOp(BinaryExpression::BinaryOperation binaryOperation, const std::vector<qc::Qubit>& expLhs, const std::vector<qc::Qubit>& expRhs) const;
-        // TODO: Rework function signature to use parameter order lhs, rhs instead of the reverse to match the signature used for all other binary, unary and shift operations (if possible).
-        static bool decreaseNewAssign(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& rhs, const std::vector<qc::Qubit>& lhs);
+        static bool        decreaseNewAssign(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs);
 
         bool expressionOpInverse([[maybe_unused]] BinaryExpression::BinaryOperation binaryOperation, [[maybe_unused]] const std::vector<qc::Qubit>& expLhs, [[maybe_unused]] const std::vector<qc::Qubit>& expRhs) override;
 
