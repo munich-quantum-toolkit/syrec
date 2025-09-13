@@ -43,7 +43,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingNotGate(const qc::Q
     mcx(gateControlQubits, targetQubit);
 
     const std::size_t currNumQuantumOperations = getNops();
-    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
+    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingCnotGate(const qc::Qubit controlQubit, const qc::Qubit targetQubit) {
@@ -58,7 +58,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingCnotGate(const qc::
     mcx(gateControlQubits, targetQubit);
 
     const std::size_t currNumQuantumOperations = getNops();
-    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
+    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingToffoliGate(const qc::Qubit controlQubitOne, const qc::Qubit controlQubitTwo, const qc::Qubit targetQubit) {
@@ -74,7 +74,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingToffoliGate(const q
     mcx(gateControlQubits, targetQubit);
 
     const std::size_t currNumQuantumOperations = getNops();
-    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
+    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubits, const qc::Qubit targetQubit) {
@@ -92,7 +92,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoli
     mcx(gateControlQubits, targetQubit);
 
     const std::size_t currNumQuantumOperations = getNops();
-    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
+    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const qc::Qubit targetQubitOne, const qc::Qubit targetQubitTwo) {
@@ -105,7 +105,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
     mcswap(gateControlQubits, targetQubitOne, targetQubitTwo);
 
     const std::size_t currNumQuantumOperations = getNops();
-    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations, {});
+    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
 }
 
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
@@ -174,7 +174,6 @@ qc::Operation* AnnotatableQuantumComputation::getQuantumOperation(std::size_t in
     return at(indexOfQuantumOperationInQuantumComputation).get();
 }
 
-// TODO: Tests
 bool AnnotatableQuantumComputation::replayOperationsAtGivenIndexRange(std::size_t indexOfFirstQuantumOperationToReplayInQuantumComputation, std::size_t indexOfLastQuantumOperationToReplayInQuantumComputation) {
     if (indexOfFirstQuantumOperationToReplayInQuantumComputation >= getNops() || indexOfLastQuantumOperationToReplayInQuantumComputation >= getNops()) {
         return false;
@@ -192,15 +191,11 @@ bool AnnotatableQuantumComputation::replayOperationsAtGivenIndexRange(std::size_
         for (std::size_t quantumOperationIdxOffset = 0; quantumOperationIdxOffset < numQuantumOperationsToReplay; ++quantumOperationIdxOffset) {
             emplace_back(at(indexOfFirstQuantumOperationToReplayInQuantumComputation - quantumOperationIdxOffset)->clone());
         }
-
-        idxOfFirstQuantumOperationToAnnotateAfterReplay += numQuantumOperationsToReplay;
-        idxOfLastQuantumOperationToAnnotateAfterReplay += numQuantumOperationsToReplay;
-        return annotateAllQuantumOperationsAtPositions(idxOfLastQuantumOperationToAnnotateAfterReplay, idxOfFirstQuantumOperationToAnnotateAfterReplay, {});
-    }
-
-    numQuantumOperationsToReplay = (indexOfLastQuantumOperationToReplayInQuantumComputation - indexOfFirstQuantumOperationToReplayInQuantumComputation) + 1U;
-    for (std::size_t quantumOperationIdxOffset = 0; quantumOperationIdxOffset < numQuantumOperationsToReplay; ++quantumOperationIdxOffset) {
-        emplace_back(at(indexOfFirstQuantumOperationToReplayInQuantumComputation + quantumOperationIdxOffset)->clone());
+    } else {
+        numQuantumOperationsToReplay = (indexOfLastQuantumOperationToReplayInQuantumComputation - indexOfFirstQuantumOperationToReplayInQuantumComputation) + 1U;
+        for (std::size_t quantumOperationIdxOffset = 0; quantumOperationIdxOffset < numQuantumOperationsToReplay; ++quantumOperationIdxOffset) {
+            emplace_back(at(indexOfFirstQuantumOperationToReplayInQuantumComputation + quantumOperationIdxOffset)->clone());
+        }
     }
 
     idxOfFirstQuantumOperationToAnnotateAfterReplay += numQuantumOperationsToReplay;
@@ -395,17 +390,32 @@ bool AnnotatableQuantumComputation::isQubitWithinRange(const qc::Qubit qubit) co
 }
 
 bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation) {
-    if (fromQuantumOperationIndex > getNops() || fromQuantumOperationIndex > toQuantumOperationIndex) {
+    if (fromQuantumOperationIndex >= getNops() || toQuantumOperationIndex >= getNops()) {
         return false;
     }
-    annotationsPerQuantumOperation.resize(toQuantumOperationIndex);
+
+    std::size_t idxOfFirstGateToAnnotate = 0U;
+    std::size_t idxOfLastGateToAnnotate  = 0U;
+    if (fromQuantumOperationIndex <= toQuantumOperationIndex) {
+        if (toQuantumOperationIndex >= annotationsPerQuantumOperation.size()) {
+            annotationsPerQuantumOperation.resize(toQuantumOperationIndex + 1U);
+        }
+        idxOfFirstGateToAnnotate = fromQuantumOperationIndex;
+        idxOfLastGateToAnnotate  = toQuantumOperationIndex;
+    } else {
+        if (fromQuantumOperationIndex >= annotationsPerQuantumOperation.size()) {
+            annotationsPerQuantumOperation.resize(fromQuantumOperationIndex + 1U);
+        }
+        idxOfFirstGateToAnnotate = toQuantumOperationIndex;
+        idxOfLastGateToAnnotate  = fromQuantumOperationIndex;
+    }
 
     QuantumOperationAnnotationsLookup gateAnnotations = userProvidedAnnotationsPerQuantumOperation;
     for (const auto& [annotationKey, annotationValue]: activateGlobalQuantumOperationAnnotations) {
         gateAnnotations[annotationKey] = annotationValue;
     }
 
-    for (std::size_t i = fromQuantumOperationIndex; i < toQuantumOperationIndex; ++i) {
+    for (std::size_t i = idxOfFirstGateToAnnotate; i <= idxOfLastGateToAnnotate; ++i) {
         annotationsPerQuantumOperation[i] = gateAnnotations;
     }
     return true;
