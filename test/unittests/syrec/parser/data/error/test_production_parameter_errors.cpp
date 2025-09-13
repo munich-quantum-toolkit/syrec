@@ -13,7 +13,7 @@
 #include "core/syrec/program.hpp"
 #include "test_syrec_parser_errors_base.hpp"
 
-#include <cstdint>
+#include <climits>
 #include <gtest/gtest.h>
 #include <string>
 
