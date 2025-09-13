@@ -21,12 +21,12 @@
 namespace syrec {
     bool CostAwareSynthesis::expAdd(const unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
         return getConstantLines(bitwidth, 0U, lines) && bitwiseCnot(annotatableQuantumComputation, lines, lhs) // duplicate lhs
-            && increase(annotatableQuantumComputation, lines, rhs);                                            // NOLINT(readability-suspicious-call-argument)
+            && increase(annotatableQuantumComputation, rhs, lines);                                            // NOLINT(readability-suspicious-call-argument)
     }
 
     bool CostAwareSynthesis::expSubtract(const unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
         return getConstantLines(bitwidth, 0U, lines) && bitwiseCnot(annotatableQuantumComputation, lines, lhs) // duplicate lhs
-            && decrease(annotatableQuantumComputation, lines, rhs);                                            // NOLINT(readability-suspicious-call-argument)
+            && decrease(annotatableQuantumComputation, rhs, lines);                                            // NOLINT(readability-suspicious-call-argument)
     }
 
     bool CostAwareSynthesis::expExor(const unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
