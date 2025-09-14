@@ -307,10 +307,10 @@ namespace syrec {
         bool synthesisOfAssignmentOk = true;
         if (const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = !expOpp.empty() ? tryMapAssignmentToBinaryOperation(assignOperation) : std::nullopt;
             mappedToBinaryOperation.has_value() && *mappedToBinaryOperation == expOpp.top()) {
-            synthesisOfAssignmentOk = increase(annotatableQuantumComputation, expLhss.top(), rhs) && increase(annotatableQuantumComputation, expRhss.top(), rhs);
+            synthesisOfAssignmentOk = increase(annotatableQuantumComputation, expLhss.top(), lhs) && increase(annotatableQuantumComputation, expRhss.top(), lhs);
             popExp();
         } else {
-            synthesisOfAssignmentOk = increase(annotatableQuantumComputation, rhs, lhs);
+            synthesisOfAssignmentOk = increase(annotatableQuantumComputation, rhs, lhs); // NOLINT(readability-suspicious-call-argument)
         }
 
         while (!expOpp.empty() && synthesisOfAssignmentOk) {
@@ -323,11 +323,11 @@ namespace syrec {
         bool synthesisOfAssignmentOk = true;
         if (const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = !expOpp.empty() ? tryMapAssignmentToBinaryOperation(assignOperation) : std::nullopt;
             mappedToBinaryOperation.has_value() && *mappedToBinaryOperation == expOpp.top()) {
-            synthesisOfAssignmentOk = decrease(annotatableQuantumComputation, expLhss.top(), rhs) &&
-                                      increase(annotatableQuantumComputation, expRhss.top(), rhs);
+            synthesisOfAssignmentOk = decrease(annotatableQuantumComputation, expLhss.top(), lhs) &&
+                                      increase(annotatableQuantumComputation, expRhss.top(), lhs);
             popExp();
         } else {
-            synthesisOfAssignmentOk = decrease(annotatableQuantumComputation, rhs, lhs);
+            synthesisOfAssignmentOk = decrease(annotatableQuantumComputation, rhs, lhs); // NOLINT(readability-suspicious-call-argument)
         }
 
         while (!expOpp.empty() && synthesisOfAssignmentOk) {
