@@ -55,7 +55,7 @@ namespace syrec {
         bool flow(const BinaryExpression& expression, const std::vector<qc::Qubit>& v);
 
         bool expAdd([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) override {
-            const bool synthesisOfExprOk = increase(annotatableQuantumComputation, lhs, rhs);
+            const bool synthesisOfExprOk = inplaceAdd(annotatableQuantumComputation, lhs, rhs);
             lines                        = rhs;
             return synthesisOfExprOk;
         }

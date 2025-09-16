@@ -307,10 +307,11 @@ namespace syrec {
         bool synthesisOfAssignmentOk = true;
         if (const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = !expOpp.empty() ? tryMapAssignmentToBinaryOperation(assignOperation) : std::nullopt;
             mappedToBinaryOperation.has_value() && *mappedToBinaryOperation == expOpp.top()) {
-            synthesisOfAssignmentOk = increase(annotatableQuantumComputation, expLhss.top(), lhs) && increase(annotatableQuantumComputation, expRhss.top(), lhs);
+            synthesisOfAssignmentOk = inplaceAdd(annotatableQuantumComputation, expLhss.top(), lhs) && inplaceAdd(annotatableQuantumComputation, expRhss.top(), lhs);
             popExp();
         } else {
-            synthesisOfAssignmentOk = increase(annotatableQuantumComputation, rhs, lhs); // NOLINT(readability-suspicious-call-argument)
+            // The assignment lhs += rhs is synthesized using the inplace addition which stores the result of the addition in the qubits passed as the right hand side operand thus the operands of the assignment need to be passed in the reverse order.
+            synthesisOfAssignmentOk = inplaceAdd(annotatableQuantumComputation, rhs, lhs); // NOLINT(readability-suspicious-call-argument)
         }
 
         while (!expOpp.empty() && synthesisOfAssignmentOk) {
@@ -323,11 +324,12 @@ namespace syrec {
         bool synthesisOfAssignmentOk = true;
         if (const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = !expOpp.empty() ? tryMapAssignmentToBinaryOperation(assignOperation) : std::nullopt;
             mappedToBinaryOperation.has_value() && *mappedToBinaryOperation == expOpp.top()) {
-            synthesisOfAssignmentOk = decrease(annotatableQuantumComputation, expLhss.top(), lhs) &&
-                                      increase(annotatableQuantumComputation, expRhss.top(), lhs);
+            synthesisOfAssignmentOk = inplaceSubtract(annotatableQuantumComputation, expLhss.top(), lhs) &&
+                                      inplaceAdd(annotatableQuantumComputation, expRhss.top(), lhs);
             popExp();
         } else {
-            synthesisOfAssignmentOk = decrease(annotatableQuantumComputation, rhs, lhs); // NOLINT(readability-suspicious-call-argument)
+            // The assignment lhs -= rhs is synthesized using the inplace subtraction which stores the result of the subtraction in the qubits passed as the right hand side operand thus the operands of the assignment need to be passed in the reverse order.
+            synthesisOfAssignmentOk = inplaceSubtract(annotatableQuantumComputation, rhs, lhs); // NOLINT(readability-suspicious-call-argument)
         }
 
         while (!expOpp.empty() && synthesisOfAssignmentOk) {
@@ -357,7 +359,7 @@ namespace syrec {
         bool synthesisOk = true;
         switch (binaryOperation) {
             case BinaryExpression::BinaryOperation::Add: // +
-                synthesisOk = increase(annotatableQuantumComputation, lhs, rhs);
+                synthesisOk = inplaceAdd(annotatableQuantumComputation, lhs, rhs);
                 lines       = rhs;
                 break;
             case BinaryExpression::BinaryOperation::Subtract: // -
@@ -365,7 +367,7 @@ namespace syrec {
                     synthesisOk = decreaseNewAssign(annotatableQuantumComputation, lhs, rhs);
                     lines       = rhs;
                 } else {
-                    synthesisOk = decrease(annotatableQuantumComputation, lhs, rhs);
+                    synthesisOk = inplaceSubtract(annotatableQuantumComputation, lhs, rhs);
                     lines       = rhs;
                 }
                 break;
@@ -385,7 +387,7 @@ namespace syrec {
         for (std::size_t i = 0; i < nQbitsOfOperation && synthesisOfOperationOk; ++i) {
             synthesisOfOperationOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(lhs[i]);
         }
-        synthesisOfOperationOk &= increase(annotatableQuantumComputation, lhs, rhs);
+        synthesisOfOperationOk &= inplaceAdd(annotatableQuantumComputation, lhs, rhs);
 
         for (std::size_t i = 0; i < nQbitsOfOperation && synthesisOfOperationOk; ++i) {
             synthesisOfOperationOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(lhs[i]);
@@ -401,9 +403,9 @@ namespace syrec {
         // no synthesis should be performed and simply return OK.
         switch (binaryOperation) {
             case BinaryExpression::BinaryOperation::Add: // +
-                return increase(annotatableQuantumComputation, expLhs, expRhs);
+                return inplaceAdd(annotatableQuantumComputation, expLhs, expRhs);
             case BinaryExpression::BinaryOperation::Subtract: // -
-                return subFlag ? decreaseNewAssign(annotatableQuantumComputation, expLhs, expRhs) : decrease(annotatableQuantumComputation, expLhs, expRhs);
+                return subFlag ? decreaseNewAssign(annotatableQuantumComputation, expLhs, expRhs) : inplaceSubtract(annotatableQuantumComputation, expLhs, expRhs);
             case BinaryExpression::BinaryOperation::Exor: // ^
                 return bitwiseCnot(annotatableQuantumComputation, expRhs, expLhs);
             default:
@@ -416,7 +418,7 @@ namespace syrec {
         // no synthesis should be performed and simply return OK.
         switch (binaryOperation) {
             case BinaryExpression::BinaryOperation::Add: // +
-                return decrease(annotatableQuantumComputation, expLhs, expRhs);
+                return inplaceSubtract(annotatableQuantumComputation, expLhs, expRhs);
             case BinaryExpression::BinaryOperation::Subtract: // -
                 return decreaseNewAssign(annotatableQuantumComputation, expLhs, expRhs);
             case BinaryExpression::BinaryOperation::Exor: // ^

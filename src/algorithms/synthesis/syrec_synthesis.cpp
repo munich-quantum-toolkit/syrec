@@ -1005,7 +1005,7 @@ namespace syrec {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(dest[i]);
         }
 
-        synthesisOk &= increase(annotatableQuantumComputation, src, dest, carry);
+        synthesisOk &= inplaceAdd(annotatableQuantumComputation, src, dest, carry);
         for (std::size_t i = 0; i < src.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(dest[i]);
         }
@@ -1057,7 +1057,7 @@ namespace syrec {
             synthesisOk &= annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(signBitOfSubtraction);
 
             // Y = Y + divisor
-            synthesisOk &= increase(annotatableQuantumComputation, divisor, truncatedAggregateOfRemainderAndQuotientQubits) && annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(signBitOfSubtraction);
+            synthesisOk &= inplaceAdd(annotatableQuantumComputation, divisor, truncatedAggregateOfRemainderAndQuotientQubits) && annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(signBitOfSubtraction);
 
             // After the 'restoring' operation for the variable V was performed, the final value of the remainder qubit can be set (remainder[i] = NOT(sign bit)).
             synthesisOk &= annotatableQuantumComputation.addOperationsImplementingNotGate(signBitOfSubtraction);
@@ -1098,7 +1098,7 @@ namespace syrec {
         return lessThan(annotatableQuantumComputation, dest, src1, src2);
     }
 
-    bool SyrecSynthesis::increase(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs, const std::optional<qc::Qubit>& optionalCarryOut) {
+    bool SyrecSynthesis::inplaceAdd(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs, const std::optional<qc::Qubit>& optionalCarryOut) {
         if (lhs.size() != rhs.size()) {
             return false;
         }
@@ -1161,12 +1161,12 @@ namespace syrec {
         return synthesisOk;
     }
 
-    bool SyrecSynthesis::decrease(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
+    bool SyrecSynthesis::inplaceSubtract(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs) {
         bool synthesisOk = true;
         for (std::size_t i = 0; i < rhs.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(rhs[i]);
         }
-        synthesisOk &= increase(annotatableQuantumComputation, lhs, rhs);
+        synthesisOk &= inplaceAdd(annotatableQuantumComputation, lhs, rhs);
         for (std::size_t i = 0; i < rhs.size() && synthesisOk; ++i) {
             synthesisOk = annotatableQuantumComputation.addOperationsImplementingNotGate(rhs[i]);
         }
@@ -1178,7 +1178,7 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::lessThan(AnnotatableQuantumComputation& annotatableQuantumComputation, qc::Qubit dest, const std::vector<qc::Qubit>& src1, const std::vector<qc::Qubit>& src2) {
-        return decreaseWithCarry(annotatableQuantumComputation, src1, src2, dest) && increase(annotatableQuantumComputation, src2, src1);
+        return decreaseWithCarry(annotatableQuantumComputation, src1, src2, dest) && inplaceAdd(annotatableQuantumComputation, src2, src1);
     }
 
     bool SyrecSynthesis::modulo(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dividend, const std::vector<qc::Qubit>& divisor, const std::vector<qc::Qubit>& quotient, const std::vector<qc::Qubit>& remainder) {
@@ -1203,7 +1203,7 @@ namespace syrec {
         for (std::size_t i = 1; i < dest.size() && synthesisOk; ++i) {
             sum.erase(sum.begin());
             partial.pop_back();
-            synthesisOk = annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src1[i]) && increase(annotatableQuantumComputation, partial, sum) && annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(src1[i]);
+            synthesisOk = annotatableQuantumComputation.registerControlQubitForPropagationInCurrentAndNestedScopes(src1[i]) && inplaceAdd(annotatableQuantumComputation, partial, sum) && annotatableQuantumComputation.deregisterControlQubitFromPropagationInCurrentScope(src1[i]);
         }
         annotatableQuantumComputation.deactivateControlQubitPropagationScope();
         return synthesisOk;

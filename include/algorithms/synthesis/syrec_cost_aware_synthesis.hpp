@@ -33,11 +33,13 @@ namespace syrec {
         }
 
         bool assignAdd(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override {
-            return increase(annotatableQuantumComputation, rhs, lhs); // NOLINT(readability-suspicious-call-argument)
+            // The assignment lhs += rhs is synthesized using the inplace addition which stores the result of the addition in the qubits passed as the right hand side operand thus the operands of the assignment need to be passed in the reverse order.
+            return inplaceAdd(annotatableQuantumComputation, rhs, lhs); // NOLINT(readability-suspicious-call-argument)
         }
 
         bool assignSubtract(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override {
-            return decrease(annotatableQuantumComputation, rhs, lhs); // NOLINT(readability-suspicious-call-argument)
+            // The assignment lhs -= rhs is synthesized using the inplace subtraction which stores the result of the subtraction in the qubits passed as the right hand side operand thus the operands of the assignment need to be passed in the reverse order.
+            return inplaceSubtract(annotatableQuantumComputation, rhs, lhs); // NOLINT(readability-suspicious-call-argument)
         }
 
         bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) override {

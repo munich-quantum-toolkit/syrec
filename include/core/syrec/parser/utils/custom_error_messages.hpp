@@ -96,21 +96,21 @@ namespace syrec_parser {
             case SemanticError::DeclaredVariableBitwidthTooLarge:
                 return "SEM21";
             case SemanticError::InfiniteLoopDetected:
-                return "SEM23";
+                return "SEM22";
             case SemanticError::UnhandledOperationFromGrammarInParser:
                 return "SEM23";
             case SemanticError::VariableBitwidthEqualToZero:
-                return "SEM25";
+                return "SEM24";
             case SemanticError::NumberOfValuesOfDimensionEqualToZero:
-                return "SEM26";
+                return "SEM25";
             case SemanticError::NoModuleMatchingUserDefinedProgramEntryPoint:
-                return "SEM27";
+                return "SEM26";
             case SemanticError::ReservedIdentifierPrefixUsed:
-                return "SEM28";
+                return "SEM27";
             case SemanticError::InvalidUserDefinedProgramEntryPointModuleIdentifier:
-                return "SEM29";
+                return "SEM28";
             case SemanticError::DeclaredNumberOfElementsInVariableTooLarge:
-                return "SEM30";
+                return "SEM29";
             default:
                 return "";
         }
