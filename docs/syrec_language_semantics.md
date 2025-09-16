@@ -30,41 +30,41 @@ We start by defining the semantics of the highest-level entity of a SyReC progra
 - If the bitwidth of a variable is not declared then it is assumed to be equal to a {doc}`configurable default value <library/Settings>`.
 - The parameter and variable identifiers must be unique in a SyReC module.
 - The identifier of the module and any of its parameters and local variables cannot start with the prefix {code}`__q` that is reserved for internal use.
-- Module overloading (i.e., the definition of a module sharing its identifier with another module while the signature [variable type, dimensionality and bitwidth] of their parameters do not match) is supported for all modules whose identifier is not equal to the one of the "main" module. However, overloading the implicitly defined main module of a SyReC program is possible.
+  - Module overloading (i.e., the definition of a module sharing its identifier with another module while the signature [variable type, dimensionality and bitwidth] of their parameters do not match) is supported for all modules whose identifier is not equal to the one of the "main" module. However, overloading the implicitly defined main module of a SyReC program is possible.
 
-  Two module signatures (module identifier + parameters) {math}`m_1` and {math}`m_2` are considered to be equal iff:
-  - The module identifiers match
-  - Both modules define the same number of parameters {math}`n`
-  - For each parameter {math}`i: 0 \leq i < n` in the sequence of the formal parameters of both modules the following holds:
-    - The type of parameter {math}`p_i` of module {math}`m_1` allows for an assignment of the parameter at the same position in the formal parameter list of module {math}`m_2` with the following table listing the assignability between the different SyReC variable types:
+    Two module signatures (module identifier + parameters) {math}`m_1` and {math}`m_2` are considered to be equal iff:
+    - The module identifiers match
+    - Both modules define the same number of parameters {math}`n`
+      - For each parameter {math}`i: 0 \leq i < n` in the sequence of the formal parameters of both modules the following holds:
+        - The type of parameter {math}`p_i` of module {math}`m_1` allows for an assignment of the parameter at the same position in the formal parameter list of module {math}`m_2` with the following table listing the assignability between the different SyReC variable types:
 
-      ```text
-      +-----------------------------------------------+-------+---------+-------+--------+---------+
-      |                                               | **Assigned from variable type**            |
-      +-----------------------------------------------+-------+---------+-------+--------+---------+
-      | **Assigned to variable type**                 | *in*  | *inout* | *out* | *wire* | *state* |
-      +-----------------------------------------------+-------+---------+-------+--------+---------+
-      | *in*                                          | X     | X       | X     | X      | X       |
-      +-----------------------------------------------+-------+---------+-------+--------+---------+
-      | *inout*                                       | o     | X       | X     | X      | o       |
-      +-----------------------------------------------+-------+---------+-------+--------+---------+
-      | *out*                                         | o     | X       | X     | X      | o       |
-      +-----------------------------------------------+-------+---------+-------+--------+---------+
-      | *wire*                                        | o     | X       | X     | X      | o       |
-      +-----------------------------------------------+-------+---------+-------+--------+---------+
-      | *state*                                       | o     | o       | o     | o      | o       |
-      +-----------------------------------------------+-------+---------+-------+--------+---------+
-      | o ... does not allow assignment                                                            |
-      |                                                                                            |
-      | X ... allows assignment                                                                    |
-      +--------------------------------------------------------------------------------------------+
-      ```
+          ```{eval-rst}
+          +-----------------------------------------------+-------+---------+-------+--------+---------+
+          |                                               | **Assigned from variable type**            |
+          +-----------------------------------------------+-------+---------+-------+--------+---------+
+          | **Assigned to variable type**                 | *in*  | *inout* | *out* | *wire* | *state* |
+          +-----------------------------------------------+-------+---------+-------+--------+---------+
+          | *in*                                          | X     | X       | X     | X      | X       |
+          +-----------------------------------------------+-------+---------+-------+--------+---------+
+          | *inout*                                       | o     | X       | X     | X      | o       |
+          +-----------------------------------------------+-------+---------+-------+--------+---------+
+          | *out*                                         | o     | X       | X     | X      | o       |
+          +-----------------------------------------------+-------+---------+-------+--------+---------+
+          | *wire*                                        | o     | X       | X     | X      | o       |
+          +-----------------------------------------------+-------+---------+-------+--------+---------+
+          | *state*                                       | o     | o       | o     | o      | o       |
+          +-----------------------------------------------+-------+---------+-------+--------+---------+
+          | o ... does not allow assignment                                                            |
+          |                                                                                            |
+          | X ... allows assignment                                                                    |
+          +--------------------------------------------------------------------------------------------+
+          ```
 
-      - The number of dimensions match
-      - The number of values for each of the defined dimensions matches
-      - The bitwidth of the parameters match
+          - The number of dimensions match
+          - The number of values for each of the defined dimensions matches
+          - The bitwidth of the parameters match
 
-  The signature of a module is expected to be unique in a SyReC program.
+    The signature of a module is expected to be unique in a SyReC program.
 
 - The maximum number of values storable in a dimension is equal to {math}`2^{32}`.
 - A variable can have at most {math}`2^{32}` dimensions.
@@ -358,45 +358,44 @@ The parser will not report an overlap in the assignment due to the index of the 
   ```
 
   While the right-hand side expression of the assignment is simplified to the integer constant _0_, the semantic error causes by the out-of-range index access in the _VariableAccess_ _a[2]_ is still reported.
+  - All operands of an expression must have the same bitwidth (excluding constant integers which are truncated to the expected bitwidth using the {doc}`configured truncation operation <library/Settings>`), with the parser using the first bitrange with known bounds as the reference bitwidth (if such an access exists in the operands). Any bit access will set the expected operand bitwidth of a _VariableAccess_ to 1.
 
-- All operands of an expression must have the same bitwidth (excluding constant integers which are truncated to the expected bitwidth using the {doc}`configured truncation operation <library/Settings>`), with the parser using the first bitrange with known bounds as the reference bitwidth (if such an access exists in the operands). Any bit access will set the expected operand bitwidth of a _VariableAccess_ to 1.
-
-  ```{note}
-  Logical and relational operations will 'truncate' the expected bitwidth of its result to 1.
-  ```
-
-  - The following table will showcase the expected operand bitwidth for each operand as well as subexpression of the right-hand side expression of the defined assignment:
-
-    ```text
-    module main(inout a(6), in b(3))
-      a.0 += (((a.1:3 + 2) > b) || (a.1 != 1))
+    ```{note}
+    Logical and relational operations will 'truncate' the expected bitwidth of its result to 1.
     ```
 
-    Note that while the expected operand bitwidth of the top-most expression is equal to 1, the operands in one of its subexpressions _((a.1:3 + 2) > b)_ are allowed to have a different bitwidth due to the relational operation _>_ causing the result to be aggregated into a 1-bit result thus satisfying the expected operand bitwidth for the logical OR operation of the parent expression.
+    - The following table will showcase the expected operand bitwidth for each operand as well as subexpression of the right-hand side expression of the defined assignment:
 
-    ```text
-    +----------------------------------+--------------------------------+
-    | **Expression**                   | **Expected operand bitwidth**  |
-    +==================================+================================+
-    | a.1:3                            |                              3 |
-    +----------------------------------+--------------------------------+
-    | 2                                |                             32 |
-    +----------------------------------+--------------------------------+
-    | (a.1:3 + 2)                      | 3                              |
-    +----------------------------------+--------------------------------+
-    | b                                | 3                              |
-    +----------------------------------+--------------------------------+
-    | ((a.1:3 + 2) > b)                | 1                              |
-    +----------------------------------+--------------------------------+
-    | a.1                              | 1                              |
-    +----------------------------------+--------------------------------+
-    | 1                                | 32                             |
-    +----------------------------------+--------------------------------+
-    | (a.1 != 1)                       | 1                              |
-    +----------------------------------+--------------------------------+
-    | ((a.1:3 + 2) > b) || (a.1 != 1)) | 1                              |
-    +----------------------------------+--------------------------------+
-    ```
+      ```text
+      module main(inout a(6), in b(3))
+        a.0 += (((a.1:3 + 2) > b) || (a.1 != 1))
+      ```
+
+      Note that while the expected operand bitwidth of the top-most expression is equal to 1, the operands in one of its subexpressions _((a.1:3 + 2) > b)_ are allowed to have a different bitwidth due to the relational operation _>_ causing the result to be aggregated into a 1-bit result thus satisfying the expected operand bitwidth for the logical OR operation of the parent expression.
+
+      ```{eval-rst}
+      +-----------------------------------+--------------------------------+
+      | **Expression**                    | **Expected operand bitwidth**  |
+      +===================================+================================+
+      | a.1:3                             |                              3 |
+      +-----------------------------------+--------------------------------+
+      | 2                                 |                             32 |
+      +-----------------------------------+--------------------------------+
+      | (a.1:3 + 2)                       | 3                              |
+      +-----------------------------------+--------------------------------+
+      | b                                 | 3                              |
+      +-----------------------------------+--------------------------------+
+      | ((a.1:3 + 2) > b)                 | 1                              |
+      +-----------------------------------+--------------------------------+
+      | a.1                               | 1                              |
+      +-----------------------------------+--------------------------------+
+      | 1                                 | 32                             |
+      +-----------------------------------+--------------------------------+
+      | (a.1 != 1)                        | 1                              |
+      +-----------------------------------+--------------------------------+
+      | (((a.1:3 + 2) > b) || (a.1 != 1)) | 1                              |
+      +-----------------------------------+--------------------------------+
+      ```
 
 - All integer constant values are truncated to the expected operand bitwidth, if the latter exists for the expression; otherwise, the values are left unchanged. However, integer constant values defined in the shift amount component of a _ShiftExpression_ are not truncated since they modify the left-hand side of the _ShiftExpression_ and "build" the result instead of being an operand of the overall expression.
 
@@ -482,11 +481,11 @@ The parser will not report an overlap in the assignment due to the index of the 
    a += (((#b + 2) * 3) - #c)
   ```
 
-  ```text
+  ```{eval-rst}
   +----------------+------------+-----------------------------+
   | **Expression** | **Result** | **Result operand bitwidth** |
   +================+============+=============================+
-  | #b + 2         |          4 |                          32 |
+  | (#b + 2)       |          4 |                          32 |
   +----------------+------------+-----------------------------+
   | (4 * 3)        |         12 |                          32 |
   +----------------+------------+-----------------------------+
