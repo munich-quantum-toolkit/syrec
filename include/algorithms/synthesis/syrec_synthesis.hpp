@@ -127,8 +127,8 @@ namespace syrec {
         /**
          * Synthesizes the addition \p lhs + \p rhs and stores the result in the qubits of the rhs operand.
          * @param annotatableQuantumComputation The annotatable quantum computation to which the generated gates are added.
-         * @param lhs The left hand side operand of the subtraction.
-         * @param rhs The right hand side operand of the subtraction.
+         * @param lhs The left hand side operand of the addition.
+         * @param rhs The right hand side operand of the addition.
          * @param optionalCarryOut Optionally pass the qubit that will store the output carry of the addition.
          * @return Whether the addition could be synthesized (i.e. no overlapping qubits and qubit length difference between the operands and whether all required gates could be added to the \p annotatableQuantumComputation).
          */
