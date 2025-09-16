@@ -129,6 +129,7 @@ namespace syrec {
          * @param annotatableQuantumComputation The annotatable quantum computation to which the generated gates are added.
          * @param lhs The left hand side operand of the subtraction.
          * @param rhs The right hand side operand of the subtraction.
+         * @param optionalCarryOut Optionally pass the qubit that will store the output carry of the addition.
          * @return Whether the addition could be synthesized (i.e. no overlapping qubits and qubit length difference between the operands and whether all required gates could be added to the \p annotatableQuantumComputation).
          */
         static bool  inplaceAdd(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs, const std::optional<qc::Qubit>& optionalCarryOut = std::nullopt);
