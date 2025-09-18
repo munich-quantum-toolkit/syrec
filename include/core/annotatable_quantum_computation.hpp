@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "core/syrec/variable.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
 #include "ir/operations/Control.hpp"
@@ -62,6 +63,17 @@ namespace syrec {
         [[nodiscard]] bool addOperationsImplementingToffoliGate(qc::Qubit controlQubitOne, qc::Qubit controlQubitTwo, qc::Qubit targetQubit);
         [[nodiscard]] bool addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubitsSet, qc::Qubit targetQubit);
         [[nodiscard]] bool addOperationsImplementingFredkinGate(qc::Qubit targetQubitOne, qc::Qubit targetQubitTwo);
+
+        /**
+         * Add a quantum register for the qubits of a SyReC variable to the quantum computation.
+         * @param quantumRegisterLabel The label for the to be added quantum register. Must not be empty and no other qubit or quantum register with the same name must exist in the quantum computation.
+         * @param variable The SyReC variable for which qubits shall be generated. Total number of elements stored in variable must be larger than zero. Bitwidth of variable must be larger than 0.
+         * @param areGeneratedQubitsGarbage Whether the generated qubits are garbage qubits.
+         * @param optionalInliningInformation Optional debug information to determine the origin of the qubits in the associated SyReC program.
+         * @return The index of the first generated non-ancillary qubit for the \p variable in the quantum computation, std::nullopt if the validation of the \p quantumRegisterLabel or \p variable failed, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid or empty inline stack).
+         */
+        [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const Variable& variable, bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
+        [[nodiscard]] std::optional<qc::Qubit> addAncillaryQubit(bool initialStateOfQubit, const InlinedQubitInformation& inliningInformation);
 
         /**
          * Add a non-ancillary qubit to the quantum computation.

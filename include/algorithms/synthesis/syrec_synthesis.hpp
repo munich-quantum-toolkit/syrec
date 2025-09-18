@@ -53,8 +53,8 @@ namespace syrec {
         explicit SyrecSynthesis(AnnotatableQuantumComputation& annotatableQuantumComputation);
         virtual ~SyrecSynthesis() = default;
 
-        [[nodiscard]] bool addVariables(const Variable::vec& variables) const;
-        void               setMainModule(const Module::ptr& mainModule);
+        // TODO: Should be unified or set via synthesis settings
+        void setMainModule(const Module::ptr& mainModule);
 
         [[maybe_unused]] static bool synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics);
 
@@ -140,7 +140,7 @@ namespace syrec {
         static bool leftShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount);  // <<
         static bool rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount); // >>
 
-        [[nodiscard]] static std::optional<qc::Qubit> addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const std::optional<QubitInliningStack::ptr>& currentModuleCallStack);
+        [[nodiscard]] bool createQuantumRegistersForSyrecVariables(const Variable::vec& variables) const;
 
         /**
          * Get the qubits accessed by the defined variable access.

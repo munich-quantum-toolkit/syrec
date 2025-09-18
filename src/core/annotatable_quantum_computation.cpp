@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -108,6 +109,27 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
     return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
 }
 
+// TODO: We will need to store the dimensions and bitwidth of the variable to be able to generate qubit labels of the form a[0][1].0 for all qubits of the quantum registers.
+// TODO: Tests
+std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const Variable& variable, bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
+    if (!canQubitsBeAddedToQuantumComputation || variable.bitwidth == 0 || std::ranges::all_of(variable.dimensions, [](const unsigned numberOfValuesOfDimension) { return numberOfValuesOfDimension == 0; }) || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || inlinedQubitsInformationLookup.contains(quantumRegisterLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && isInlineStackNotSetOrEmpty(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
+        return std::nullopt;
+    }
+
+    const unsigned numberOfElementsInVariable    = std::accumulate(variable.dimensions.cbegin(), variable.dimensions.cend(), 1U, std::multiplies());
+    const unsigned totalNumberOfQubitsOfVariable = numberOfElementsInVariable * variable.bitwidth;
+    const auto     indexToFirstQubitOfVariable   = addQubitRegister(totalNumberOfQubitsOfVariable, quantumRegisterLabel);
+    if (areGeneratedQubitsGarbage) {
+        setLogicalQubitsGarbage(indexToFirstQubitOfVariable.getStartIndex(), indexToFirstQubitOfVariable.getEndIndex());
+    }
+
+    if (optionalInliningInformation.has_value()) {
+        inlinedQubitsInformationLookup[quantumRegisterLabel] = *optionalInliningInformation;
+    }
+    return indexToFirstQubitOfVariable.getStartIndex();
+}
+
+// TODO: If we are generating quantum registers for all SyReC module parameters then this function is obsolete. Currently only left due to existing tests which will need to be refactored.
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
     if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().contains(qubitLabel) || inlinedQubitsInformationLookup.contains(qubitLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && isInlineStackNotSetOrEmpty(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
         return std::nullopt;
@@ -125,6 +147,7 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(con
     return qubitIndex;
 }
 
+// TODO: If possible aggregate all ancillary qubits into two quantum registers that store the ancillary qubits initialized to 0 and 1 respectively. Whether a reordering/resize/modification of quantum registers in the quantum computation is possible needs to be determined.
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit, const InlinedQubitInformation& inliningInformation) {
     if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().contains(qubitLabel) || inlinedQubitsInformationLookup.contains(qubitLabel) || inliningInformation.userDeclaredQubitLabel.has_value() || (inliningInformation.inlineStack.has_value() && isInlineStackNotSetOrEmpty(inliningInformation.inlineStack.value()))) {
         return std::nullopt;
@@ -158,6 +181,9 @@ bool AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitToDefinitive
     return true;
 }
 
+// TODO: quantumRegister is std::unordered_map so iterating over entries could return different order than using the qubit indices
+// TODO: This function should build the qubit label of the form a[0][1].0 since we are using the variable identifier as the label of the quantum register
+// TODO: Tests
 std::vector<std::string> AnnotatableQuantumComputation::getQubitLabels() const {
     std::vector<std::string> qubitLabels(getNqubits(), "");
     for (const auto& quantumRegister: getQuantumRegisters()) {
