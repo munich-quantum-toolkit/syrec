@@ -1326,11 +1326,6 @@ namespace syrec {
         assert(bitwidth <= 32);
 
         // Ancillary qubits generated for an integer larger than 1 all share the same origin and thus will reuse the same module call stack in its inline information
-        const std::optional<QubitInliningStack::ptr> sharedAncillaryQubitModuleCallStack = bitwidth > 0 ? getLastCreatedModuleCallStackInstance() : std::nullopt;
-        if (!sharedAncillaryQubitModuleCallStack) {
-            return false;
-        }
-
         auto initialValuesOfAncillaryQubits = std::vector(bitwidth, false);
         for (std::size_t i = 0; i < initialValuesOfAncillaryQubits.size(); ++i) {
             initialValuesOfAncillaryQubits[i] = (value & (1 << i)) != 0;
@@ -1341,7 +1336,8 @@ namespace syrec {
 
         // TODO: Update internal qubit builder
         const std::string quantumRegisterLabel = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedQubitIndexForFirstQubitOfQuantumRegister, true);
-        const auto        inliningInformation  = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, *sharedAncillaryQubitModuleCallStack);
+        auto              inliningInformation  = AnnotatableQuantumComputation::InlinedQubitInformation();
+        inliningInformation.inlineStack        = getLastCreatedModuleCallStackInstance();
 
         const std::optional<qc::Qubit> actualQubitIndexForFirstQubitOfQuantumRegister = annotatableQuantumComputation.addPreliminaryAncillaryRegister(quantumRegisterLabel, initialValuesOfAncillaryQubits, inliningInformation);
         const qc::Qubit                actualQubitIndexOfLastQubitOfQuantumRegister   = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
