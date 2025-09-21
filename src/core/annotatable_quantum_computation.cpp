@@ -207,19 +207,36 @@ bool AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiv
             continue;
         }
 
+        const std::string& labelOfQuantumRegisterToPotentiallyEnlarge    = currQuantumRegisterAsAncillaryOne->quantumRegisterLabel;
+        const qc::Qubit    firstQubitOfQuantumRegisterPriorToEnlargement = currQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex;
+        const qc::Qubit    lastQubitOfQuantumRegisterPriorToEnlargement  = currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex;
+
         for (auto nextQuantumRegisterIterator = std::next(quantumRegisterIterator); nextQuantumRegisterIterator != quantumRegisterAssociatedVariableLayouts.end() && modificationsSuccessful;) {
             const auto* nextQuantumRegisterAsAncillaryOne = dynamic_cast<const AncillaryQuantumRegisterVariableLayout*>(nextQuantumRegisterIterator->get());
             if (nextQuantumRegisterAsAncillaryOne == nullptr) {
                 break;
             }
-            modificationsSuccessful     = currQuantumRegisterAsAncillaryOne->mergeWithOtherAncillaryQubitRegister(*nextQuantumRegisterAsAncillaryOne);
+
+            const std::string& labelOfQuantumRegisterToRemove = nextQuantumRegisterIterator->get()->quantumRegisterLabel;
+            modificationsSuccessful                           = currQuantumRegisterAsAncillaryOne->mergeWithOtherAncillaryQubitRegister(*nextQuantumRegisterAsAncillaryOne)
+                                   // Verify that the qubit indices invariant holds that requires that thefirst qubit of quantum register is smaller or equal to the last qubit of the register
+                                   && currQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex == firstQubitOfQuantumRegisterPriorToEnlargement && currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex > lastQubitOfQuantumRegisterPriorToEnlargement && currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex == nextQuantumRegisterIterator->get()->storedQubitIndices.lastQubitIndex && quantumRegisters.erase(labelOfQuantumRegisterToRemove) == 1U;
             nextQuantumRegisterIterator = quantumRegisterAssociatedVariableLayouts.erase(nextQuantumRegisterIterator);
         }
 
-        const auto [mergedFirstAncillaryQubitIndexOfMergedRegister, lastAncillaryQubitIndexOfMergedRegister] = QubitIndexRange({.firstQubitIndex = currQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex, .lastQubitIndex = currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex});
-        modificationsSuccessful &= isQubitWithinRange(mergedFirstAncillaryQubitIndexOfMergedRegister) && isQubitWithinRange(lastAncillaryQubitIndexOfMergedRegister);
+        const auto [firstAncillaryQubitIndexOfMergedRegister, lastAncillaryQubitIndexOfMergedRegister] = QubitIndexRange({.firstQubitIndex = currQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex, .lastQubitIndex = currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex});
+        modificationsSuccessful &= isQubitWithinRange(firstAncillaryQubitIndexOfMergedRegister) && isQubitWithinRange(lastAncillaryQubitIndexOfMergedRegister);
+
         if (modificationsSuccessful) {
-            setLogicalQubitsAncillary(mergedFirstAncillaryQubitIndexOfMergedRegister, lastAncillaryQubitIndexOfMergedRegister);
+            setLogicalQubitsAncillary(firstAncillaryQubitIndexOfMergedRegister, lastAncillaryQubitIndexOfMergedRegister);
+            if (lastQubitOfQuantumRegisterPriorToEnlargement != lastAncillaryQubitIndexOfMergedRegister) {
+                if (quantumRegisters.contains(labelOfQuantumRegisterToPotentiallyEnlarge)) {
+                    const auto mergedQuantumRegisterSize                            = lastAncillaryQubitIndexOfMergedRegister - firstAncillaryQubitIndexOfMergedRegister + 1U;
+                    quantumRegisters.at(labelOfQuantumRegisterToPotentiallyEnlarge) = qc::QuantumRegister(firstAncillaryQubitIndexOfMergedRegister, mergedQuantumRegisterSize, labelOfQuantumRegisterToPotentiallyEnlarge);
+                } else {
+                    modificationsSuccessful = false;
+                }
+            }
         }
         ++quantumRegisterIterator;
     }
