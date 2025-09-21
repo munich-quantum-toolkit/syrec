@@ -154,8 +154,8 @@ namespace syrec {
          */
         [[nodiscard]] bool getVariables(const VariableAccess::ptr& variableAccess, std::vector<qc::Qubit>& lines);
 
-        [[nodiscard]] std::optional<qc::Qubit> getConstantLine(bool value, const std::optional<QubitInliningStack::ptr>& inlinedQubitModuleCallStack);
-        [[nodiscard]] bool                     getConstantLines(unsigned bitwidth, unsigned value, std::vector<qc::Qubit>& lines);
+        [[nodiscard]] std::optional<qc::Qubit> getConstantLine(bool value, const std::optional<QubitInliningStack::ptr>& inlinedQubitModuleCallStack) const;
+        [[nodiscard]] bool                     getConstantLines(unsigned bitwidth, unsigned value, std::vector<qc::Qubit>& lines) const;
 
         [[nodiscard]] static std::optional<AssignStatement::AssignOperation>  tryMapBinaryToAssignmentOperation(BinaryExpression::BinaryOperation binaryOperation) noexcept;
         [[nodiscard]] static std::optional<BinaryExpression::BinaryOperation> tryMapAssignmentToBinaryOperation(AssignStatement::AssignOperation assignOperation) noexcept;
@@ -265,6 +265,6 @@ namespace syrec {
         std::unique_ptr<FirstVariableQubitOffsetLookup>     firstVariableQubitOffsetLookup;
 
     private:
-        std::map<bool, std::vector<qc::Qubit>> freeConstLinesMap;
+        [[nodiscard]] bool synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant);
     };
 } // namespace syrec

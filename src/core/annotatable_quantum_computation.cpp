@@ -15,6 +15,7 @@
 #include "ir/operations/Control.hpp"
 #include "ir/operations/OpType.hpp"
 #include "ir/operations/Operation.hpp"
+#include "nlohmann/detail/input/binary_reader.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -112,63 +113,117 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
 // TODO: We will need to store the dimensions and bitwidth of the variable to be able to generate qubit labels of the form a[0][1].0 for all qubits of the quantum registers.
 // TODO: Tests
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const Variable& variable, bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
-    if (!canQubitsBeAddedToQuantumComputation || variable.bitwidth == 0 || std::ranges::all_of(variable.dimensions, [](const unsigned numberOfValuesOfDimension) { return numberOfValuesOfDimension == 0; }) || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || inlinedQubitsInformationLookup.contains(quantumRegisterLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && isInlineStackNotSetOrEmpty(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
+    if (!canQubitsBeAddedToQuantumComputation || variable.bitwidth == 0 || std::ranges::all_of(variable.dimensions, [](const unsigned numberOfValuesOfDimension) { return numberOfValuesOfDimension == 0; }) || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && isInlineStackNotSetOrEmpty(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
         return std::nullopt;
     }
 
-    const unsigned numberOfElementsInVariable    = std::accumulate(variable.dimensions.cbegin(), variable.dimensions.cend(), 1U, std::multiplies());
-    const unsigned totalNumberOfQubitsOfVariable = numberOfElementsInVariable * variable.bitwidth;
-    const auto     indexToFirstQubitOfVariable   = addQubitRegister(totalNumberOfQubitsOfVariable, quantumRegisterLabel);
+    const unsigned numberOfElementsInVariable         = std::accumulate(variable.dimensions.cbegin(), variable.dimensions.cend(), 1U, std::multiplies());
+    const unsigned totalNumberOfQubitsOfVariable      = numberOfElementsInVariable * variable.bitwidth;
+    const auto     indexToFirstQubitOfQuantumRegister = addQubitRegister(totalNumberOfQubitsOfVariable, quantumRegisterLabel);
     if (areGeneratedQubitsGarbage) {
-        setLogicalQubitsGarbage(indexToFirstQubitOfVariable.getStartIndex(), indexToFirstQubitOfVariable.getEndIndex());
+        setLogicalQubitsGarbage(indexToFirstQubitOfQuantumRegister.getStartIndex(), indexToFirstQubitOfQuantumRegister.getEndIndex());
     }
 
-    if (optionalInliningInformation.has_value()) {
-        inlinedQubitsInformationLookup[quantumRegisterLabel] = *optionalInliningInformation;
-    }
-    return indexToFirstQubitOfVariable.getStartIndex();
+    const auto coveredQubitIndices = QubitIndexRange({.firstQubitIndex = indexToFirstQubitOfQuantumRegister.getStartIndex(), .lastQubitIndex = indexToFirstQubitOfQuantumRegister.getEndIndex()});
+    quantumRegisterAssociatedVariableLayouts.emplace_back(std::make_unique<NonAncillaryQuantumRegisterVariableLayout>(coveredQubitIndices, quantumRegisterLabel, variable.dimensions, variable.bitwidth, optionalInliningInformation));
+    return indexToFirstQubitOfQuantumRegister.getStartIndex();
 }
 
-// TODO: If we are generating quantum registers for all SyReC module parameters then this function is obsolete. Currently only left due to existing tests which will need to be refactored.
-std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
-    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().contains(qubitLabel) || inlinedQubitsInformationLookup.contains(qubitLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && isInlineStackNotSetOrEmpty(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
+std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryRegister(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation) {
+    if (!canQubitsBeAddedToQuantumComputation || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || initialStateOfAncillaryQubits.empty() || (sharedInliningInformation.inlineStack.has_value() && isInlineStackNotSetOrEmpty(sharedInliningInformation.inlineStack.value())) || !sharedInliningInformation.userDeclaredQubitLabel.has_value() || sharedInliningInformation.userDeclaredQubitLabel->empty()) {
         return std::nullopt;
     }
 
-    constexpr std::size_t qubitSize  = 1;
-    const auto            qubitIndex = addQubitRegister(qubitSize, qubitLabel).getStartIndex();
-    if (isGarbageQubit) {
-        setLogicalQubitGarbage(qubitIndex);
-    }
-
-    if (optionalInliningInformation.has_value()) {
-        inlinedQubitsInformationLookup[qubitLabel] = *optionalInliningInformation;
-    }
-    return qubitIndex;
-}
-
-// TODO: If possible aggregate all ancillary qubits into two quantum registers that store the ancillary qubits initialized to 0 and 1 respectively. Whether a reordering/resize/modification of quantum registers in the quantum computation is possible needs to be determined.
-std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit, const InlinedQubitInformation& inliningInformation) {
-    if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().contains(qubitLabel) || inlinedQubitsInformationLookup.contains(qubitLabel) || inliningInformation.userDeclaredQubitLabel.has_value() || (inliningInformation.inlineStack.has_value() && isInlineStackNotSetOrEmpty(inliningInformation.inlineStack.value()))) {
-        return std::nullopt;
-    }
-
-    constexpr std::size_t qubitSize  = 1;
-    const auto            qubitIndex = addQubitRegister(qubitSize, qubitLabel).getStartIndex();
-    addedAncillaryQubitIndices.emplace(qubitIndex);
-    inlinedQubitsInformationLookup[qubitLabel] = inliningInformation;
-
-    if (initialStateOfQubit) {
+    const auto indexToFirstQubitOfQuantumRegister = addQubitRegister(initialStateOfAncillaryQubits.size(), quantumRegisterLabel).getStartIndex();
+    for (qc::Qubit ancillaryQubitOffsetInQuantumRegister = 0; ancillaryQubitOffsetInQuantumRegister < initialStateOfAncillaryQubits.size(); ++ancillaryQubitOffsetInQuantumRegister) {
         // Since ancillary qubits are assumed to have an initial value of
         // zero, we need to add an inversion gate to derive the correct
         // initial value of 1.
         // We can either use a simple X quantum operation to initialize the qubit with '1' but we should
         // probably also consider the active control qubits set in the currently active control qubit propagation scopes.
-        if (!addOperationsImplementingNotGate(qubitIndex)) {
+        if (!initialStateOfAncillaryQubits.at(ancillaryQubitOffsetInQuantumRegister)) {
+            continue;
+        }
+
+        if (!addOperationsImplementingNotGate(indexToFirstQubitOfQuantumRegister + ancillaryQubitOffsetInQuantumRegister)) {
             return std::nullopt;
         }
     }
-    return qubitIndex;
+    return indexToFirstQubitOfQuantumRegister;
+}
+
+// TODO: If we are generating quantum registers for all SyReC module parameters then this function is obsolete. Currently only left due to existing tests which will need to be refactored.
+std::optional<qc::Qubit> AnnotatableQuantumComputation::addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
+    // if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().contains(qubitLabel) || inlinedQubitsInformationLookup.contains(qubitLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && isInlineStackNotSetOrEmpty(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
+    //     return std::nullopt;
+    // }
+    //
+    // constexpr std::size_t qubitSize  = 1;
+    // const auto            qubitIndex = addQubitRegister(qubitSize, qubitLabel).getStartIndex();
+    // if (isGarbageQubit) {
+    //     setLogicalQubitGarbage(qubitIndex);
+    // }
+    //
+    // if (optionalInliningInformation.has_value()) {
+    //     inlinedQubitsInformationLookup[qubitLabel] = *optionalInliningInformation;
+    // }
+    // return qubitIndex;
+    return std::nullopt;
+}
+
+// TODO: If possible aggregate all ancillary qubits into two quantum registers that store the ancillary qubits initialized to 0 and 1 respectively. Whether a reordering/resize/modification of quantum registers in the quantum computation is possible needs to be determined.
+std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit, const InlinedQubitInformation& inliningInformation) {
+    // if (!canQubitsBeAddedToQuantumComputation || qubitLabel.empty() || getQuantumRegisters().contains(qubitLabel) || inlinedQubitsInformationLookup.contains(qubitLabel) || inliningInformation.userDeclaredQubitLabel.has_value() || (inliningInformation.inlineStack.has_value() && isInlineStackNotSetOrEmpty(inliningInformation.inlineStack.value()))) {
+    //     return std::nullopt;
+    // }
+    //
+    // constexpr std::size_t qubitSize  = 1;
+    // const auto            qubitIndex = addQubitRegister(qubitSize, qubitLabel).getStartIndex();
+    // addedAncillaryQubitIndices.emplace(qubitIndex);
+    // inlinedQubitsInformationLookup[qubitLabel] = inliningInformation;
+    //
+    // if (initialStateOfQubit) {
+    //     // Since ancillary qubits are assumed to have an initial value of
+    //     // zero, we need to add an inversion gate to derive the correct
+    //     // initial value of 1.
+    //     // We can either use a simple X quantum operation to initialize the qubit with '1' but we should
+    //     // probably also consider the active control qubits set in the currently active control qubit propagation scopes.
+    //     if (!addOperationsImplementingNotGate(qubitIndex)) {
+    //         return std::nullopt;
+    //     }
+    // }
+    // return qubitIndex;
+    return std::nullopt;
+}
+
+bool AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiveAncillaryRegistersAndMergeAdjacentOnes() {
+    canQubitsBeAddedToQuantumComputation = false;
+
+    bool modificationsSuccessful = true;
+    for (auto quantumRegisterIterator = quantumRegisterAssociatedVariableLayouts.begin(); quantumRegisterIterator != quantumRegisterAssociatedVariableLayouts.end() && modificationsSuccessful;) {
+        auto* currQuantumRegisterAsAncillaryOne = dynamic_cast<AncillaryQuantumRegisterVariableLayout*>(quantumRegisterIterator->get());
+        if (currQuantumRegisterAsAncillaryOne == nullptr) {
+            ++quantumRegisterIterator;
+            continue;
+        }
+
+        for (auto nextQuantumRegisterIterator = std::next(quantumRegisterIterator); nextQuantumRegisterIterator != quantumRegisterAssociatedVariableLayouts.end() && modificationsSuccessful;) {
+            const auto* nextQuantumRegisterAsAncillaryOne = dynamic_cast<const AncillaryQuantumRegisterVariableLayout*>(nextQuantumRegisterIterator->get());
+            if (nextQuantumRegisterAsAncillaryOne == nullptr) {
+                break;
+            }
+            modificationsSuccessful     = currQuantumRegisterAsAncillaryOne->mergeWithOtherAncillaryQubitRegister(*nextQuantumRegisterAsAncillaryOne);
+            nextQuantumRegisterIterator = quantumRegisterAssociatedVariableLayouts.erase(nextQuantumRegisterIterator);
+        }
+
+        const auto [mergedFirstAncillaryQubitIndexOfMergedRegister, lastAncillaryQubitIndexOfMergedRegister] = QubitIndexRange({.firstQubitIndex = currQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex, .lastQubitIndex = currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex});
+        modificationsSuccessful &= isQubitWithinRange(mergedFirstAncillaryQubitIndexOfMergedRegister) && isQubitWithinRange(lastAncillaryQubitIndexOfMergedRegister);
+        if (modificationsSuccessful) {
+            setLogicalQubitsAncillary(mergedFirstAncillaryQubitIndexOfMergedRegister, lastAncillaryQubitIndexOfMergedRegister);
+        }
+        ++quantumRegisterIterator;
+    }
+    return modificationsSuccessful;
 }
 
 bool AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitToDefinitiveAncillary(qc::Qubit qubit) {
@@ -184,13 +239,42 @@ bool AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitToDefinitive
 // TODO: quantumRegister is std::unordered_map so iterating over entries could return different order than using the qubit indices
 // TODO: This function should build the qubit label of the form a[0][1].0 since we are using the variable identifier as the label of the quantum register
 // TODO: Tests
-std::vector<std::string> AnnotatableQuantumComputation::getQubitLabels() const {
-    std::vector<std::string> qubitLabels(getNqubits(), "");
-    for (const auto& quantumRegister: getQuantumRegisters()) {
-        const qc::Qubit qubitIndex = quantumRegister.second.getStartIndex();
-        qubitLabels[qubitIndex]    = quantumRegister.first;
+std::optional<std::vector<std::string>> AnnotatableQuantumComputation::getQubitLabels() const {
+    // std::size_t totalNumberOfQubitLabelsToGenerate = 0U;
+    // for (const auto& quantumRegisterVariableLayout: quantumRegisterAssociatedVariableLayouts) {
+    //     totalNumberOfQubitLabelsToGenerate += quantumRegisterVariableLayout->getNumberOfQubitsInQuantumRegister();
+    // }
+    //
+    // auto        generatedQubitLabels      = std::vector<std::string>(totalNumberOfQubitLabelsToGenerate, "");
+    // bool        generationOfQubitLabelsOk = true;
+    // std::size_t insertionIndex            = 0U;
+    //
+    // for (std::size_t i = 0; i < quantumRegisterAssociatedVariableLayouts.size() && generationOfQubitLabelsOk; ++i) {
+    //     const auto& currProcessedQuantumRegister = quantumRegisterAssociatedVariableLayouts.at(i);
+    //     generationOfQubitLabelsOk                = currProcessedQuantumRegister->generateAndAddLabelsForAllStoredQubitsToContainer(generatedQubitLabels, insertionIndex);
+    //     insertionIndex += currProcessedQuantumRegister->getNumberOfQubitsInQuantumRegister();
+    // }
+    // return generationOfQubitLabelsOk ? std::make_optional(generatedQubitLabels) : std::nullopt;
+    return std::nullopt;
+}
+
+std::optional<std::string> AnnotatableQuantumComputation::getQubitLabel(const qc::Qubit qubit, const QubitLabelType qubitLabelType) const {
+    const std::optional<std::size_t>                                                            indexOfQuantumRegisterStoringQubit  = determineIndexOfQuantumRegisterStoringQubit(qubit);
+    const std::optional<BaseQuantumRegisterVariableLayout::QuantumRegisterQubitIndexLookupData> qubitInformationFromQuantumRegister = indexOfQuantumRegisterStoringQubit.has_value() ? quantumRegisterAssociatedVariableLayouts.at(*indexOfQuantumRegisterStoringQubit)->determineLookupDataForQubitFromQuantumRegister(qubit) : std::nullopt;
+    if (!qubitInformationFromQuantumRegister.has_value()) {
+        return std::nullopt;
     }
-    return qubitLabels;
+
+    std::string inheritedQubitIdentifierFromQuantumRegister;
+    if (qubitLabelType == UserDeclared) {
+        if (!qubitInformationFromQuantumRegister->inlinedQubitInformation.has_value() || !qubitInformationFromQuantumRegister->inlinedQubitInformation->userDeclaredQubitLabel.has_value()) {
+            return std::nullopt;
+        }
+        inheritedQubitIdentifierFromQuantumRegister = *qubitInformationFromQuantumRegister->inlinedQubitInformation->userDeclaredQubitLabel;
+    } else if (qubitLabelType == Internal) {
+        inheritedQubitIdentifierFromQuantumRegister = qubitInformationFromQuantumRegister->quantumRegisterLabel;
+    }
+    return buildQubitLabelForQubitOfVariableInQuantumRegister(inheritedQubitIdentifierFromQuantumRegister, qubitInformationFromQuantumRegister->accessedValuePerDimensionOfElementStoringQubit, qubitInformationFromQuantumRegister->relativeQubitIndexInElementStoringQubit);
 }
 
 qc::Operation* AnnotatableQuantumComputation::getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
@@ -404,10 +488,12 @@ bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std:
 }
 
 const AnnotatableQuantumComputation::InlinedQubitInformation* AnnotatableQuantumComputation::getInliningInformationOfQubit(const std::string& qubitLabel) const {
-    if (!inlinedQubitsInformationLookup.contains(qubitLabel)) {
-        return nullptr;
-    }
-    return &inlinedQubitsInformationLookup.at(qubitLabel);
+    // if (!inlinedQubitsInformationLookup.contains(qubitLabel)) {
+    //     return nullptr;
+    // }
+    // return &inlinedQubitsInformationLookup.at(qubitLabel);
+    // TODO:
+    return nullptr;
 }
 
 // BEGIN NON-PUBLIC FUNCTIONALITY
@@ -446,3 +532,128 @@ bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(std:
     }
     return true;
 }
+
+// BEGIN Quantum register variable alyout functionality
+AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::NonAncillaryQuantumRegisterVariableLayout(const QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, const unsigned qubitSizeOfElementInVariable, const std::optional<InlinedQubitInformation>& optionalSharedQubitInliningInformation):
+    BaseQuantumRegisterVariableLayout(coveredQubitIndicesOfQuantumRegister, quantumRegisterLabel), elementQubitSize(qubitSizeOfElementInVariable), numValuesPerDimensionOfVariable(numValuesPerDimensionOfVariable), optionalSharedQubitInliningInformation(optionalSharedQubitInliningInformation) {
+    offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths = std::vector(numValuesPerDimensionOfVariable.size(), 1U);
+    std::size_t dimensionIndex                                        = numValuesPerDimensionOfVariable.size() - 1U;
+    for (auto offsetIterator = std::next(offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths.rbegin()); offsetIterator != offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths.rend(); ++offsetIterator) {
+        *offsetIterator = *std::prev(offsetIterator) * numValuesPerDimensionOfVariable.at(dimensionIndex--);
+    }
+}
+
+std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::QuantumRegisterQubitIndexLookupData> AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::determineLookupDataForQubitFromQuantumRegister(qc::Qubit qubit) const {
+    const std::optional<std::vector<unsigned>> requiredValuePerDimensionToAccessElementStoringQubit = storedQubitIndices.firstQubitIndex >= qubit && storedQubitIndices.lastQubitIndex <= qubit ? getRequiredValuesPerDimensionToAccessQubitOfVariable(qubit) : std::nullopt;
+    if (!requiredValuePerDimensionToAccessElementStoringQubit.has_value()) {
+        return std::nullopt;
+    }
+
+    const qc::Qubit relativeQubitIndexInQuantumRegister = qubit - storedQubitIndices.firstQubitIndex;
+    return QuantumRegisterQubitIndexLookupData({.quantumRegisterLabel                           = quantumRegisterLabel,
+                                                .accessedValuePerDimensionOfElementStoringQubit = *requiredValuePerDimensionToAccessElementStoringQubit,
+                                                .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
+                                                .inlinedQubitInformation                        = optionalSharedQubitInliningInformation});
+}
+
+[[nodiscard]] std::optional<std::vector<unsigned>> AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::getRequiredValuesPerDimensionToAccessQubitOfVariable(const qc::Qubit qubit) const {
+    if (offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths.empty() || numValuesPerDimensionOfVariable.empty() || elementQubitSize == 0 || storedQubitIndices.firstQubitIndex > qubit) {
+        return std::nullopt;
+    }
+
+    // I. Calculate offset to next element in dimension
+    // II. For each dimension perform a binary search to determine which element contains the qubit
+    // III. Use indices to build accessed values per dimension for qubit.
+    bool couldRequiredValuePerDimensionBeDetermined = true;
+    auto requiredValuesPerDimension                 = std::vector(numValuesPerDimensionOfVariable.size(), 0U);
+    for (std::size_t i = 0; i < requiredValuesPerDimension.size() && couldRequiredValuePerDimensionBeDetermined; ++i) {
+        const unsigned qubitOffsetToNextElementInDimension = offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths[i] * elementQubitSize;
+
+        std::vector<unsigned> firstQubitIndexPerElementInDimension = std::vector(numValuesPerDimensionOfVariable.at(i), qubitOffsetToNextElementInDimension);
+        firstQubitIndexPerElementInDimension[0]                    = storedQubitIndices.firstQubitIndex;
+        for (std::size_t j = 0; j < i; ++j) {
+            firstQubitIndexPerElementInDimension[0] += (requiredValuesPerDimension[j] * offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths[j]) * elementQubitSize;
+        }
+
+        for (std::size_t j = 1; j < firstQubitIndexPerElementInDimension.size(); ++j) {
+            firstQubitIndexPerElementInDimension[j] += firstQubitIndexPerElementInDimension[j - 1];
+        }
+
+        const auto& indexOfElementContainingQubit = std::ranges::lower_bound(std::as_const(firstQubitIndexPerElementInDimension), qubit);
+        couldRequiredValuePerDimensionBeDetermined &= indexOfElementContainingQubit != firstQubitIndexPerElementInDimension.cend();
+        const unsigned indexOffset    = indexOfElementContainingQubit != firstQubitIndexPerElementInDimension.cend() ? static_cast<unsigned>(*indexOfElementContainingQubit > qubit) : 0U;
+        requiredValuesPerDimension[i] = static_cast<unsigned>(std::distance(firstQubitIndexPerElementInDimension.cbegin(), indexOfElementContainingQubit)) - indexOffset;
+    }
+    return couldRequiredValuePerDimensionBeDetermined ? std::make_optional(requiredValuesPerDimension) : std::nullopt;
+}
+
+AnnotatableQuantumComputation::AncillaryQuantumRegisterVariableLayout::AncillaryQuantumRegisterVariableLayout(const QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const InlinedQubitInformation& sharedQubitInliningInformation):
+    BaseQuantumRegisterVariableLayout(coveredQubitIndicesOfQuantumRegister, quantumRegisterLabel) {
+    // TODO: We should somewhere check the invariant that the first qubit index must be larger than the last qubit index.
+    storedQubitIndices         = coveredQubitIndicesOfQuantumRegister;
+    this->quantumRegisterLabel = quantumRegisterLabel;
+
+    for (qc::Qubit firstQubitIndex = storedQubitIndices.firstQubitIndex; firstQubitIndex <= storedQubitIndices.lastQubitIndex; ++firstQubitIndex) {
+        qubitInliningInformation.emplace(std::make_pair(firstQubitIndex, sharedQubitInliningInformation));
+    }
+}
+
+bool AnnotatableQuantumComputation::AncillaryQuantumRegisterVariableLayout::mergeWithOtherAncillaryQubitRegister(const AncillaryQuantumRegisterVariableLayout& other) {
+    if (storedQubitIndices.firstQubitIndex < other.storedQubitIndices.firstQubitIndex && storedQubitIndices.lastQubitIndex == other.storedQubitIndices.firstQubitIndex - 1) {
+        return false;
+    }
+
+    const std::unordered_map<qc::Qubit, InlinedQubitInformation>* smallerInlineInformationLookup = &qubitInliningInformation;
+    const std::unordered_map<qc::Qubit, InlinedQubitInformation>* largerInlineInformationLookup  = &other.qubitInliningInformation;
+    if (qubitInliningInformation.size() >= other.qubitInliningInformation.size()) {
+        smallerInlineInformationLookup = &other.qubitInliningInformation;
+        largerInlineInformationLookup  = &qubitInliningInformation;
+    }
+
+    bool containsDuplicateInlineInformation = false;
+    for (auto smallerInlineInformationLookupIterator = smallerInlineInformationLookup->begin(); smallerInlineInformationLookupIterator != smallerInlineInformationLookup->end() && !containsDuplicateInlineInformation; ++smallerInlineInformationLookupIterator) {
+        containsDuplicateInlineInformation = largerInlineInformationLookup->contains(smallerInlineInformationLookupIterator->first);
+    }
+
+    if (containsDuplicateInlineInformation) {
+        return false;
+    }
+
+    storedQubitIndices.lastQubitIndex = other.storedQubitIndices.lastQubitIndex;
+    qubitInliningInformation.insert(other.qubitInliningInformation.cbegin(), other.qubitInliningInformation.cend());
+    return true;
+}
+
+std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::QuantumRegisterQubitIndexLookupData> AnnotatableQuantumComputation::AncillaryQuantumRegisterVariableLayout::determineLookupDataForQubitFromQuantumRegister(const qc::Qubit qubit) const {
+    if (storedQubitIndices.firstQubitIndex > qubit || storedQubitIndices.lastQubitIndex < qubit) {
+        return std::nullopt;
+    }
+
+    const qc::Qubit relativeQubitIndexInQuantumRegister = qubit - storedQubitIndices.firstQubitIndex;
+    const auto&     inliningInformationOfQubit          = qubitInliningInformation.find(qubit);
+
+    return QuantumRegisterQubitIndexLookupData({.quantumRegisterLabel                           = quantumRegisterLabel,
+                                                .accessedValuePerDimensionOfElementStoringQubit = std::vector({0U}),
+                                                .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
+                                                .inlinedQubitInformation                        = inliningInformationOfQubit != qubitInliningInformation.cend() ? std::make_optional(inliningInformationOfQubit->second) : std::nullopt});
+}
+
+// END Quantum register variable alyout functionality
+
+std::string AnnotatableQuantumComputation::buildQubitLabelForQubitOfVariableInQuantumRegister(const std::string& quantumRegisterLabel, const std::vector<unsigned>& accessedValuePerDimension, std::size_t relativeQubitIndexInElement) {
+    std::string generatedQubitLabel = quantumRegisterLabel;
+    for (const auto accessedValueOfDimension: accessedValuePerDimension) {
+        generatedQubitLabel += "[" + std::to_string(accessedValueOfDimension) + "]";
+    }
+    generatedQubitLabel += "." + std::to_string(relativeQubitIndexInElement);
+    return generatedQubitLabel;
+}
+
+std::optional<std::size_t> AnnotatableQuantumComputation::determineIndexOfQuantumRegisterStoringQubit(const qc::Qubit qubit) const {
+    // TODO: Comment Returns the first element in variable element indices lookup whose firstQubitIndex >= qubit. This is equivalent to a binary search ?
+    const auto& iteratorToQuantumRegisterStoringQubit = std::lower_bound(quantumRegisterAssociatedVariableLayouts.cbegin(), quantumRegisterAssociatedVariableLayouts.cend(), qubit, [](const std::unique_ptr<BaseQuantumRegisterVariableLayout>& quantumRegisterVariableLayout, const qc::Qubit qubit) {
+        return quantumRegisterVariableLayout->storedQubitIndices.lastQubitIndex < qubit;
+    });
+    return iteratorToQuantumRegisterStoringQubit != quantumRegisterAssociatedVariableLayouts.cend() ? std::make_optional(std::distance(quantumRegisterAssociatedVariableLayouts.cbegin(), iteratorToQuantumRegisterStoringQubit)) : std::nullopt;
+}
+// END NON-PUBLIC FUNCTIONALITY

@@ -121,8 +121,6 @@ namespace syrec {
     // Helper Functions for the synthesis methods
     SyrecSynthesis::SyrecSynthesis(AnnotatableQuantumComputation& annotatableQuantumComputation):
         annotatableQuantumComputation(annotatableQuantumComputation) {
-        freeConstLinesMap.try_emplace(false /* emplacing a default constructed object */);
-        freeConstLinesMap.try_emplace(true /* emplacing a default constructed object */);
         statementExecutionOrderStack   = std::make_unique<StatementExecutionOrderStack>();
         firstVariableQubitOffsetLookup = std::make_unique<FirstVariableQubitOffsetLookup>();
     }
@@ -238,14 +236,12 @@ namespace syrec {
 
         // synthesize the statements
         const auto synthesisOfMainModuleOk = synthesizer->onModule(main);
-        for (const auto& ancillaryQubit: synthesizer->annotatableQuantumComputation.getAddedPreliminaryAncillaryQubitIndices()) {
-            if (!synthesizer->annotatableQuantumComputation.promotePreliminaryAncillaryQubitToDefinitiveAncillary(ancillaryQubit)) {
-                std::cerr << "Failed to mark qubit" << std::to_string(ancillaryQubit) << " as ancillary qubit\n";
-                return false;
-            }
+        if (synthesisOfMainModuleOk && !synthesizer->annotatableQuantumComputation.promotePreliminaryAncillaryQubitsToDefinitiveAncillaryRegistersAndMergeAdjacentOnes()) {
+            std::cerr << "Failed to either promote preliminary ancillary registers to actual ancillary registers or merge of adjacent ancillary registers failed\n";
+            return false;
         }
 
-        if (!synthesizer->firstVariableQubitOffsetLookup->closeVariableQubitOffsetScope()) {
+        if (synthesisOfMainModuleOk && !synthesizer->firstVariableQubitOffsetLookup->closeVariableQubitOffsetScope()) {
             std::cerr << "Failed to close qubit offset scope for parameters and local variables during cleanup after synthesis of main module " << main->name << "\n";
             return false;
         }
@@ -1259,7 +1255,6 @@ namespace syrec {
             }
 
             const bool                                                            areQubitsCreatedForVariableConsideredGarbage = variable->type == Variable::Type::In || variable->type == Variable::Type::Wire;
-            const std::optional<QubitInliningStack::ptr>                          inlineStack                                  = areQubitsCreatedForVariableConsideredGarbage ? getLastCreatedModuleCallStackInstance() : std::nullopt;
             std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> optionalQubitInliningInformation;
 
             std::string quantumRegisterLabel = variable->name;
@@ -1272,7 +1267,7 @@ namespace syrec {
 
                 optionalQubitInliningInformation                         = AnnotatableQuantumComputation::InlinedQubitInformation();
                 optionalQubitInliningInformation->userDeclaredQubitLabel = variable->name;
-                optionalQubitInliningInformation->inlineStack            = inlineStack;
+                optionalQubitInliningInformation->inlineStack            = getLastCreatedModuleCallStackInstance();
             }
 
             // TODO: Validation of quantum register label to conform to OpenQASM 3.0 specification?
@@ -1309,51 +1304,55 @@ namespace syrec {
         return synthesisOfVariableAccessOk;
     }
 
-    std::optional<qc::Qubit> SyrecSynthesis::getConstantLine(bool value, const std::optional<QubitInliningStack::ptr>& inlinedQubitModuleCallStack) {
+    std::optional<qc::Qubit> SyrecSynthesis::getConstantLine(bool value, const std::optional<QubitInliningStack::ptr>& inlinedQubitModuleCallStack) const {
         qc::Qubit constLine = 0U;
 
-        if (!freeConstLinesMap[value].empty()) {
-            constLine = freeConstLinesMap[value].back();
-            freeConstLinesMap[value].pop_back();
-        } else if (!freeConstLinesMap[!value].empty()) {
-            constLine = freeConstLinesMap[!value].back();
-            freeConstLinesMap[!value].pop_back();
-            if (!annotatableQuantumComputation.addOperationsImplementingNotGate(constLine)) {
-                return std::nullopt;
-            }
-        } else {
-            const auto        expectedQubitIndex  = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
-            const std::string qubitLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedQubitIndex, value);
-            auto              inliningInformation = AnnotatableQuantumComputation::InlinedQubitInformation();
-            if (shouldQubitInlineInformationBeRecorded()) {
-                inliningInformation.inlineStack = inlinedQubitModuleCallStack;
-            }
-
-            const std::optional<qc::Qubit> actualQubitIndex = annotatableQuantumComputation.addPreliminaryAncillaryQubit(qubitLabel, value, inliningInformation);
-            if (!actualQubitIndex.has_value() || *actualQubitIndex != expectedQubitIndex) {
-                return std::nullopt;
-            }
-            constLine = expectedQubitIndex;
+        const auto        expectedQubitIndexForFirstQubitOfQuantumRegister = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
+        const std::string quantumRegisterLabel                             = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedQubitIndexForFirstQubitOfQuantumRegister, value);
+        auto              inliningInformation                              = AnnotatableQuantumComputation::InlinedQubitInformation();
+        if (shouldQubitInlineInformationBeRecorded()) {
+            inliningInformation.inlineStack = inlinedQubitModuleCallStack;
         }
+
+        const std::optional<qc::Qubit> actualQubitIndexForFirstQubitOfQuantumRegister = annotatableQuantumComputation.addPreliminaryAncillaryRegister(quantumRegisterLabel, {value}, inliningInformation);
+        if (!actualQubitIndexForFirstQubitOfQuantumRegister.has_value() || *actualQubitIndexForFirstQubitOfQuantumRegister != expectedQubitIndexForFirstQubitOfQuantumRegister) {
+            return std::nullopt;
+        }
+        constLine = expectedQubitIndexForFirstQubitOfQuantumRegister;
         return constLine;
     }
 
-    bool SyrecSynthesis::getConstantLines(unsigned bitwidth, qc::Qubit value, std::vector<qc::Qubit>& lines) {
+    bool SyrecSynthesis::getConstantLines(const unsigned bitwidth, const qc::Qubit value, std::vector<qc::Qubit>& lines) const {
         assert(bitwidth <= 32);
 
         // Ancillary qubits generated for an integer larger than 1 all share the same origin and thus will reuse the same module call stack in its inline information
-        const std::optional<QubitInliningStack::ptr> sharedAncillaryQubitModuleCallStack  = bitwidth > 0 ? getLastCreatedModuleCallStackInstance() : std::nullopt;
-        bool                                         couldQubitsForConstantLinesBeFetched = shouldQubitInlineInformationBeRecorded() ? sharedAncillaryQubitModuleCallStack.has_value() : true;
-
-        for (unsigned i = 0U; i < bitwidth && couldQubitsForConstantLinesBeFetched; ++i) {
-            const std::optional<qc::Qubit> ancillaryQubitIndex = getConstantLine((value & (1 << i)) != 0, sharedAncillaryQubitModuleCallStack);
-            if (ancillaryQubitIndex.has_value()) {
-                lines.emplace_back(*ancillaryQubitIndex);
-            } else {
-                couldQubitsForConstantLinesBeFetched = false;
-            }
+        const std::optional<QubitInliningStack::ptr> sharedAncillaryQubitModuleCallStack = bitwidth > 0 ? getLastCreatedModuleCallStackInstance() : std::nullopt;
+        if (!sharedAncillaryQubitModuleCallStack) {
+            return false;
         }
-        return couldQubitsForConstantLinesBeFetched;
+
+        auto initialValuesOfAncillaryQubits = std::vector(bitwidth, false);
+        for (std::size_t i = 0; i < initialValuesOfAncillaryQubits.size(); ++i) {
+            initialValuesOfAncillaryQubits[i] = (value & (1 << i)) != 0;
+        }
+
+        const auto expectedQubitIndexForFirstQubitOfQuantumRegister = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
+        const auto expectedQubitIndexOfLastQubitOfQuantumRegister   = static_cast<qc::Qubit>(expectedQubitIndexForFirstQubitOfQuantumRegister + bitwidth);
+
+        // TODO: Update internal qubit builder
+        const std::string quantumRegisterLabel = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedQubitIndexForFirstQubitOfQuantumRegister, true);
+        const auto        inliningInformation  = AnnotatableQuantumComputation::InlinedQubitInformation(std::nullopt, *sharedAncillaryQubitModuleCallStack);
+
+        const std::optional<qc::Qubit> actualQubitIndexForFirstQubitOfQuantumRegister = annotatableQuantumComputation.addPreliminaryAncillaryRegister(quantumRegisterLabel, initialValuesOfAncillaryQubits, inliningInformation);
+        const qc::Qubit                actualQubitIndexOfLastQubitOfQuantumRegister   = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
+        if (!actualQubitIndexForFirstQubitOfQuantumRegister.has_value() || *actualQubitIndexForFirstQubitOfQuantumRegister != expectedQubitIndexForFirstQubitOfQuantumRegister || actualQubitIndexOfLastQubitOfQuantumRegister != expectedQubitIndexOfLastQubitOfQuantumRegister) {
+            return false;
+        }
+
+        for (qc::Qubit firstAncillaryQubit = *actualQubitIndexForFirstQubitOfQuantumRegister; firstAncillaryQubit < *actualQubitIndexForFirstQubitOfQuantumRegister + bitwidth; ++firstAncillaryQubit) {
+            lines.emplace_back(firstAncillaryQubit);
+        }
+        return true;
     }
 
     std::optional<AssignStatement::AssignOperation> SyrecSynthesis::tryMapBinaryToAssignmentOperation(BinaryExpression::BinaryOperation binaryOperation) noexcept {

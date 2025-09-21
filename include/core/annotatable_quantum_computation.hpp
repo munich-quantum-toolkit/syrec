@@ -37,6 +37,11 @@ namespace syrec {
         using QuantumOperationAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
         using SynthesisCostMetricValue          = std::uint64_t;
 
+        struct QubitIndexRange {
+            qc::Qubit firstQubitIndex;
+            qc::Qubit lastQubitIndex;
+        };
+
         /**
          * Stores debug information about the ancillary and local module variable qubits that can be used to determine the origin of the qubit in the
          * SyReC program or to determine the user declared identifier of the associated variable for a qubit. This information is not available for the
@@ -58,6 +63,11 @@ namespace syrec {
                 userDeclaredQubitLabel(userDeclaredQubitLabel), inlineStack(inlineStack != nullptr ? std::make_optional(inlineStack) : std::nullopt) {}
         };
 
+        enum QubitLabelType : std::uint8_t {
+            Internal,
+            UserDeclared
+        };
+
         [[nodiscard]] bool addOperationsImplementingNotGate(qc::Qubit targetQubit);
         [[nodiscard]] bool addOperationsImplementingCnotGate(qc::Qubit controlQubit, qc::Qubit targetQubit);
         [[nodiscard]] bool addOperationsImplementingToffoliGate(qc::Qubit controlQubitOne, qc::Qubit controlQubitTwo, qc::Qubit targetQubit);
@@ -73,8 +83,11 @@ namespace syrec {
          * @return The index of the first generated non-ancillary qubit for the \p variable in the quantum computation, std::nullopt if the validation of the \p quantumRegisterLabel or \p variable failed, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid or empty inline stack).
          */
         [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const Variable& variable, bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
-        [[nodiscard]] std::optional<qc::Qubit> addAncillaryQubit(bool initialStateOfQubit, const InlinedQubitInformation& inliningInformation);
 
+        // TODO: Documentation
+        [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryRegister(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation);
+
+        // TODO: Obsolete if quantum registers are used
         /**
          * Add a non-ancillary qubit to the quantum computation.
          * @param qubitLabel The label of the ancillary qubit. Must be non-empty.
@@ -84,6 +97,8 @@ namespace syrec {
          */
         [[nodiscard]] std::optional<qc::Qubit> addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
 
+        // TODO: Rework to also be able to add ancillary register (that should be merged at the end of synthesis if possible to prevent "fragmentation" (i.e. many small ancillary qubits will be generated during synthesis).
+        // TODO: Can all ancillary qubits be merged into two big ancillary registers (storing 0 and 1 ancillaries respectively) without having to fixup all quantum operations that contain an ancillary qubit as control or target qubit.
         /**
          * Add a preliminary ancillary qubit to the quantum computation. Ancillary qubits added need to be explicitly marked as such via the \see AnnotatableQuantumComputation#setQubitAncillary call.
          * @param qubitLabel The label of the ancillary qubit. Must be non-empty.
@@ -101,24 +116,32 @@ namespace syrec {
          */
         [[nodiscard]] std::unordered_set<qc::Qubit> getAddedPreliminaryAncillaryQubitIndices() const { return addedAncillaryQubitIndices; }
 
+        // TODO: Documentation.
+        [[nodiscard]] bool promotePreliminaryAncillaryQubitsToDefinitiveAncillaryRegistersAndMergeAdjacentOnes();
+
         /**
          * Promote a previously added preliminary ancillary qubit status to a permanent one. No qubits can be added to the quantum computation after this point.
          * @param qubit The index of the qubit in the quantum computation.
          * @return Whether the qubit index was known in the quantum computation. If the index is not known, qubits can still be added to the quantum computation.
          */
-        [[nodiscard]] bool                     promotePreliminaryAncillaryQubitToDefinitiveAncillary(qc::Qubit qubit);
-        [[nodiscard]] std::vector<std::string> getQubitLabels() const;
-        [[nodiscard]] qc::Operation*           getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
+        [[nodiscard]] bool promotePreliminaryAncillaryQubitToDefinitiveAncillary(qc::Qubit qubit);
+        // TODO: For large circuits the additional copy required to create the std::optional<std::string> return object could result in quite some runtime overhead, usage of the index parameterized-variant should be preferred here.
+        // This function could also be made obsolete
+        [[nodiscard]] std::optional<std::vector<std::string>> getQubitLabels() const;
+
+        [[nodiscard]] std::optional<std::string>        getQubitLabel(qc::Qubit qubit, QubitLabelType qubitLabelType) const;
+        [[nodiscard]] qc::Operation*                    getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
 
         /**
-         * Replay a set of already existing quantum operations by readding the quantum operations to the quantum computation.
-         * @param indexOfFirstQuantumOperationToReplayInQuantumComputation The index of the first quantum operation to replay. The index of the first quantum operation to replay is allowed to be larger than the index of the last quantum operation to replay.
-         * @param indexOfLastQuantumOperationToReplayInQuantumComputation The index of the last quantum operation to replay.
-         * @return Whether the indices referenced an existing quantum operation and whether all requested quantum operation could be replayed.
-         * @remark While a quantum operation can by added to the qc::QuantumComputation with the qc::QuantumComputation.emplace_back(...) function, the required quantum gate annotations are not added to the annotatable quantum computation. Additionally, with this function we can somewhat restrict the user to only add operations that can be simulated by the syrec::SimpleSimulation (assuming that the replayed operations where generated by calls to the addOperationsImplementingXGate functions of the annotatable quantum computation).
-         * @remark This function is not thread-safe. Additionally, the annotations of the replayed operations are not copied to the newly created operations.
-         */
+        * Replay a set of already existing quantum operations by readding the quantum operations to the quantum computation.
+        * @param indexOfFirstQuantumOperationToReplayInQuantumComputation The index of the first quantum operation to replay. The index of the first quantum operation to replay is allowed to be larger than the index of the last quantum operation to replay.
+        * @param indexOfLastQuantumOperationToReplayInQuantumComputation The index of the last quantum operation to replay.
+        * @return Whether the indices referenced an existing quantum operation and whether all requested quantum operation could be replayed.
+        * @remark While a quantum operation can by added to the qc::QuantumComputation with the qc::QuantumComputation.emplace_back(...) function, the required quantum gate annotations are not added to the annotatable quantum computation. Additionally, with this function we can somewhat restrict the user to only add operations that can be simulated by the syrec::SimpleSimulation (assuming that the replayed operations where generated by calls to the addOperationsImplementingXGate functions of the annotatable quantum computation).
+        * @remark This function is not thread-safe. Additionally, the annotations of the replayed operations are not copied to the newly created operations.
+        */
         [[nodiscard]] bool                              replayOperationsAtGivenIndexRange(std::size_t indexOfFirstQuantumOperationToReplayInQuantumComputation, std::size_t indexOfLastQuantumOperationToReplayInQuantumComputation);
+
         [[nodiscard]] QuantumOperationAnnotationsLookup getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
         [[nodiscard]] SynthesisCostMetricValue          getQuantumCostForSynthesis() const;
         [[nodiscard]] SynthesisCostMetricValue          getTransistorCostForSynthesis() const;
@@ -214,6 +237,53 @@ namespace syrec {
         std::vector<QuantumOperationAnnotationsLookup> annotationsPerQuantumOperation;
         std::unordered_set<qc::Qubit>                  addedAncillaryQubitIndices;
 
-        std::unordered_map<std::string, InlinedQubitInformation> inlinedQubitsInformationLookup;
+        // TODO: This is probably obsolete since the quantum register variable layout already stores this information
+        //std::unordered_map<std::string, InlinedQubitInformation> inlinedQubitsInformationLookup;
+
+        struct BaseQuantumRegisterVariableLayout {
+            struct QuantumRegisterQubitIndexLookupData {
+                std::string                            quantumRegisterLabel;
+                std::vector<unsigned>                  accessedValuePerDimensionOfElementStoringQubit;
+                qc::Qubit                              relativeQubitIndexInElementStoringQubit;
+                std::optional<InlinedQubitInformation> inlinedQubitInformation;
+            };
+
+            BaseQuantumRegisterVariableLayout(const QubitIndexRange storedQubitIndices, const std::string& quantumRegisterLabel):
+                storedQubitIndices(storedQubitIndices), quantumRegisterLabel(quantumRegisterLabel) {}
+
+            virtual ~BaseQuantumRegisterVariableLayout()                                                                                                   = default;
+            [[nodiscard]] virtual std::optional<QuantumRegisterQubitIndexLookupData> determineLookupDataForQubitFromQuantumRegister(qc::Qubit qubit) const = 0;
+            [[nodiscard]] unsigned                                                   getNumberOfQubitsInQuantumRegister() const { return storedQubitIndices.lastQubitIndex - storedQubitIndices.firstQubitIndex + 1U; }
+
+            QubitIndexRange storedQubitIndices;
+            std::string     quantumRegisterLabel;
+        };
+
+        struct NonAncillaryQuantumRegisterVariableLayout final: BaseQuantumRegisterVariableLayout {
+            [[nodiscard]] std::optional<QuantumRegisterQubitIndexLookupData> determineLookupDataForQubitFromQuantumRegister(qc::Qubit qubit) const override;
+            [[nodiscard]] std::optional<std::vector<unsigned>>               getRequiredValuesPerDimensionToAccessQubitOfVariable(qc::Qubit qubit) const;
+
+            NonAncillaryQuantumRegisterVariableLayout(QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, unsigned qubitSizeOfElementInVariable, const std::optional<InlinedQubitInformation>& optionalSharedQubitInliningInformation);
+
+            unsigned                               elementQubitSize;
+            std::vector<unsigned>                  numValuesPerDimensionOfVariable;
+            std::vector<unsigned>                  offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths;
+            std::optional<InlinedQubitInformation> optionalSharedQubitInliningInformation;
+        };
+
+        struct AncillaryQuantumRegisterVariableLayout final: BaseQuantumRegisterVariableLayout {
+            [[nodiscard]] std::optional<QuantumRegisterQubitIndexLookupData> determineLookupDataForQubitFromQuantumRegister(qc::Qubit qubit) const override;
+
+            // TODO: The qubit inlining information in the constructor is probably the same for all qubit indices since it will be initially called during the creation of ancillary quantum registers, while the qubit inlining information might change during the merge of fragmented ancillary registers
+            AncillaryQuantumRegisterVariableLayout(QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const InlinedQubitInformation& sharedQubitInliningInformation);
+            [[nodiscard]] bool mergeWithOtherAncillaryQubitRegister(const AncillaryQuantumRegisterVariableLayout& other);
+
+            std::unordered_map<qc::Qubit, InlinedQubitInformation> qubitInliningInformation;
+        };
+
+        [[nodiscard]] std::optional<std::size_t> determineIndexOfQuantumRegisterStoringQubit(qc::Qubit qubit) const;
+        [[nodiscard]] static std::string         buildQubitLabelForQubitOfVariableInQuantumRegister(const std::string& quantumRegisterLabel, const std::vector<unsigned>& accessedValuePerDimension, std::size_t relativeQubitIndexInElement);
+
+        std::vector<std::unique_ptr<BaseQuantumRegisterVariableLayout>> quantumRegisterAssociatedVariableLayouts;
     };
 } // namespace syrec
