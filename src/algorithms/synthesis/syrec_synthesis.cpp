@@ -1366,49 +1366,6 @@ namespace syrec {
         }
     }
 
-    // std::optional<qc::Qubit> SyrecSynthesis::addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const std::optional<QubitInliningStack::ptr>& currentModuleCallStack) {
-    //     bool                     couldQubitsForVariableBeAdded = true;
-    //     std::optional<qc::Qubit> firstQubitOfVariable;
-    //
-    //     const auto currNumQubits = annotatableQuantumComputation.getNqubits();
-    //     if (dimensions.empty()) {
-    //         for (unsigned i = 0U; i < var->bitwidth && couldQubitsForVariableBeAdded; ++i) {
-    //             std::string                                                           internalQubitLabel     = var->name;
-    //             std::string                                                           userDeclaredQubitLabel = var->name;
-    //             const bool                                                            isGarbageQubit         = var->type == Variable::Type::In || var->type == Variable::Type::Wire;
-    //             std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> optionalQubitInliningInformation;
-    //
-    //             if (var->type == Variable::Type::Wire || var->type == Variable::Type::State) {
-    //                 // To prevent name clashes when local module variables are inlined at the callsite, all local variable names are transformed to '__q<curr_num_qubits>' and an alias is created and stored
-    //                 // in the annotatable quantum computation. The <curr_num_qubits> portion of the new variable name is the number of qubits prior to the addition of any variable in this call so that the qubits
-    //                 // created for each value of a dimension of a variable share the same name prefix (i.e. the variable 'wire a[2](2)' will cause the generation of the qubits '__q0[0].0', '__q0[0].1','__q0[1].0', '__q0[1].0')
-    //                 internalQubitLabel = InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(currNumQubits);
-    //             }
-    //             internalQubitLabel += arraystr + "." + std::to_string(i);
-    //             userDeclaredQubitLabel += arraystr + "." + std::to_string(i);
-    //
-    //             if (internalQubitLabel != userDeclaredQubitLabel) {
-    //                 optionalQubitInliningInformation                         = AnnotatableQuantumComputation::InlinedQubitInformation();
-    //                 optionalQubitInliningInformation->userDeclaredQubitLabel = userDeclaredQubitLabel;
-    //                 optionalQubitInliningInformation->inlineStack            = currentModuleCallStack;
-    //             }
-    //             const std::optional<qc::Qubit> addedQubitIndex = annotatableQuantumComputation.addNonAncillaryQubit(internalQubitLabel, isGarbageQubit, optionalQubitInliningInformation);
-    //             couldQubitsForVariableBeAdded                  = addedQubitIndex.has_value();
-    //             firstQubitOfVariable                           = (!firstQubitOfVariable.has_value() && couldQubitsForVariableBeAdded) ? addedQubitIndex : firstQubitOfVariable;
-    //         }
-    //     } else {
-    //         const auto        len = static_cast<std::size_t>(dimensions.front());
-    //         const std::vector newDimensions(dimensions.begin() + 1U, dimensions.end());
-    //
-    //         for (std::size_t i = 0U; i < len && couldQubitsForVariableBeAdded; ++i) {
-    //             const std::optional<qc::Qubit> addedQubitIndexForValueOfDimension = addVariable(annotatableQuantumComputation, newDimensions, var, arraystr + "[" + std::to_string(i) + "]", currentModuleCallStack);
-    //             couldQubitsForVariableBeAdded                                     = addedQubitIndexForValueOfDimension.has_value();
-    //             firstQubitOfVariable                                              = (!firstQubitOfVariable.has_value() && couldQubitsForVariableBeAdded) ? addedQubitIndexForValueOfDimension : firstQubitOfVariable;
-    //         }
-    //     }
-    //     return firstQubitOfVariable;
-    // }
-
     std::optional<QubitInliningStack::ptr> SyrecSynthesis::getLastCreatedModuleCallStackInstance() const {
         if (!shouldQubitInlineInformationBeRecorded() || moduleCallStackInstances->empty()) {
             return std::nullopt;
