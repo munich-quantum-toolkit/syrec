@@ -263,8 +263,5 @@ namespace syrec {
         std::optional<std::vector<QubitInliningStack::ptr>> moduleCallStackInstances;
         std::unique_ptr<StatementExecutionOrderStack>       statementExecutionOrderStack;
         std::unique_ptr<FirstVariableQubitOffsetLookup>     firstVariableQubitOffsetLookup;
-
-    private:
-        [[nodiscard]] bool synthesizeModuleCall(const std::variant<const CallStatement*, const UncallStatement*>& callStmtVariant);
     };
 } // namespace syrec

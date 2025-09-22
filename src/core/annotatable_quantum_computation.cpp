@@ -522,7 +522,8 @@ bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(std:
     }
 
     for (std::size_t i = idxOfFirstGateToAnnotate; i <= idxOfLastGateToAnnotate; ++i) {
-        annotationsPerQuantumOperation[i] = gateAnnotations;
+        annotationsPerQuantumOperation[i].insert(userProvidedAnnotationsPerQuantumOperation.cbegin(), userProvidedAnnotationsPerQuantumOperation.cend());
+        annotationsPerQuantumOperation[i].insert(activateGlobalQuantumOperationAnnotations.cbegin(), activateGlobalQuantumOperationAnnotations.cend());
     }
     return true;
 }
