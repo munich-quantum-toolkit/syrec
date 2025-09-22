@@ -129,12 +129,26 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyr
     return indexToFirstQubitOfQuantumRegister.getStartIndex();
 }
 
-std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryRegister(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation) {
+std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryRegisterOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation) {
     if (!canQubitsBeAddedToQuantumComputation || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || initialStateOfAncillaryQubits.empty() || (sharedInliningInformation.inlineStack.has_value() && isInlineStackNotSetOrEmpty(sharedInliningInformation.inlineStack.value())) || sharedInliningInformation.userDeclaredQubitLabel.has_value()) {
         return std::nullopt;
     }
 
-    const auto indexToFirstQubitOfQuantumRegister = addQubitRegister(initialStateOfAncillaryQubits.size(), quantumRegisterLabel).getStartIndex();
+    qc::Qubit                          indexToFirstGeneratedAncillaryQubit = 0U;
+    BaseQuantumRegisterVariableLayout* lastAddedQuantumRegister            = quantumRegisterAssociatedVariableLayouts.empty() ? nullptr : quantumRegisterAssociatedVariableLayouts.back().get();
+    if (auto* lastAddedQuantumRegisterAsAncillaryOne = dynamic_cast<AncillaryQuantumRegisterVariableLayout*>(lastAddedQuantumRegister); lastAddedQuantumRegisterAsAncillaryOne != nullptr) {
+        if (!quantumRegisters.contains(lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel)) {
+            return std::nullopt;
+        }
+
+        indexToFirstGeneratedAncillaryQubit = lastAddedQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex + 1;
+        lastAddedQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex += initialStateOfAncillaryQubits.size();
+        const auto newAncillaryRegisterSize                                               = (lastAddedQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex - lastAddedQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex) + 1U;
+        quantumRegisters.at(lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel) = qc::QuantumRegister(lastAddedQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex, newAncillaryRegisterSize, lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel);
+    } else {
+        indexToFirstGeneratedAncillaryQubit = addQubitRegister(initialStateOfAncillaryQubits.size(), quantumRegisterLabel).getStartIndex();
+    }
+
     for (qc::Qubit ancillaryQubitOffsetInQuantumRegister = 0; ancillaryQubitOffsetInQuantumRegister < initialStateOfAncillaryQubits.size(); ++ancillaryQubitOffsetInQuantumRegister) {
         // Since ancillary qubits are assumed to have an initial value of
         // zero, we need to add an inversion gate to derive the correct
@@ -145,11 +159,11 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryR
             continue;
         }
 
-        if (!addOperationsImplementingNotGate(indexToFirstQubitOfQuantumRegister + ancillaryQubitOffsetInQuantumRegister)) {
+        if (!addOperationsImplementingNotGate(indexToFirstGeneratedAncillaryQubit + ancillaryQubitOffsetInQuantumRegister)) {
             return std::nullopt;
         }
     }
-    return indexToFirstQubitOfQuantumRegister;
+    return indexToFirstGeneratedAncillaryQubit;
 }
 
 // TODO: If we are generating quantum registers for all SyReC module parameters then this function is obsolete. Currently only left due to existing tests which will need to be refactored.
@@ -196,51 +210,14 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryQ
     return std::nullopt;
 }
 
-bool AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiveAncillaryRegistersAndMergeAdjacentOnes() {
+void AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits() {
     canQubitsBeAddedToQuantumComputation = false;
 
-    bool modificationsSuccessful = true;
-    for (auto quantumRegisterIterator = quantumRegisterAssociatedVariableLayouts.begin(); quantumRegisterIterator != quantumRegisterAssociatedVariableLayouts.end() && modificationsSuccessful;) {
-        auto* currQuantumRegisterAsAncillaryOne = dynamic_cast<AncillaryQuantumRegisterVariableLayout*>(quantumRegisterIterator->get());
-        if (currQuantumRegisterAsAncillaryOne == nullptr) {
-            ++quantumRegisterIterator;
-            continue;
+    for (auto quantumRegisterIterator = quantumRegisterAssociatedVariableLayouts.begin(); quantumRegisterIterator != quantumRegisterAssociatedVariableLayouts.end(); ++quantumRegisterIterator) {
+        if (const auto* currQuantumRegisterAsAncillaryOne = dynamic_cast<const AncillaryQuantumRegisterVariableLayout*>(quantumRegisterIterator->get()); currQuantumRegisterAsAncillaryOne != nullptr) {
+            setLogicalQubitsAncillary(currQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex, currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex);
         }
-
-        const std::string& labelOfQuantumRegisterToPotentiallyEnlarge    = currQuantumRegisterAsAncillaryOne->quantumRegisterLabel;
-        const qc::Qubit    firstQubitOfQuantumRegisterPriorToEnlargement = currQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex;
-        const qc::Qubit    lastQubitOfQuantumRegisterPriorToEnlargement  = currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex;
-
-        for (auto nextQuantumRegisterIterator = std::next(quantumRegisterIterator); nextQuantumRegisterIterator != quantumRegisterAssociatedVariableLayouts.end() && modificationsSuccessful;) {
-            const auto* nextQuantumRegisterAsAncillaryOne = dynamic_cast<const AncillaryQuantumRegisterVariableLayout*>(nextQuantumRegisterIterator->get());
-            if (nextQuantumRegisterAsAncillaryOne == nullptr) {
-                break;
-            }
-
-            const std::string& labelOfQuantumRegisterToRemove = nextQuantumRegisterIterator->get()->quantumRegisterLabel;
-            modificationsSuccessful                           = currQuantumRegisterAsAncillaryOne->mergeWithOtherAncillaryQubitRegister(*nextQuantumRegisterAsAncillaryOne)
-                                   // Verify that the qubit indices invariant holds that requires that thefirst qubit of quantum register is smaller or equal to the last qubit of the register
-                                   && currQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex == firstQubitOfQuantumRegisterPriorToEnlargement && currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex > lastQubitOfQuantumRegisterPriorToEnlargement && currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex == nextQuantumRegisterIterator->get()->storedQubitIndices.lastQubitIndex && quantumRegisters.erase(labelOfQuantumRegisterToRemove) == 1U;
-            nextQuantumRegisterIterator = quantumRegisterAssociatedVariableLayouts.erase(nextQuantumRegisterIterator);
-        }
-
-        const auto [firstAncillaryQubitIndexOfMergedRegister, lastAncillaryQubitIndexOfMergedRegister] = QubitIndexRange({.firstQubitIndex = currQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex, .lastQubitIndex = currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex});
-        modificationsSuccessful &= isQubitWithinRange(firstAncillaryQubitIndexOfMergedRegister) && isQubitWithinRange(lastAncillaryQubitIndexOfMergedRegister);
-
-        if (modificationsSuccessful) {
-            setLogicalQubitsAncillary(firstAncillaryQubitIndexOfMergedRegister, lastAncillaryQubitIndexOfMergedRegister);
-            if (lastQubitOfQuantumRegisterPriorToEnlargement != lastAncillaryQubitIndexOfMergedRegister) {
-                if (quantumRegisters.contains(labelOfQuantumRegisterToPotentiallyEnlarge)) {
-                    const auto mergedQuantumRegisterSize                            = lastAncillaryQubitIndexOfMergedRegister - firstAncillaryQubitIndexOfMergedRegister + 1U;
-                    quantumRegisters.at(labelOfQuantumRegisterToPotentiallyEnlarge) = qc::QuantumRegister(firstAncillaryQubitIndexOfMergedRegister, mergedQuantumRegisterSize, labelOfQuantumRegisterToPotentiallyEnlarge);
-                } else {
-                    modificationsSuccessful = false;
-                }
-            }
-        }
-        ++quantumRegisterIterator;
     }
-    return modificationsSuccessful;
 }
 
 bool AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitToDefinitiveAncillary(qc::Qubit qubit) {

@@ -85,7 +85,9 @@ namespace syrec {
         [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const Variable& variable, bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
 
         // TODO: Documentation
-        [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryRegister(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation);
+        // TODO: Either append to existing ancillary qubit register or merge registers after the new register was added (i.e. the latter might be required if the former cannot initialize the internal state of the qubits in the qc::QuantumComputation using its public interface [i.e. initialLayout, etc.]). The latter option seems to be the preferred option since adding
+        // qubit via qc::QuantumComputation::addQubit(...) will also create a quantum register (see https://github.com/munich-quantum-toolkit/core/blob/main/src/ir/QuantumComputation.cpp#L518)?
+        [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryRegisterOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation);
 
         // TODO: Obsolete if quantum registers are used
         /**
@@ -116,8 +118,8 @@ namespace syrec {
          */
         [[nodiscard]] std::unordered_set<qc::Qubit> getAddedPreliminaryAncillaryQubitIndices() const { return addedAncillaryQubitIndices; }
 
-        // TODO: Documentation.
-        [[nodiscard]] bool promotePreliminaryAncillaryQubitsToDefinitiveAncillaryRegistersAndMergeAdjacentOnes();
+        // TODO: Documentation
+        void promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits();
 
         /**
          * Promote a previously added preliminary ancillary qubit status to a permanent one. No qubits can be added to the quantum computation after this point.
