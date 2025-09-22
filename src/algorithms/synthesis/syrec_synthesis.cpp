@@ -1303,7 +1303,7 @@ namespace syrec {
 
     std::optional<qc::Qubit> SyrecSynthesis::getConstantLine(bool value, const std::optional<QubitInliningStack::ptr>& inlinedQubitModuleCallStack) const {
         const auto        expectedAncillaryQubitIndex = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
-        const std::string quantumRegisterLabel        = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedAncillaryQubitIndex, value);
+        const std::string quantumRegisterLabel        = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedAncillaryQubitIndex);
         auto              inliningInformation         = AnnotatableQuantumComputation::InlinedQubitInformation();
         if (shouldQubitInlineInformationBeRecorded()) {
             inliningInformation.inlineStack = inlinedQubitModuleCallStack;
@@ -1325,7 +1325,7 @@ namespace syrec {
         const auto expectedQubitIndexForFirstAddedAncillaryQubit = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
 
         // TODO: Update internal qubit builder
-        const std::string quantumRegisterLabel = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedQubitIndexForFirstAddedAncillaryQubit, true);
+        const std::string quantumRegisterLabel = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedQubitIndexForFirstAddedAncillaryQubit);
         auto              inliningInformation  = AnnotatableQuantumComputation::InlinedQubitInformation();
         inliningInformation.inlineStack        = getLastCreatedModuleCallStackInstance();
 

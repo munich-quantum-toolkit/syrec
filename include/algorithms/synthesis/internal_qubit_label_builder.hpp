@@ -22,8 +22,8 @@ namespace syrec {
             return std::string(INTERNAL_QUBIT_LABEL_PREFIX) + std::to_string(currNumQubitsInQuantumComputation);
         }
 
-        [[maybe_unused]] static std::string buildAncillaryQubitLabel(const std::size_t currNumQubitsInQuantumComputation, bool isInitialStateOfAncillaryQubitOne) {
-            return buildNonAncillaryQubitLabel(currNumQubitsInQuantumComputation) + "_const_" + (isInitialStateOfAncillaryQubitOne ? "1" : "0");
+        [[maybe_unused]] static std::string buildAncillaryQubitLabel(const std::size_t currNumQubitsInQuantumComputation) {
+            return buildNonAncillaryQubitLabel(currNumQubitsInQuantumComputation) + "_anc";
         }
     };
 } // namespace syrec

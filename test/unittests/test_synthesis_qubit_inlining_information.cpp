@@ -91,7 +91,7 @@ namespace {
         }
 
         static void assertQubitInlineInformationOfAncillaryQubitMatches(const AnnotatableQuantumComputation& annotatableQuantumComputation, const std::size_t numQubitsInQuantumComputationPriorToCreationOfAncillaryQubit, bool expectedInitialStateOfAncillaryQubit, const AnnotatableQuantumComputation::InlinedQubitInformation* expectedQubitInlineInformation) {
-            const std::string ancillaryQubitLabel = InternalQubitLabelBuilder::buildAncillaryQubitLabel(numQubitsInQuantumComputationPriorToCreationOfAncillaryQubit, expectedInitialStateOfAncillaryQubit);
+            const std::string ancillaryQubitLabel = InternalQubitLabelBuilder::buildAncillaryQubitLabel(numQubitsInQuantumComputationPriorToCreationOfAncillaryQubit);
 
             const AnnotatableQuantumComputation::InlinedQubitInformation* actualQubitInlineInformation = annotatableQuantumComputation.getInliningInformationOfQubit(ancillaryQubitLabel);
             if (expectedQubitInlineInformation == nullptr) {
@@ -430,11 +430,11 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     constexpr unsigned int indexOfFirstAncillaryQubit                = 8U;
     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit);
+    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubit = true;
-    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit);
+    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitInternalLabel, secondAncillaryQubitInternalLabel));
 }
@@ -464,11 +464,11 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     constexpr unsigned int indexOfFirstAncillaryQubit                = 6U;
     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit);
+    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubit = false;
-    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit);
+    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitInternalLabel, secondAncillaryQubitInternalLabel));
 }
@@ -508,11 +508,11 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     constexpr unsigned int indexOfFirstAncillaryQubit                = 4U;
     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit);
+    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubit = true;
-    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit);
+    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitInternalLabel, secondAncillaryQubitInternalLabel));
 }
@@ -554,11 +554,11 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     constexpr unsigned int indexOfFirstAncillaryQubit                = 6U;
     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit);
+    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubit = false;
-    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit);
+    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitInternalLabel, secondAncillaryQubitInternalLabel));
 }
@@ -598,11 +598,11 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     constexpr unsigned int indexOfFirstAncillaryQubit                = 4U;
     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit);
+    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubit = true;
-    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit);
+    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitInternalLabel, secondAncillaryQubitInternalLabel));
 }
@@ -644,11 +644,11 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     constexpr unsigned int indexOfFirstAncillaryQubit                = 6U;
     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit);
+    const std::string&     firstAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubit = false;
-    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit);
+    const std::string& secondAncillaryQubitInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubit + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitInternalLabel, secondAncillaryQubitInternalLabel));
 }
@@ -803,11 +803,11 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     qubitInlineInformation.userDeclaredQubitLabel                            = std::nullopt;
     constexpr bool     expectedInitialStateOfFirstAncillaryQubitOfMainModule = false;
-    const std::string& firstAncillaryQubitOfMainModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInMainModule, expectedInitialStateOfFirstAncillaryQubitOfMainModule);
+    const std::string& firstAncillaryQubitOfMainModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInMainModule);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitInMainModule, expectedInitialStateOfFirstAncillaryQubitOfMainModule, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubitOfMainModule = true;
-    const std::string& secondAncillaryQubitOfMainModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInMainModule + 1U, expectedInitialStateOfSecondAncillaryQubitOfMainModule);
+    const std::string& secondAncillaryQubitOfMainModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInMainModule + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitInMainModule + 1U, expectedInitialStateOfSecondAncillaryQubitOfMainModule, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitOfMainModuleInternalLabel, secondAncillaryQubitOfMainModuleInternalLabel));
 
@@ -842,16 +842,16 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     qubitInlineInformation.userDeclaredQubitLabel                              = std::nullopt;
     constexpr bool     expectedInitialStateOfFirstAncillaryQubitOfCalledModule = true;
-    const std::string& firstAncillaryQubitOfCalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule, expectedInitialStateOfFirstAncillaryQubitOfCalledModule);
+    const std::string& firstAncillaryQubitOfCalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitInCalledModule, expectedInitialStateOfFirstAncillaryQubitOfCalledModule, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubitOfCalledModule = true;
-    const std::string& secondAncillaryQubitOfCalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule + 1U, expectedInitialStateOfSecondAncillaryQubitOfCalledModule);
+    const std::string& secondAncillaryQubitOfCalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitInCalledModule + 1U, expectedInitialStateOfSecondAncillaryQubitOfCalledModule, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitOfCalledModuleInternalLabel, secondAncillaryQubitOfCalledModuleInternalLabel));
 
     constexpr bool     expectedInitialStateOfThirdAncillaryQubitOfCalledModule = false;
-    const std::string& thirdAncillaryQubitOfCalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule + 2U, expectedInitialStateOfThirdAncillaryQubitOfCalledModule);
+    const std::string& thirdAncillaryQubitOfCalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule + 2U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitInCalledModule + 2U, expectedInitialStateOfThirdAncillaryQubitOfCalledModule, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, secondAncillaryQubitOfCalledModuleInternalLabel, thirdAncillaryQubitOfCalledModuleInternalLabel));
 
@@ -880,11 +880,11 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     constexpr unsigned int indexOfFirstAncillaryQubitAfterCalledModule                                  = indexOfFirstAncillaryQubitInCalledModule + 3U;
     constexpr bool         expectedInitialStateOfFirstAncillaryQubitCreatedAfterSynthesisOfCalledModule = true;
-    const std::string&     firstAncillaryQubitCreatedAfterSynthesisOfCalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitAfterCalledModule, expectedInitialStateOfFirstAncillaryQubitCreatedAfterSynthesisOfCalledModule);
+    const std::string&     firstAncillaryQubitCreatedAfterSynthesisOfCalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitAfterCalledModule);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitAfterCalledModule, expectedInitialStateOfFirstAncillaryQubitCreatedAfterSynthesisOfCalledModule, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubitCreatedAfterSynthesisOfCalledModule = true;
-    const std::string& secondAncillaryQubitCreatedAfterSynthesisOfCalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitAfterCalledModule + 1U, expectedInitialStateOfSecondAncillaryQubitCreatedAfterSynthesisOfCalledModule);
+    const std::string& secondAncillaryQubitCreatedAfterSynthesisOfCalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitAfterCalledModule + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitAfterCalledModule + 1U, expectedInitialStateOfSecondAncillaryQubitCreatedAfterSynthesisOfCalledModule, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitCreatedAfterSynthesisOfCalledModuleInternalLabel, secondAncillaryQubitCreatedAfterSynthesisOfCalledModuleInternalLabel));
 
@@ -915,11 +915,11 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     qubitInlineInformation.userDeclaredQubitLabel                            = std::nullopt;
     constexpr bool     expectedInitialStateOfFirstAncillaryQubitOfMainModule = false;
-    const std::string& firstAncillaryQubitOfMainModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInMainModule, expectedInitialStateOfFirstAncillaryQubitOfMainModule);
+    const std::string& firstAncillaryQubitOfMainModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInMainModule);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitInMainModule, expectedInitialStateOfFirstAncillaryQubitOfMainModule, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubitOfMainModule = true;
-    const std::string& secondAncillaryQubitOfMainModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInMainModule + 1U, expectedInitialStateOfSecondAncillaryQubitOfMainModule);
+    const std::string& secondAncillaryQubitOfMainModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInMainModule + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitInMainModule + 1U, expectedInitialStateOfSecondAncillaryQubitOfMainModule, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitOfMainModuleInternalLabel, secondAncillaryQubitOfMainModuleInternalLabel));
 
@@ -954,16 +954,16 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     qubitInlineInformation.userDeclaredQubitLabel                                = std::nullopt;
     constexpr bool     expectedInitialStateOfFirstAncillaryQubitOfUncalledModule = true;
-    const std::string& firstAncillaryQubitOfUncalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule, expectedInitialStateOfFirstAncillaryQubitOfUncalledModule);
+    const std::string& firstAncillaryQubitOfUncalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitInCalledModule, expectedInitialStateOfFirstAncillaryQubitOfUncalledModule, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubitOfUncalledModule = true;
-    const std::string& secondAncillaryQubitOfUncalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule + 1U, expectedInitialStateOfSecondAncillaryQubitOfUncalledModule);
+    const std::string& secondAncillaryQubitOfUncalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitInCalledModule + 1U, expectedInitialStateOfSecondAncillaryQubitOfUncalledModule, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitOfUncalledModuleInternalLabel, secondAncillaryQubitOfUncalledModuleInternalLabel));
 
     constexpr bool     expectedInitialStateOfThirdAncillaryQubitOfUncalledModule = false;
-    const std::string& thirdAncillaryQubitOfUncalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule + 2U, expectedInitialStateOfThirdAncillaryQubitOfUncalledModule);
+    const std::string& thirdAncillaryQubitOfUncalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitInCalledModule + 2U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitInCalledModule + 2U, expectedInitialStateOfThirdAncillaryQubitOfUncalledModule, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, secondAncillaryQubitOfUncalledModuleInternalLabel, thirdAncillaryQubitOfUncalledModuleInternalLabel));
 
@@ -992,11 +992,11 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 
     constexpr unsigned int indexOfFirstAncillaryQubitAfterUncalledModule                                  = indexOfFirstAncillaryQubitInCalledModule + 3U;
     constexpr bool         expectedInitialStateOfFirstAncillaryQubitCreatedAfterSynthesisOfUncalledModule = true;
-    const std::string&     firstAncillaryQubitCreatedAfterSynthesisOfUncalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitAfterUncalledModule, expectedInitialStateOfFirstAncillaryQubitCreatedAfterSynthesisOfUncalledModule);
+    const std::string&     firstAncillaryQubitCreatedAfterSynthesisOfUncalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitAfterUncalledModule);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitAfterUncalledModule, expectedInitialStateOfFirstAncillaryQubitCreatedAfterSynthesisOfUncalledModule, &qubitInlineInformation));
 
     constexpr bool     expectedInitialStateOfSecondAncillaryQubitCreatedAfterSynthesisOfUncalledModule = true;
-    const std::string& secondAncillaryQubitCreatedAfterSynthesisOfUncalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitAfterUncalledModule + 1U, expectedInitialStateOfSecondAncillaryQubitCreatedAfterSynthesisOfUncalledModule);
+    const std::string& secondAncillaryQubitCreatedAfterSynthesisOfUncalledModuleInternalLabel          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(indexOfFirstAncillaryQubitAfterUncalledModule + 1U);
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitAfterUncalledModule + 1U, expectedInitialStateOfSecondAncillaryQubitCreatedAfterSynthesisOfUncalledModule, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitCreatedAfterSynthesisOfUncalledModuleInternalLabel, secondAncillaryQubitCreatedAfterSynthesisOfUncalledModuleInternalLabel));
 
