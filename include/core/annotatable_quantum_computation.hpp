@@ -232,7 +232,7 @@ namespace syrec {
         std::vector<QuantumOperationAnnotationsLookup> annotationsPerQuantumOperation;
 
         struct BaseQuantumRegisterVariableLayout {
-            struct QuantumRegisterQubitIndexLookupData {
+            struct QubitInVariableLayoutData {
                 std::string                            quantumRegisterLabel;
                 std::vector<unsigned>                  accessedValuePerDimensionOfElementStoringQubit;
                 qc::Qubit                              relativeQubitIndexInElementStoringQubit;
@@ -242,17 +242,17 @@ namespace syrec {
             BaseQuantumRegisterVariableLayout(const QubitIndexRange storedQubitIndices, std::string quantumRegisterLabel):
                 storedQubitIndices(storedQubitIndices), quantumRegisterLabel(std::move(quantumRegisterLabel)) {}
 
-            virtual ~BaseQuantumRegisterVariableLayout()                                                                                                   = default;
-            [[nodiscard]] virtual std::optional<QuantumRegisterQubitIndexLookupData> determineLookupDataForQubitFromQuantumRegister(qc::Qubit qubit) const = 0;
-            [[nodiscard]] unsigned                                                   getNumberOfQubitsInQuantumRegister() const { return storedQubitIndices.lastQubitIndex - storedQubitIndices.firstQubitIndex + 1U; }
+            virtual ~BaseQuantumRegisterVariableLayout()                                                                             = default;
+            [[nodiscard]] virtual std::optional<QubitInVariableLayoutData> determineQubitInVariableLayoutData(qc::Qubit qubit) const = 0;
+            [[nodiscard]] unsigned                                         getNumberOfQubitsInQuantumRegister() const { return storedQubitIndices.lastQubitIndex - storedQubitIndices.firstQubitIndex + 1U; }
 
             QubitIndexRange storedQubitIndices;
             std::string     quantumRegisterLabel;
         };
 
         struct NonAncillaryQuantumRegisterVariableLayout final: BaseQuantumRegisterVariableLayout {
-            [[nodiscard]] std::optional<QuantumRegisterQubitIndexLookupData> determineLookupDataForQubitFromQuantumRegister(qc::Qubit qubit) const override;
-            [[nodiscard]] std::optional<std::vector<unsigned>>               getRequiredValuesPerDimensionToAccessQubitOfVariable(qc::Qubit qubit) const;
+            [[nodiscard]] std::optional<QubitInVariableLayoutData> determineQubitInVariableLayoutData(qc::Qubit qubit) const override;
+            [[nodiscard]] std::optional<std::vector<unsigned>>     getRequiredValuesPerDimensionToAccessQubitOfVariable(qc::Qubit qubit) const;
 
             NonAncillaryQuantumRegisterVariableLayout(QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, unsigned qubitSizeOfElementInVariable, const std::optional<InlinedQubitInformation>& optionalSharedQubitInliningInformation);
 
@@ -263,11 +263,12 @@ namespace syrec {
         };
 
         struct AncillaryQuantumRegisterVariableLayout final: BaseQuantumRegisterVariableLayout {
-            [[nodiscard]] std::optional<QuantumRegisterQubitIndexLookupData> determineLookupDataForQubitFromQuantumRegister(qc::Qubit qubit) const override;
-            [[nodiscard]] bool                                               appendQubitRange(QubitIndexRange qubitIndexRange, const InlinedQubitInformation& sharedQubitInliningInformation);
+            [[nodiscard]] std::optional<QubitInVariableLayoutData> determineQubitInVariableLayoutData(qc::Qubit qubit) const override;
+            [[nodiscard]] bool                                     appendQubitRange(QubitIndexRange qubitIndexRange, const InlinedQubitInformation& sharedQubitInliningInformation);
 
             AncillaryQuantumRegisterVariableLayout(QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const InlinedQubitInformation& sharedQubitInliningInformation);
 
+            // TODO: Since the inline information is shared between ancillary qubit ranges, this collection could be split into a std::vector<QubitRange, InlinedQubitInformation> to group shared qubit inline information using only one InlinedQubitInformation instead of n copies for a qubit range.
             std::unordered_map<qc::Qubit, InlinedQubitInformation> qubitInliningInformation;
         };
 
