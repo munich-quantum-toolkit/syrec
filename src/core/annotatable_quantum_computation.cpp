@@ -516,8 +516,8 @@ AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::NonAnc
     }
 }
 
-std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::QuantumRegisterQubitIndexLookupData> AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::determineLookupDataForQubitFromQuantumRegister(qc::Qubit qubit) const {
-    const std::optional<std::vector<unsigned>> requiredValuePerDimensionToAccessElementStoringQubit = storedQubitIndices.firstQubitIndex >= qubit && storedQubitIndices.lastQubitIndex <= qubit ? getRequiredValuesPerDimensionToAccessQubitOfVariable(qubit) : std::nullopt;
+std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::QuantumRegisterQubitIndexLookupData> AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::determineLookupDataForQubitFromQuantumRegister(const qc::Qubit qubit) const {
+    const std::optional<std::vector<unsigned>> requiredValuePerDimensionToAccessElementStoringQubit = storedQubitIndices.firstQubitIndex <= qubit && storedQubitIndices.lastQubitIndex >= qubit ? getRequiredValuesPerDimensionToAccessQubitOfVariable(qubit) : std::nullopt;
     if (!requiredValuePerDimensionToAccessElementStoringQubit.has_value()) {
         return std::nullopt;
     }
@@ -552,10 +552,26 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
             firstQubitIndexPerElementInDimension[j] += firstQubitIndexPerElementInDimension[j - 1];
         }
 
+        // Binary search will return first element that is larger or equal than the qubit.
         const auto& indexOfElementContainingQubit = std::ranges::lower_bound(std::as_const(firstQubitIndexPerElementInDimension), qubit);
-        couldRequiredValuePerDimensionBeDetermined &= indexOfElementContainingQubit != firstQubitIndexPerElementInDimension.cend();
-        const unsigned indexOffset    = indexOfElementContainingQubit != firstQubitIndexPerElementInDimension.cend() ? static_cast<unsigned>(*indexOfElementContainingQubit > qubit) : 0U;
-        requiredValuesPerDimension[i] = static_cast<unsigned>(std::distance(firstQubitIndexPerElementInDimension.cbegin(), indexOfElementContainingQubit)) - indexOffset;
+        unsigned    accessedValueOfDimension      = static_cast<unsigned>(std::distance(firstQubitIndexPerElementInDimension.cbegin(), indexOfElementContainingQubit));
+
+        // If the qubit is stored in the last value of the dimension then no element larger than the qubit exists in the collection storing the first qubit of each value of the dimension
+        if (indexOfElementContainingQubit == firstQubitIndexPerElementInDimension.cend()) {
+            // If the qubit is accessible by any element of the dimension then we can stop the search and return that no index for the qubit in the provided dimensions exists.
+            const qc::Qubit firstQubitAfterLastElementInDimensionWasAccessed = firstQubitIndexPerElementInDimension.back() + elementQubitSize;
+            if (qubit >= firstQubitAfterLastElementInDimensionWasAccessed) {
+                couldRequiredValuePerDimensionBeDetermined = false;
+                continue;
+            }
+            // Otherwise, we need to assume that the qubit is stored in the last value of the dimension.
+            accessedValueOfDimension = numValuesPerDimensionOfVariable[i] - 1U;
+        }
+        // We need to distinguish the two cases that are possible based on the result of the binary search:
+        // I.  The qubit is equal to the first qubit of the element returned from the binary search.
+        // II. The binary search returned the index to the first element that is larger than the qubit thus the qubit must be stored in the element at (index - 1).
+        accessedValueOfDimension -= static_cast<unsigned>(qubit < firstQubitIndexPerElementInDimension[accessedValueOfDimension]);
+        requiredValuesPerDimension[i] = accessedValueOfDimension;
     }
     return couldRequiredValuePerDimensionBeDetermined ? std::make_optional(requiredValuesPerDimension) : std::nullopt;
 }
@@ -619,6 +635,8 @@ std::string AnnotatableQuantumComputation::buildQubitLabelForQubitOfVariableInQu
 
 std::optional<std::size_t> AnnotatableQuantumComputation::determineIndexOfQuantumRegisterStoringQubit(const qc::Qubit qubit) const {
     // TODO: Comment Returns the first element in variable element indices lookup whose firstQubitIndex >= qubit. This is equivalent to a binary search ?
+    // "Copy" comments of AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::getRequiredValuesPerDimensionToAccessQubitOfVariable(const qc::Qubit qubit) regarding the behaviour of the binary search
+    // TODO: Also copy functionality to handle qubit being stored in last element of vector
     const auto& iteratorToQuantumRegisterStoringQubit = std::lower_bound(quantumRegisterAssociatedVariableLayouts.cbegin(), quantumRegisterAssociatedVariableLayouts.cend(), qubit, [](const std::unique_ptr<BaseQuantumRegisterVariableLayout>& quantumRegisterVariableLayout, const qc::Qubit qubit) {
         return quantumRegisterVariableLayout->storedQubitIndices.lastQubitIndex < qubit;
     });
