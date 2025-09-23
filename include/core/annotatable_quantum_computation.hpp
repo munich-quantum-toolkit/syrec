@@ -38,8 +38,17 @@ namespace syrec {
         using QuantumOperationAnnotationsLookup = std::map<std::string, std::string, std::less<>>;
         using SynthesisCostMetricValue          = std::uint64_t;
 
+        /**
+         * A wrapper for a qubit index range [first, last] in which the first qubit index is assumed to be smaller or equal to the last index.
+         */
         struct QubitIndexRange {
+            /**
+             * The start index of the qubit index range.
+             */
             qc::Qubit firstQubitIndex;
+            /**
+             * The last index of the qubit index range.
+             */
             qc::Qubit lastQubitIndex;
         };
 
@@ -64,8 +73,17 @@ namespace syrec {
                 userDeclaredQubitLabel(userDeclaredQubitLabel), inlineStack(inlineStack != nullptr ? std::make_optional(inlineStack) : std::nullopt) {}
         };
 
+        /**
+         * A flag usable to control which type of qubit label should be generated when trying to fetch the label of a qubit.
+         */
         enum QubitLabelType : std::uint8_t {
+            /**
+             * Generate the qubit label using the internal identifier of the qubit.
+             */
             Internal,
+            /**
+             * Generate the qubit label using the user declared identifier of the associated syrec::Variable. Not usable for ancillary qubits since no user declared qubit label can be defined for this type of qubits.
+             */
             UserDeclared
         };
 
@@ -85,53 +103,28 @@ namespace syrec {
          */
         [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const Variable& variable, bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
 
-        // TODO: Documentation
-        // TODO: Either append to existing ancillary qubit register or merge registers after the new register was added (i.e. the latter might be required if the former cannot initialize the internal state of the qubits in the qc::QuantumComputation using its public interface [i.e. initialLayout, etc.]). The latter option seems to be the preferred option since adding
-        // qubit via qc::QuantumComputation::addQubit(...) will also create a quantum register (see https://github.com/munich-quantum-toolkit/core/blob/main/src/ir/QuantumComputation.cpp#L518)?
+        /**
+         * Add a quantum register for a number of preliminary ancillary qubits in the quantum computation.
+         * @param quantumRegisterLabel The label for the created quantum register. A new quantum register is only created if the ancillary qubits could not be appended to an adjacent ancillary qubit register.
+         * @param initialStateOfAncillaryQubits A collection defining how many ancillary qubits should be added but also their initial values (each ancillary qubit initialized with '1' will cause the addition of a controlled X gate to the quantum computation). Cannot be empty.
+         * @param sharedInliningInformation The inline information recorded for all ancillary qubits generated with this call.
+         * @return The index of the first generated ancillary qubits. If more than one ancillary qubits wa added then their indices are adjacent to the return index.
+         * @remark If no more qubits are to be added to the quantum computation then the preliminary ancillary qubits need to be promoted to actual ancillary qubits with a call to AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits().
+         */
         [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryRegisterOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation);
 
-        // TODO: Obsolete if quantum registers are used
         /**
-         * Add a non-ancillary qubit to the quantum computation.
-         * @param qubitLabel The label of the ancillary qubit. Must be non-empty.
-         * @param isGarbageQubit Whether the qubit is a garbage qubit.
-         * @param optionalInliningInformation Optional debug information to determine the origin of the qubit in the associated SyReC program.
-         * @return The index of the non-ancillary qubit in the quantum computation, std::nullopt if a qubit with the same label already exists, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid or empty inline stack).
+         * Promote the added preliminary ancillary qubits to "actual" ancillary qubits in the quantum computation.
+         * @remark After the promotion of the preliminary ancillary qubits was performed no further qubits can be added to the quantum computation.
          */
-        [[nodiscard]] std::optional<qc::Qubit> addNonAncillaryQubit(const std::string& qubitLabel, bool isGarbageQubit, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
-
-        // TODO: Rework to also be able to add ancillary register (that should be merged at the end of synthesis if possible to prevent "fragmentation" (i.e. many small ancillary qubits will be generated during synthesis).
-        // TODO: Can all ancillary qubits be merged into two big ancillary registers (storing 0 and 1 ancillaries respectively) without having to fixup all quantum operations that contain an ancillary qubit as control or target qubit.
-        /**
-         * Add a preliminary ancillary qubit to the quantum computation. Ancillary qubits added need to be explicitly marked as such via the \see AnnotatableQuantumComputation#setQubitAncillary call.
-         * @param qubitLabel The label of the ancillary qubit. Must be non-empty.
-         * @param initialStateOfQubit The initial state of the ancillary qubits. Is assumed to be 0 by default. The initial state of 1 is achieved by adding an X quantum operation.
-         * @param inliningInformation Debug information to determine the origin of the ancillary qubit in the associated SyReC program.
-         * @return The index of the ancillary qubit in the quantum computation, std::nullopt if a qubit with the same label already exists or no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information was invalid (user defined qubit label must have no value and value of inline stack cannot be null or empty).
-         */
-        [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryQubit(const std::string& qubitLabel, bool initialStateOfQubit, const InlinedQubitInformation& inliningInformation);
-
-        /**
-         * Return the indices of the preliminary ancillary qubits added via \see AnnotatableQuantumComputation#addAncillaryQubit.
-         *
-         * Qubits not added as ancillary ones to the quantum computation will not be considered as such.
-         * @return The indices of the ancillary qubits added to the quantum computation via \see AnnotatableQuantumComputation#addAncillaryQubit.
-         */
-        [[nodiscard]] std::unordered_set<qc::Qubit> getAddedPreliminaryAncillaryQubitIndices() const { return addedAncillaryQubitIndices; }
-
-        // TODO: Documentation
         void promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits();
 
         /**
-         * Promote a previously added preliminary ancillary qubit status to a permanent one. No qubits can be added to the quantum computation after this point.
-         * @param qubit The index of the qubit in the quantum computation.
-         * @return Whether the qubit index was known in the quantum computation. If the index is not known, qubits can still be added to the quantum computation.
+         * Determine the label of a qubit based on its location and the associated variable layout of the SyReC variable stored in the quantum register that stores the qubit.
+         * @param qubit The qubit whose label shall be determined.
+         * @param qubitLabelType The type of qubit label to generated. Can either be the internally or user declared one.
+         * @return Returns the label of the qubit in the form of a stringified syrec::VariableAccess (e.g. the label generated for qubit 3 of the syrec::Variable a[2][3](2) is equal to a[0][1].1), otherwise std::nullopt.
          */
-        [[nodiscard]] bool promotePreliminaryAncillaryQubitToDefinitiveAncillary(qc::Qubit qubit);
-        // TODO: For large circuits the additional copy required to create the std::optional<std::string> return object could result in quite some runtime overhead, usage of the index parameterized-variant should be preferred here.
-        // This function could also be made obsolete
-        [[nodiscard]] std::optional<std::vector<std::string>> getQubitLabels() const;
-
         [[nodiscard]] std::optional<std::string> getQubitLabel(qc::Qubit qubit, QubitLabelType qubitLabelType) const;
         [[nodiscard]] qc::Operation*             getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
 
@@ -217,12 +210,12 @@ namespace syrec {
         [[maybe_unused]] bool setOrUpdateAnnotationOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation, const std::string_view& annotationKey, const std::string& annotationValue);
 
         /**
-         * Get the inline information of a qubit.
-         * @param qubit The index of the qubit in the quantum computation.
-         * @return Returns the inlined qubit information if such data exists, otherwise std::nullopt is returned.
-         * @remark The inline stack of a qubit is only recorded if the qubit inlining feature is activated via a boolean flag in the synthesis settings.
+         * Get the inline stack of a qubit.
+         * @param qubit The index of the qubit in the quantum computation
+         * @return The inline stack of the \p qubit if said qubit is an ancillary qubit or associated with a local variable of a SyReC module.
+         * @remark The lifetime of the return qubit inline stack is managed by the annotatable quantum computation and can be influence by modifications of the latter.
          */
-        [[nodiscard]] const InlinedQubitInformation* getInliningInformationOfQubit(qc::Qubit qubit) const;
+        [[nodiscard]] const QubitInliningStack* getInlineStackOfQubit(qc::Qubit qubit) const;
 
     protected:
         [[maybe_unused]] bool annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation);
@@ -237,14 +230,13 @@ namespace syrec {
         // We are assuming that no operations in the qc::QuantumComputation are removed (i.e. by applying qc::CircuitOptimizer) and will thus use the index of the quantum operation
         // as the search key in the container storing the annotations per quantum operation.
         std::vector<QuantumOperationAnnotationsLookup> annotationsPerQuantumOperation;
-        std::unordered_set<qc::Qubit>                  addedAncillaryQubitIndices;
 
         struct BaseQuantumRegisterVariableLayout {
             struct QuantumRegisterQubitIndexLookupData {
-                std::string                    quantumRegisterLabel;
-                std::vector<unsigned>          accessedValuePerDimensionOfElementStoringQubit;
-                qc::Qubit                      relativeQubitIndexInElementStoringQubit;
-                const InlinedQubitInformation* inlinedQubitInformation;
+                std::string                            quantumRegisterLabel;
+                std::vector<unsigned>                  accessedValuePerDimensionOfElementStoringQubit;
+                qc::Qubit                              relativeQubitIndexInElementStoringQubit;
+                std::optional<InlinedQubitInformation> inlinedQubitInformation;
             };
 
             BaseQuantumRegisterVariableLayout(const QubitIndexRange storedQubitIndices, std::string quantumRegisterLabel):
@@ -273,7 +265,7 @@ namespace syrec {
         struct AncillaryQuantumRegisterVariableLayout final: BaseQuantumRegisterVariableLayout {
             [[nodiscard]] std::optional<QuantumRegisterQubitIndexLookupData> determineLookupDataForQubitFromQuantumRegister(qc::Qubit qubit) const override;
             [[nodiscard]] bool                                               appendQubitRange(QubitIndexRange qubitIndexRange, const InlinedQubitInformation& sharedQubitInliningInformation);
-            // TODO: The qubit inlining information in the constructor is probably the same for all qubit indices since it will be initially called during the creation of ancillary quantum registers, while the qubit inlining information might change during the merge of fragmented ancillary registers
+
             AncillaryQuantumRegisterVariableLayout(QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const InlinedQubitInformation& sharedQubitInliningInformation);
 
             std::unordered_map<qc::Qubit, InlinedQubitInformation> qubitInliningInformation;

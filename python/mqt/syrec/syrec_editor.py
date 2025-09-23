@@ -195,16 +195,11 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
                 "<UNKNOWN>" if internal_qubit_label is None else internal_qubit_label
             )
 
-            should_qubit_line_text_be_clickable = (
-                self.annotatable_quantum_computation.is_circuit_qubit_ancillary(
-                    circuit_view_qubit_label.associated_qubit
-                )
-                or self.annotatable_quantum_computation.is_circuit_qubit_garbage(
-                    circuit_view_qubit_label.associated_qubit
-                )
-            ) and self.annotatable_quantum_computation.get_inlining_information_of_qubit(
+            should_qubit_line_text_be_clickable = self.annotatable_quantum_computation.is_circuit_qubit_ancillary(
                 circuit_view_qubit_label.associated_qubit
-            ) is not None
+            ) or self.annotatable_quantum_computation.is_circuit_qubit_garbage(
+                circuit_view_qubit_label.associated_qubit
+            )
             if not should_qubit_line_text_be_clickable or internal_qubit_label is None:
                 self.non_ancillary_or_garbage_qubits_lookup.add(circuit_view_qubit_label.associated_qubit)
 
@@ -966,10 +961,9 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 # TODO: How should we continue here?
                 continue
 
-            if (
-                self.annotatable_quantum_computation.is_circuit_qubit_garbage(i)
-                or self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i)
-            ) and self.annotatable_quantum_computation.get_inlining_information_of_qubit(i) is not None:
+            if self.annotatable_quantum_computation.is_circuit_qubit_garbage(
+                i
+            ) or self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i):
                 self.qubits_labels_of_local_variables_lookup.add(internal_qubit_label)
                 # TODO: Update comment
                 # With the assumption that the internal qubit label contains the current number (referred to as D) of qubits of the quantum computation
@@ -1042,8 +1036,8 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         self.qubit_info_widget.toggle_all_inline_information_controls(True)
         # Sort combobox qubit labels according to prefix __q<NUM>
 
-        inline_information_of_qubit: syrec.inlined_qubit_information | None = (
-            self.annotatable_quantum_computation.get_inlining_information_of_qubit(
+        inline_stack_of_qubit: syrec.qubit_inlining_stack | None = (
+            self.annotatable_quantum_computation.get_inline_stack_of_qubit(
                 qubit_internal_label_and_index.associated_qubit
             )
             if self.annotatable_quantum_computation is not None
@@ -1057,15 +1051,11 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
             else None
         )
 
-        if inline_information_of_qubit is not None:
-            self.qubit_info_widget.update_information(
-                qubit_internal_label_and_index.internal_qubit_label,
-                user_declared_qubit_label,
-                inline_information_of_qubit.inline_stack,
-            )
-        else:
-            self.qubit_info_widget.clear_inline_data_controls()
-            self.qubit_info_widget.toggle_all_inline_information_controls(False)
+        self.qubit_info_widget.update_information(
+            qubit_internal_label_and_index.internal_qubit_label,
+            user_declared_qubit_label,
+            inline_stack_of_qubit,
+        )
 
     def handle_combobox_selection_change(self, new_combobox_idx: int) -> None:
         if new_combobox_idx == -1:
