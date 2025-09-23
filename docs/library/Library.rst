@@ -7,7 +7,7 @@ Library
     AnnotatableQuantumComputation
     NBitValuesContainer
     Parser
-    QubitInliningInformation
+    QubitInlineStack
     Settings
     Simulation
     Synthesis
