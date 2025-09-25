@@ -68,10 +68,6 @@ namespace syrec {
              *  stack is equal to the module in which the associated variable of the qubit was declared.
              */
             std::optional<QubitInliningStack::ptr> inlineStack;
-
-            InlinedQubitInformation() = default;
-            InlinedQubitInformation(const std::optional<std::string>& userDeclaredQubitLabel, const QubitInliningStack::ptr& inlineStack):
-                userDeclaredQubitLabel(userDeclaredQubitLabel), inlineStack(inlineStack != nullptr ? std::make_optional(inlineStack) : std::nullopt) {}
         };
 
         /**

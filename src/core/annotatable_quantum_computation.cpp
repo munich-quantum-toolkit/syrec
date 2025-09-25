@@ -36,20 +36,18 @@ namespace {
         }
 
         const auto qubitRangeOfFirstElementInCollection = static_cast<syrec::AnnotatableQuantumComputation::QubitIndexRange>(*firstElementOfCollection);
-        if (qubitRangeOfFirstElementInCollection.firstQubitIndex > qubitToFind) {
+        if (qubitToFind < qubitRangeOfFirstElementInCollection.firstQubitIndex) {
             return std::nullopt;
         }
 
-        const auto& iteratorToRangeElementGreaterOrEqualToQubit = std::lower_bound(firstElementOfCollection, lastElementOfCollection, qubitToFind, [](const syrec::AnnotatableQuantumComputation::QubitIndexRange& qubitIndexRangeOfElement, const qc::Qubit qubitToFind) { return qubitIndexRangeOfElement.lastQubitIndex < qubitToFind; });
-        ptrdiff_t   iteratorOffsetForFoundElement               = 0U;
-        if (iteratorToRangeElementGreaterOrEqualToQubit == lastElementOfCollection) {
-            const auto qubitRangeOfLastElementInCollection = static_cast<syrec::AnnotatableQuantumComputation::QubitIndexRange>(*iteratorToRangeElementGreaterOrEqualToQubit);
-            if (qubitToFind == qubitRangeOfLastElementInCollection.firstQubitIndex) {
-                return std::nullopt;
-            }
-            iteratorOffsetForFoundElement = 1U;
+        // Performs a binary search through the sorted collection of the syrec::AnnotatableQuantumComputation::QubitIndexRange elements, assumed to be sorted in ascending order based on the value of the start qubit of the index range, and returns the first element that is <= qubitToFind.
+        // At this point we already checked whether the qubitToFind is smaller than the lowest qubit in qubit index range collection, if the qubitToFind is larger than the largest qubit in the qubit index range collection than the std::end() iterator of the collection is return. Otherwise,
+        // the iterator points to the qubit index range that contains the qubitToFind.
+        const auto iteratorToRangeElementGreaterThanQubit = std::lower_bound(firstElementOfCollection, lastElementOfCollection, qubitToFind, [](const syrec::AnnotatableQuantumComputation::QubitIndexRange& qubitIndexRangeOfElement, const qc::Qubit qubitToFind) { return qubitIndexRangeOfElement.lastQubitIndex < qubitToFind; });
+        if (iteratorToRangeElementGreaterThanQubit == lastElementOfCollection) {
+            return std::nullopt;
         }
-        return static_cast<std::size_t>(std::distance(firstElementOfCollection, iteratorToRangeElementGreaterOrEqualToQubit) - iteratorOffsetForFoundElement);
+        return static_cast<std::size_t>(std::distance(firstElementOfCollection, iteratorToRangeElementGreaterThanQubit));
     }
 
     bool isInlineStackNotSetOrEmpty(const syrec::QubitInliningStack::ptr& inlineStackToCheck) {
@@ -503,7 +501,12 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
         return std::nullopt;
     }
 
-    const qc::Qubit relativeQubitIndexInQuantumRegister = qubit - storedQubitIndices.firstQubitIndex;
+    qc::Qubit firstQubitOfAccessedElement = storedQubitIndices.firstQubitIndex;
+    for (std::size_t i = 0; i < numValuesPerDimensionOfVariable.size(); ++i) {
+        firstQubitOfAccessedElement += requiredValuePerDimensionToAccessElementStoringQubit->at(i) * offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths.at(i) * elementQubitSize;
+    }
+
+    const qc::Qubit relativeQubitIndexInQuantumRegister = qubit - firstQubitOfAccessedElement;
     return QubitInVariableLayoutData({.quantumRegisterLabel                           = quantumRegisterLabel,
                                       .accessedValuePerDimensionOfElementStoringQubit = *requiredValuePerDimensionToAccessElementStoringQubit,
                                       .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
@@ -525,8 +528,8 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
     for (std::size_t i = 0; i < requiredValuesPerDimension.size() && couldRequiredValuePerDimensionBeDetermined; ++i) {
         const unsigned qubitOffsetToNextElementInDimension = offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths[i] * qubitSizeOfElements;
 
-        std::vector<unsigned> firstQubitIndexPerElementInDimension = std::vector(numValuesPerDimensionOfVariable.at(i), qubitOffsetToNextElementInDimension);
-        firstQubitIndexPerElementInDimension[0]                    = storedQubitIndices.firstQubitIndex;
+        auto firstQubitIndexPerElementInDimension = std::vector(numValuesPerDimensionOfVariable.at(i), qubitOffsetToNextElementInDimension);
+        firstQubitIndexPerElementInDimension[0]   = storedQubitIndices.firstQubitIndex;
         for (std::size_t j = 0; j < i; ++j) {
             firstQubitIndexPerElementInDimension[0] += (requiredValuesPerDimension[j] * offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths[j]) * qubitSizeOfElements;
         }
@@ -535,7 +538,7 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
             firstQubitIndexPerElementInDimension[j] += firstQubitIndexPerElementInDimension[j - 1];
         }
 
-        const auto qubitIndexRangePerElementOfCollection = firstQubitIndexPerElementInDimension | std::views::transform([qubitSizeOfElements](const qc::Qubit firstQubitOfElement) { return QubitIndexRange(firstQubitOfElement, firstQubitOfElement + qubitSizeOfElements); });
+        const auto qubitIndexRangePerElementOfCollection = firstQubitIndexPerElementInDimension | std::views::transform([qubitOffsetToNextElementInDimension](const qc::Qubit firstQubitOfElement) { return QubitIndexRange(firstQubitOfElement, (firstQubitOfElement + qubitOffsetToNextElementInDimension) - 1U); });
         const auto indexOfElementContainingQubit         = static_cast<std::optional<unsigned>>(findIndexOfElementContainingQubit(qubitIndexRangePerElementOfCollection.begin(), qubitIndexRangePerElementOfCollection.end(), qubit));
 
         couldRequiredValuePerDimensionBeDetermined = indexOfElementContainingQubit.has_value();
