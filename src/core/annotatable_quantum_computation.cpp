@@ -224,7 +224,7 @@ std::optional<std::string> AnnotatableQuantumComputation::getQubitLabel(const qc
     return buildQubitLabelForQubitOfVariableInQuantumRegister(inheritedQubitIdentifierFromQuantumRegister, qubitInformationFromQuantumRegister->accessedValuePerDimensionOfElementStoringQubit, qubitInformationFromQuantumRegister->relativeQubitIndexInElementStoringQubit);
 }
 
-qc::Operation* AnnotatableQuantumComputation::getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
+const qc::Operation* AnnotatableQuantumComputation::getQuantumOperation(const std::size_t indexOfQuantumOperationInQuantumComputation) const {
     if (indexOfQuantumOperationInQuantumComputation >= getNops()) {
         return nullptr;
     }
@@ -452,7 +452,7 @@ bool AnnotatableQuantumComputation::isQubitWithinRange(const qc::Qubit qubit) co
     return qubit < getNqubits();
 }
 
-bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation) {
+bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(const std::size_t fromQuantumOperationIndex, const std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation) {
     if (fromQuantumOperationIndex >= getNops() || toQuantumOperationIndex >= getNops()) {
         return false;
     }

@@ -123,7 +123,7 @@ namespace syrec {
          * @return Returns the label of the qubit in the form of a stringified syrec::VariableAccess (e.g. the label generated for qubit 3 of the syrec::Variable a[2][3](2) is equal to a[0][1].1), otherwise std::nullopt.
          */
         [[nodiscard]] std::optional<std::string> getQubitLabel(qc::Qubit qubit, QubitLabelType qubitLabelType) const;
-        [[nodiscard]] qc::Operation*             getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
+        [[nodiscard]] const qc::Operation*       getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
 
         /**
         * Replay a set of already existing quantum operations by readding the quantum operations to the quantum computation.
@@ -167,7 +167,7 @@ namespace syrec {
          * @remarks The control qubit is only removed from the aggregate of all registered control qubits if the last activated local scope registered the @p controlQubit.
          * The deregistered control qubit is not 'inherited' by any quantum computation added to the internally used qc::QuantumComputation while the current scope is active. Additionally,
          * the deregistered control qubits are not filtered from the user defined control qubits provided as parameters to any of the addOperationsImplementingXGate calls.
-         * @param controlQubit The control qubit to deregister
+         * @param controlQubit The control qubit to deregister.
          * @return Whether the control qubit exists in the internally used qc::QuantumComputation and was deregistered from the last activated propagation scope.
          */
         [[nodiscard]] bool deregisterControlQubitFromPropagationInCurrentScope(qc::Qubit controlQubit);
@@ -176,7 +176,7 @@ namespace syrec {
          * Register a control qubit in the last activated control qubit propagation scope.
          *
          * @remarks If no active local control qubit scope exists, a new one is created.
-         * @param controlQubit The control qubit to register
+         * @param controlQubit The control qubit to register.
          * @return Whether the control qubit exists in the \p quantumComputation and was registered in the last activated propagation scope.
          */
         [[nodiscard]] bool registerControlQubitForPropagationInCurrentAndNestedScopes(qc::Qubit controlQubit);
@@ -184,32 +184,32 @@ namespace syrec {
         /**
          * Register or update a global quantum operation annotation. Global quantum operation annotations are added to all quantum operations added to the internally used qc::QuantumComputation.
          * Already existing quantum computations in the qc::QuantumComputation are not modified.
-         * @param key The key of the global quantum operation annotation
-         * @param value The value of the global quantum operation annotation
+         * @param key The key of the global quantum operation annotation.
+         * @param value The value of the global quantum operation annotation.
          * @return Whether an existing global annotation was updated.
          */
         [[maybe_unused]] bool setOrUpdateGlobalQuantumOperationAnnotation(const std::string_view& key, const std::string& value);
 
         /**
          * Remove a global gate annotation. Existing annotations of the gates of the circuit are not modified.
-         * @param key The key of the global gate annotation to be removed
+         * @param key The key of the global gate annotation to be removed.
          * @return Whether a global gate annotation was removed.
          */
         [[maybe_unused]] bool removeGlobalQuantumOperationAnnotation(const std::string_view& key);
 
         /**
-         * Set a key value annotation for a quantum operation
-         * @param indexOfQuantumOperationInQuantumComputation The index of the quantum operation in the quantum computation
-         * @param annotationKey The key of the quantum operation annotation
-         * @param annotationValue The value of the quantum operation annotation
-         * @return Whether an operation at the user-provided index existed in the quantum operation
+         * Set a key value annotation for a quantum operation.
+         * @param indexOfQuantumOperationInQuantumComputation The index of the quantum operation in the quantum computation.
+         * @param annotationKey The key of the quantum operation annotation.
+         * @param annotationValue The value of the quantum operation annotation.
+         * @return Whether an operation at the user-provided index existed in the quantum operation.
          */
         [[maybe_unused]] bool setOrUpdateAnnotationOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation, const std::string_view& annotationKey, const std::string& annotationValue);
 
         /**
-         * Get the inlined qubit information
+         * Get the inlined qubit information.
          * @param qubit The qubit whose inline information shall be fetched.
-         * @return The inline information of the qubit if such information exists, otherwise std::nullopt is returned
+         * @return The inline information of the qubit if such information exists, otherwise std::nullopt is returned.
          */
         [[nodiscard]] std::optional<InlinedQubitInformation> getInlinedQubitInformation(qc::Qubit qubit) const;
 
