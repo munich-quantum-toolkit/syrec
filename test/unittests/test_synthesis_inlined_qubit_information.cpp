@@ -23,7 +23,6 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <optional>
-#include <ranges>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -75,7 +74,6 @@ namespace {
             assertConditionalInlineStackReferencesEqualityOfQubits(annotatableQuantumComputation, firstQubitToCheck, secondQubitToCheck, false);
         }
 
-        // TODO: How can we check whether the ancillary qubit is correctly initialized => this should probably be verified in the tests of the annotatable quantum computation.
         static void assertQubitInlineInformationMatchesExpectedOne(const AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit qubit, const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& expectedQubitInlineInformation) {
             const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> actualInlinedQubitInformation = annotatableQuantumComputation.getInlinedQubitInformation(qubit);
             if (expectedQubitInlineInformation.has_value()) {
@@ -165,12 +163,12 @@ namespace {
             }
         }
 
-        static void assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(const AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit firstQubitOfElementOfVariable, const std::string& userDeclaredVariableIdentifier, const std::vector<unsigned>& accessedValuePerDimension, const std::size_t numQubitsToCheck, const QubitInliningStack::ptr& sharedQubitInlineStack) {
+        static void assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(const AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit firstQubitOfElementOfVariable, const std::string& userDeclaredVariableIdentifier, const std::vector<unsigned>& accessedValuePerDimension, const std::size_t numQubitsToCheck, const std::optional<QubitInliningStack::ptr>& sharedQubitInlineStack) {
             for (qc::Qubit i = firstQubitOfElementOfVariable; i < firstQubitOfElementOfVariable + numQubitsToCheck; ++i) {
                 const qc::Qubit relativeQubitIndexInElement        = i - firstQubitOfElementOfVariable;
                 const auto      inlineInformationOfQubitOfVariable = AnnotatableQuantumComputation::InlinedQubitInformation({.userDeclaredQubitLabel = buildExpectedFullQubitLabel(userDeclaredVariableIdentifier, accessedValuePerDimension, relativeQubitIndexInElement), .inlineStack = sharedQubitInlineStack});
                 ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatchesExpectedOne(annotatableQuantumComputation, i, inlineInformationOfQubitOfVariable)) << "Qubit inline information for qubit at index " << std::to_string(relativeQubitIndexInElement) << " in element mismatch!";
-                if (i > firstQubitOfElementOfVariable) {
+                if (sharedQubitInlineStack.has_value() && i > firstQubitOfElementOfVariable) {
                     ASSERT_NO_FATAL_FAILURE(assertInlineStacksOfVariablesReferenceSameInstance(annotatableQuantumComputation, i, i - 1U));
                 }
             }
@@ -833,424 +831,276 @@ TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitsInformati
 // END tests for inlined qubit information behaviour with feature activated in synthesis settings
 
 // // BEGIN tests for inlined qubit information behaviour with feature deactivated in synthesis settings
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfMainModuleParameters) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a(4), out b(4)) a += b", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfLocalMainModuleVariables) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main() wire a(4), b(4) a += b", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = "";
-//
-//     constexpr unsigned int mainModuleLocalVariableBitwidth = 4U;
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "a", {0U}, mainModuleLocalVariableBitwidth, 0U, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "b", {0U}, mainModuleLocalVariableBitwidth, 4U, qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfCalledModuleParameters) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) a += b module main(inout a(4), out b(4)) call add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfCalledModuleVariables) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) call add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = "";
-//
-//     // Check inline information of local variables of main module
-//     constexpr unsigned int mainModuleLocalVariableBitwidth             = 2U;
-//     constexpr unsigned int indexOfFirstQubitOfMainModuleLocalVariables = 8U;
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {0U}, mainModuleLocalVariableBitwidth, indexOfFirstQubitOfMainModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "y", {0U}, mainModuleLocalVariableBitwidth, indexOfFirstQubitOfMainModuleLocalVariables + mainModuleLocalVariableBitwidth, qubitInlineInformation));
-//
-//     // Check inline information of local variables of called module in main module
-//     const Module::ptr& calledModuleReference = this->syrecProgramInstance.findModule("add");
-//     ASSERT_THAT(calledModuleReference, testing::NotNull());
-//
-//     constexpr unsigned int calledModuleLocalVariablesBitwidth            = 3U;
-//     constexpr unsigned int indexOfFirstQubitOfCalledModuleLocalVariables = indexOfFirstQubitOfMainModuleLocalVariables + (2 * mainModuleLocalVariableBitwidth);
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "s", {0U}, mainModuleLocalVariableBitwidth, indexOfFirstQubitOfCalledModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "t", {0U}, mainModuleLocalVariableBitwidth, indexOfFirstQubitOfCalledModuleLocalVariables + calledModuleLocalVariablesBitwidth, qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfUncalledModuleParameters) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) a += b module main(inout a(4), out b(4)) uncall add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfUncalledModuleVariables) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) uncall add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = "";
-//
-//     // Check inline information of local variables of main module
-//     constexpr unsigned int mainModuleLocalVariableBitwidth             = 2U;
-//     constexpr unsigned int indexOfFirstQubitOfMainModuleLocalVariables = 8U;
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {0U}, mainModuleLocalVariableBitwidth, indexOfFirstQubitOfMainModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "y", {0U}, mainModuleLocalVariableBitwidth, indexOfFirstQubitOfMainModuleLocalVariables + mainModuleLocalVariableBitwidth, qubitInlineInformation));
-//
-//     // Check inline information of local variables of called module in main module
-//     const Module::ptr& uncalledModuleReference = this->syrecProgramInstance.findModule("add");
-//     ASSERT_THAT(uncalledModuleReference, testing::NotNull());
-//
-//     constexpr unsigned int uncalledModuleLocalVariablesBitwidth            = 3U;
-//     constexpr unsigned int indexOfFirstQubitOfUncalledModuleLocalVariables = indexOfFirstQubitOfMainModuleLocalVariables + (2 * mainModuleLocalVariableBitwidth);
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "s", {0U}, mainModuleLocalVariableBitwidth, indexOfFirstQubitOfUncalledModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "t", {0U}, mainModuleLocalVariableBitwidth, indexOfFirstQubitOfUncalledModuleLocalVariables + uncalledModuleLocalVariablesBitwidth, qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInMainModule) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a(4), out b(4)) a += b; a += 2", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = std::nullopt;
-//
-//     constexpr unsigned int indexOfFirstAncillaryQubit                = 8U;
-//     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
-//
-//     constexpr bool expectedInitialStateOfSecondAncillaryQubit = true;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInMainModule) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a(2), out b(4)) a += (b.0:1 & b.2:3)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = std::nullopt;
-//
-//     constexpr unsigned int indexOfFirstAncillaryQubit                = 6U;
-//     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
-//
-//     constexpr bool expectedInitialStateOfSecondAncillaryQubit = false;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInCalledModule) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module addWithConst(inout a(2)) a += 2 module main(inout a(2), in b(2)) call addWithConst(a); a += b", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = std::nullopt;
-//
-//     constexpr unsigned int indexOfFirstAncillaryQubit                = 4U;
-//     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
-//
-//     constexpr bool expectedInitialStateOfSecondAncillaryQubit = true;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInCalledModule) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(4)) a += (b.0:1 & b.2:3) module main(inout a(2), in b(4)) call add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = std::nullopt;
-//
-//     constexpr unsigned int indexOfFirstAncillaryQubit                = 6U;
-//     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
-//
-//     constexpr bool expectedInitialStateOfSecondAncillaryQubit = false;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInUncalledModule) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module addWithConst(inout a(2)) a += 2 module main(inout a(2), in b(2)) uncall addWithConst(a); a += b", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = std::nullopt;
-//
-//     constexpr unsigned int indexOfFirstAncillaryQubit                = 4U;
-//     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
-//
-//     constexpr bool expectedInitialStateOfSecondAncillaryQubit = true;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInUncalledModule) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(4)) a += (b.0:1 & b.2:3) module main(inout a(2), in b(4)) uncall add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = std::nullopt;
-//
-//     constexpr unsigned int indexOfFirstAncillaryQubit                = 6U;
-//     constexpr bool         expectedInitialStateOfFirstAncillaryQubit = false;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit, expectedInitialStateOfFirstAncillaryQubit, &qubitInlineInformation));
-//
-//     constexpr bool expectedInitialStateOfSecondAncillaryQubit = false;
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubit + 1U, expectedInitialStateOfSecondAncillaryQubit, &qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfModuleParametersUsedAsParametersInCalledModule) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) call add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = "";
-//
-//     // Check inline information of local variables of main module
-//     constexpr unsigned int mainModuleParametersBitwidth                = 4U;
-//     constexpr unsigned int indexOfFirstQubitOfMainModuleLocalVariables = 2 * mainModuleParametersBitwidth;
-//     constexpr unsigned int bitwidthOfMainModuleLocalVariables          = 2;
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {0U}, bitwidthOfMainModuleLocalVariables, indexOfFirstQubitOfMainModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "y", {0U}, bitwidthOfMainModuleLocalVariables, indexOfFirstQubitOfMainModuleLocalVariables + bitwidthOfMainModuleLocalVariables, qubitInlineInformation));
-//
-//     // Check inline information of local variables of called module in main module
-//     constexpr unsigned int indexOfFirstQubitOfCalledModuleLocalVariables = (2 * mainModuleParametersBitwidth) + (2 * bitwidthOfMainModuleLocalVariables);
-//     constexpr unsigned int bitwidthOfCalledModuleLocalVariables          = 3U;
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "s", {0U}, bitwidthOfCalledModuleLocalVariables, indexOfFirstQubitOfCalledModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "t", {0U}, bitwidthOfCalledModuleLocalVariables, indexOfFirstQubitOfCalledModuleLocalVariables + bitwidthOfCalledModuleLocalVariables, qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfLocalModuleVariablesUsedAsParametersInCalledModule) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) uncall add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = "";
-//
-//     // Check inline information of local variables of main module
-//     constexpr unsigned int mainModuleParametersBitwidth                = 4U;
-//     constexpr unsigned int indexOfFirstQubitOfMainModuleLocalVariables = 2 * mainModuleParametersBitwidth;
-//     constexpr unsigned int bitwidthOfMainModuleLocalVariables          = 2;
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {0U}, bitwidthOfMainModuleLocalVariables, indexOfFirstQubitOfMainModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "y", {0U}, bitwidthOfMainModuleLocalVariables, indexOfFirstQubitOfMainModuleLocalVariables + bitwidthOfMainModuleLocalVariables, qubitInlineInformation));
-//
-//     // Check inline information of local variables of uncalled module in main module
-//     constexpr unsigned int indexOfFirstQubitOfUncalledModuleLocalVariables = (2 * mainModuleParametersBitwidth) + (2 * bitwidthOfMainModuleLocalVariables);
-//     constexpr unsigned int bitwidthOfUncalledModuleLocalVariables          = 3U;
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "s", {0U}, bitwidthOfUncalledModuleLocalVariables, indexOfFirstQubitOfUncalledModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "t", {0U}, bitwidthOfUncalledModuleLocalVariables, indexOfFirstQubitOfUncalledModuleLocalVariables + bitwidthOfUncalledModuleLocalVariables, qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitsInformationFeatureDeactivatedForLargerThan1DVariable) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a[2](4), out b[1][2](2)) wire x[2][2](2), z(2) x[0][1] += x[1][0]", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {1U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {1U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {1U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {1U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U, 0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U, 0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U, 1U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U, 1U}, 1U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = "";
-//
-//     // Check inline information of local variables of main module
-//     constexpr unsigned int indexOfFirstLocalVariableQubit = 12U;
-//     constexpr unsigned int variableXBitwidth              = 2U;
-//
-//     constexpr unsigned int indexOfFirstQubitOfDimension00 = indexOfFirstLocalVariableQubit;
-//     constexpr unsigned int indexOfFirstQubitOfDimension01 = indexOfFirstQubitOfDimension00 + variableXBitwidth;
-//     constexpr unsigned int indexOfFirstQubitOfDimension10 = indexOfFirstQubitOfDimension01 + variableXBitwidth;
-//     constexpr unsigned int indexOfFirstQubitOfDimension11 = indexOfFirstQubitOfDimension10 + variableXBitwidth;
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {0U, 0U}, variableXBitwidth, indexOfFirstQubitOfDimension00, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {0U, 1U}, variableXBitwidth, indexOfFirstQubitOfDimension01, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {1U, 0U}, variableXBitwidth, indexOfFirstQubitOfDimension10, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {1U, 1U}, variableXBitwidth, indexOfFirstQubitOfDimension11, qubitInlineInformation));
-//
-//     constexpr unsigned int indexOfFirstQubitOfLocal1DVariable = indexOfFirstQubitOfDimension11 + variableXBitwidth;
-//     std::string            internalQubitLabelOfFirstQubitOf1DVariable;
-//     ASSERT_NO_FATAL_FAILURE(this->buildFullQubitLabel(InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(indexOfFirstQubitOfLocal1DVariable), {0U}, 0U, internalQubitLabelOfFirstQubitOf1DVariable));
-//     ASSERT_NO_FATAL_FAILURE(this->buildFullQubitLabel("z", {0U}, 0U, *qubitInlineInformation.userDeclaredQubitLabel));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, internalQubitLabelOfFirstQubitOf1DVariable, &qubitInlineInformation));
-//
-//     std::string internalQubitLabelOfSecondQubitOf1DVariable;
-//     ASSERT_NO_FATAL_FAILURE(this->buildFullQubitLabel(InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(indexOfFirstQubitOfLocal1DVariable), {0U}, 1U, internalQubitLabelOfSecondQubitOf1DVariable));
-//     ASSERT_NO_FATAL_FAILURE(this->buildFullQubitLabel("z", {0U}, 1U, *qubitInlineInformation.userDeclaredQubitLabel));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, internalQubitLabelOfSecondQubitOf1DVariable, &qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitsInformationFeatureDeactivatedDoesHandleNameClashBetweenModuleLocalVariablesAndCalledModuleLocalVariablesCorrectly) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire x(3), y(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) call add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = "";
-//
-//     // Check inline information of local variables of main module
-//     constexpr unsigned int mainModuleParametersBitwidth                = 4U;
-//     constexpr unsigned int indexOfFirstQubitOfMainModuleLocalVariables = 2 * mainModuleParametersBitwidth;
-//     constexpr unsigned int bitwidthOfMainModuleLocalVariables          = 2;
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {0U}, bitwidthOfMainModuleLocalVariables, indexOfFirstQubitOfMainModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "y", {0U}, bitwidthOfMainModuleLocalVariables, indexOfFirstQubitOfMainModuleLocalVariables + bitwidthOfMainModuleLocalVariables, qubitInlineInformation));
-//
-//     // Check inline information of local variables of called module in main module
-//     constexpr unsigned int indexOfFirstQubitOfCalledModuleLocalVariables = (2 * mainModuleParametersBitwidth) + (2 * bitwidthOfMainModuleLocalVariables);
-//     constexpr unsigned int bitwidthOfCalledModuleLocalVariables          = 3U;
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {0U}, bitwidthOfCalledModuleLocalVariables, indexOfFirstQubitOfCalledModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "y", {0U}, bitwidthOfCalledModuleLocalVariables, indexOfFirstQubitOfCalledModuleLocalVariables + bitwidthOfCalledModuleLocalVariables, qubitInlineInformation));
-// }
-//
-// TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitsInformationFeatureDeactivatedDoesHandleNameClashBetweenModuleLocalVariablesAndUncalledModuleLocalVariablesCorrectly) {
-//     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire x(3), y(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) uncall add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 3U, nullptr));
-//
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 0U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 1U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 2U, nullptr));
-//     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "b", {0U}, 3U, nullptr));
-//
-//     AnnotatableQuantumComputation::InlinedQubitInformation qubitInlineInformation;
-//     qubitInlineInformation.userDeclaredQubitLabel = "";
-//
-//     // Check inline information of local variables of main module
-//     constexpr unsigned int mainModuleParametersBitwidth                = 4U;
-//     constexpr unsigned int indexOfFirstQubitOfMainModuleLocalVariables = 2 * mainModuleParametersBitwidth;
-//     constexpr unsigned int bitwidthOfMainModuleLocalVariables          = 2;
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {0U}, bitwidthOfMainModuleLocalVariables, indexOfFirstQubitOfMainModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "y", {0U}, bitwidthOfMainModuleLocalVariables, indexOfFirstQubitOfMainModuleLocalVariables + bitwidthOfMainModuleLocalVariables, qubitInlineInformation));
-//
-//     // Check inline information of local variables of uncalled module in main module
-//     constexpr unsigned int indexOfFirstQubitOfUncalledModuleLocalVariables = (2 * mainModuleParametersBitwidth) + (2 * bitwidthOfMainModuleLocalVariables);
-//     constexpr unsigned int bitwidthOfUncalledModuleLocalVariables          = 3U;
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "x", {0U}, bitwidthOfUncalledModuleLocalVariables, indexOfFirstQubitOfUncalledModuleLocalVariables, qubitInlineInformation));
-//     ASSERT_NO_FATAL_FAILURE(this->assertNonAncillaryQubitInlineInformationForQubitsOfValueOfDimension(this->annotatableQuantumComputation, "y", {0U}, bitwidthOfUncalledModuleLocalVariables, indexOfFirstQubitOfUncalledModuleLocalVariables + bitwidthOfUncalledModuleLocalVariables, qubitInlineInformation));
-// }
-// // END tests for inlined qubit information behaviour with feature deactivated in synthesis settings
-//
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfMainModuleParameters) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a(4), out b(4)) a += b", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 8U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfLocalMainModuleVariables) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main() wire a(4), b(4) a += b", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    constexpr qc::Qubit    firstQubitOfParameterAOfMainModule = 0U;
+    constexpr qc::Qubit    firstQubitOfParameterBOfMainModule = 4U;
+    constexpr unsigned int mainModuleLocalVariableBitwidth    = 4U;
+
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfParameterAOfMainModule, "a", {0U}, mainModuleLocalVariableBitwidth, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfParameterBOfMainModule, "b", {0U}, mainModuleLocalVariableBitwidth, std::nullopt));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfCalledModuleParameters) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) a += b module main(inout a(4), out b(4)) call add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 8U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfCalledModuleVariables) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) call add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 8U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstQubitOfLocalVariableXOfMainModule = 8U;
+    constexpr qc::Qubit firstQubitOfLocalVariableYOfMainModule = 10U;
+    constexpr unsigned  localVariableBitwidthOfMainModule      = 2U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableXOfMainModule, "x", {0U}, localVariableBitwidthOfMainModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableYOfMainModule, "y", {0U}, localVariableBitwidthOfMainModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableSOfCalledModule = 12U;
+    constexpr qc::Qubit firstQubitOfLocalVariableTOfCalledModule = 15U;
+    constexpr unsigned  localVariableBitwidthOfCalledModule      = 3U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableSOfCalledModule, "s", {0U}, localVariableBitwidthOfCalledModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableTOfCalledModule, "t", {0U}, localVariableBitwidthOfCalledModule, std::nullopt));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfUncalledModuleParameters) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) a += b module main(inout a(4), out b(4)) uncall add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 8U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfUncalledModuleVariables) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) uncall add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 8U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstQubitOfLocalVariableXOfMainModule = 8U;
+    constexpr qc::Qubit firstQubitOfLocalVariableYOfMainModule = 10U;
+    constexpr unsigned  localVariableBitwidthOfMainModule      = 2U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableXOfMainModule, "x", {0U}, localVariableBitwidthOfMainModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableYOfMainModule, "y", {0U}, localVariableBitwidthOfMainModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableSOfUncalledModule = 12U;
+    constexpr qc::Qubit firstQubitOfLocalVariableTOfUncalledModule = 15U;
+    constexpr unsigned  localVariableBitwidthOfUncalledModule      = 3U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableSOfUncalledModule, "s", {0U}, localVariableBitwidthOfUncalledModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableTOfUncalledModule, "t", {0U}, localVariableBitwidthOfUncalledModule, std::nullopt));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInMainModule) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a(4), out b(4)) a += b; a += 2", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 8U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstAncillaryQubit  = 8U;
+    constexpr qc::Qubit secondAncillaryQubit = 9U;
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, firstAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, secondAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInMainModule) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a(2), out b(4)) a += (b.0:1 & b.2:3)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 6U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstAncillaryQubit  = 6U;
+    constexpr qc::Qubit secondAncillaryQubit = 7U;
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, firstAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, secondAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInCalledModule) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module addWithConst(inout a(2)) a += 2 module main(inout a(2), in b(2)) call addWithConst(a); a += b", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 4U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstAncillaryQubit  = 4U;
+    constexpr qc::Qubit secondAncillaryQubit = 5U;
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, firstAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, secondAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInCalledModule) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(4)) a += (b.0:1 & b.2:3) module main(inout a(2), in b(4)) call add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 6U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstAncillaryQubit  = 6U;
+    constexpr qc::Qubit secondAncillaryQubit = 7U;
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, firstAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, secondAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInUncalledModule) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module addWithConst(inout a(2)) a += 2 module main(inout a(2), in b(2)) uncall addWithConst(a); a += b", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 4U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstAncillaryQubit  = 4U;
+    constexpr qc::Qubit secondAncillaryQubit = 5U;
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, firstAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, secondAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInUncalledModule) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(4)) a += (b.0:1 & b.2:3) module main(inout a(2), in b(4)) uncall add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 6U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstAncillaryQubit  = 6U;
+    constexpr qc::Qubit secondAncillaryQubit = 7U;
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, firstAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+    ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, secondAncillaryQubit, AnnotatableQuantumComputation::InlinedQubitInformation()));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfModuleParametersUsedAsParametersInCalledModule) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) call add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 8U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstQubitOfLocalVariableXOfMainModule = 8U;
+    constexpr qc::Qubit firstQubitOfLocalVariableYOfMainModule = 10U;
+    constexpr unsigned  bitwidthOfLocalVariablesOfMainModule   = 2U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableXOfMainModule, "x", {0U}, bitwidthOfLocalVariablesOfMainModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableYOfMainModule, "y", {0U}, bitwidthOfLocalVariablesOfMainModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableSOfCalledModule = 12U;
+    constexpr qc::Qubit firstQubitOfLocalVariableTOfCalledModule = 15U;
+    constexpr unsigned  bitwidthOfLocalVariablesOfCalledModule   = 3U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableSOfCalledModule, "s", {0U}, bitwidthOfLocalVariablesOfCalledModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableTOfCalledModule, "t", {0U}, bitwidthOfLocalVariablesOfCalledModule, std::nullopt));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfLocalModuleVariablesUsedAsParametersInCalledModule) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) uncall add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    for (qc::Qubit qubit = 0; qubit < 8U; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstQubitOfLocalVariableXOfMainModule = 8U;
+    constexpr qc::Qubit firstQubitOfLocalVariableYOfMainModule = 10U;
+    constexpr unsigned  bitwidthOfLocalVariablesOfMainModule   = 2U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableXOfMainModule, "x", {0U}, bitwidthOfLocalVariablesOfMainModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableYOfMainModule, "y", {0U}, bitwidthOfLocalVariablesOfMainModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableSOfCalledModule = 12U;
+    constexpr qc::Qubit firstQubitOfLocalVariableTOfCalledModule = 15U;
+    constexpr unsigned  bitwidthOfLocalVariablesOfCalledModule   = 3U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableSOfCalledModule, "s", {0U}, bitwidthOfLocalVariablesOfCalledModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableTOfCalledModule, "t", {0U}, bitwidthOfLocalVariablesOfCalledModule, std::nullopt));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitsInformationFeatureDeactivatedForLargerThan1DVariable) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a[2](4), out b[1][2](2)) wire x[2][2](2), z(2) x[0][1] += x[1][0]", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    constexpr unsigned numQubitsInParameterAOfMainModule = 8U;
+    constexpr unsigned numQubitsInParameterBOfMainModule = 4U;
+    for (qc::Qubit qubit = 0; qubit < numQubitsInParameterAOfMainModule + numQubitsInParameterBOfMainModule; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr unsigned  bitwidthOfElementsInLocalVariableXOfMainModule      = 2U;
+    constexpr qc::Qubit firstQubitOfDimension00OfLocalVariableXOfMainModule = 12U;
+    constexpr qc::Qubit firstQubitOfDimension01OfLocalVariableXOfMainModule = 14U;
+    constexpr qc::Qubit firstQubitOfDimension10OfLocalVariableXOfMainModule = 16U;
+    constexpr qc::Qubit firstQubitOfDimension11OfLocalVariableXOfMainModule = 18U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfDimension00OfLocalVariableXOfMainModule, "x", {0U, 0U}, bitwidthOfElementsInLocalVariableXOfMainModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfDimension01OfLocalVariableXOfMainModule, "x", {0U, 1U}, bitwidthOfElementsInLocalVariableXOfMainModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfDimension10OfLocalVariableXOfMainModule, "x", {1U, 0U}, bitwidthOfElementsInLocalVariableXOfMainModule, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfDimension11OfLocalVariableXOfMainModule, "x", {1U, 1U}, bitwidthOfElementsInLocalVariableXOfMainModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableZOfMainModule        = 20U;
+    constexpr unsigned  bitwidthOfElementInLocalVariableZOfMainModule = 2U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableZOfMainModule, "z", {0U}, bitwidthOfElementInLocalVariableZOfMainModule, std::nullopt));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitsInformationFeatureDeactivatedDoesHandleNameClashBetweenModuleLocalVariablesAndCalledModuleLocalVariablesCorrectly) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire x(3), y(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) call add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    constexpr unsigned numQubitsInParameterAOfMainModule = 4U;
+    constexpr unsigned numQubitsInParameterBOfMainModule = 4U;
+    for (qc::Qubit qubit = 0; qubit < numQubitsInParameterAOfMainModule + numQubitsInParameterBOfMainModule; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstQubitOfLocalVariableXOfMainModule        = 8U;
+    constexpr unsigned  bitwidthOfElementInLocalVariableXOfMainModule = 2U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableXOfMainModule, "x", {0U}, bitwidthOfElementInLocalVariableXOfMainModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableYOfMainModule        = 10U;
+    constexpr unsigned  bitwidthOfElementInLocalVariableYOfMainModule = 2U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableYOfMainModule, "y", {0U}, bitwidthOfElementInLocalVariableYOfMainModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableXOfCalledModule        = 12U;
+    constexpr unsigned  bitwidthOfElementInLocalVariableXOfCalledModule = 3U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableXOfCalledModule, "x", {0U}, bitwidthOfElementInLocalVariableXOfCalledModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableYOfCalledModule        = 15U;
+    constexpr unsigned  bitwidthOfElementInLocalVariableYOfCalledModule = 3U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableYOfCalledModule, "y", {0U}, bitwidthOfElementInLocalVariableYOfCalledModule, std::nullopt));
+}
+
+TYPED_TEST_P(SynthesisInlinedQubitInformationTestsFixture, InlineQubitsInformationFeatureDeactivatedDoesHandleNameClashBetweenModuleLocalVariablesAndUncalledModuleLocalVariablesCorrectly) {
+    ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire x(3), y(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) uncall add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation));
+
+    constexpr unsigned numQubitsInParameterAOfMainModule = 4U;
+    constexpr unsigned numQubitsInParameterBOfMainModule = 4U;
+    for (qc::Qubit qubit = 0; qubit < numQubitsInParameterAOfMainModule + numQubitsInParameterBOfMainModule; ++qubit) {
+        ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationMatchesExpectedOne(this->annotatableQuantumComputation, qubit, std::nullopt));
+    }
+
+    constexpr qc::Qubit firstQubitOfLocalVariableXOfMainModule        = 8U;
+    constexpr unsigned  bitwidthOfElementInLocalVariableXOfMainModule = 2U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableXOfMainModule, "x", {0U}, bitwidthOfElementInLocalVariableXOfMainModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableYOfMainModule        = 10U;
+    constexpr unsigned  bitwidthOfElementInLocalVariableYOfMainModule = 2U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableYOfMainModule, "y", {0U}, bitwidthOfElementInLocalVariableYOfMainModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableXOfUncalledModule        = 12U;
+    constexpr unsigned  bitwidthOfElementInLocalVariableXOfUncalledModule = 3U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableXOfUncalledModule, "x", {0U}, bitwidthOfElementInLocalVariableXOfUncalledModule, std::nullopt));
+
+    constexpr qc::Qubit firstQubitOfLocalVariableYOfCUncalledModule       = 15U;
+    constexpr unsigned  bitwidthOfElementInLocalVariableYOfUncalledModule = 3U;
+    ASSERT_NO_FATAL_FAILURE(this->assertInlinedQubitInformationOfQubitsOfElementOfVariableAreTheSameExceptForUserDeclaredQubitLabel(this->annotatableQuantumComputation, firstQubitOfLocalVariableYOfCUncalledModule, "y", {0U}, bitwidthOfElementInLocalVariableYOfUncalledModule, std::nullopt));
+}
+// END tests for inlined qubit information behaviour with feature deactivated in synthesis settings
+
 REGISTER_TYPED_TEST_SUITE_P(SynthesisInlinedQubitInformationTestsFixture,
                             InlineQubitInformationFeatureActivatedDoesNotRecordInlineStackOfMainModuleParameters,
                             InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfLocalMainModuleVariables,
@@ -1270,26 +1120,25 @@ REGISTER_TYPED_TEST_SUITE_P(SynthesisInlinedQubitInformationTestsFixture,
                             InlineQubitInformationFeatureActivatedLocalModuleVariablesAndAncillaryQubitsOfUncalledModuleOnSameDepthOfInlineStackShareSameInlineStack,
                             InlineQubitsInformationFeatureActivatedForLargerThan1DVariable,
                             InlineQubitsInformationFeatureActivatedDoesRecordDifferentInlineStacksForNameClashBetweenModuleLocalVariablesAndCalledModuleLocalVariables,
-                            InlineQubitsInformationFeatureActivatedDoesRecordDifferentInlineStacksForNameClashBetweenModuleLocalVariablesAndUncalledModuleLocalVariables
-                            //
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfMainModuleParameters,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfLocalMainModuleVariables,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfCalledModuleParameters,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfCalledModuleVariables,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfUncalledModuleParameters,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfUncalledModuleVariables,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInMainModule,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInMainModule,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInCalledModule,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInCalledModule,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInUncalledModule,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInUncalledModule,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfModuleParametersUsedAsParametersInCalledModule,
-                            // InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfLocalModuleVariablesUsedAsParametersInCalledModule,
-                            // InlineQubitsInformationFeatureDeactivatedForLargerThan1DVariable,
-                            // InlineQubitsInformationFeatureDeactivatedDoesHandleNameClashBetweenModuleLocalVariablesAndCalledModuleLocalVariablesCorrectly,
-                            // InlineQubitsInformationFeatureDeactivatedDoesHandleNameClashBetweenModuleLocalVariablesAndUncalledModuleLocalVariablesCorrectly
-);
+                            InlineQubitsInformationFeatureActivatedDoesRecordDifferentInlineStacksForNameClashBetweenModuleLocalVariablesAndUncalledModuleLocalVariables,
+
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfMainModuleParameters,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfLocalMainModuleVariables,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfCalledModuleParameters,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfCalledModuleVariables,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfUncalledModuleParameters,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfUncalledModuleVariables,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInMainModule,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInMainModule,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInCalledModule,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInCalledModule,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInUncalledModule,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInUncalledModule,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfModuleParametersUsedAsParametersInCalledModule,
+                            InlineQubitInformationFeatureDeactivatedDoesNotRecordInlineStackOfLocalModuleVariablesUsedAsParametersInCalledModule,
+                            InlineQubitsInformationFeatureDeactivatedForLargerThan1DVariable,
+                            InlineQubitsInformationFeatureDeactivatedDoesHandleNameClashBetweenModuleLocalVariablesAndCalledModuleLocalVariablesCorrectly,
+                            InlineQubitsInformationFeatureDeactivatedDoesHandleNameClashBetweenModuleLocalVariablesAndUncalledModuleLocalVariablesCorrectly);
 
 using SynthesizerTypes = testing::Types<CostAwareSynthesis, LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, SynthesisInlinedQubitInformationTestsFixture, SynthesizerTypes, );
