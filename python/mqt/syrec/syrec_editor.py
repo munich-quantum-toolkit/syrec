@@ -1036,19 +1036,19 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         self.qubit_info_widget.toggle_all_inline_information_controls(True)
         # Sort combobox qubit labels according to prefix __q<NUM>
 
-        inline_stack_of_qubit: syrec.qubit_inlining_stack | None = (
-            self.annotatable_quantum_computation.get_inline_stack_of_qubit(
+        inline_information_of_qubit: syrec.inlined_qubit_information | None = (
+            self.annotatable_quantum_computation.get_inlined_qubit_information(
                 qubit_internal_label_and_index.associated_qubit
             )
             if self.annotatable_quantum_computation is not None
             else None
         )
+
+        inline_stack_of_qubit: syrec.qubit_inlining_stack | None = (
+            inline_information_of_qubit.inline_stack if inline_information_of_qubit is not None else None
+        )
         user_declared_qubit_label: str | None = (
-            self.annotatable_quantum_computation.get_qubit_label(
-                qubit_internal_label_and_index.associated_qubit, syrec.qubit_label_type.user_declared
-            )
-            if self.annotatable_quantum_computation is not None
-            else None
+            inline_information_of_qubit.user_declared_qubit_label if inline_information_of_qubit is not None else None
         )
 
         self.qubit_info_widget.update_information(

@@ -49,6 +49,11 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .def("size", &QubitInliningStack::size, "Get the number of stack entries")
             .def("__getitem__", &QubitInliningStack::getStackEntryAt, "idx"_a, py::return_value_policy::reference_internal); // NOLINT(misc-include-cleaner)
 
+    py::class_<AnnotatableQuantumComputation::InlinedQubitInformation>(m, "inlined_qubit_information")
+            .def(py::init<>(), "Constructs an empty inlined qubit information container")
+            .def_property_readonly("user_declared_qubit_label", [](const AnnotatableQuantumComputation::InlinedQubitInformation& inlinedQubitInfo) { return inlinedQubitInfo.userDeclaredQubitLabel; }, "Get the label of the qubit as defined by the user in the SyReC program")
+            .def_property_readonly("inline_stack", [](const AnnotatableQuantumComputation::InlinedQubitInformation& inlinedQubitInfo) { return inlinedQubitInfo.inlineStack; }, "Get the inline stack associated with the qubit");
+
     py::enum_<AnnotatableQuantumComputation::QubitLabelType>(m, "qubit_label_type")
             .value("internal", AnnotatableQuantumComputation::QubitLabelType::Internal, "Generate the qubit label using the internal qubit identifier (only available for ancillary qubits and local SyReC module variables)")
             .value("user_declared", AnnotatableQuantumComputation::QubitLabelType::UserDeclared, "Generate the qubit label using the user declared variable identifier (only available for the qubits of the variables of a SyReC program [ancillary qubits are not associated with a variable and thus have no user declared label])")
@@ -60,7 +65,7 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .def("get_quantum_cost_for_synthesis", &AnnotatableQuantumComputation::getQuantumCostForSynthesis, "Get the quantum cost to synthesis the quantum computation")
             .def("get_transistor_cost_for_synthesis", &AnnotatableQuantumComputation::getTransistorCostForSynthesis, "Get the transistor cost to synthesis the quantum computation")
             .def("get_annotations_of_quantum_operation", &AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation, "quantum_operation_index_in_quantum_operation"_a, "Get the annotations of a specific quantum operation in the quantum computation")
-            .def("get_inline_stack_of_qubit", &AnnotatableQuantumComputation::getInlineStackOfQubit, "qubit"_a, "Get the inline stack of a qubit", py::return_value_policy::reference_internal);
+            .def("get_inlined_qubit_information", &AnnotatableQuantumComputation::getInlinedQubitInformation, "qubit"_a, "Get the inlined information of a qubit");
 
     py::class_<NBitValuesContainer>(m, "n_bit_values_container")
             .def(py::init<>(), "Constructs an empty container of size zero.")

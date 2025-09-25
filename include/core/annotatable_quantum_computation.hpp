@@ -210,12 +210,11 @@ namespace syrec {
         [[maybe_unused]] bool setOrUpdateAnnotationOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation, const std::string_view& annotationKey, const std::string& annotationValue);
 
         /**
-         * Get the inline stack of a qubit.
-         * @param qubit The index of the qubit in the quantum computation
-         * @return The inline stack of the \p qubit if said qubit is an ancillary qubit or associated with a local variable of a SyReC module.
-         * @remark The lifetime of the return qubit inline stack is managed by the annotatable quantum computation and can be influence by modifications of the latter.
+         * Get the inlined qubit information
+         * @param qubit The qubit whose inline information shall be fetched.
+         * @return The inline information of the qubit if such information exists, otherwise std::nullopt is returned
          */
-        [[nodiscard]] const QubitInliningStack* getInlineStackOfQubit(qc::Qubit qubit) const;
+        [[nodiscard]] std::optional<InlinedQubitInformation> getInlinedQubitInformation(qc::Qubit qubit) const;
 
     protected:
         [[maybe_unused]] bool annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation);

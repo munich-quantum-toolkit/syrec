@@ -28,6 +28,30 @@
 #include <vector>
 
 namespace {
+    template<class ForwardIterator>
+    std::optional<std::size_t> findIndexOfElementContainingQubit(ForwardIterator firstElementOfCollection, ForwardIterator lastElementOfCollection, const qc::Qubit qubitToFind) {
+        static_assert(std::is_same_v<syrec::AnnotatableQuantumComputation::QubitIndexRange, typename std::iterator_traits<ForwardIterator>::value_type>);
+        if (std::distance(firstElementOfCollection, lastElementOfCollection) == 0) {
+            return std::nullopt;
+        }
+
+        const auto qubitRangeOfFirstElementInCollection = static_cast<syrec::AnnotatableQuantumComputation::QubitIndexRange>(*firstElementOfCollection);
+        if (qubitRangeOfFirstElementInCollection.firstQubitIndex > qubitToFind) {
+            return std::nullopt;
+        }
+
+        const auto& iteratorToRangeElementGreaterOrEqualToQubit = std::lower_bound(firstElementOfCollection, lastElementOfCollection, qubitToFind, [](const syrec::AnnotatableQuantumComputation::QubitIndexRange& qubitIndexRangeOfElement, const qc::Qubit qubitToFind) { return qubitIndexRangeOfElement.lastQubitIndex < qubitToFind; });
+        ptrdiff_t   iteratorOffsetForFoundElement               = 0U;
+        if (iteratorToRangeElementGreaterOrEqualToQubit == lastElementOfCollection) {
+            const auto qubitRangeOfLastElementInCollection = static_cast<syrec::AnnotatableQuantumComputation::QubitIndexRange>(*iteratorToRangeElementGreaterOrEqualToQubit);
+            if (qubitToFind == qubitRangeOfLastElementInCollection.firstQubitIndex) {
+                return std::nullopt;
+            }
+            iteratorOffsetForFoundElement = 1U;
+        }
+        return static_cast<std::size_t>(std::distance(firstElementOfCollection, iteratorToRangeElementGreaterOrEqualToQubit) - iteratorOffsetForFoundElement);
+    }
+
     bool isInlineStackNotSetOrEmpty(const syrec::QubitInliningStack::ptr& inlineStackToCheck) {
         return inlineStackToCheck == nullptr || inlineStackToCheck->size() == 0;
     }
@@ -412,13 +436,17 @@ bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std:
     return true;
 }
 
-const QubitInliningStack* AnnotatableQuantumComputation::getInlineStackOfQubit(const qc::Qubit qubit) const {
+std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> AnnotatableQuantumComputation::getInlinedQubitInformation(const qc::Qubit qubit) const {
     const std::optional<std::size_t>                                                  indexOfQuantumRegisterContainingQubit           = determineIndexOfQuantumRegisterStoringQubit(qubit);
     const std::optional<BaseQuantumRegisterVariableLayout::QubitInVariableLayoutData> associatedVariableForQubitDataInQuantumRegister = indexOfQuantumRegisterContainingQubit.has_value() ? quantumRegisterAssociatedVariableLayouts.at(*indexOfQuantumRegisterContainingQubit)->determineQubitInVariableLayoutData(qubit) : std::nullopt;
-    if (!associatedVariableForQubitDataInQuantumRegister.has_value() || !associatedVariableForQubitDataInQuantumRegister->inlinedQubitInformation.has_value() || !associatedVariableForQubitDataInQuantumRegister->inlinedQubitInformation->inlineStack.has_value()) {
-        return nullptr;
+    if (!associatedVariableForQubitDataInQuantumRegister.has_value() || !associatedVariableForQubitDataInQuantumRegister->inlinedQubitInformation.has_value()) {
+        return std::nullopt;
     }
-    return associatedVariableForQubitDataInQuantumRegister->inlinedQubitInformation->inlineStack->get();
+
+    InlinedQubitInformation qubitInlineInformation = associatedVariableForQubitDataInQuantumRegister->inlinedQubitInformation.value();
+    // The user declared qubit label stored in the qubit inline information of the quantum register only stores the identifier of the associated SyReC variable but no information about where in the variable the qubit is stored.
+    qubitInlineInformation.userDeclaredQubitLabel = getQubitLabel(qubit, UserDeclared);
+    return qubitInlineInformation;
 }
 
 // BEGIN NON-PUBLIC FUNCTIONALITY
@@ -490,39 +518,28 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
     // I. Calculate offset to next element in dimension
     // II. For each dimension perform a binary search to determine which element contains the qubit
     // III. Use indices to build accessed values per dimension for qubit.
-    bool couldRequiredValuePerDimensionBeDetermined = true;
-    auto requiredValuesPerDimension                 = std::vector(numValuesPerDimensionOfVariable.size(), 0U);
+    bool            couldRequiredValuePerDimensionBeDetermined = true;
+    auto            requiredValuesPerDimension                 = std::vector(numValuesPerDimensionOfVariable.size(), 0U);
+    const qc::Qubit qubitSizeOfElements                        = elementQubitSize;
+
     for (std::size_t i = 0; i < requiredValuesPerDimension.size() && couldRequiredValuePerDimensionBeDetermined; ++i) {
-        const unsigned qubitOffsetToNextElementInDimension = offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths[i] * elementQubitSize;
+        const unsigned qubitOffsetToNextElementInDimension = offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths[i] * qubitSizeOfElements;
 
         std::vector<unsigned> firstQubitIndexPerElementInDimension = std::vector(numValuesPerDimensionOfVariable.at(i), qubitOffsetToNextElementInDimension);
         firstQubitIndexPerElementInDimension[0]                    = storedQubitIndices.firstQubitIndex;
         for (std::size_t j = 0; j < i; ++j) {
-            firstQubitIndexPerElementInDimension[0] += (requiredValuesPerDimension[j] * offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths[j]) * elementQubitSize;
+            firstQubitIndexPerElementInDimension[0] += (requiredValuesPerDimension[j] * offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths[j]) * qubitSizeOfElements;
         }
 
         for (std::size_t j = 1; j < firstQubitIndexPerElementInDimension.size(); ++j) {
             firstQubitIndexPerElementInDimension[j] += firstQubitIndexPerElementInDimension[j - 1];
         }
 
-        // Binary search will return first element that is larger or equal than the qubit.
-        const auto& indexOfFirstElementWithQubitsLargerOrEqualToSearchedForQubit = std::ranges::lower_bound(std::as_const(firstQubitIndexPerElementInDimension), qubit);
-        unsigned    accessedValueOfDimension                                     = static_cast<unsigned>(std::distance(firstQubitIndexPerElementInDimension.cbegin(), indexOfFirstElementWithQubitsLargerOrEqualToSearchedForQubit));
+        const auto qubitIndexRangePerElementOfCollection = firstQubitIndexPerElementInDimension | std::views::transform([qubitSizeOfElements](const qc::Qubit firstQubitOfElement) { return QubitIndexRange(firstQubitOfElement, firstQubitOfElement + qubitSizeOfElements); });
+        const auto indexOfElementContainingQubit         = static_cast<std::optional<unsigned>>(findIndexOfElementContainingQubit(qubitIndexRangePerElementOfCollection.begin(), qubitIndexRangePerElementOfCollection.end(), qubit));
 
-        // If the qubit is stored in the last value of the dimension then no element larger than the qubit exists in the collection storing the first qubit of each value of the dimension
-        if (indexOfFirstElementWithQubitsLargerOrEqualToSearchedForQubit == firstQubitIndexPerElementInDimension.cend()) {
-            // If the qubit is not accessible by any element of the dimension then we can stop our search search and return that no index could be generated.
-            const qc::Qubit firstQubitAfterLastElementInDimensionWasAccessed = firstQubitIndexPerElementInDimension.back() + elementQubitSize;
-            if (qubit > firstQubitAfterLastElementInDimensionWasAccessed) {
-                couldRequiredValuePerDimensionBeDetermined = false;
-                continue;
-            }
-            // If the qubit is not larger than the last qubit covered by the current dimension then it must be stored in the last value of the dimension.
-            // Note that since we use std::distance(x.cbegin(), x.cend()) which returns x.size() to calculate the required index for the current dimension, an additionally decrement of the index is required.
-            --accessedValueOfDimension;
-        }
-        // If the qubit is not stored in the last element of the dimensoin then it must be contained in the element at the found index.
-        requiredValuesPerDimension[i] = accessedValueOfDimension;
+        couldRequiredValuePerDimensionBeDetermined = indexOfElementContainingQubit.has_value();
+        requiredValuesPerDimension[i]              = indexOfElementContainingQubit.value_or(0);
     }
     return couldRequiredValuePerDimensionBeDetermined ? std::make_optional(requiredValuesPerDimension) : std::nullopt;
 }
@@ -585,29 +602,7 @@ std::string AnnotatableQuantumComputation::buildQubitLabelForQubitOfVariableInQu
 }
 
 std::optional<std::size_t> AnnotatableQuantumComputation::determineIndexOfQuantumRegisterStoringQubit(const qc::Qubit qubit) const {
-    if (quantumRegisterAssociatedVariableLayouts.empty()) {
-        return std::nullopt;
-    }
-
-    // Perform a binary search that will return the first quantum register whose first start index is sorted before the searched for qubit in the quantum computation.
-    // We assumed that the quantum registers are sorted according to their contained qubit indices and that no "qubit gaps" between the quantum registers exist.
-    const auto& iteratorToFirstQuantumRegisterWithQubitsLargerOrEqualToSearchedForQubit = std::ranges::lower_bound(quantumRegisterAssociatedVariableLayouts, qubit, std::less(), [](const std::unique_ptr<BaseQuantumRegisterVariableLayout>& quantumRegisterVariableLayout) { return quantumRegisterVariableLayout->storedQubitIndices.lastQubitIndex; });
-
-    // If the binary search returned that no quantum register contained the qubit, a case distinction has to be made due to the binary search returning the first quantum register whose first qubit index is larger or equal to the search for qubit.
-    // We thus need to distinguish whether the qubit is larger or equal to the last qubit index stored in the last quantum register
-    const auto indexToQuantumRegisterStoringQubit = static_cast<std::size_t>(std::distance(quantumRegisterAssociatedVariableLayouts.cbegin(), iteratorToFirstQuantumRegisterWithQubitsLargerOrEqualToSearchedForQubit));
-    if (iteratorToFirstQuantumRegisterWithQubitsLargerOrEqualToSearchedForQubit == quantumRegisterAssociatedVariableLayouts.cend()) {
-        // If the search for qubit is larger than the last qubit index stored in the last quantum register then the quantum computation does not contain the qubit.
-        const qc::Qubit lastStoredQubit = quantumRegisterAssociatedVariableLayouts.back()->storedQubitIndices.lastQubitIndex;
-        if (qubit > lastStoredQubit) {
-            return std::nullopt;
-        }
-        // We need to decrement the calculate index to the last quantum register since std::distance(x.cbegin(), x.cend()) will return x.size().
-        return quantumRegisterAssociatedVariableLayouts.size() - 1U;
-    }
-    // In all other cases the qubit must be stored in the element at the index returned from the binary search since we checked that:
-    // - The qubit is not smaller than the smallest qubit of all quantum registers.
-    // - The qubit is not larger than the largest qubit of all quantum registers.
-    return indexToQuantumRegisterStoringQubit;
+    const auto qubitRangeOfQuantumRegisters = quantumRegisterAssociatedVariableLayouts | std::views::transform([](const std::unique_ptr<BaseQuantumRegisterVariableLayout>& quantumRegisterVariableLayout) { return quantumRegisterVariableLayout->storedQubitIndices; });
+    return findIndexOfElementContainingQubit(qubitRangeOfQuantumRegisters.begin(), qubitRangeOfQuantumRegisters.end(), qubit);
 }
 // END NON-PUBLIC FUNCTIONALITY
