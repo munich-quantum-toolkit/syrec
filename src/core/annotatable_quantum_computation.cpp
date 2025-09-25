@@ -488,8 +488,8 @@ bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(std:
 }
 
 // BEGIN Quantum register variable alyout functionality
-AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::NonAncillaryQuantumRegisterVariableLayout(const QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, const unsigned qubitSizeOfElementInVariable, const std::optional<InlinedQubitInformation>& optionalSharedQubitInliningInformation):
-    BaseQuantumRegisterVariableLayout(coveredQubitIndicesOfQuantumRegister, quantumRegisterLabel), elementQubitSize(qubitSizeOfElementInVariable), numValuesPerDimensionOfVariable(numValuesPerDimensionOfVariable), optionalSharedQubitInliningInformation(optionalSharedQubitInliningInformation) {
+AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::NonAncillaryQuantumRegisterVariableLayout(const QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, const unsigned qubitSizeOfElementInVariable, const std::optional<InlinedQubitInformation>& optionalSharedInlinedQubitInformation):
+    BaseQuantumRegisterVariableLayout(coveredQubitIndicesOfQuantumRegister, quantumRegisterLabel), elementQubitSize(qubitSizeOfElementInVariable), numValuesPerDimensionOfVariable(numValuesPerDimensionOfVariable), optionalSharedInlinedQubitInformation(optionalSharedInlinedQubitInformation) {
     offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths = std::vector(numValuesPerDimensionOfVariable.size(), 1U);
     std::size_t dimensionIndex                                        = numValuesPerDimensionOfVariable.size() - 1U;
     for (auto offsetIterator = std::next(offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths.rbegin()); offsetIterator != offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths.rend(); ++offsetIterator) {
@@ -507,7 +507,7 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
     return QubitInVariableLayoutData({.quantumRegisterLabel                           = quantumRegisterLabel,
                                       .accessedValuePerDimensionOfElementStoringQubit = *requiredValuePerDimensionToAccessElementStoringQubit,
                                       .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
-                                      .inlinedQubitInformation                        = optionalSharedQubitInliningInformation});
+                                      .inlinedQubitInformation                        = optionalSharedInlinedQubitInformation});
 }
 
 [[nodiscard]] std::optional<std::vector<unsigned>> AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::getRequiredValuesPerDimensionToAccessQubitOfVariable(const qc::Qubit qubit) const {
@@ -544,15 +544,11 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
     return couldRequiredValuePerDimensionBeDetermined ? std::make_optional(requiredValuesPerDimension) : std::nullopt;
 }
 
-AnnotatableQuantumComputation::AncillaryQuantumRegisterVariableLayout::AncillaryQuantumRegisterVariableLayout(const QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const InlinedQubitInformation& sharedQubitInliningInformation):
+AnnotatableQuantumComputation::AncillaryQuantumRegisterVariableLayout::AncillaryQuantumRegisterVariableLayout(const QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const InlinedQubitInformation& sharedInlinedQubitInformation):
     BaseQuantumRegisterVariableLayout(coveredQubitIndicesOfQuantumRegister, quantumRegisterLabel) {
-    // TODO: We should somewhere check the invariant that the first qubit index must be larger than the last qubit index.
     storedQubitIndices         = coveredQubitIndicesOfQuantumRegister;
     this->quantumRegisterLabel = quantumRegisterLabel;
-
-    for (qc::Qubit firstQubitIndex = storedQubitIndices.firstQubitIndex; firstQubitIndex <= storedQubitIndices.lastQubitIndex; ++firstQubitIndex) {
-        qubitInliningInformation.emplace(std::make_pair(firstQubitIndex, sharedQubitInliningInformation));
-    }
+    sharedQubitRangeInlineInformationLookup.emplace_back(storedQubitIndices, sharedInlinedQubitInformation);
 }
 
 std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::QubitInVariableLayoutData> AnnotatableQuantumComputation::AncillaryQuantumRegisterVariableLayout::determineQubitInVariableLayoutData(const qc::Qubit qubit) const {
@@ -561,38 +557,32 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
     }
 
     const qc::Qubit relativeQubitIndexInQuantumRegister = qubit - storedQubitIndices.firstQubitIndex;
-    const auto&     inliningInformationOfQubit          = qubitInliningInformation.find(qubit);
+
+    const auto&                      nonOverlappingQubitIndexRanges = sharedQubitRangeInlineInformationLookup | std::views::transform([](const SharedQubitRangeInlineInformation& sharedQubitRangeInlineInformation) { return sharedQubitRangeInlineInformation.coveredQubitIndexRange; });
+    const std::optional<std::size_t> indexOfQubitRangeStoringQubit  = findIndexOfElementContainingQubit(nonOverlappingQubitIndexRanges.begin(), nonOverlappingQubitIndexRanges.end(), qubit);
+    if (!indexOfQubitRangeStoringQubit.has_value()) {
+        return std::nullopt;
+    }
+
     return QubitInVariableLayoutData({.quantumRegisterLabel                           = quantumRegisterLabel,
                                       .accessedValuePerDimensionOfElementStoringQubit = std::vector({0U}),
                                       .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
-                                      .inlinedQubitInformation                        = inliningInformationOfQubit->second});
+                                      .inlinedQubitInformation                        = sharedQubitRangeInlineInformationLookup.at(*indexOfQubitRangeStoringQubit).inlinedQubitInformation});
 }
 
-bool AnnotatableQuantumComputation::AncillaryQuantumRegisterVariableLayout::appendQubitRange(const QubitIndexRange qubitIndexRange, const InlinedQubitInformation& sharedQubitInliningInformation) {
-    if (qubitIndexRange.firstQubitIndex != storedQubitIndices.lastQubitIndex + 1 || qubitIndexRange.firstQubitIndex > qubitIndexRange.lastQubitIndex) {
+bool AnnotatableQuantumComputation::AncillaryQuantumRegisterVariableLayout::appendQubitRange(const QubitIndexRange qubitIndexRange, const InlinedQubitInformation& sharedInlinedQubitInformation) {
+    if (sharedQubitRangeInlineInformationLookup.empty() || qubitIndexRange.firstQubitIndex != storedQubitIndices.lastQubitIndex + 1 || qubitIndexRange.firstQubitIndex > qubitIndexRange.lastQubitIndex) {
         return false;
     }
 
-    bool didQubitInlineInformationExistForAnyQubit = false;
-    for (qc::Qubit qubitToAppend = qubitIndexRange.firstQubitIndex; qubitToAppend <= qubitIndexRange.lastQubitIndex && !didQubitInlineInformationExistForAnyQubit; ++qubitToAppend) {
-        didQubitInlineInformationExistForAnyQubit = qubitInliningInformation.contains(qubitToAppend);
-    }
-
-    if (didQubitInlineInformationExistForAnyQubit) {
-        return false;
-    }
-
+    sharedQubitRangeInlineInformationLookup.emplace_back(qubitIndexRange, sharedInlinedQubitInformation);
     const qc::Qubit qubitIndexRangeLength = (qubitIndexRange.lastQubitIndex - qubitIndexRange.firstQubitIndex) + 1U;
     storedQubitIndices.lastQubitIndex += qubitIndexRangeLength;
-
-    for (qc::Qubit qubitToAppend = qubitIndexRange.firstQubitIndex; qubitToAppend <= qubitIndexRange.lastQubitIndex; ++qubitToAppend) {
-        qubitInliningInformation[qubitToAppend] = sharedQubitInliningInformation;
-    }
     return true;
 }
-// END Quantum register variable alyout functionality
+// END Quantum register variable layout functionality
 
-std::string AnnotatableQuantumComputation::buildQubitLabelForQubitOfVariableInQuantumRegister(const std::string& quantumRegisterLabel, const std::vector<unsigned>& accessedValuePerDimension, std::size_t relativeQubitIndexInElement) {
+std::string AnnotatableQuantumComputation::buildQubitLabelForQubitOfVariableInQuantumRegister(const std::string& quantumRegisterLabel, const std::vector<unsigned>& accessedValuePerDimension, const std::size_t relativeQubitIndexInElement) {
     std::string generatedQubitLabel = quantumRegisterLabel;
     for (const auto accessedValueOfDimension: accessedValuePerDimension) {
         generatedQubitLabel += "[" + std::to_string(accessedValueOfDimension) + "]";
