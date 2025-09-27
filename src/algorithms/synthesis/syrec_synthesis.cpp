@@ -1267,8 +1267,9 @@ namespace syrec {
                 optionalQubitInliningInformation->inlineStack            = getLastCreatedModuleCallStackInstance();
             }
 
+            const auto variableLayoutInformation = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = variable->dimensions, .bitwidth = variable->bitwidth});
             // TODO: Validation of quantum register label to conform to OpenQASM 3.0 specification?
-            const std::optional<qc::Qubit> indexToFirstQubitOfQuantumRegister = annotatableQuantumComputation.addQuantumRegisterForSyrecVariable(quantumRegisterLabel, *variable, areQubitsCreatedForVariableConsideredGarbage, optionalQubitInliningInformation);
+            const std::optional<qc::Qubit> indexToFirstQubitOfQuantumRegister = annotatableQuantumComputation.addQuantumRegisterForSyrecVariable(quantumRegisterLabel, variableLayoutInformation, areQubitsCreatedForVariableConsideredGarbage, optionalQubitInliningInformation);
             if (!indexToFirstQubitOfQuantumRegister.has_value()) {
                 // TODO: Additional debug information (call stack, etc.)
                 std::cerr << "Failed to add quantum register for SyReC variable '" << variable->name << "'\n";

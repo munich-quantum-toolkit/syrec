@@ -50,8 +50,14 @@ namespace {
         return static_cast<std::size_t>(std::distance(firstElementOfCollection, iteratorToRangeElementGreaterThanQubit));
     }
 
-    bool isInlineStackNotSetOrEmpty(const syrec::QubitInliningStack::ptr& inlineStackToCheck) {
-        return inlineStackToCheck == nullptr || inlineStackToCheck->size() == 0;
+    bool isDataOfInlineStackOk(const syrec::QubitInliningStack::ptr& inlineStackToCheck) {
+        const std::size_t numElementsToCheck   = inlineStackToCheck != nullptr ? inlineStackToCheck->size() : 0;
+        bool              allStackEntriesValid = numElementsToCheck > 0;
+        for (std::size_t i = 0; i < numElementsToCheck && allStackEntriesValid; ++i) {
+            const syrec::QubitInliningStack::QubitInliningStackEntry* inlineStackEntryAtIdx = inlineStackToCheck->getStackEntryAt(i);
+            allStackEntriesValid                                                            = inlineStackEntryAtIdx != nullptr && inlineStackEntryAtIdx->targetModule != nullptr;
+        }
+        return allStackEntriesValid;
     }
 } // namespace
 
@@ -133,25 +139,25 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
 }
 
 // TODO: Tests
-std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const Variable& variable, const bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
-    if (!canQubitsBeAddedToQuantumComputation || variable.bitwidth == 0 || std::ranges::all_of(variable.dimensions, [](const unsigned numberOfValuesOfDimension) { return numberOfValuesOfDimension == 0; }) || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && isInlineStackNotSetOrEmpty(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
+std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
+    if (!canQubitsBeAddedToQuantumComputation || associatedVariableLayoutInformation.bitwidth == 0 || associatedVariableLayoutInformation.numValuesPerDimension.empty() || std::ranges::any_of(associatedVariableLayoutInformation.numValuesPerDimension, [](const unsigned numberOfValuesOfDimension) { return numberOfValuesOfDimension == 0; }) || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && !isDataOfInlineStackOk(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
         return std::nullopt;
     }
 
-    const unsigned numberOfElementsInVariable    = std::accumulate(variable.dimensions.cbegin(), variable.dimensions.cend(), 1U, std::multiplies());
-    const unsigned totalNumberOfQubitsOfVariable = numberOfElementsInVariable * variable.bitwidth;
+    const unsigned numberOfElementsInVariable    = std::accumulate(associatedVariableLayoutInformation.numValuesPerDimension.cbegin(), associatedVariableLayoutInformation.numValuesPerDimension.cend(), 1U, std::multiplies());
+    const unsigned totalNumberOfQubitsOfVariable = numberOfElementsInVariable * associatedVariableLayoutInformation.bitwidth;
     const auto     addedQuantumRegister          = addQubitRegister(totalNumberOfQubitsOfVariable, quantumRegisterLabel);
     if (areGeneratedQubitsGarbage) {
         setLogicalQubitsGarbage(addedQuantumRegister.getStartIndex(), addedQuantumRegister.getEndIndex());
     }
 
     const auto coveredQubitIndices = QubitIndexRange({.firstQubitIndex = addedQuantumRegister.getStartIndex(), .lastQubitIndex = addedQuantumRegister.getEndIndex()});
-    quantumRegisterAssociatedVariableLayouts.emplace_back(std::make_unique<NonAncillaryQuantumRegisterVariableLayout>(coveredQubitIndices, quantumRegisterLabel, variable.dimensions, variable.bitwidth, optionalInliningInformation));
+    quantumRegisterAssociatedVariableLayouts.emplace_back(std::make_unique<NonAncillaryQuantumRegisterVariableLayout>(coveredQubitIndices, quantumRegisterLabel, associatedVariableLayoutInformation.numValuesPerDimension, associatedVariableLayoutInformation.bitwidth, optionalInliningInformation));
     return addedQuantumRegister.getStartIndex();
 }
 
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryRegisterOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation) {
-    if (!canQubitsBeAddedToQuantumComputation || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || initialStateOfAncillaryQubits.empty() || (sharedInliningInformation.inlineStack.has_value() && isInlineStackNotSetOrEmpty(sharedInliningInformation.inlineStack.value())) || sharedInliningInformation.userDeclaredQubitLabel.has_value()) {
+    if (!canQubitsBeAddedToQuantumComputation || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || initialStateOfAncillaryQubits.empty() || (sharedInliningInformation.inlineStack.has_value() && !isDataOfInlineStackOk(sharedInliningInformation.inlineStack.value())) || sharedInliningInformation.userDeclaredQubitLabel.has_value()) {
         return std::nullopt;
     }
 

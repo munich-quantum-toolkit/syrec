@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include "core/syrec/variable.hpp"
 #include "dd/DDDefinitions.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
@@ -84,22 +83,38 @@ namespace syrec {
             UserDeclared
         };
 
+        /**
+         * A simpler container for the layout information about a SyReC variable.
+         */
+        struct AssociatedVariableLayoutInformation {
+            /**
+             * The number of values for each dimension of a SyReC variable
+             */
+            std::vector<unsigned> numValuesPerDimension;
+            /**
+             * The bitwidth of each element in the SyReC variable.
+             */
+            unsigned bitwidth;
+        };
+
         [[nodiscard]] bool addOperationsImplementingNotGate(qc::Qubit targetQubit);
         [[nodiscard]] bool addOperationsImplementingCnotGate(qc::Qubit controlQubit, qc::Qubit targetQubit);
         [[nodiscard]] bool addOperationsImplementingToffoliGate(qc::Qubit controlQubitOne, qc::Qubit controlQubitTwo, qc::Qubit targetQubit);
         [[nodiscard]] bool addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubitsSet, qc::Qubit targetQubit);
         [[nodiscard]] bool addOperationsImplementingFredkinGate(qc::Qubit targetQubitOne, qc::Qubit targetQubitTwo);
 
+        // TODO: Should we check whether the inline stack does not contain nullptr references to the target module (should not be possible if qubit inline stack is constructed using its .push(...) operations)?
         /**
          * Add a quantum register for the qubits of a SyReC variable to the quantum computation.
          * @param quantumRegisterLabel The label for the to be added quantum register. Must not be empty and no other qubit or quantum register with the same name must exist in the quantum computation.
-         * @param variable The SyReC variable for which qubits shall be generated. Total number of elements stored in variable must be larger than zero. Bitwidth of variable must be larger than 0.
+         * @param associatedVariableLayoutInformation Layout information about the associated SyReC variable that is used to detremine the number of qubits to generate. Total number of elements stored in variable must be larger than zero. Bitwidth of variable must be larger than 0.
          * @param areGeneratedQubitsGarbage Whether the generated qubits are garbage qubits.
          * @param optionalInliningInformation Optional debug information to determine the origin of the qubits in the associated SyReC program.
          * @return The index of the first generated non-ancillary qubit for the \p variable in the quantum computation, std::nullopt if the validation of the \p quantumRegisterLabel or \p variable failed, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid or empty inline stack).
          */
-        [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const Variable& variable, bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
+        [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
 
+        // TODO: Should we check whether the inline stack does not contain nullptr references to the target module (should not be possible if qubit inline stack is constructed using its .push(...) operations)?
         /**
          * Add a quantum register for a number of preliminary ancillary qubits in the quantum computation.
          * @param quantumRegisterLabel The label for the created quantum register. A new quantum register is only created if the ancillary qubits could not be appended to an adjacent ancillary qubit register.
@@ -206,6 +221,7 @@ namespace syrec {
          */
         [[maybe_unused]] bool setOrUpdateAnnotationOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation, const std::string_view& annotationKey, const std::string& annotationValue);
 
+        // TODO: Should we return a pointer instead to be able to determine whether the inlined information of qubits reference the same instance?
         /**
          * Get the inlined qubit information.
          * @param qubit The qubit whose inline information shall be fetched.
@@ -268,7 +284,8 @@ namespace syrec {
                 QubitIndexRange         coveredQubitIndexRange;
                 InlinedQubitInformation inlinedQubitInformation;
 
-                SharedQubitRangeInlineInformation(const QubitIndexRange coveredQubitIndexRange, InlinedQubitInformation inlinedQubitInformation): coveredQubitIndexRange(coveredQubitIndexRange), inlinedQubitInformation(std::move(inlinedQubitInformation)) {}
+                SharedQubitRangeInlineInformation(const QubitIndexRange coveredQubitIndexRange, InlinedQubitInformation inlinedQubitInformation):
+                    coveredQubitIndexRange(coveredQubitIndexRange), inlinedQubitInformation(std::move(inlinedQubitInformation)) {}
             };
             std::vector<SharedQubitRangeInlineInformation> sharedQubitRangeInlineInformationLookup;
         };
