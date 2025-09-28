@@ -274,7 +274,6 @@ namespace syrec {
          */
         [[maybe_unused]] bool setOrUpdateAnnotationOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation, const std::string_view& annotationKey, const std::string& annotationValue);
 
-        // TODO: Should we return a pointer instead to be able to determine whether the inlined information of qubits reference the same instance?
         /**
          * Get the inlined qubit information.
          * @param qubit The qubit whose inline information shall be fetched.

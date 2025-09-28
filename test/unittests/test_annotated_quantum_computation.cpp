@@ -12,11 +12,14 @@
 #include "core/qubit_inlining_stack.hpp"
 #include "core/syrec/module.hpp"
 #include "ir/Definitions.hpp"
+#include "ir/QuantumComputation.hpp"
+#include "ir/Register.hpp"
 #include "ir/operations/Control.hpp"
 #include "ir/operations/OpType.hpp"
 #include "ir/operations/Operation.hpp"
 #include "ir/operations/StandardOperation.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
@@ -266,7 +269,7 @@ protected:
     }
 
     static void assertExpectedAndActualQubitLabelMatch(const AnnotatableQuantumComputation& annotatableQuantumComputation, const AnnotatableQuantumComputation::QubitLabelType qubitLabelType, const qc::Qubit qubitToCheck, const std::string& expectedQubitIdentifier, const std::vector<unsigned>& expectedAccessedValuePerDimensionToAccessQubitToCheck, const unsigned expectedAccessedBitToAccessQubitToCheck) {
-        std::string                expectedQubitLabel = "";
+        std::string                expectedQubitLabel;
         std::optional<std::string> actualQubitLabel;
 
         ASSERT_NO_FATAL_FAILURE(expectedQubitLabel = buildExpectedQubitLabel(expectedQubitIdentifier, expectedAccessedValuePerDimensionToAccessQubitToCheck, expectedAccessedBitToAccessQubitToCheck));

@@ -8,7 +8,6 @@
  * Licensed under the MIT License
  */
 
-#include "algorithms/synthesis/internal_qubit_label_builder.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_synthesis.hpp"
@@ -17,6 +16,7 @@
 #include "core/qubit_inlining_stack.hpp"
 #include "core/syrec/module.hpp"
 #include "core/syrec/program.hpp"
+#include "ir/Definitions.hpp"
 
 #include <cstddef>
 #include <gmock/gmock-matchers.h>

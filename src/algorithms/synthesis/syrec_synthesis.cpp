@@ -131,13 +131,11 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
-        // TODO: All precondition checks can be refactoring into own function.
         if (synthesizer == nullptr) {
             std::cerr << "Please use a valid synthesizer instance when trying to synthesis a SyReC program\n";
             return false;
         }
 
-        // TODO: Validate that annotatable quantum computation is empty. This covers only properties of base class but not of derived class.
         if (synthesizer->annotatableQuantumComputation.getNops() != 0 || synthesizer->annotatableQuantumComputation.getNqubits() != 0) {
             std::cerr << "Annotatable quantum computation must be empty prior to the synthesis of a SyReC program\n";
             return false;
@@ -1256,10 +1254,14 @@ namespace syrec {
 
             std::string quantumRegisterLabel = variable->name;
             if (variable->type == Variable::Type::Wire || variable->type == Variable::Type::State) {
-                // TODO: Rework comment since only one quantum register is created instead of n separate qubits.
-                // To prevent name clashes when local module variables are inlined at the callsite, all local variable names are transformed to '__q<curr_num_qubits>' and an alias is created and stored
-                // in the annotatable quantum computation. The <curr_num_qubits> portion of the new variable name is the number of qubits prior to the addition of any variable in this call so that the qubits
-                // created for each value of a dimension of a variable share the same name prefix (i.e. the variable 'wire a[2](2)' will cause the generation of the qubits '__q0[0].0', '__q0[0].1','__q0[1].0', '__q0[1].0')
+                // To prevent name clashes between the identifiers of the local variables of a module with any active variable, a transformation of the local variable identifier to '__q<curr_num_qubits>' is performed and used
+                // to identify the variable in the quantum computation with the prefix portion <curr_num_qubits> being equal to the current number of qubits in the quantum computation.
+                // The 'original' identifier of the local variable is stored as the user declared label in the inline qubit information of the qubits of the variable.
+                // Note that assuming that the local module variable contains n qubits then instead of creating n 1-qubit quantum registers, one n-qubit quantum register will be created using the internal identifier of the local variable
+                // as its identifier.
+                //
+                // One caveat to remember is that the generated quantum computation can only be converted to its OpenQASM 3.0 representation but not the OpenQASM 2.0 due to the chosen internal variable identifier prefix '__q<curr_num_qubits>'
+                // not defining a valid OpenQASM 2.0 quantum register identifier.
                 quantumRegisterLabel = InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(annotatableQuantumComputation.getNqubits());
 
                 optionalQubitInliningInformation                         = AnnotatableQuantumComputation::InlinedQubitInformation();
@@ -1267,17 +1269,14 @@ namespace syrec {
                 optionalQubitInliningInformation->inlineStack            = getLastCreatedModuleCallStackInstance();
             }
 
-            const auto variableLayoutInformation = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = variable->dimensions, .bitwidth = variable->bitwidth});
-            // TODO: Validation of quantum register label to conform to OpenQASM 3.0 specification?
+            const auto                     variableLayoutInformation          = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = variable->dimensions, .bitwidth = variable->bitwidth});
             const std::optional<qc::Qubit> indexToFirstQubitOfQuantumRegister = annotatableQuantumComputation.addQuantumRegisterForSyrecVariable(quantumRegisterLabel, variableLayoutInformation, areQubitsCreatedForVariableConsideredGarbage, optionalQubitInliningInformation);
             if (!indexToFirstQubitOfQuantumRegister.has_value()) {
-                // TODO: Additional debug information (call stack, etc.)
                 std::cerr << "Failed to add quantum register for SyReC variable '" << variable->name << "'\n";
                 return false;
             }
 
             if (!firstVariableQubitOffsetLookup->registerOrUpdateOffsetToFirstQubitOfVariableInCurrentScope(variable->name, *indexToFirstQubitOfQuantumRegister)) {
-                // TODO: Additional debug information (call stack, etc.)
                 std::cerr << "Failed to register offset to first qubit of quantum register for SyReC variable '" << variable->name << "'\n";
                 return false;
             }
@@ -1323,12 +1322,10 @@ namespace syrec {
             initialValuesOfAncillaryQubits[i] = (value & (1 << i)) != 0;
         }
 
-        const auto expectedQubitIndexForFirstAddedAncillaryQubit = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
-
-        // TODO: Update internal qubit builder
-        const std::string quantumRegisterLabel = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedQubitIndexForFirstAddedAncillaryQubit);
-        auto              inliningInformation  = AnnotatableQuantumComputation::InlinedQubitInformation();
-        inliningInformation.inlineStack        = getLastCreatedModuleCallStackInstance();
+        const auto        expectedQubitIndexForFirstAddedAncillaryQubit = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
+        const std::string quantumRegisterLabel                          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedQubitIndexForFirstAddedAncillaryQubit);
+        auto              inliningInformation                           = AnnotatableQuantumComputation::InlinedQubitInformation();
+        inliningInformation.inlineStack                                 = getLastCreatedModuleCallStackInstance();
 
         const std::optional<qc::Qubit> actualQubitIndexForFirstAddedAncillaryQubit = annotatableQuantumComputation.addPreliminaryAncillaryRegisterOrAppendToAdjacentOne(quantumRegisterLabel, initialValuesOfAncillaryQubits, inliningInformation);
         const bool                     couldAncillaryQubitsBeAdded                 = actualQubitIndexForFirstAddedAncillaryQubit.has_value() && *actualQubitIndexForFirstAddedAncillaryQubit == expectedQubitIndexForFirstAddedAncillaryQubit;
