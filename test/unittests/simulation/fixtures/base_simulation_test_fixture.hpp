@@ -16,6 +16,7 @@
 #include "core/n_bit_values_container.hpp"
 #include "core/properties.hpp"
 #include "core/syrec/program.hpp"
+#include "qasm3/Importer.hpp"
 
 #include <cstddef>
 #include <fstream>
@@ -24,6 +25,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -77,6 +79,7 @@ public:
         const std::string& stringifiedInputCircuit = jsonDataOfTestCase[jsonKeyForInputCircuit].template get<std::string>();
         ASSERT_NO_FATAL_FAILURE(parseInputCircuitFromString(stringifiedInputCircuit, syrecProgramInstance));
         ASSERT_TRUE(performProgramSynthesis(syrecProgramInstance, annotatableQuantumComputation, optionalSynthesisSettings)) << "Synthesis of input circuit was not successful";
+        ASSERT_NO_FATAL_FAILURE(assertExportToValidQasm3AndReimportSuccessful(annotatableQuantumComputation));
 
         const json& jsonDataOfSimulationRuns = jsonDataOfTestCase[jsonKeyForSimulationRuns];
         for (const auto& jsonDataOfSimulationRun: jsonDataOfSimulationRuns) {
@@ -98,7 +101,7 @@ public:
 
 protected:
     static void loadAndParseTestCaseDataFromJson(const std::string& pathToTestCaseDataJsonFile, const std::string& testcaseJsonKey, json& containerForJsonDataOfTestCase) {
-        std::ifstream inputFileStream(pathToTestCaseDataJsonFile, std::ios_base::in);
+        std::ifstream inputFileStream(pathToTestCaseDataJsonFile, std::ios_base::in); //NOLINT(portability-template-virtual-member-function)
         ASSERT_TRUE(inputFileStream.good()) << "Input file @" << pathToTestCaseDataJsonFile << " is not in a usable state (e.g. does not exist)";
 
         const json parsedJsonDataOfFile = json::parse(inputFileStream);
@@ -134,6 +137,23 @@ protected:
         } else {
             return syrec::LineAwareSynthesis::synthesize(annotatableQuantumComputation, program, synthesisSettings);
         }
+    }
+
+    // Check that dump of annotatable quantum computation create valid OpenQASM 3.0 program (see issue #360).
+    static void assertExportToValidQasm3AndReimportSuccessful(const syrec::AnnotatableQuantumComputation& annotatableQuantumComputation) {
+        std::stringstream exportBufferForQasm3Representation;
+        ASSERT_NO_FATAL_FAILURE(annotatableQuantumComputation.dumpOpenQASM(exportBufferForQasm3Representation)) << "Failed to dump OpenQASM 3.0 representation of annotatable quantum computation";
+
+        // std::ostream and std::istream use same position for writing and reading so after the export was finished (i.e. the std::ostream was written) we need to reset the read position to the begin of the stream
+        exportBufferForQasm3Representation.seekg(0U, std::ios_base::beg);
+
+        qc::QuantumComputation importedQuantumComputation;
+        ASSERT_NO_FATAL_FAILURE(importedQuantumComputation = qasm3::Importer::import(exportBufferForQasm3Representation)) << "Failed to import previously dumped OpenQASM 3.0 representation of annotatable quantum computation";
+        ASSERT_EQ(annotatableQuantumComputation.getNops(), importedQuantumComputation.getNops()) << "Number of operations of imported quantum computation did not match number of operations of exported annotatable quantum computation";
+        ASSERT_EQ(annotatableQuantumComputation.getNqubits(), importedQuantumComputation.getNqubits()) << "Number of qubits of imported quantum computation did not match qubits of operations of exported annotatable quantum computation";
+        ;
+        ASSERT_EQ(annotatableQuantumComputation.getQuantumRegisters().size(), importedQuantumComputation.getQuantumRegisters().size()) << "Number of quantum registers of imported quantum computation did not match number of quantum registers of exported annotatable quantum computation";
+        ;
     }
 
     static void assertSimulationResultForStateMatchesExpectedOne(const syrec::AnnotatableQuantumComputation& annotatableQuantumComputation, const syrec::NBitValuesContainer& inputState, const syrec::NBitValuesContainer& expectedOutputState, const std::size_t userDefinedNumQubitsToCheck) {
