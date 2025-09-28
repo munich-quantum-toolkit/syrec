@@ -15,10 +15,13 @@
 #include "ir/operations/Control.hpp"
 #include "ir/operations/OpType.hpp"
 #include "ir/operations/Operation.hpp"
-#include "nlohmann/detail/input/binary_reader.hpp"
 
 #include <algorithm>
 #include <cstddef>
+#include <functional>
+#include <iterator>
+#include <memory>
+#include <numeric>
 #include <optional>
 #include <ranges>
 #include <string>
@@ -29,7 +32,7 @@
 
 namespace {
     template<class ForwardIterator>
-    std::optional<std::size_t> findIndexOfElementContainingQubit(ForwardIterator firstElementOfCollection, ForwardIterator lastElementOfCollection, const qc::Qubit qubitToFind) {
+    std::optional<std::size_t> findIndexOfElementContainingQubit(const ForwardIterator& firstElementOfCollection, const ForwardIterator& lastElementOfCollection, const qc::Qubit qubitToFind) {
         static_assert(std::is_same_v<syrec::AnnotatableQuantumComputation::QubitIndexRange, typename std::iterator_traits<ForwardIterator>::value_type>);
         if (std::distance(firstElementOfCollection, lastElementOfCollection) == 0) {
             return std::nullopt;
@@ -138,7 +141,6 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
     return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
 }
 
-// TODO: Tests
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
     if (!canQubitsBeAddedToQuantumComputation || associatedVariableLayoutInformation.bitwidth == 0 || associatedVariableLayoutInformation.numValuesPerDimension.empty() || std::ranges::any_of(associatedVariableLayoutInformation.numValuesPerDimension, [](const unsigned numberOfValuesOfDimension) { return numberOfValuesOfDimension == 0; }) || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && !isDataOfInlineStackOk(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
         return std::nullopt;
@@ -225,7 +227,7 @@ std::optional<std::string> AnnotatableQuantumComputation::getQubitLabel(const qc
         }
         inheritedQubitIdentifierFromQuantumRegister = *qubitInformationFromQuantumRegister->inlinedQubitInformation->userDeclaredQubitLabel;
     } else if (qubitLabelType == Internal) {
-        inheritedQubitIdentifierFromQuantumRegister = qubitInformationFromQuantumRegister->quantumRegisterLabel;
+        inheritedQubitIdentifierFromQuantumRegister = quantumRegisterAssociatedVariableLayouts.at(*indexOfQuantumRegisterStoringQubit)->quantumRegisterLabel;
     }
     return buildQubitLabelForQubitOfVariableInQuantumRegister(inheritedQubitIdentifierFromQuantumRegister, qubitInformationFromQuantumRegister->accessedValuePerDimensionOfElementStoringQubit, qubitInformationFromQuantumRegister->relativeQubitIndexInElementStoringQubit);
 }
@@ -513,8 +515,7 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
     }
 
     const qc::Qubit relativeQubitIndexInQuantumRegister = qubit - firstQubitOfAccessedElement;
-    return QubitInVariableLayoutData({.quantumRegisterLabel                           = quantumRegisterLabel,
-                                      .accessedValuePerDimensionOfElementStoringQubit = *requiredValuePerDimensionToAccessElementStoringQubit,
+    return QubitInVariableLayoutData({.accessedValuePerDimensionOfElementStoringQubit = *requiredValuePerDimensionToAccessElementStoringQubit,
                                       .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
                                       .inlinedQubitInformation                        = optionalSharedInlinedQubitInformation});
 }
@@ -573,8 +574,7 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
         return std::nullopt;
     }
 
-    return QubitInVariableLayoutData({.quantumRegisterLabel                           = quantumRegisterLabel,
-                                      .accessedValuePerDimensionOfElementStoringQubit = std::vector({0U}),
+    return QubitInVariableLayoutData({.accessedValuePerDimensionOfElementStoringQubit = std::vector({0U}),
                                       .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
                                       .inlinedQubitInformation                        = sharedQubitRangeInlineInformationLookup.at(*indexOfQubitRangeStoringQubit).inlinedQubitInformation});
 }

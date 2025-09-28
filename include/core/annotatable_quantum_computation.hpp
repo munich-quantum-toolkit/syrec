@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include "dd/DDDefinitions.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
 #include "ir/operations/Control.hpp"
@@ -21,6 +20,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -97,13 +97,46 @@ namespace syrec {
             unsigned bitwidth;
         };
 
+        /**
+         * Add a quantum operation representing a NOT gate to the quantum computation.
+         * @param targetQubit The target qubit of the NOT gate, said qubit must be in the range of the known qubits of the quantum computation.
+         * @return Whether the quantum operation for the NOT gate could be added to the quantum computation. Additionally, the target qubit cannot be equal to any control qubit currently registered to be propagated.
+         */
         [[nodiscard]] bool addOperationsImplementingNotGate(qc::Qubit targetQubit);
+
+        /**
+         * Add a quantum operation representing a CNOT gate to the quantum computation.
+         * @param controlQubit The control qubit of the CNOT gate, said qubit must be in the range of the known qubits of the quantum computation. Cannot be equal to the \p targetQubit.
+         * @param targetQubit The target qubit of the CNOT gate, said qubit must be in the range of the known qubits of the quantum computation. Cannot be equal to the \p controlQubit. Additionally, the target qubit cannot be equal to any control qubit currently registered to be propagated.
+         * @return Whether the quantum operation for the CNOT gate could be added to the quantum computation.
+         */
         [[nodiscard]] bool addOperationsImplementingCnotGate(qc::Qubit controlQubit, qc::Qubit targetQubit);
+
+        /**
+         * Add a quantum operation representing a Toffoli gate to the quantum computation.
+         * @param controlQubitOne The first control qubit of the Toffoli gate, said qubit must be in the range of the known qubits of the quantum computation. Cannot be equal to the \p targetQubit or \p controlQubitTwo.
+         * @param controlQubitTwo The second control qubit of the Toffoli gate, said qubit must be in the range of the known qubits of the quantum computation. Cannot be equal to the \p targetQubit or \p controlQubitOne.
+         * @param targetQubit The target qubit of the Toffoli gate, said qubit must be in the range of the known qubits of the quantum computation. Cannot be equal to the \p controlQubitOne or \p controlQubitTwo. Additionally, the target qubit cannot be equal to any control qubit currently registered to be propagated.
+         * @return Whether the quantum operation for the CNOT gate could be added to the quantum computation.
+         */
         [[nodiscard]] bool addOperationsImplementingToffoliGate(qc::Qubit controlQubitOne, qc::Qubit controlQubitTwo, qc::Qubit targetQubit);
+
+        /**
+         * Add a quantum operation representing a multi-control Toffoli gate to the quantum computation.
+         * @param controlQubitsSet The set of control qubits of the multi-control Toffoli gate which must contain at least one control qubit. Cannot be equal to the \p targetQubit.
+         * @param targetQubit The target qubit of the multi-control Toffoli gate, said qubit must be in the range of the known qubits of the quantum computation. Cannot be equal to any control qubit of \p controlQubitSet or currently registered to be propagated control qubits.
+         * @return Whether the quantum operation for the multi-control Toffoli gate could be added to the quantum computation.
+         */
         [[nodiscard]] bool addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubitsSet, qc::Qubit targetQubit);
+
+        /**
+         * Add a quantum operation representing a Fredkin gate to the quantum computation.
+         * @param targetQubitOne The first target qubit of the Fredkin gate. Cannot be equal to the \p targetQubitTwo or any of the currently registered to be propagated control qubits.
+         * @param targetQubitTwo The second target qubit of the Fredkin gate. Cannot be equal to the \p targetQubitOne or any of the currently registered to be propagated control qubits.
+         * @return Whether the quantum operation for the Fredkin gate could be added to the quantum computation.
+         */
         [[nodiscard]] bool addOperationsImplementingFredkinGate(qc::Qubit targetQubitOne, qc::Qubit targetQubitTwo);
 
-        // TODO: Should we check whether the inline stack does not contain nullptr references to the target module (should not be possible if qubit inline stack is constructed using its .push(...) operations)?
         /**
          * Add a quantum register for the qubits of a SyReC variable to the quantum computation.
          * @param quantumRegisterLabel The label for the to be added quantum register. Must not be empty and no other qubit or quantum register with the same name must exist in the quantum computation.
@@ -114,7 +147,6 @@ namespace syrec {
          */
         [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
 
-        // TODO: Should we check whether the inline stack does not contain nullptr references to the target module (should not be possible if qubit inline stack is constructed using its .push(...) operations)?
         /**
          * Add a quantum register for a number of preliminary ancillary qubits in the quantum computation.
          * @param quantumRegisterLabel The label for the created quantum register. A new quantum register is only created if the ancillary qubits could not be appended to an adjacent ancillary qubit register.
@@ -138,7 +170,13 @@ namespace syrec {
          * @return Returns the label of the qubit in the form of a stringified syrec::VariableAccess (e.g. the label generated for qubit 3 of the syrec::Variable a[2][3](2) is equal to a[0][1].1), otherwise std::nullopt.
          */
         [[nodiscard]] std::optional<std::string> getQubitLabel(qc::Qubit qubit, QubitLabelType qubitLabelType) const;
-        [[nodiscard]] const qc::Operation*       getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
+
+        /**
+         * Get a pointer to the quantum operation at a given index in the quantum computation.
+         * @param indexOfQuantumOperationInQuantumComputation The index to the quantum operation in the quantum computation.
+         * @return A pointer to the quantum operation if an operation at the given index existed in the quantum computation, otherwise nullptr.
+         */
+        [[nodiscard]] const qc::Operation* getQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
 
         /**
         * Replay a set of already existing quantum operations by readding the quantum operations to the quantum computation.
@@ -150,9 +188,24 @@ namespace syrec {
         */
         [[nodiscard]] bool replayOperationsAtGivenIndexRange(std::size_t indexOfFirstQuantumOperationToReplayInQuantumComputation, std::size_t indexOfLastQuantumOperationToReplayInQuantumComputation);
 
+        /**
+         * Get the annotations of a quantum operation at a given index in the quantum computation.
+         * @param indexOfQuantumOperationInQuantumComputation The index to the quantum operation whose annotations shall be fetched in the quantum computation.
+         * @return A lookup of the fetched annotations. If the index did not reference an operation in the quantum computation then an empty lookup is returned.
+         */
         [[nodiscard]] QuantumOperationAnnotationsLookup getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const;
-        [[nodiscard]] SynthesisCostMetricValue          getQuantumCostForSynthesis() const;
-        [[nodiscard]] SynthesisCostMetricValue          getTransistorCostForSynthesis() const;
+
+        /**
+         * Determine the quantum cost to synthesis the given quantum computation.
+         * @return The quantum cost for the synthesis of the quantum computation.
+         */
+        [[nodiscard]] SynthesisCostMetricValue getQuantumCostForSynthesis() const;
+
+        /**
+         * Determine the transistor cost to synthesis the given quantum computation.
+         * @return The transistor cost for the synthesis of the quantum computation.
+         */
+        [[nodiscard]] SynthesisCostMetricValue getTransistorCostForSynthesis() const;
 
         /**
          * Activate a new control qubit propagation scope.
@@ -243,29 +296,80 @@ namespace syrec {
         // as the search key in the container storing the annotations per quantum operation.
         std::vector<QuantumOperationAnnotationsLookup> annotationsPerQuantumOperation;
 
+        /**
+         * A container to store layout information for a quantum register.
+         */
         struct BaseQuantumRegisterVariableLayout {
+            /**
+             * Information about a qubit in the variable layout of a quantum register.
+             */
             struct QubitInVariableLayoutData {
-                std::string                            quantumRegisterLabel;
-                std::vector<unsigned>                  accessedValuePerDimensionOfElementStoringQubit;
-                qc::Qubit                              relativeQubitIndexInElementStoringQubit;
+                /**
+                 * The required value per dimension to access the element storing the associated qubit in the variable layout of the quantum register.
+                 */
+                std::vector<unsigned> accessedValuePerDimensionOfElementStoringQubit;
+                /**
+                 * The relative index to access the qubit in the element storing the associated qubit in the variable layout of the quantum register.
+                 */
+                qc::Qubit relativeQubitIndexInElementStoringQubit;
+                /**
+                 * The optional inline qubit information about the qubit storing in the quantum register
+                 */
                 std::optional<InlinedQubitInformation> inlinedQubitInformation;
             };
 
+            /**
+             * Store basic variable layout information of a quantum register as well as the quantum registers label.
+             * @param storedQubitIndices The stored qubit range of the quantum register.
+             * @param quantumRegisterLabel The label of the quantum register.
+             */
             BaseQuantumRegisterVariableLayout(const QubitIndexRange storedQubitIndices, std::string quantumRegisterLabel):
                 storedQubitIndices(storedQubitIndices), quantumRegisterLabel(std::move(quantumRegisterLabel)) {}
 
-            virtual ~BaseQuantumRegisterVariableLayout()                                                                             = default;
+            virtual ~BaseQuantumRegisterVariableLayout() = default;
+            /**
+             * Determine various information about a given qubit in the variable layout of the quantum register.
+             * @param qubit The qubit whose quantum register variable layout information should be determined.
+             * @return Information about the qubit in the variable layout of the quantum register, otherwise std::nullopt.
+             */
             [[nodiscard]] virtual std::optional<QubitInVariableLayoutData> determineQubitInVariableLayoutData(qc::Qubit qubit) const = 0;
-            [[nodiscard]] unsigned                                         getNumberOfQubitsInQuantumRegister() const { return storedQubitIndices.lastQubitIndex - storedQubitIndices.firstQubitIndex + 1U; }
+
+            /**
+             * Determine the number of qubits of the quantum register.
+             * @return The number of qubits stored in the quantum register
+             */
+            [[nodiscard]] unsigned getNumberOfQubitsInQuantumRegister() const { return storedQubitIndices.lastQubitIndex - storedQubitIndices.firstQubitIndex + 1U; }
 
             QubitIndexRange storedQubitIndices;
             std::string     quantumRegisterLabel;
         };
 
+        /**
+         * A container for the layout of a syrec::Variable in a quantum register with the qubits of the latter assumed to not be ancillary qubits.
+         */
         struct NonAncillaryQuantumRegisterVariableLayout final: BaseQuantumRegisterVariableLayout {
+            /**
+             * Determine various information about a given qubit in the variable layout of the quantum register.
+             * @param qubit The qubit whose quantum register variable layout information should be determined.
+             * @return Information about the qubit in the variable layout of the quantum register, otherwise std::nullopt.
+             */
             [[nodiscard]] std::optional<QubitInVariableLayoutData> determineQubitInVariableLayoutData(qc::Qubit qubit) const override;
-            [[nodiscard]] std::optional<std::vector<unsigned>>     getRequiredValuesPerDimensionToAccessQubitOfVariable(qc::Qubit qubit) const;
 
+            /**
+             * Determine the required accessed value per dimension in the variable layout to access the element in the syrec::Variable that contains the \p qubit.
+             * @param qubit The qubit for which the accessed value per dimension should be determined.
+             * @return The required accessed value per dimension to access the element storing the qubit in the variable layout, otherwise std::nullopt.
+             */
+            [[nodiscard]] std::optional<std::vector<unsigned>> getRequiredValuesPerDimensionToAccessQubitOfVariable(qc::Qubit qubit) const;
+
+            /**
+             * Create a new variable layout for a non-ancillary quantum register storing the qubits of a syrec::Variable.
+             * @param coveredQubitIndicesOfQuantumRegister The covered qubit index range of the ancillary quantum register. The first qubit index is assumed to be larger or equal to the last qubit index.
+             * @param quantumRegisterLabel The label of the ancillary quantum register. Must not be empty.
+             * @param numValuesPerDimensionOfVariable The number of values per dimension of the associated syrec::Variable.
+             * @param qubitSizeOfElementInVariable The bitwidth of every element in the syrec::Variable.
+             * @param optionalSharedInlinedQubitInformation The optional inline qubit information shared by all qubits of the quantum register.
+             */
             NonAncillaryQuantumRegisterVariableLayout(QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, unsigned qubitSizeOfElementInVariable, const std::optional<InlinedQubitInformation>& optionalSharedInlinedQubitInformation);
 
             unsigned                               elementQubitSize;
@@ -274,10 +378,31 @@ namespace syrec {
             std::optional<InlinedQubitInformation> optionalSharedInlinedQubitInformation;
         };
 
+        /**
+         * A container for the layout of an ancillary quantum register.
+         */
         struct AncillaryQuantumRegisterVariableLayout final: BaseQuantumRegisterVariableLayout {
+            /**
+             * Determine various information about a given qubit in the variable layout of the quantum register.
+             * @param qubit The qubit whose quantum register variable layout information should be determined.
+             * @return Information about the qubit in the variable layout of the quantum register, otherwise std::nullopt.
+             */
             [[nodiscard]] std::optional<QubitInVariableLayoutData> determineQubitInVariableLayoutData(qc::Qubit qubit) const override;
-            [[nodiscard]] bool                                     appendQubitRange(QubitIndexRange qubitIndexRange, const InlinedQubitInformation& sharedInlinedQubitInformation);
 
+            /**
+             * Append a qubit index range to the ancillary quantum register
+             * @param qubitIndexRange The qubit index range to append. The first qubit index must be larger or equal to its last qubit index while the first qubit index must be the next qubit after the current last qubit in the ancillary quantum register.
+             * @param sharedInlinedQubitInformation The inline qubit information of the to be added qubits.
+             * @return Whether the qubit index range could be appended.
+             */
+            [[nodiscard]] bool appendQubitRange(QubitIndexRange qubitIndexRange, const InlinedQubitInformation& sharedInlinedQubitInformation);
+
+            /**
+             * Create a new variable layout for a ancillary quantum register.
+             * @param coveredQubitIndicesOfQuantumRegister The covered qubit index range of the ancillary quantum register. The first qubit index is assumed to be larger or equal to the last qubit index.
+             * @param quantumRegisterLabel The label of the ancillary quantum register. Must not be empty.
+             * @param sharedInlinedQubitInformation The inline qubit information of the associated qubit index range.
+             */
             AncillaryQuantumRegisterVariableLayout(QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const InlinedQubitInformation& sharedInlinedQubitInformation);
 
             struct SharedQubitRangeInlineInformation {
@@ -287,12 +412,34 @@ namespace syrec {
                 SharedQubitRangeInlineInformation(const QubitIndexRange coveredQubitIndexRange, InlinedQubitInformation inlinedQubitInformation):
                     coveredQubitIndexRange(coveredQubitIndexRange), inlinedQubitInformation(std::move(inlinedQubitInformation)) {}
             };
+
+            /**
+             * A collection of shared inlined qubit information for each of the shared qubit ranges in the quantum register. The collection is assumed to be sorted in ascending order according to the value of the first qubit of each qubit range.
+             * No gaps between the stored qubit index ranges is allowed to exist.
+             */
             std::vector<SharedQubitRangeInlineInformation> sharedQubitRangeInlineInformationLookup;
         };
 
+        /**
+         * Determine which quantum register in the quantum computation contains the given qubit.
+         * @param qubit The qubit whose associated quantum register shall be determined.
+         * @return The index of the quantum register containing the qubit, std::nullopt if no such quantum register is found.
+         */
         [[nodiscard]] std::optional<std::size_t> determineIndexOfQuantumRegisterStoringQubit(qc::Qubit qubit) const;
-        [[nodiscard]] static std::string         buildQubitLabelForQubitOfVariableInQuantumRegister(const std::string& quantumRegisterLabel, const std::vector<unsigned>& accessedValuePerDimension, std::size_t relativeQubitIndexInElement);
 
+        /**
+         * Build the label of a qubit in the format of a stringified syrec::VariableAccess.
+         * @param quantumRegisterLabel The label of the quantum register storing the qubit.
+         * @param accessedValuePerDimension The required value per dimension to access the qubit in the associated quantum registers variable layout.
+         * @param relativeQubitIndexInElement The relative index in the element containing the qubit in the associated quantum register variable layout (the element is assumed to be accessed using the \p accessedValuePerDimension dimension access).
+         * @return The build qubit label (e.g. a[0][2].2)
+         */
+        [[nodiscard]] static std::string buildQubitLabelForQubitOfVariableInQuantumRegister(const std::string& quantumRegisterLabel, const std::vector<unsigned>& accessedValuePerDimension, std::size_t relativeQubitIndexInElement);
+
+        /**
+         * An ordered collection storing the variable layout stored in each quantum register.
+         * Said quantum registers are assumed to be sorted according to the index of their first qubit in the quantum computation in ascending order. Additionally, no gaps are allowed to exist between the stored qubits of the quantum registers.
+         */
         std::vector<std::unique_ptr<BaseQuantumRegisterVariableLayout>> quantumRegisterAssociatedVariableLayouts;
     };
 } // namespace syrec
