@@ -240,7 +240,7 @@ namespace syrec {
          * Calculate the index of the accessed value in the unrolled variable if the evaluated variable access contained a non-compile time constant expression in any of its accessed dimensions.
          * @param evaluatedVariableAccess The evaluated variable access whose accessed index should be calculated.
          * @param containerToStoreUnrolledIndex The container storing the qubits storing the calculated index. Must be passed as an empty container.
-         * @return Whether the index of the accessed element in the provided variable access could be calculcated.
+         * @return Whether the index of the accessed element in the provided variable access could be calculated.
          * @remark Note that the value of the calculated index is not known at compile time, e.g. the unrolled index of the element 'a[1][2][1]' in 'a[2][4][3]' is equal to 19 (1*12 + 2*3 + 1)
          */
         [[nodiscard]] bool calculateSymbolicUnrolledIndexForElementInVariable(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerToStoreUnrolledIndex);
