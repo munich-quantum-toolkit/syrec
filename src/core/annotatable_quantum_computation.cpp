@@ -285,15 +285,15 @@ AnnotatableQuantumComputation::SynthesisCostMetricValue AnnotatableQuantumComput
 }
 
 void AnnotatableQuantumComputation::activateControlQubitPropagationScope() {
-    controlQubitPropgationScopes.emplace_back();
+    controlQubitPropagationScopes.emplace_back();
 }
 
 void AnnotatableQuantumComputation::deactivateControlQubitPropagationScope() {
-    if (controlQubitPropgationScopes.empty()) {
+    if (controlQubitPropagationScopes.empty()) {
         return;
     }
 
-    const auto& localControlLineScope = controlQubitPropgationScopes.back();
+    const auto& localControlLineScope = controlQubitPropagationScopes.back();
     for (const auto [controlLine, wasControlLineActiveInParentScope]: localControlLineScope) {
         if (wasControlLineActiveInParentScope) {
             // Control lines registered prior to the local scope and deactivated by the latter should still be registered in the parent
@@ -303,15 +303,15 @@ void AnnotatableQuantumComputation::deactivateControlQubitPropagationScope() {
             aggregateOfPropagatedControlQubits.erase(controlLine);
         }
     }
-    controlQubitPropgationScopes.pop_back();
+    controlQubitPropagationScopes.pop_back();
 }
 
 bool AnnotatableQuantumComputation::deregisterControlQubitFromPropagationInCurrentScope(const qc::Qubit controlQubit) {
-    if (controlQubitPropgationScopes.empty() || !isQubitWithinRange(controlQubit)) {
+    if (controlQubitPropagationScopes.empty() || !isQubitWithinRange(controlQubit)) {
         return false;
     }
 
-    auto& localControlLineScope = controlQubitPropgationScopes.back();
+    auto& localControlLineScope = controlQubitPropagationScopes.back();
     if (!localControlLineScope.contains(controlQubit)) {
         return false;
     }
@@ -325,11 +325,11 @@ bool AnnotatableQuantumComputation::registerControlQubitForPropagationInCurrentA
         return false;
     }
 
-    if (controlQubitPropgationScopes.empty()) {
+    if (controlQubitPropagationScopes.empty()) {
         activateControlQubitPropagationScope();
     }
 
-    auto& localControlLineScope = controlQubitPropgationScopes.back();
+    auto& localControlLineScope = controlQubitPropagationScopes.back();
     // If an entry for the to be registered control line already exists in the current scope then the previously determine value of the flag indicating whether the control line existed in the parent scope
     // should have the same value that it had when the control line was initially added to the current scope
 

@@ -88,7 +88,7 @@ namespace syrec_parser {
             KeywordSkip         = 54,
             BitrangeStartPrefix = 55,
             BitrangEndPrefix    = 56,
-            SkipableWhitespaces = 57,
+            SkippableWhitespaces = 57,
             LineComment         = 58,
             Multilinecomment    = 59,
             Ident               = 60,
