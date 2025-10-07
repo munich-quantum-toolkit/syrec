@@ -888,7 +888,7 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitAfterCalledModule + 1U, expectedInitialStateOfSecondAncillaryQubitCreatedAfterSynthesisOfCalledModule, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitCreatedAfterSynthesisOfCalledModuleInternalLabel, secondAncillaryQubitCreatedAfterSynthesisOfCalledModuleInternalLabel));
 
-    // The ancillary qubits created after the called module was synthesized should use the inline stack instance as the other qubits creatd for the main modules local variables and previously created ancillary qubits
+    // The ancillary qubits created after the called module was synthesized should use the inline stack instance as the other qubits created for the main modules local variables and previously created ancillary qubits
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitOfMainModuleInternalLabel, firstAncillaryQubitCreatedAfterSynthesisOfCalledModuleInternalLabel));
 }
 
@@ -1000,7 +1000,7 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfAncillaryQubitMatches(this->annotatableQuantumComputation, indexOfFirstAncillaryQubitAfterUncalledModule + 1U, expectedInitialStateOfSecondAncillaryQubitCreatedAfterSynthesisOfUncalledModule, &qubitInlineInformation));
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitCreatedAfterSynthesisOfUncalledModuleInternalLabel, secondAncillaryQubitCreatedAfterSynthesisOfUncalledModuleInternalLabel));
 
-    // The ancillary qubits created after the called module was synthesized should use the inline stack instance as the other qubits creatd for the main modules local variables and previously created ancillary qubits
+    // The ancillary qubits created after the called module was synthesized should use the inline stack instance as the other qubits created for the main modules local variables and previously created ancillary qubits
     ASSERT_NO_FATAL_FAILURE(this->assertInlineStacksOfVariablesReferenceSameInstance(this->annotatableQuantumComputation, firstAncillaryQubitOfMainModuleInternalLabel, firstAncillaryQubitCreatedAfterSynthesisOfUncalledModuleInternalLabel));
 }
 
