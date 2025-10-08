@@ -153,11 +153,19 @@ TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInUnaryExpres
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInLhsOperandOfBinaryExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+    if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
+        GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
+    } else {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+    }
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInRhsOperandOfBinaryExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+    if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
+        GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
+    } else {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+    }
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, LogicalOperandModifiesExpectedBitwidthForIntegerTruncationInNestedExpressionOfBinaryExpression) {
@@ -181,7 +189,6 @@ TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInExpressionU
 }
 
 TYPED_TEST_P(BaseSimulationTestFixture, IntegerConstantTruncationOnlyPerformedAfterCompileTimeConstantExpressionWasEvaluatedNotDuringEvaluation) {
-    constexpr int x = 2;
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
 }
 

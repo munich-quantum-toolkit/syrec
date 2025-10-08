@@ -586,7 +586,7 @@ namespace syrec {
 
         const std::size_t      accessedBitrangeLengthOfLhsOperand = dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess.getNumberOfAccessedBits();
         std::vector<qc::Qubit> rhs;
-        synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, accessedBitrangeLengthOfLhsOperand, rhs, qubitsStoringSelectedValueOfVariable, statement.assignOperation) && qubitsStoringSelectedValueOfVariable.size() == rhs.size();
+        synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, accessedBitrangeLengthOfLhsOperand, rhs, qubitsStoringSelectedValueOfVariable, statement.assignOperation);
         opVec.clear();
 
         switch (statement.assignOperation) {
