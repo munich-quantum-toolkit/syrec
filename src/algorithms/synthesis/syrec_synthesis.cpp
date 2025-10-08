@@ -192,6 +192,10 @@ namespace syrec {
             }
         }
 
+        if (settings != nullptr && settings->get<utils::IntegerConstantTruncationOperation>(INTEGER_CONSTANT_TRUNCATION_OPTION_CONFIG_KEY).has_value()) {
+            synthesizer->integerConstantTruncationOperation = settings->get<utils::IntegerConstantTruncationOperation>(INTEGER_CONSTANT_TRUNCATION_OPTION_CONFIG_KEY).value_or(utils::IntegerConstantTruncationOperation::BitwiseAnd);
+        }
+
         // Run-time measuring
         const TimeStamp simulationStartTime = std::chrono::steady_clock::now();
 
@@ -782,7 +786,7 @@ namespace syrec {
     bool SyrecSynthesis::onExpression(const NumericExpression& expression, const std::optional<unsigned>& optionalExpectedOperandBitwidth, std::vector<qc::Qubit>& lines) {
         if (const std::optional<unsigned> compileTimeValueOfNumericExpression = expression.value->tryEvaluate(loopMap); compileTimeValueOfNumericExpression.has_value()) {
             const unsigned expectedOperandBitwidth   = optionalExpectedOperandBitwidth.value_or(32U);
-            const unsigned truncatedCompileTimeValue = utils::truncateConstantValueToExpectedBitwidth(*compileTimeValueOfNumericExpression, expectedOperandBitwidth, utils::IntegerConstantTruncationOperation::BitwiseAnd);
+            const unsigned truncatedCompileTimeValue = utils::truncateConstantValueToExpectedBitwidth(*compileTimeValueOfNumericExpression, expectedOperandBitwidth, integerConstantTruncationOperation);
             return getConstantLines(expectedOperandBitwidth, truncatedCompileTimeValue, lines);
         }
         return false;
@@ -1839,9 +1843,8 @@ namespace syrec {
                 const std::optional<unsigned> constantValueOfExprEvaluatedToCompileTime = evaluatedVariableAccess.evaluatedDimensionAccess.accessedValuePerDimension.at(i);
                 assert(constantValueOfExprEvaluatedToCompileTime.has_value());
 
-                // TODO: Integer truncation operation is currently hard coded but option from synthesis settings should be use if available in the future
-                unsigned evaluatedCompileTimeValueOfExpr = utils::truncateConstantValueToExpectedBitwidth(*constantValueOfExprEvaluatedToCompileTime, numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, utils::IntegerConstantTruncationOperation::BitwiseAnd);
-                evaluatedCompileTimeValueOfExpr          = utils::truncateConstantValueToExpectedBitwidth(evaluatedCompileTimeValueOfExpr * offsetToNextElementOfDimensionInNumberOfArrayElements, numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, utils::IntegerConstantTruncationOperation::BitwiseAnd);
+                unsigned evaluatedCompileTimeValueOfExpr = utils::truncateConstantValueToExpectedBitwidth(*constantValueOfExprEvaluatedToCompileTime, numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, integerConstantTruncationOperation);
+                evaluatedCompileTimeValueOfExpr          = utils::truncateConstantValueToExpectedBitwidth(evaluatedCompileTimeValueOfExpr * offsetToNextElementOfDimensionInNumberOfArrayElements, numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, integerConstantTruncationOperation);
                 // We might be able to compute parts of the unrolled index at compile time.
                 if (compileTimeValueOfUnrolledIndex.has_value()) {
                     compileTimeValueOfUnrolledIndex = *compileTimeValueOfUnrolledIndex + evaluatedCompileTimeValueOfExpr;

@@ -18,6 +18,7 @@
 #include "core/syrec/expression.hpp"
 #include "core/syrec/module.hpp"
 #include "core/syrec/number.hpp"
+#include "core/syrec/parser/utils/syrec_operation_utils.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
 #include "core/syrec/variable.hpp"
@@ -38,8 +39,9 @@
 namespace syrec {
     class SyrecSynthesis {
     public:
-        inline static const std::string MAIN_MODULE_IDENTIFIER_CONFIG_KEY            = "main_module";
-        inline static const std::string GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY = "create_qubit_inline_debug_information";
+        inline static const std::string MAIN_MODULE_IDENTIFIER_CONFIG_KEY             = "main_module";
+        inline static const std::string GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY  = "create_qubit_inline_debug_information";
+        inline static const std::string INTEGER_CONSTANT_TRUNCATION_OPTION_CONFIG_KEY = "integer_constant_truncation_op";
 
         std::stack<BinaryExpression::BinaryOperation>  expOpp;
         std::stack<std::vector<unsigned>>              expLhss;
@@ -85,12 +87,10 @@ namespace syrec {
         virtual bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation)     = 0;
 
         virtual bool onExpression(const Expression::ptr& expression, const std::optional<unsigned>& optionalExpectedOperandBitwidth, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
-        // TODO: Test case if ((a + 2) > 16) with 'in a(4)'
         virtual bool onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
         virtual bool onExpression(const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
         virtual bool onExpression(const NumericExpression& expression, const std::optional<unsigned>& optionalExpectedOperandBitwidth, std::vector<qc::Qubit>& lines);
         virtual bool onExpression(const VariableExpression& expression, std::vector<qc::Qubit>& lines);
-        // TODO: Test case: a += (b + (c > ~16))
         virtual bool onExpression(const UnaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
 
         virtual bool expAdd([[maybe_unused]] unsigned bitwidth, std::vector<qc::Qubit>& lines, const std::vector<qc::Qubit>& lhs, const std::vector<qc::Qubit>& rhs)      = 0;
@@ -143,6 +143,13 @@ namespace syrec {
         static bool leftShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount);  // <<
         static bool rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount); // >>
 
+        /**
+         * Perform compile time simplifications of the operands of the expressions.
+         * @param expression The expression to simplify.
+         * @param loopVariableValueLookup A lookup for the current value of the active loop variables.
+         * @return std::nullopt if the expression type could not be handled or if an evaluation of a compile time constant expression failed, otherwise either the original expression (if no simplification could be performed) or its simplification.
+         * @remark The truncation of compile time constant integer values/bitwidth used in subexpressions of the expression to simplify is also considered a simplification since this will help to reduce the number of ancillary qubits needed to synthesis the integer value.
+         */
         [[nodiscard]] static std::optional<Expression::ptr> performCompileTimeSimplificationsOfExpression(const Expression::ptr& expression, const Number::LoopVariableMapping& loopVariableValueLookup);
 
         [[nodiscard]] static std::optional<qc::Qubit> addVariable(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<unsigned>& dimensions, const Variable::ptr& var, const std::string& arraystr, const std::optional<QubitInliningStack::ptr>& currentModuleCallStack);
@@ -269,6 +276,8 @@ namespace syrec {
         std::optional<std::vector<QubitInliningStack::ptr>> moduleCallStackInstances;
         std::unique_ptr<StatementExecutionOrderStack>       statementExecutionOrderStack;
         std::unique_ptr<FirstVariableQubitOffsetLookup>     firstVariableQubitOffsetLookup;
+
+        utils::IntegerConstantTruncationOperation integerConstantTruncationOperation = utils::IntegerConstantTruncationOperation::BitwiseAnd;
 
     private:
         std::map<bool, std::vector<qc::Qubit>> freeConstLinesMap;

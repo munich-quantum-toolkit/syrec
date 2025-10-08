@@ -13,6 +13,7 @@
 #include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "base_simulation_test_fixture.hpp"
 #include "core/properties.hpp"
+#include "core/syrec/parser/utils/syrec_operation_utils.hpp"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -109,6 +110,81 @@ TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedModuleIdentifierInSynthesisSe
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingBitwiseAndIntegerTruncationOperation) {
+    auto synthesisSettings = std::make_shared<syrec::Properties>();
+    synthesisSettings->set<utils::IntegerConstantTruncationOperation>(syrec::SyrecSynthesis::INTEGER_CONSTANT_TRUNCATION_OPTION_CONFIG_KEY, utils::IntegerConstantTruncationOperation::BitwiseAnd);
+
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingModuloIntegerTruncationOperation) {
+    auto synthesisSettings = std::make_shared<syrec::Properties>();
+    synthesisSettings->set<utils::IntegerConstantTruncationOperation>(syrec::SyrecSynthesis::INTEGER_CONSTANT_TRUNCATION_OPTION_CONFIG_KEY, utils::IntegerConstantTruncationOperation::Modulo);
+
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBit) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitDefinedAsIntegerConstantExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithKnownBounds) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartLargerThanEndAndStartDefinedAsIntegerConstantExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartSmallerThanEndAndEndDefinedAsIntegerConstantExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInShiftExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInUnaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInLhsOperandOfBinaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInRhsOperandOfBinaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, LogicalOperandModifiesExpectedBitwidthForIntegerTruncationInNestedExpressionOfBinaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfCompileTimeConstantExpressionInNestedExpressionOfBinaryExpression) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInGuardConditionOfIfStatement) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInExpressionUsedInDimensionAccessOfVariableAccess) {
+    if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
+        GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
+    } else {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, IntegerConstantTruncationOnlyPerformedAfterCompileTimeConstantExpressionWasEvaluatedNotDuringEvaluation) {
+    constexpr int x = 2;
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), nullptr);
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesModuleWithMainIdentiferAsMainModule,
                             OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMainExists,
@@ -122,7 +198,24 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithNoFullMatchFoundCausesError,
                             UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithFullMatchFoundSelectsLatterAsModuleModule,
                             UserDefinedMainModuleIdentifierInSynthesisSettingsMatchingMultipleModulesCausesError,
-                            UserDefinedModuleIdentifierInSynthesisSettingsOnlyMatchingModulesWithSameIdentifierCharacterCasing);
+                            UserDefinedModuleIdentifierInSynthesisSettingsOnlyMatchingModulesWithSameIdentifierCharacterCasing,
+
+                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingBitwiseAndIntegerTruncationOperation,
+                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingModuloIntegerTruncationOperation,
+                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBit,
+                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitDefinedAsIntegerConstantExpression,
+                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithKnownBounds,
+                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartLargerThanEndAndStartDefinedAsIntegerConstantExpression,
+                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartSmallerThanEndAndEndDefinedAsIntegerConstantExpression,
+                            TruncationOfIntegerConstantInShiftExpression,
+                            TruncationOfIntegerConstantInUnaryExpression,
+                            TruncationOfIntegerConstantInLhsOperandOfBinaryExpression,
+                            TruncationOfIntegerConstantInRhsOperandOfBinaryExpression,
+                            LogicalOperandModifiesExpectedBitwidthForIntegerTruncationInNestedExpressionOfBinaryExpression,
+                            TruncationOfCompileTimeConstantExpressionInNestedExpressionOfBinaryExpression,
+                            TruncationOfIntegerConstantInGuardConditionOfIfStatement,
+                            TruncationOfIntegerConstantInExpressionUsedInDimensionAccessOfVariableAccess,
+                            IntegerConstantTruncationOnlyPerformedAfterCompileTimeConstantExpressionWasEvaluatedNotDuringEvaluation);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
