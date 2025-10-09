@@ -20,7 +20,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <gtest/gtest.h>
-#include <memory>
 #include <optional>
 
 using namespace syrec;

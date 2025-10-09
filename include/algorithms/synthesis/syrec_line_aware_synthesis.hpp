@@ -29,7 +29,7 @@ namespace syrec {
     public:
         using SyrecSynthesis::SyrecSynthesis;
 
-        static bool synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const ConfigurableOptions& settings, Statistics* optionalRecordedStatistics = nullptr);
+        static bool synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const ConfigurableOptions& settings = ConfigurableOptions(), Statistics* optionalRecordedStatistics = nullptr);
 
     protected:
         bool processStatement(const Statement::ptr& statement) override;

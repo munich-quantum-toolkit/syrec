@@ -19,18 +19,18 @@
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
 #include "core/syrec/parser/utils/symbolTable/base_symbol_table.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"
-#include "core/syrec/program.hpp"
 #include "core/syrec/variable.hpp"
 
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <utility>
 
 namespace syrec_parser {
     class CustomExpressionVisitor: protected CustomBaseVisitor {
     public:
-        CustomExpressionVisitor(const std::shared_ptr<ParserMessagesContainer>& sharedMessagesContainerInstance, const std::shared_ptr<utils::BaseSymbolTable>& sharedSymbolTableInstance, const syrec::ConfigurableOptions& parserConfiguration):
-            CustomBaseVisitor(sharedMessagesContainerInstance, sharedSymbolTableInstance, parserConfiguration) {}
+        CustomExpressionVisitor(const std::shared_ptr<ParserMessagesContainer>& sharedMessagesContainerInstance, const std::shared_ptr<utils::BaseSymbolTable>& sharedSymbolTableInstance, syrec::ConfigurableOptions parserConfiguration):
+            CustomBaseVisitor(sharedMessagesContainerInstance, sharedSymbolTableInstance, std::move(parserConfiguration)) {}
 
         struct DeterminedExpressionOperandBitwidthInformation {
             unsigned int                     operandBitwidth = 0;

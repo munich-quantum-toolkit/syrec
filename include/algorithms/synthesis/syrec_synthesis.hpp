@@ -13,6 +13,7 @@
 #include "algorithms/synthesis/first_variable_qubit_offset_lookup.hpp"
 #include "algorithms/synthesis/statement_execution_order_stack.hpp"
 #include "core/annotatable_quantum_computation.hpp"
+#include "core/configurable_options.hpp"
 #include "core/qubit_inlining_stack.hpp"
 #include "core/statistics.hpp"
 #include "core/syrec/expression.hpp"
@@ -55,7 +56,7 @@ namespace syrec {
         [[nodiscard]] bool addVariables(const Variable::vec& variables) const;
         void               setMainModule(const Module::ptr& mainModule);
 
-        [[maybe_unused]] static bool synthesize(SyrecSynthesis* synthesizer, const Program& program, const ConfigurableOptions& settings, Statistics* optionalRecordedStatistics = nullptr);
+        [[maybe_unused]] static bool synthesize(SyrecSynthesis* synthesizer, const Program& program, const ConfigurableOptions& settings = ConfigurableOptions(), Statistics* optionalRecordedStatistics = nullptr);
 
     protected:
         constexpr static std::string_view GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER = "lno";

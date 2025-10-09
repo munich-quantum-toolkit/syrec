@@ -10,7 +10,6 @@
 
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
-#include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "base_simulation_test_fixture.hpp"
 #include "core/configurable_options.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"

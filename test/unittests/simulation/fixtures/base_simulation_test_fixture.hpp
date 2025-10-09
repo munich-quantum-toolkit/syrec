@@ -20,8 +20,6 @@
 #include <cstddef>
 #include <fstream>
 #include <gtest/gtest.h>
-#include <ios>
-#include <memory>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -98,7 +96,7 @@ public:
 
 protected:
     static void loadAndParseTestCaseDataFromJson(const std::string& pathToTestCaseDataJsonFile, const std::string& testcaseJsonKey, json& containerForJsonDataOfTestCase) {
-        std::ifstream inputFileStream(pathToTestCaseDataJsonFile, std::ios_base::in);
+        std::ifstream inputFileStream(pathToTestCaseDataJsonFile, std::ifstream::in | std::ifstream::binary);
         ASSERT_TRUE(inputFileStream.good()) << "Input file @" << pathToTestCaseDataJsonFile << " is not in a usable state (e.g. does not exist)";
 
         const json parsedJsonDataOfFile = json::parse(inputFileStream);

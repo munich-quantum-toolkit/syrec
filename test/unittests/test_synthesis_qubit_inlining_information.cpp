@@ -11,7 +11,6 @@
 #include "algorithms/synthesis/internal_qubit_label_builder.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
-#include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/configurable_options.hpp"
 #include "core/qubit_inlining_stack.hpp"
