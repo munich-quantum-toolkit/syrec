@@ -175,6 +175,7 @@ namespace syrec {
         const std::string&         defaultMainModuleIdentifier = "main";
         std::optional<std::string> expectedMainModuleIdentifier;
         if (settings.optionalProgramEntryPointModuleIdentifier.has_value()) {
+            expectedMainModuleIdentifier = settings.optionalProgramEntryPointModuleIdentifier;
             if (expectedMainModuleIdentifier.value().empty()) {
                 std::cerr << "Expected main module identifier defined in synthesis settings must have a value\n";
                 return false;
@@ -184,7 +185,6 @@ namespace syrec {
                 std::cerr << "Expected main module identifier defined in synthesis settings '" << *expectedMainModuleIdentifier << "' did not defined a valid identifier according to the SyReC grammar, check your inputs!\n";
                 return false;
             }
-            expectedMainModuleIdentifier = settings.optionalProgramEntryPointModuleIdentifier;
         } else {
             if (program.findModule(defaultMainModuleIdentifier) != nullptr) {
                 expectedMainModuleIdentifier = defaultMainModuleIdentifier;
