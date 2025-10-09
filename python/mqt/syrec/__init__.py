@@ -36,6 +36,7 @@ from .pysyrec import (
     SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION,
     SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER,
     annotatable_quantum_computation,
+    configurable_options,
     cost_aware_synthesis,
     inlined_qubit_information,
     line_aware_synthesis,
@@ -44,7 +45,6 @@ from .pysyrec import (
     properties,
     qubit_inlining_stack,
     qubit_inlining_stack_entry,
-    read_program_settings,
     simple_simulation,
 )
 
@@ -53,6 +53,7 @@ __all__ = [
     "SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER",
     "__version__",
     "annotatable_quantum_computation",
+    "configurable_options",
     "cost_aware_synthesis",
     "inlined_qubit_information",
     "line_aware_synthesis",
@@ -61,6 +62,5 @@ __all__ = [
     "properties",
     "qubit_inlining_stack",
     "qubit_inlining_stack_entry",
-    "read_program_settings",
     "simple_simulation",
 ]

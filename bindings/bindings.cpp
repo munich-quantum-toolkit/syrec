@@ -13,6 +13,7 @@
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
+#include "core/configurable_options.hpp"
 #include "core/n_bit_values_container.hpp"
 #include "core/properties.hpp"
 #include "core/qubit_inlining_stack.hpp"
@@ -98,18 +99,18 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .value("bitwise_and", utils::IntegerConstantTruncationOperation::BitwiseAnd, "Use the bitwise AND operation for the truncation of constant values")
             .export_values();
 
-    py::class_<ReadProgramSettings>(m, "read_program_settings")
+    py::class_<ConfigurableOptions>(m, "configurable_options")
             .def(py::init<>(), "Constructs ReadProgramSettings object.")
-            .def_readwrite("default_bitwidth", &ReadProgramSettings::defaultBitwidth, "Defines the default variable bitwidth used by the SyReC parser for variables whose bitwidth specification was omitted")
-            .def_readwrite("integer_constant_truncation_operation", &ReadProgramSettings::integerConstantTruncationOperation, "Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language")
-            .def_readwrite("allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variableAccess", &ReadProgramSettings::allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess, "Defines whether an access on the assigned to signal parts of an assigned is allowed in variable accesses defined in any operand of the assignment. For further details we refer to the semantics of the SyReC language.")
-            .def_readwrite("main_module_identifier", &ReadProgramSettings::optionalProgramEntryPointModuleIdentifier, "Define the identifier of the module serving as the entry-point of the to be processed SyReC program");
+            .def_readwrite("default_bitwidth", &ConfigurableOptions::defaultBitwidth, "Defines the default variable bitwidth used by the SyReC parser for variables whose bitwidth specification was omitted")
+            .def_readwrite("integer_constant_truncation_operation", &ConfigurableOptions::integerConstantTruncationOperation, "Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language")
+            .def_readwrite("allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variableAccess", &ConfigurableOptions::allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess, "Defines whether an access on the assigned to signal parts of an assigned is allowed in variable accesses defined in any operand of the assignment. For further details we refer to the semantics of the SyReC language.")
+            .def_readwrite("main_module_identifier", &ConfigurableOptions::optionalProgramEntryPointModuleIdentifier, "Define the identifier of the module serving as the entry-point of the to be processed SyReC program");
 
     py::class_<Program>(m, "program")
             .def(py::init<>(), "Constructs SyReC program object.")
             .def("add_module", &Program::addModule)
-            .def("read", &Program::read, "filename"_a, "settings"_a = ReadProgramSettings{}, "Read and process a SyReC program from a file.")
-            .def("read_from_string", &Program::readFromString, "stringifiedProgram"_a, "settings"_a = ReadProgramSettings{}, "Process an already stringified SyReC program.");
+            .def("read", &Program::read, "filename"_a, "settings"_a = ConfigurableOptions{}, "Read and process a SyReC program from a file.")
+            .def("read_from_string", &Program::readFromString, "stringifiedProgram"_a, "settings"_a = ConfigurableOptions{}, "Process an already stringified SyReC program.");
 
     m.attr("SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER")            = py::str(SyrecSynthesis::MAIN_MODULE_IDENTIFIER_CONFIG_KEY);
     m.attr("SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION") = py::str(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY);
