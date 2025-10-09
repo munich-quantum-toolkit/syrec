@@ -589,8 +589,8 @@ namespace syrec {
 
         // In some cases the expected bitwidth of the assigned to variable parts of the assignment are not known to the parser (e.g. when a loop variable is used in either the dimension access of bitrange component of a variable access) that
         // in combination with the assumed default bitwidth of compile time integer constants and the requirement that the operands on the left and right hand side of the assignment have the same bitwidth can result in a synthesis error if no
-        // truncation of integer constant is performed. An example for such a case is the SyReC module 'module main(inout a(4)) for $i = 0 to 2 do a.$i:($i + 1) += 120'.
-        // The bitwidth of the assigned to variable parts is equal to 2 while the bitwidth of the right hand side of the expression is 32 due to the assumed bitwidth chosen for integer constants. Thus to satisfy the invariant that both operands need
+        // truncation of integer constant is performed. An example for such a case is the SyReC module 'module main(inout a(4)) for $i = 0 to 2 do a.$i:($i + 1) += 120 rof'.
+        // The bitwidth of the assigned to variable parts is equal to 2 while the bitwidth of the right hand side of the expression is 32 due to the assumed bitwidth chosen for integer constants. To satisfy the invariant that both operands need
         // to have the same bitwidth, a truncation of the integer constant to the expected bitwidth of 2 needs to be performed.
         synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, accessedBitrangeLengthOfLhsOperand, rhs, qubitsStoringSelectedValueOfVariable, statement.assignOperation);
         // We should validate that the invariant that both sides of the assignment have the same bitwidth is satisfied but due to some weird implementation details of the line aware synthesis, which might be modified to fix issue #280, this cannot be done without risking
