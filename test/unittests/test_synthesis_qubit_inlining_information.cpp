@@ -13,6 +13,7 @@
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
+#include "core/configurable_options.hpp"
 #include "core/properties.hpp"
 #include "core/qubit_inlining_stack.hpp"
 #include "core/syrec/module.hpp"
@@ -46,9 +47,9 @@ namespace {
             }
         }
 
-        static void parseInputCircuitFromString(const std::string_view& stringifiedSyrecProgram, Program& parserInstance, const std::optional<ReadProgramSettings>& optionalParserConfiguration = std::nullopt) {
+        static void parseInputCircuitFromString(const std::string_view& stringifiedSyrecProgram, Program& parserInstance, const std::optional<ConfigurableOptions>& optionalParserConfiguration = std::nullopt) {
             std::string errorsOfReadInputCircuit;
-            ASSERT_NO_FATAL_FAILURE(errorsOfReadInputCircuit = parserInstance.readFromString(stringifiedSyrecProgram, optionalParserConfiguration.value_or(syrec::ReadProgramSettings())));
+            ASSERT_NO_FATAL_FAILURE(errorsOfReadInputCircuit = parserInstance.readFromString(stringifiedSyrecProgram, optionalParserConfiguration.value_or(syrec::ConfigurableOptions())));
             ASSERT_TRUE(errorsOfReadInputCircuit.empty()) << "Expected no errors in input circuits but actually found the following: " << errorsOfReadInputCircuit;
         }
 

@@ -144,7 +144,7 @@ TEST_F(SyrecParserErrorTestsFixture, ModuleCallOverloadResolutionResolvingToExpl
 
 TEST_F(SyrecParserErrorTestsFixture, ModuleCallOverloadResolutionResolvingToExplicitlyDefinedMainModuleOfConfigCausesError) {
     const std::string          userDefinedExpectedMainModuleIdentifier = "userDefMain";
-    syrec::ReadProgramSettings parserConfiguration;
+    syrec::ConfigurableOptions parserConfiguration;
     parserConfiguration.optionalProgramEntryPointModuleIdentifier = userDefinedExpectedMainModuleIdentifier;
 
     buildAndRecordExpectedSemanticError<SemanticError::CannotCallMainModule>(Message::Position(1, 53), userDefinedExpectedMainModuleIdentifier);

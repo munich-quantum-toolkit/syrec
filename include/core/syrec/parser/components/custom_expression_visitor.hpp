@@ -11,6 +11,7 @@
 #pragma once
 
 #include "TSyrecParser.h"
+#include "core/configurable_options.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/number.hpp"
 #include "core/syrec/parser/components/custom_base_visitor.hpp"
@@ -28,7 +29,7 @@
 namespace syrec_parser {
     class CustomExpressionVisitor: protected CustomBaseVisitor {
     public:
-        CustomExpressionVisitor(const std::shared_ptr<ParserMessagesContainer>& sharedMessagesContainerInstance, const std::shared_ptr<utils::BaseSymbolTable>& sharedSymbolTableInstance, const syrec::ReadProgramSettings& parserConfiguration):
+        CustomExpressionVisitor(const std::shared_ptr<ParserMessagesContainer>& sharedMessagesContainerInstance, const std::shared_ptr<utils::BaseSymbolTable>& sharedSymbolTableInstance, const syrec::ConfigurableOptions& parserConfiguration):
             CustomBaseVisitor(sharedMessagesContainerInstance, sharedSymbolTableInstance, parserConfiguration) {}
 
         struct DeterminedExpressionOperandBitwidthInformation {

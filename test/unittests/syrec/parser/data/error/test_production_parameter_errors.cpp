@@ -8,6 +8,7 @@
  * Licensed under the MIT License
  */
 
+#include "core/configurable_options.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
 #include "core/syrec/program.hpp"
@@ -123,8 +124,9 @@ TEST_F(SyrecParserErrorTestsFixture, DeclaredParameterBitwidthLongerThanMaximumS
 }
 
 TEST_F(SyrecParserErrorTestsFixture, ParameterBitwidthTakenFromUserConfigLongerThanMaximumSupportedValueCausesError) {
-    constexpr unsigned int defaultSignalBitwidth           = 33;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 33;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredVariableBitwidthTooLarge>(Message::Position(1, 15), defaultSignalBitwidth, 32);
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredVariableBitwidthTooLarge>(Message::Position(1, 34), defaultSignalBitwidth, 32);
@@ -142,16 +144,18 @@ TEST_F(SyrecParserErrorTestsFixture, ModuleLocalVariableDeclarationWithExplicitl
 }
 
 TEST_F(SyrecParserErrorTestsFixture, ModuleParameterDeclarationWithImplicitlyDefinedBitwidthOfZeroNotPossible) {
-    constexpr unsigned int defaultSignalBitwidth           = 0;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 0;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::VariableBitwidthEqualToZero>(Message::Position(1, 27));
     performTestExecution("module main(inout a(4), in b) ++= a", userProvidedParserConfiguration);
 }
 
 TEST_F(SyrecParserErrorTestsFixture, ModuleLocalVariableDeclarationWithImplicitlyDefinedBitwidthOfZeroNotPossible) {
-    constexpr unsigned int defaultSignalBitwidth           = 0;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 0;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::VariableBitwidthEqualToZero>(Message::Position(1, 29));
     performTestExecution("module main(inout a(4)) wire b ++= a", userProvidedParserConfiguration);

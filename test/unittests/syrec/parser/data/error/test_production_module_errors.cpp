@@ -9,6 +9,7 @@
  */
 
 #include "algorithms/synthesis/internal_qubit_label_builder.hpp"
+#include "core/configurable_options.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
 #include "core/syrec/program.hpp"
@@ -82,7 +83,7 @@ TEST_F(SyrecParserErrorTestsFixture, OverloadOfModuleNamedMainCausesError) {
 
 TEST_F(SyrecParserErrorTestsFixture, OverloadOfModuleMatchingUserDefinedExpectedMainModuleIdentifierCausesError) {
     const std::string          userDefinedExpectedMainModuleIdentifier = "userDefMain";
-    syrec::ReadProgramSettings parserConfiguration;
+    syrec::ConfigurableOptions parserConfiguration;
     parserConfiguration.optionalProgramEntryPointModuleIdentifier = userDefinedExpectedMainModuleIdentifier;
 
     buildAndRecordExpectedSemanticError<SemanticError::DuplicateMainModuleDefinition>(Message::Position(1, 44), userDefinedExpectedMainModuleIdentifier);
@@ -91,7 +92,7 @@ TEST_F(SyrecParserErrorTestsFixture, OverloadOfModuleMatchingUserDefinedExpected
 
 TEST_F(SyrecParserErrorTestsFixture, NoModuleMatchingUserDefinedExpectedMainModuleIdentifierWithOtherModulesNotMatchingPotentialMainModuleRequirementsCausesError) {
     const std::string          userDefinedExpectedMainModuleIdentifier = "userDefMain";
-    syrec::ReadProgramSettings parserConfiguration;
+    syrec::ConfigurableOptions parserConfiguration;
     parserConfiguration.optionalProgramEntryPointModuleIdentifier = userDefinedExpectedMainModuleIdentifier;
 
     buildAndRecordExpectedSemanticError<SemanticError::NoModuleMatchingUserDefinedProgramEntryPoint>(Message::Position(0, 0), userDefinedExpectedMainModuleIdentifier);
@@ -100,7 +101,7 @@ TEST_F(SyrecParserErrorTestsFixture, NoModuleMatchingUserDefinedExpectedMainModu
 
 TEST_F(SyrecParserErrorTestsFixture, NoModuleMatchingUserDefinedExpectedMainModuleIdentifierWithOtherModulesMatchingPotentialMainModuleRequirementsCausesError) {
     const std::string          userDefinedExpectedMainModuleIdentifier = "userDefMain";
-    syrec::ReadProgramSettings parserConfiguration;
+    syrec::ConfigurableOptions parserConfiguration;
     parserConfiguration.optionalProgramEntryPointModuleIdentifier = userDefinedExpectedMainModuleIdentifier;
 
     buildAndRecordExpectedSemanticError<SemanticError::NoModuleMatchingUserDefinedProgramEntryPoint>(Message::Position(0, 0), userDefinedExpectedMainModuleIdentifier);
@@ -109,7 +110,7 @@ TEST_F(SyrecParserErrorTestsFixture, NoModuleMatchingUserDefinedExpectedMainModu
 
 TEST_F(SyrecParserErrorTestsFixture, UserDefinedExpectedMainModuleIdentifierBeingInvalidCausesError) {
     const std::string          userDefinedExpectedMainModuleIdentifier = "2_invalidIdentifier";
-    syrec::ReadProgramSettings parserConfiguration;
+    syrec::ConfigurableOptions parserConfiguration;
     parserConfiguration.optionalProgramEntryPointModuleIdentifier = userDefinedExpectedMainModuleIdentifier;
 
     buildAndRecordExpectedSemanticError<SemanticError::InvalidUserDefinedProgramEntryPointModuleIdentifier>(Message::Position(0, 0), userDefinedExpectedMainModuleIdentifier);
@@ -118,7 +119,7 @@ TEST_F(SyrecParserErrorTestsFixture, UserDefinedExpectedMainModuleIdentifierBein
 
 TEST_F(SyrecParserErrorTestsFixture, EmptyUserDefinedExpectedMainModuleIdentifierCausesError) {
     const std::string          userDefinedExpectedMainModuleIdentifier;
-    syrec::ReadProgramSettings parserConfiguration;
+    syrec::ConfigurableOptions parserConfiguration;
     parserConfiguration.optionalProgramEntryPointModuleIdentifier = userDefinedExpectedMainModuleIdentifier;
 
     buildAndRecordExpectedSemanticError<SemanticError::InvalidUserDefinedProgramEntryPointModuleIdentifier>(Message::Position(0, 0), userDefinedExpectedMainModuleIdentifier);
