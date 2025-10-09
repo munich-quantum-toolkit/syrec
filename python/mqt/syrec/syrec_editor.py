@@ -345,11 +345,11 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         self.annotatable_quantum_computation = syrec.annotatable_quantum_computation()
         if self.cost_aware_synthesis:
             syrec.cost_aware_synthesis(
-                self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options, None
+                self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options
             )
         else:
             syrec.line_aware_synthesis(
-                self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options, None
+                self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options
             )
 
         self.sim_action.setDisabled(False)
@@ -445,7 +445,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         for i in input_list:
             my_inp_bitset = syrec.n_bit_values_container(no_of_bits, i)
             my_out_bitset = syrec.n_bit_values_container(no_of_bits)
-            syrec.simple_simulation(my_out_bitset, self.annotatable_quantum_computation, my_inp_bitset, None)
+            syrec.simple_simulation(my_out_bitset, self.annotatable_quantum_computation, my_inp_bitset)
 
             inp_bitset_with_ancillaes_set = syrec.n_bit_values_container(no_of_bits, i + bit1_mask)
             combination_inp.append(str(inp_bitset_with_ancillaes_set))
