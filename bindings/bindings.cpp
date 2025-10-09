@@ -90,7 +90,7 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .value("bitwise_and", utils::IntegerConstantTruncationOperation::BitwiseAnd, "Use the bitwise AND operation for the truncation of constant values")
             .export_values();
 
-    py::class_<ConfigurableOptions>(m, "configurable_options")
+    py::class_<ConfigurableOptions, std::shared_ptr<ConfigurableOptions>>(m, "configurable_options")
             .def(py::init<>(), "Constructs ReadProgramSettings object.")
             .def_readwrite("default_bitwidth", &ConfigurableOptions::defaultBitwidth, "Defines the default variable bitwidth used by the SyReC parser for variables whose bitwidth specification was omitted")
             .def_readwrite("integer_constant_truncation_operation", &ConfigurableOptions::integerConstantTruncationOperation, "Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language")
