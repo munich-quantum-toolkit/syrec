@@ -586,7 +586,15 @@ namespace syrec {
 
         const std::size_t      accessedBitrangeLengthOfLhsOperand = dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess.getNumberOfAccessedBits();
         std::vector<qc::Qubit> rhs;
+
+        // In some cases the expected bitwidth of the assigned to variable parts of the assignment are not known to the parser (e.g. when a loop variable is used in either the dimension access of bitrange component of a variable access) that
+        // in combination with the assumed default bitwidth of compile time integer constants and the requirement that the operands on the left and right hand side of the assignment have the same bitwidth can result in a synthesis error if no
+        // truncation of integer constant is performed. An example for such a case is the SyReC module 'module main(inout a(4)) for $i = 0 to 2 do a.$i:($i + 1) += 120'.
+        // The bitwidth of the assigned to variable parts is equal to 2 while the bitwidth of the right hand side of the expression is 32 due to the assumed bitwidth chosen for integer constants. Thus to satisfy the invariant that both operands need
+        // to have the same bitwidth, a truncation of the integer constant to the expected bitwidth of 2 needs to be performed.
         synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, accessedBitrangeLengthOfLhsOperand, rhs, qubitsStoringSelectedValueOfVariable, statement.assignOperation);
+        // We should validate that the invariant that both sides of the assignment have the same bitwidth is satisfied but due to some weird implementation details of the line aware synthesis, which might be modified to fix issue #280, this cannot be done without risking
+        // that some assignment variants cannot be synthesized anymore. This hopefully changes in the future.
         opVec.clear();
 
         switch (statement.assignOperation) {
@@ -722,6 +730,23 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::onExpression(const Expression::ptr& expression, const std::optional<unsigned>& optionalExpectedOperandBitwidth, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, const OperationVariant operationVariant) {
+        // At the moment it makes no difference whether the evaluation of compile time constant expressions (CTCE) used as the operands of the current expression is performed here or in the overloaded for the concrete
+        // expression type, if it were performed in the latter the code for the evaluation would be smaller since only the specific expression type needs to be handled but no other improvement would result from this.
+        // However, we would still need a generic function that is able to handle all supported expression types.
+        // If arithmetic, logical or other optimizations are performed in the future then moving the evaluation of CTCEs into the overload for the concrete expression type would make sense.
+        //
+        // Why do we need to perform the evaluation of CTCE which we assume to also perform a truncation of compile time integer constant values before trying to synthesize the expression itself?
+        // Let us use the SyReC module 'module main(inout a(2)) for $i = 0 to 2 step 1 do a += (($i + 2) + 3) rof' as an example.
+        //
+        // If we would not have evaluated the CTCE before trying to synthesize the topmost binary expression '(($i + 2) + 3)' then the following would have happened:
+        // Due to the SyrecSynthesis::onExpression(...) variants only allowing to return the result in the form of the qubits storing said result, compile time constant integer values cannot be propagated up in the expression tree.
+        // Additionally, since the parser might not be able to determine the expected operand bitwidth for the operands of an expression (e.g. if a loop variable is used in the dimension or bit range component of a variable access) then
+        // a default bitwidth for compile time integer constant values has to be assumed which is equal to the maximum supported bitwidth (=32). Thus to propagate this integer constant in the expression tree, 32 ancillary qubits are needed.
+        // However, since all operands of a SyReC operation with more than two operands must have the same bitwidth, only 2 ancillary qubits would be needed to propagate the integer constant.
+        //
+        // The assumed bitwidth for integer constant values leads to a second problem, if no truncation is performed, that can be explained with the example 'module main(inout a(1), in b(4)) for $i = 0 to 2 step 1 do a += (b.$i:($i + 1) > 120) rof'.
+        // Since the bitwidth of the operand 'b.$i:($i + 1)' is only known during synthesis no truncation of any integer constant value in the right hand side operand of the binary expression 'b.$i:($i + 1) > 120' is performed thus the bitwidth of the operand '120'
+        // is assumed to be equal to 32 which in turn will lead to a synthesis error due to the operand bitwidths not being equal (lhs=2, rhs=32) if no truncation of integer constant values is performed during the evaluation of CTCEs.
         const Expression::ptr simplifiedExpr = performCompileTimeSimplificationsOfExpression(expression, loopMap).value_or(expression);
         if (simplifiedExpr == nullptr) {
             return false;
