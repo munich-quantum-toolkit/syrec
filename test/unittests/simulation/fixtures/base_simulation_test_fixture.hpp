@@ -15,7 +15,6 @@
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/configurable_options.hpp"
 #include "core/n_bit_values_container.hpp"
-#include "core/properties.hpp"
 #include "core/syrec/program.hpp"
 
 #include <cstddef>
@@ -62,12 +61,12 @@ public:
         return std::is_same_v<T, syrec::LineAwareSynthesis>;
     }
 
-    void performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(const std::string_view& circuitToParseAndSynthesis, const std::optional<syrec::Properties::ptr>& optionalSynthesisSettings = std::nullopt) {
+    void performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(const std::string_view& circuitToParseAndSynthesis, const std::optional<syrec::ConfigurableOptions>& optionalSynthesisSettings = std::nullopt) {
         ASSERT_NO_FATAL_FAILURE(parseInputCircuitFromString(circuitToParseAndSynthesis, syrecProgramInstance));
         ASSERT_FALSE(performProgramSynthesis(syrecProgramInstance, annotatableQuantumComputation, optionalSynthesisSettings)) << "Expected synthesis of input circuit to fail";
     }
 
-    void performTestExecutionForCircuitLoadedFromJson(const std::string& pathToTestCaseDataJsonFile, const std::string& testcaseJsonKey, const std::optional<syrec::Properties::ptr>& optionalSynthesisSettings = std::nullopt) {
+    void performTestExecutionForCircuitLoadedFromJson(const std::string& pathToTestCaseDataJsonFile, const std::string& testcaseJsonKey, const std::optional<syrec::ConfigurableOptions>& optionalSynthesisSettings = std::nullopt) {
         json jsonDataOfTestCase;
         ASSERT_NO_FATAL_FAILURE(loadAndParseTestCaseDataFromJson(pathToTestCaseDataJsonFile, testcaseJsonKey, jsonDataOfTestCase));
         ASSERT_NO_FATAL_FAILURE(validateJsonStructure(jsonDataOfTestCase));
@@ -128,8 +127,8 @@ protected:
         }
     }
 
-    [[nodiscard]] static bool performProgramSynthesis(const syrec::Program& program, syrec::AnnotatableQuantumComputation& annotatableQuantumComputation, const std::optional<syrec::Properties::ptr>& optionalSynthesisSettings = std::nullopt) {
-        const auto synthesisSettings = optionalSynthesisSettings.value_or(std::make_shared<syrec::Properties>());
+    [[nodiscard]] static bool performProgramSynthesis(const syrec::Program& program, syrec::AnnotatableQuantumComputation& annotatableQuantumComputation, const std::optional<syrec::ConfigurableOptions>& optionalSynthesisSettings = std::nullopt) {
+        const auto synthesisSettings = optionalSynthesisSettings.value_or(syrec::ConfigurableOptions());
         if constexpr (std::is_same_v<T, syrec::CostAwareSynthesis>) {
             return syrec::CostAwareSynthesis::synthesize(annotatableQuantumComputation, program, synthesisSettings);
         } else {

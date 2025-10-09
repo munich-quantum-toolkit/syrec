@@ -59,6 +59,11 @@ namespace syrec {
         bool allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess = false;
 
         /**
+         * Should debug information for the local variables of a SyReC module be generated (e.g. call stack and associated original variable identifier, etc.) in the annotatable quantum computation during synthesis. Is not recorded by default.
+         */
+        bool generatedInlinedQubitDebugInformation = false;
+
+        /**
          * @brief Define the identifier of the module that should serve as the entry point of the SyReC program.
          * @details By default the entry point in a SyReC program is identified by a module with an identifier equal to 'main'. If no such module is found, the last defined module in the program also serves as the entry point for the latter.
          * - If this property is set then only one module that matches this identifier is allowed to exist. Module overload resolution for modules with identifier 'main' is allowed in that case.

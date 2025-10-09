@@ -12,7 +12,8 @@
 
 #include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
-#include "core/properties.hpp"
+#include "core/configurable_options.hpp"
+#include "core/statistics.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
@@ -428,9 +429,9 @@ namespace syrec {
         }
     }
 
-    bool LineAwareSynthesis::synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
+    bool LineAwareSynthesis::synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const ConfigurableOptions& settings, Statistics* optionalRecordedStatistics) {
         LineAwareSynthesis synthesizer(annotatableQuantumComputation);
-        return SyrecSynthesis::synthesize(&synthesizer, program, settings, statistics);
+        return SyrecSynthesis::synthesize(&synthesizer, program, settings, optionalRecordedStatistics);
     }
 
     std::optional<bool> LineAwareSynthesis::doesVariableAccessNotContainCompileTimeconstantExpressions(const VariableAccess::ptr& variableAccess) const {

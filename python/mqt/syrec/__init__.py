@@ -33,8 +33,6 @@ if sys.platform == "win32":
 
 from ._version import version as __version__
 from .pysyrec import (
-    SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION,
-    SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER,
     annotatable_quantum_computation,
     configurable_options,
     cost_aware_synthesis,
@@ -42,15 +40,13 @@ from .pysyrec import (
     line_aware_synthesis,
     n_bit_values_container,
     program,
-    properties,
     qubit_inlining_stack,
     qubit_inlining_stack_entry,
     simple_simulation,
+    statistics,
 )
 
 __all__ = [
-    "SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION",
-    "SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER",
     "__version__",
     "annotatable_quantum_computation",
     "configurable_options",
@@ -59,8 +55,8 @@ __all__ = [
     "line_aware_synthesis",
     "n_bit_values_container",
     "program",
-    "properties",
     "qubit_inlining_stack",
     "qubit_inlining_stack_entry",
     "simple_simulation",
+    "statistics",
 ]

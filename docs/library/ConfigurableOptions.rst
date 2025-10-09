@@ -1,4 +1,4 @@
-Configurable options
+ConfigurableOptions
 ====================
 
 An object provided read and write access to the configurable options of the SyReC parser and the various supported synthesis algorithms.
@@ -13,8 +13,8 @@ The following enum defines the integer constant truncation operations supported 
         :undoc-members:
         :members:
 
-Class representing a property map (used for storing settings and statistical information).
+An object that can be used to store various statistics collected in the SyReC parser and various supported synthesis algorithms.
 
-    .. autoclass:: mqt.syrec.properties
+    .. autoclass:: mqt.syrec.statistics
         :undoc-members:
         :members:

@@ -92,7 +92,7 @@ TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisTest) {
     ASSERT_NO_FATAL_FAILURE(errorString = prog.read(fileName, settings)) << "Unexpected crash during processing of SyReC program";
     ASSERT_TRUE(errorString.empty()) << "Found errors during processing of SyReC program: " << errorString;
 
-    ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
+    ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog, settings));
     ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNops());
     ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNqubits());
 
@@ -111,7 +111,7 @@ TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisQASMTest) {
     ASSERT_NO_FATAL_FAILURE(errorString = prog.read(fileName, settings)) << "Unexpected crash during processing of SyReC program";
     ASSERT_TRUE(errorString.empty()) << "Found errors during processing of SyReC program: " << errorString;
     // We are not asserting that the synthesis completes successfully since the 'dump' of the circuit into the .qasm file might help debugging the error.
-    ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
+    ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog, settings));
 
     const auto lastIndex      = fileName.find_last_of('.');
     const auto outputFileName = fileName.substr(0, lastIndex);

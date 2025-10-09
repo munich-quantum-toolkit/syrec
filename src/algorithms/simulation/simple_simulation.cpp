@@ -11,7 +11,7 @@
 #include "algorithms/simulation/simple_simulation.hpp"
 
 #include "core/n_bit_values_container.hpp"
-#include "core/properties.hpp"
+#include "core/statistics.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/QuantumComputation.hpp"
 #include "ir/operations/Control.hpp"
@@ -61,7 +61,7 @@ bool syrec::coreOperationSimulation(const qc::Operation& op, NBitValuesContainer
     return false;
 }
 
-void syrec::simpleSimulation(NBitValuesContainer& output, const qc::QuantumComputation& quantumComputation, const NBitValuesContainer& input, const Properties::ptr& statistics) {
+void syrec::simpleSimulation(NBitValuesContainer& output, const qc::QuantumComputation& quantumComputation, const NBitValuesContainer& input, Statistics* optionalRecordedStatistics) {
     if (input.size() != quantumComputation.getNqubits()) {
         std::cerr << "Input state size (" << input.size() << ") must match number of qubits in the quantum computation (" << quantumComputation.getNqubits() << ")\n";
         return;
@@ -83,7 +83,7 @@ void syrec::simpleSimulation(NBitValuesContainer& output, const qc::QuantumCompu
 
     const TimeStamp simulationEndTime = std::chrono::steady_clock::now();
     const auto      simulationRunTime = std::chrono::duration_cast<std::chrono::milliseconds>(simulationEndTime - simulationStartTime);
-    if (statistics != nullptr) {
-        statistics->set("runtime", static_cast<double>(simulationRunTime.count()));
+    if (optionalRecordedStatistics != nullptr) {
+        optionalRecordedStatistics->runtimeInMilliseconds = static_cast<double>(simulationRunTime.count());
     }
 }

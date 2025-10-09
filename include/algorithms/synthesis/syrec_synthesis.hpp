@@ -13,8 +13,8 @@
 #include "algorithms/synthesis/first_variable_qubit_offset_lookup.hpp"
 #include "algorithms/synthesis/statement_execution_order_stack.hpp"
 #include "core/annotatable_quantum_computation.hpp"
-#include "core/properties.hpp"
 #include "core/qubit_inlining_stack.hpp"
+#include "core/statistics.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/module.hpp"
 #include "core/syrec/number.hpp"
@@ -39,10 +39,6 @@
 namespace syrec {
     class SyrecSynthesis {
     public:
-        inline static const std::string MAIN_MODULE_IDENTIFIER_CONFIG_KEY             = "main_module";
-        inline static const std::string GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY  = "create_qubit_inline_debug_information";
-        inline static const std::string INTEGER_CONSTANT_TRUNCATION_OPTION_CONFIG_KEY = "integer_constant_truncation_op";
-
         std::stack<BinaryExpression::BinaryOperation>  expOpp;
         std::stack<std::vector<unsigned>>              expLhss;
         std::stack<std::vector<unsigned>>              expRhss;
@@ -59,7 +55,7 @@ namespace syrec {
         [[nodiscard]] bool addVariables(const Variable::vec& variables) const;
         void               setMainModule(const Module::ptr& mainModule);
 
-        [[maybe_unused]] static bool synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics);
+        [[maybe_unused]] static bool synthesize(SyrecSynthesis* synthesizer, const Program& program, const ConfigurableOptions& settings, Statistics* optionalRecordedStatistics = nullptr);
 
     protected:
         constexpr static std::string_view GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER = "lno";

@@ -11,7 +11,7 @@
 #pragma once
 
 #include "core/n_bit_values_container.hpp"
-#include "core/properties.hpp"
+#include "core/statistics.hpp"
 #include "ir/QuantumComputation.hpp"
 #include "ir/operations/Operation.hpp"
 
@@ -44,19 +44,7 @@ namespace syrec {
     * @param input Input pattern. The index of the pattern corresponds to the line index.
     *              The bit-width of the input pattern has to be initialized properly to the
     *              number of lines.
-    * @param statistics <table border="0" width="100%">
-    *   <tr>
-    *     <td class="indexkey">Information</td>
-    *     <td class="indexkey">Type</td>
-    *     <td class="indexkey">Description</td>
-    *   </tr>
-    *   <tr>
-    *     <td class="indexvalue">runtime</td>
-    *     <td class="indexvalue">double</td>
-    *     <td class="indexvalue">Run-time consumed by the algorithm in CPU seconds.</td>
-    *   </tr>
-    * </table>
+    * @param optionalRecordedStatistics Container to optionally store recorded statistics during the simulation of the given input state.
     */
-    void simpleSimulation(NBitValuesContainer& output, const qc::QuantumComputation& quantumComputation, const NBitValuesContainer& input,
-                          const Properties::ptr& statistics = Properties::ptr());
+    void simpleSimulation(NBitValuesContainer& output, const qc::QuantumComputation& quantumComputation, const NBitValuesContainer& input, Statistics* optionalRecordedStatistics = nullptr);
 } // namespace syrec

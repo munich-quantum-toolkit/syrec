@@ -14,8 +14,9 @@
 #include "algorithms/synthesis/internal_qubit_label_builder.hpp"
 #include "algorithms/synthesis/statement_execution_order_stack.hpp"
 #include "core/annotatable_quantum_computation.hpp"
-#include "core/properties.hpp"
+#include "core/configurable_options.hpp"
 #include "core/qubit_inlining_stack.hpp"
+#include "core/statistics.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/number.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"
@@ -158,7 +159,7 @@ namespace syrec {
         return couldQubitsForVariablesBeAdded;
     }
 
-    bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
+    bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, const Program& program, const ConfigurableOptions& settings, Statistics* optionalRecordedStatistics) {
         if (synthesizer->statementExecutionOrderStack->getCurrentAggregateStatementExecutionOrderState() != StatementExecutionOrderStack::StatementExecutionOrder::Sequential) {
             std::cerr << "Execution order at start of synthesis should be sequential\n";
             return false;
@@ -173,8 +174,7 @@ namespace syrec {
         // Validation of optional defined main module identifier of synthesis settings
         const std::string&         defaultMainModuleIdentifier = "main";
         std::optional<std::string> expectedMainModuleIdentifier;
-        if (settings != nullptr && settings->get<std::string>(MAIN_MODULE_IDENTIFIER_CONFIG_KEY).has_value()) {
-            expectedMainModuleIdentifier = settings->get<std::string>(MAIN_MODULE_IDENTIFIER_CONFIG_KEY);
+        if (settings.optionalProgramEntryPointModuleIdentifier.has_value()) {
             if (expectedMainModuleIdentifier.value().empty()) {
                 std::cerr << "Expected main module identifier defined in synthesis settings must have a value\n";
                 return false;
@@ -184,6 +184,7 @@ namespace syrec {
                 std::cerr << "Expected main module identifier defined in synthesis settings '" << *expectedMainModuleIdentifier << "' did not defined a valid identifier according to the SyReC grammar, check your inputs!\n";
                 return false;
             }
+            expectedMainModuleIdentifier = settings.optionalProgramEntryPointModuleIdentifier;
         } else {
             if (program.findModule(defaultMainModuleIdentifier) != nullptr) {
                 expectedMainModuleIdentifier = defaultMainModuleIdentifier;
@@ -192,10 +193,7 @@ namespace syrec {
             }
         }
 
-        if (settings != nullptr && settings->get<utils::IntegerConstantTruncationOperation>(INTEGER_CONSTANT_TRUNCATION_OPTION_CONFIG_KEY).has_value()) {
-            synthesizer->integerConstantTruncationOperation = settings->get<utils::IntegerConstantTruncationOperation>(INTEGER_CONSTANT_TRUNCATION_OPTION_CONFIG_KEY).value_or(utils::IntegerConstantTruncationOperation::BitwiseAnd);
-        }
-
+        synthesizer->integerConstantTruncationOperation = settings.integerConstantTruncationOperation;
         // Run-time measuring
         const TimeStamp simulationStartTime = std::chrono::steady_clock::now();
 
@@ -227,7 +225,7 @@ namespace syrec {
 
         // declare as top module
         synthesizer->setMainModule(main);
-        if (settings != nullptr && settings->get<bool>(GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, false)) {
+        if (settings.generatedInlinedQubitDebugInformation) {
             auto mainModuleCallStackEntry         = QubitInliningStack::QubitInliningStackEntry();
             mainModuleCallStackEntry.targetModule = main;
 
@@ -268,10 +266,10 @@ namespace syrec {
             return false;
         }
 
-        if (statistics != nullptr) {
-            const TimeStamp simulationEndTime = std::chrono::steady_clock::now();
-            const auto      simulationRunTime = std::chrono::duration_cast<std::chrono::milliseconds>(simulationEndTime - simulationStartTime);
-            statistics->set("runtime", static_cast<double>(simulationRunTime.count()));
+        if (optionalRecordedStatistics != nullptr) {
+            const TimeStamp simulationEndTime                 = std::chrono::steady_clock::now();
+            const auto      simulationRunTime                 = std::chrono::duration_cast<std::chrono::milliseconds>(simulationEndTime - simulationStartTime);
+            optionalRecordedStatistics->runtimeInMilliseconds = static_cast<double>(simulationRunTime.count());
         }
         return synthesisOfMainModuleOk;
     }

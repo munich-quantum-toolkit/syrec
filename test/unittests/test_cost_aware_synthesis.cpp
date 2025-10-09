@@ -92,7 +92,7 @@ TEST_P(SyrecCostAwareSynthesisTest, GenericSynthesisTest) {
     ASSERT_NO_FATAL_FAILURE(errorString = prog.read(fileName, settings)) << "Unexpected crash during processing of SyReC program";
     ASSERT_TRUE(errorString.empty()) << "Found errors during processing of SyReC program: " << errorString;
 
-    ASSERT_TRUE(CostAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
+    ASSERT_TRUE(CostAwareSynthesis::synthesize(annotatableQuantumComputation, prog, settings));
     ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNops());
     ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNqubits());
 

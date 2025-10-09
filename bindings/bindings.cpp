@@ -15,8 +15,8 @@
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/configurable_options.hpp"
 #include "core/n_bit_values_container.hpp"
-#include "core/properties.hpp"
 #include "core/qubit_inlining_stack.hpp"
+#include "core/statistics.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
@@ -81,18 +81,9 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
                     },
                     "Returns a string containing the stringified values of the stored bits.");
 
-    py::class_<Properties, std::shared_ptr<Properties>>(m, "properties")
+    py::class_<Statistics>(m, "statistics")
             .def(py::init<>(), "Constructs property map object.")
-            .def("set_string", &Properties::set<std::string>)
-            .def("set_bool", &Properties::set<bool>)
-            .def("set_int", &Properties::set<int>)
-            .def("set_unsigned", &Properties::set<unsigned>)
-            .def("set_double", &Properties::set<double>)
-            .def("get_string", py::overload_cast<const std::string&>(&Properties::get<std::string>, py::const_)) // NOLINT(misc-include-cleaner)
-            .def("get_double", py::overload_cast<const std::string&>(&Properties::get<double>, py::const_))      // NOLINT(misc-include-cleaner)
-            .def("get_bool", py::overload_cast<const std::string&>(&Properties::get<bool>, py::const_))          // NOLINT(misc-include-cleaner)
-            .def("contains", &Properties::containsKey, "key"_a, "Determine whether a matching entry for the given key exists")
-            .def("remove", &Properties::remove, "key"_a, "Removes the entry matching the given key");
+            .def_readwrite("runtime_in_milliseconds", &Statistics::runtimeInMilliseconds, "The recorded runtime in milliseconds");
 
     py::enum_<utils::IntegerConstantTruncationOperation>(m, "integer_constant_truncation_operation")
             .value("modulo", utils::IntegerConstantTruncationOperation::Modulo, "Use the modulo operation for the truncation of constant values")
@@ -104,7 +95,8 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .def_readwrite("default_bitwidth", &ConfigurableOptions::defaultBitwidth, "Defines the default variable bitwidth used by the SyReC parser for variables whose bitwidth specification was omitted")
             .def_readwrite("integer_constant_truncation_operation", &ConfigurableOptions::integerConstantTruncationOperation, "Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language")
             .def_readwrite("allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variableAccess", &ConfigurableOptions::allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess, "Defines whether an access on the assigned to signal parts of an assigned is allowed in variable accesses defined in any operand of the assignment. For further details we refer to the semantics of the SyReC language.")
-            .def_readwrite("main_module_identifier", &ConfigurableOptions::optionalProgramEntryPointModuleIdentifier, "Define the identifier of the module serving as the entry-point of the to be processed SyReC program");
+            .def_readwrite("main_module_identifier", &ConfigurableOptions::optionalProgramEntryPointModuleIdentifier, "Define the identifier of the module serving as the entry-point of the to be processed SyReC program")
+            .def_readwrite("generate_inlined_qubit_debug_information", &ConfigurableOptions::generatedInlinedQubitDebugInformation, "Should debug information for the qubits associated with the local variables of a SyReC module be generated");
 
     py::class_<Program>(m, "program")
             .def(py::init<>(), "Constructs SyReC program object.")
@@ -112,10 +104,7 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .def("read", &Program::read, "filename"_a, "settings"_a = ConfigurableOptions{}, "Read and process a SyReC program from a file.")
             .def("read_from_string", &Program::readFromString, "stringifiedProgram"_a, "settings"_a = ConfigurableOptions{}, "Process an already stringified SyReC program.");
 
-    m.attr("SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER")            = py::str(SyrecSynthesis::MAIN_MODULE_IDENTIFIER_CONFIG_KEY);
-    m.attr("SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION") = py::str(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY);
-
-    m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = Properties::ptr(), "statistics"_a = Properties::ptr(), "Cost-aware synthesis of the SyReC program.");
-    m.def("line_aware_synthesis", &LineAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = Properties::ptr(), "statistics"_a = Properties::ptr(), "Line-aware synthesis of the SyReC program.");
-    m.def("simple_simulation", &simpleSimulation, "output"_a, "quantum_computation"_a, "input"_a, "statistics"_a = Properties::ptr(), "Simulation of a synthesized SyReC program");
+    m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a, "optional_recorded_statistics"_a, "Cost-aware synthesis of the SyReC program.");
+    m.def("line_aware_synthesis", &LineAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a, "optional_recorded_statistics"_a, "Line-aware synthesis of the SyReC program.");
+    m.def("simple_simulation", &simpleSimulation, "output"_a, "quantum_computation"_a, "input"_a, "optional_recorded_statistics"_a, "Simulation of a synthesized SyReC program");
 }

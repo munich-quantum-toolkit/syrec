@@ -14,7 +14,6 @@
 #include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/configurable_options.hpp"
-#include "core/properties.hpp"
 #include "core/qubit_inlining_stack.hpp"
 #include "core/syrec/module.hpp"
 #include "core/syrec/program.hpp"
@@ -38,8 +37,8 @@ namespace {
             static_assert(std::is_same_v<T, CostAwareSynthesis> || std::is_same_v<T, LineAwareSynthesis>);
         }
 
-        [[nodiscard]] static bool performProgramSynthesis(const Program& program, AnnotatableQuantumComputation& annotatableQuantumComputation, const std::optional<Properties::ptr>& optionalSynthesisSettings = std::nullopt) {
-            const Properties::ptr synthesisSettings = optionalSynthesisSettings.value_or(std::make_shared<Properties>());
+        [[nodiscard]] static bool performProgramSynthesis(const Program& program, AnnotatableQuantumComputation& annotatableQuantumComputation, const std::optional<ConfigurableOptions>& optionalSynthesisSettings = std::nullopt) {
+            const ConfigurableOptions synthesisSettings = optionalSynthesisSettings.value_or(ConfigurableOptions());
             if constexpr (std::is_same_v<T, CostAwareSynthesis>) {
                 return CostAwareSynthesis::synthesize(annotatableQuantumComputation, program, synthesisSettings);
             } else {
@@ -53,7 +52,7 @@ namespace {
             ASSERT_TRUE(errorsOfReadInputCircuit.empty()) << "Expected no errors in input circuits but actually found the following: " << errorsOfReadInputCircuit;
         }
 
-        static void parseAndSynthesisProgramFromString(const std::string_view& stringifiedSyrecProgram, Program& containerForGeneratedIr, AnnotatableQuantumComputation& annotatableQuantumComputation, const std::optional<Properties::ptr>& optionalSynthesisSettings = std::nullopt) {
+        static void parseAndSynthesisProgramFromString(const std::string_view& stringifiedSyrecProgram, Program& containerForGeneratedIr, AnnotatableQuantumComputation& annotatableQuantumComputation, const std::optional<ConfigurableOptions>& optionalSynthesisSettings = std::nullopt) {
             ASSERT_NO_FATAL_FAILURE(parseInputCircuitFromString(stringifiedSyrecProgram, containerForGeneratedIr));
             ASSERT_TRUE(performProgramSynthesis(containerForGeneratedIr, annotatableQuantumComputation, optionalSynthesisSettings)) << "Failed to synthesize SyReC program: " << stringifiedSyrecProgram;
         }
@@ -209,8 +208,8 @@ TYPED_TEST_SUITE_P(SynthesisQubitInlinineInformationTestsFixture);
 
 // BEGIN tests for inlined qubit information behaviour with feature activated in synthesis settings
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesNotRecordInlineStackOfMainModuleParameters) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a(4), out b(4)) a += b", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -225,8 +224,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfLocalMainModuleVariables) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main() wire a(4), b(4) a += b", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     const Module::ptr& sharedTargetModule = this->syrecProgramInstance.findModule("main");
@@ -251,8 +250,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesNotRecordInlineStackOfCalledModuleParameters) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) a += b module main(inout a(4), out b(4)) call add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -267,8 +266,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfCalledModuleLocalVariables) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) call add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -328,8 +327,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesNotRecordInlineStackOfUncalledModuleParameters) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) a += b module main(inout a(4), out b(4)) uncall add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -344,8 +343,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfUncalledLocalModuleVariables) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(4), in b(4)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) uncall add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -405,8 +404,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInMainModule) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a(4), out b(4)) a += b; a += 2", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -441,8 +440,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInMainModule) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a(2), out b(4)) a += (b.0:1 & b.2:3)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -475,8 +474,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInCalledModule) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module addWithConst(inout a(2)) a += 2 module main(inout a(2), in b(2)) call addWithConst(a); a += b", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -519,8 +518,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInCalledModule) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(4)) a += (b.0:1 & b.2:3) module main(inout a(2), in b(4)) call add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -565,8 +564,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfAncillaryQubitsCreatedForIntegerConstantsInUncalledModule) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module addWithConst(inout a(2)) a += 2 module main(inout a(2), in b(2)) uncall addWithConst(a); a += b", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -609,8 +608,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfAncillaryQubitsCreatedForIntermediateResultsInUncalledModule) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(4)) a += (b.0:1 & b.2:3) module main(inout a(2), in b(4)) uncall add(a, b)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -655,8 +654,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfLocalModuleVariablesUsedAsParametersInCalledModule) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) call add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -718,8 +717,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedDoesRecordInlineStackOfLocalModuleVariablesUsedAsParametersInUncalledModule) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire s(3), t(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) uncall add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -782,8 +781,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedLocalModuleVariablesAndAncillaryQubitsOfCalledModuleOnSameDepthOfInlineStackShareSameInlineStack) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(in a(2)) wire s(3) s += 3 module main() wire x(2) x += 2; call add(x); x += 3", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     const Module::ptr& mainModuleReference = this->syrecProgramInstance.findModule("main");
@@ -894,8 +893,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformationFeatureActivatedLocalModuleVariablesAndAncillaryQubitsOfUncalledModuleOnSameDepthOfInlineStackShareSameInlineStack) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(in a(2)) wire s(3) s += 3 module main() wire x(2) x += 2; uncall add(x); x += 3", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     const Module::ptr& mainModuleReference = this->syrecProgramInstance.findModule("main");
@@ -1006,8 +1005,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitInformati
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitsInformationFeatureActivatedForLargerThan1DVariable) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module main(inout a[2](4), out b[1][2](2)) wire x[2][2](2), z(2) x[0][1] += x[1][0]", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -1085,8 +1084,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitsInformat
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitsInformationFeatureActivatedDoesRecordDifferentInlineStacksForNameClashBetweenModuleLocalVariablesAndCalledModuleLocalVariables) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire x(3), y(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) call add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
@@ -1150,8 +1149,8 @@ TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitsInformat
 }
 
 TYPED_TEST_P(SynthesisQubitInlinineInformationTestsFixture, InlineQubitsInformationFeatureActivatedDoesRecordDifferentInlineStacksForNameClashBetweenModuleLocalVariablesAndUncalledModuleLocalVariables) {
-    Properties::ptr synthesisSettings = std::make_shared<Properties>();
-    synthesisSettings->set(SyrecSynthesis::GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, true);
+    ConfigurableOptions synthesisSettings;
+    synthesisSettings.generatedInlinedQubitDebugInformation = true;
     ASSERT_NO_FATAL_FAILURE(this->parseAndSynthesisProgramFromString("module add(inout a(2), in b(2)) wire x(3), y(3) a += b module main(inout a(4), out b(4)) wire x(2), y(2) uncall add(x, y)", this->syrecProgramInstance, this->annotatableQuantumComputation, synthesisSettings));
 
     ASSERT_NO_FATAL_FAILURE(this->assertQubitInlineInformationOfModuleParameterOrLocalVariableMatches(this->annotatableQuantumComputation, "a", {0U}, 0U, nullptr));
