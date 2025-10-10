@@ -207,7 +207,7 @@
     ]
   },
   "TruncationOfIntegerConstantInUnaryExpression": {
-    "inputCircuit": "module main(inout a(2)) wire b(3) a.1 += !((b + 13) < 1)",
+    "inputCircuit": "module main(inout a(2)) wire b(3) for $i = 1 to 3 step 3 do a.1 += (b < ~($i + 1)) rof",
     "simulationRuns": [
       {
         "in": "00",
@@ -275,6 +275,78 @@
       {
         "in": "000",
         "out": "011"
+      }
+    ]
+  },
+  "PartialSimplificationInNestedExpressionOfUnaryExpressionPerformedDueToIntegerConstantTruncation": {
+    "inputCircuit": "module main(inout a(2), in b(2)) if !(b > ((b + a) * (#b - #a))) then ++= a else --= a fi !(b > ((b + a) * (#b - #a)))",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "1000"
+      },
+      {
+        "in": "1000",
+        "out": "0100"
+      },
+      {
+        "in": "0100",
+        "out": "1100"
+      },
+      {
+        "in": "1100",
+        "out": "0000"
+      }
+    ]
+  },
+  "PartialSimplificationInNestedExpressionOfBinaryExpressionPerformedDueToIntegerConstantTruncation": {
+    "inputCircuit": "module main(inout a(2), in b(2)) if (b > (b * (#a - #b))) then ++= a else --= a fi (b > (b * (#a - #b)))",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "0001",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1011"
+      }
+    ]
+  },
+  "PartialSimplificationInNestedExpressionOfShiftExpressionPerformedDueToIntegerConstantTruncation": {
+    "inputCircuit": "module main(inout a(2), in b(2)) a += ((b + (3 + #b)) << 1)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0100"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "0011",
+        "out": "0011"
+      }
+    ]
+  },
+  "RuntimeStatisticsRecordedDuringSynthesisIfOptionalResultContainerIsProvided": {
+    "inputCircuit": "module main(inout a(2)) for 14 do ++= a rof",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "11"
       }
     ]
   }

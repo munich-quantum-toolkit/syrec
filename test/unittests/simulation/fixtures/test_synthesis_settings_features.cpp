@@ -12,9 +12,11 @@
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "base_simulation_test_fixture.hpp"
 #include "core/configurable_options.hpp"
+#include "core/statistics.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"
 
 #include <gtest/gtest.h>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -190,6 +192,28 @@ TYPED_TEST_P(BaseSimulationTestFixture, IntegerConstantTruncationOnlyPerformedAf
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, PartialSimplificationInNestedExpressionOfUnaryExpressionPerformedDueToIntegerConstantTruncation) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, PartialSimplificationInNestedExpressionOfBinaryExpressionPerformedDueToIntegerConstantTruncation) {
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, PartialSimplificationInNestedExpressionOfShiftExpressionPerformedDueToIntegerConstantTruncation) {
+    if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
+        GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
+    } else {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, RuntimeStatisticsRecordedDuringSynthesisIfOptionalResultContainerIsProvided) {
+    syrec::Statistics optionalRecordedStatisticsContainer;
+    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), std::nullopt, &optionalRecordedStatisticsContainer);
+    ASSERT_GT(optionalRecordedStatisticsContainer.runtimeInMilliseconds, 0) << "Expected recorded runtime to be larger than zero!";
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesModuleWithMainIdentiferAsMainModule,
                             OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMainExists,
@@ -220,7 +244,12 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             TruncationOfCompileTimeConstantExpressionInNestedExpressionOfBinaryExpression,
                             TruncationOfIntegerConstantInGuardConditionOfIfStatement,
                             TruncationOfIntegerConstantInExpressionUsedInDimensionAccessOfVariableAccess,
-                            IntegerConstantTruncationOnlyPerformedAfterCompileTimeConstantExpressionWasEvaluatedNotDuringEvaluation);
+                            IntegerConstantTruncationOnlyPerformedAfterCompileTimeConstantExpressionWasEvaluatedNotDuringEvaluation,
+
+                            PartialSimplificationInNestedExpressionOfUnaryExpressionPerformedDueToIntegerConstantTruncation,
+                            PartialSimplificationInNestedExpressionOfBinaryExpressionPerformedDueToIntegerConstantTruncation,
+                            PartialSimplificationInNestedExpressionOfShiftExpressionPerformedDueToIntegerConstantTruncation,
+                            RuntimeStatisticsRecordedDuringSynthesisIfOptionalResultContainerIsProvided);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
