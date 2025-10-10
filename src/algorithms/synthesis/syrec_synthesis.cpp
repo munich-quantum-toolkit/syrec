@@ -1326,6 +1326,9 @@ namespace syrec {
         }
 
         if (auto const* exprAsNumericExpr = dynamic_cast<NumericExpression*>(expression.get()); exprAsNumericExpr != nullptr) {
+            if (exprAsNumericExpr->value->isConstant()) {
+                return expression;
+            }
             if (const std::optional<unsigned> compileTimeValueOfNumericExpression = exprAsNumericExpr->value->tryEvaluate(loopVariableValueLookup); compileTimeValueOfNumericExpression.has_value()) {
                 return std::make_shared<NumericExpression>(std::make_shared<Number>(*compileTimeValueOfNumericExpression), 32U);
             }
@@ -1348,7 +1351,6 @@ namespace syrec {
                 if (const std::optional<unsigned> compileTimeValueOfExpr = utils::tryEvaluate(compileTimeConstantValueOfLhsOperand, exprAsBinaryExpr->binaryOperation, compileTimeConstantValueOfRhsOperand); compileTimeValueOfExpr.has_value()) {
                     return std::make_shared<NumericExpression>(std::make_shared<Number>(*compileTimeValueOfExpr), 32U);
                 }
-                return std::nullopt;
             }
             // Even if we cannot determine the compile time value of the binary expression we could still generate a simplified expression if the simplification of the operands of the original expression resulted in simplified operands.
             if (*simplifiedLhsOperand != exprAsBinaryExpr->lhs || simplifiedRhsOperand != exprAsBinaryExpr->rhs) {
@@ -1367,7 +1369,6 @@ namespace syrec {
                 if (const std::optional<unsigned> compileTimeValueOfExpr = utils::tryEvaluate(compileTimeConstantValueOfToBeShiftedOperand, exprAsShiftExpr->shiftOperation, compileTimeConstantValueOfShiftAmount); compileTimeValueOfExpr.has_value()) {
                     return std::make_shared<NumericExpression>(std::make_shared<Number>(*compileTimeValueOfExpr), 32U);
                 }
-                return std::nullopt;
             }
             // Similarly to the binary expression a new shift expression can be generated if the simplification of the lhs operand of the original shift expression could be simplifiied.
             if (*simplifiedToBeShiftedOperand != exprAsShiftExpr->lhs) {
@@ -1385,7 +1386,6 @@ namespace syrec {
                 if (const std::optional<unsigned> compileTimeConstantValueOfUnaryExpr = utils::tryEvaluate(exprAsUnaryExpr->unaryOperation, compileTimeConstantValueOfUnaryExprOperand); compileTimeConstantValueOfUnaryExpr.has_value()) {
                     return std::make_shared<NumericExpression>(std::make_shared<Number>(*compileTimeConstantValueOfUnaryExpr), 32U);
                 }
-                return std::nullopt;
             }
             // If the compile time value of the unary expression cannot be determined one can create a new unary expression if its operand could be simplified.
             if (*simplifiedUnaryExprOperand != exprAsUnaryExpr->expr) {
