@@ -1041,7 +1041,7 @@ class ConfigurableOptionsUpdated(QtWidgets.QDialog):  # type: ignore[misc]
         default_bitwidth_label = QtWidgets.QLabel("Default signal bitwidth:")
         self.default_bitwidth_textbox = QtWidgets.QLineEdit()
         self.default_bitwidth_textbox.setText(str(self.configurable_parser_and_synthesis_options.default_bitwidth))
-        self.default_bitwidth_textbox.setPlaceholderText("Valid value range is [1, 2^16]")
+        self.default_bitwidth_textbox.setPlaceholderText("Valid value range is [1, 2^31)")
         # The value range of the default bitwidth is restricted due to python having no built-in unsigned integer type.
         self.default_bitwidth_textbox.setValidator(QtGui.QIntValidator(1, 2147483647))
 
