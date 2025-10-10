@@ -19,6 +19,7 @@
 #include "core/syrec/program.hpp"
 
 #include <cstddef>
+#include <exception>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
@@ -100,9 +101,13 @@ protected:
         std::ifstream inputFileStream(pathToTestCaseDataJsonFile, std::ifstream::in | std::ifstream::binary);
         ASSERT_TRUE(inputFileStream.good()) << "Input file @" << pathToTestCaseDataJsonFile << " is not in a usable state (e.g. does not exist)";
 
-        const json parsedJsonDataOfFile = json::parse(inputFileStream);
-        ASSERT_TRUE(parsedJsonDataOfFile.contains(testcaseJsonKey)) << "Matching entry for test case was not found in json loaded from " << pathToTestCaseDataJsonFile << " when using '" << testcaseJsonKey << "' as key";
-        containerForJsonDataOfTestCase = parsedJsonDataOfFile[testcaseJsonKey];
+        try {
+            const json parsedJsonDataOfFile = json::parse(inputFileStream);
+            ASSERT_TRUE(parsedJsonDataOfFile.contains(testcaseJsonKey)) << "Matching entry for test case was not found in json loaded from " << pathToTestCaseDataJsonFile << " when using '" << testcaseJsonKey << "' as key";
+            containerForJsonDataOfTestCase = parsedJsonDataOfFile[testcaseJsonKey];
+        } catch (const std::exception& ex) {
+            FAIL() << "Failed to parse JSON '" << pathToTestCaseDataJsonFile << "': " << ex.what();
+        }
     }
 
     void validateJsonStructure(const json& jsonToValidate) const {
@@ -139,7 +144,7 @@ protected:
         ASSERT_EQ(inputState.size(), expectedOutputState.size());
 
         syrec::NBitValuesContainer actualOutputState(inputState.size());
-        ASSERT_NO_FATAL_FAILURE(syrec::simpleSimulation(actualOutputState, annotatableQuantumComputation, inputState));
+        ASSERT_NO_FATAL_FAILURE(syrec::simpleSimulation(actualOutputState, annotatableQuantumComputation, inputState, nullptr));
         ASSERT_EQ(actualOutputState.size(), expectedOutputState.size());
 
         // We are assuming that the indices of the ancilla qubits are larger than the one of the inputs/output qubits and that the user is not interested in the value of the ancillary qubits.

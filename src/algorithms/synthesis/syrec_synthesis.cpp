@@ -30,6 +30,7 @@
 #include <bit>
 #include <cassert>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <functional>
 #include <iostream>
@@ -114,7 +115,7 @@ namespace {
     }
 
     [[nodiscard]] unsigned determineNumberOfBitsRequiredToStoreValue(const unsigned value) {
-        return static_cast<unsigned>(std::bit_width(value));
+        return value == 0U ? 1U : static_cast<unsigned>(std::bit_width(value));
     }
 
     [[nodiscard]] constexpr bool isBinaryOperationLogicalOperation(const syrec::BinaryExpression::BinaryOperation binaryOperation) {
@@ -808,9 +809,11 @@ namespace syrec {
 
     bool SyrecSynthesis::onExpression(const NumericExpression& expression, const std::optional<unsigned>& optionalExpectedOperandBitwidth, std::vector<qc::Qubit>& lines) {
         if (const std::optional<unsigned> compileTimeValueOfNumericExpression = expression.value->tryEvaluate(loopMap); compileTimeValueOfNumericExpression.has_value()) {
-            const unsigned expectedOperandBitwidth   = optionalExpectedOperandBitwidth.value_or(32U);
-            const unsigned truncatedCompileTimeValue = utils::truncateConstantValueToExpectedBitwidth(*compileTimeValueOfNumericExpression, expectedOperandBitwidth, integerConstantTruncationOperation);
-            return getConstantLines(expectedOperandBitwidth, truncatedCompileTimeValue, lines);
+            if (optionalExpectedOperandBitwidth.has_value()) {
+                const unsigned truncatedCompileTimeValue = utils::truncateConstantValueToExpectedBitwidth(*compileTimeValueOfNumericExpression, *optionalExpectedOperandBitwidth, integerConstantTruncationOperation);
+                return getConstantLines(*optionalExpectedOperandBitwidth, truncatedCompileTimeValue, lines);
+            }
+            return getConstantLines(32U, *compileTimeValueOfNumericExpression, lines);
         }
         return false;
     }
@@ -834,9 +837,9 @@ namespace syrec {
         unsigned expectedOperandsBitwidth = 1U;
         if (!isBinaryOperationLogicalOperation(expression.binaryOperation)) {
             if (lhsOperandAsNumericExpr == nullptr && rhsOperandAsNumericExpr != nullptr) {
-                expectedOperandsBitwidth = isBinaryOperationLogicalOperation(expression.binaryOperation) ? 1U : expression.lhs->bitwidth();
+                expectedOperandsBitwidth = expression.lhs->bitwidth();
             } else if (lhsOperandAsNumericExpr != nullptr && rhsOperandAsNumericExpr == nullptr) {
-                expectedOperandsBitwidth = isBinaryOperationLogicalOperation(expression.binaryOperation) ? 1U : expression.rhs->bitwidth();
+                expectedOperandsBitwidth = expression.rhs->bitwidth();
             } else {
                 expectedOperandsBitwidth = expression.bitwidth();
             }
@@ -1353,7 +1356,7 @@ namespace syrec {
                 }
             }
             // Even if we cannot determine the compile time value of the binary expression we could still generate a simplified expression if the simplification of the operands of the original expression resulted in simplified operands.
-            if (*simplifiedLhsOperand != exprAsBinaryExpr->lhs || simplifiedRhsOperand != exprAsBinaryExpr->rhs) {
+            if (*simplifiedLhsOperand != exprAsBinaryExpr->lhs || *simplifiedRhsOperand != exprAsBinaryExpr->rhs) {
                 return std::make_shared<BinaryExpression>(*simplifiedLhsOperand, exprAsBinaryExpr->binaryOperation, *simplifiedRhsOperand);
             }
             return expression;
@@ -1912,7 +1915,11 @@ namespace syrec {
                     qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex = qubitsStoringSynthesizedExprOfDimension;
                 } else if (std::has_single_bit(offsetToNextElementOfDimensionInNumberOfArrayElements)) {
                     numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
-                    synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) && leftShift(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, offsetToNextElementOfDimensionInNumberOfArrayElements / 2);
+                    // We cannot use the https://en.cppreference.com/w/cpp/numeric/countr_zero.html instead of std::log2(...) because the former will be detected as a typo by the pre-commit checks.
+                    // To fix this false positive typo one would have to add a separate configuration file for the typo checks (see https://github.com/crate-ci/typos/discussions/907)
+                    const auto shiftAmount = static_cast<unsigned>(std::log2(offsetToNextElementOfDimensionInNumberOfArrayElements));
+                    synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) &&
+                                   leftShift(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, shiftAmount);
                     numOperationsAfterSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
                 } else {
                     numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
@@ -2019,7 +2026,7 @@ namespace syrec {
 
         unsigned    currBitIdx = bitrangeStart;
         std::vector containerForAccessedBits(bitrangeStartAndEndIdxDifference + 1U, 0U);
-        for (qc::Qubit& bitIdx: containerForAccessedBits) {
+        for (unsigned& bitIdx: containerForAccessedBits) {
             bitIdx     = currBitIdx;
             currBitIdx = bitrangeStartIdxLargerThanEnd ? currBitIdx - 1U : currBitIdx + 1U;
         }

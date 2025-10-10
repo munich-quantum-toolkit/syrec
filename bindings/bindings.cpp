@@ -80,7 +80,7 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
                     "Returns a string containing the stringified values of the stored bits.");
 
     py::class_<Statistics>(m, "statistics")
-            .def(py::init<>(), "Constructs property map object.")
+            .def(py::init<>(), "Constructs an object to record collected statistics.")
             .def_readwrite("runtime_in_milliseconds", &Statistics::runtimeInMilliseconds, "The recorded runtime in milliseconds");
 
     py::enum_<utils::IntegerConstantTruncationOperation>(m, "integer_constant_truncation_operation")
@@ -92,7 +92,7 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .def(py::init<>(), "Constructs ReadProgramSettings object.")
             .def_readwrite("default_bitwidth", &ConfigurableOptions::defaultBitwidth, "Defines the default variable bitwidth used by the SyReC parser for variables whose bitwidth specification was omitted")
             .def_readwrite("integer_constant_truncation_operation", &ConfigurableOptions::integerConstantTruncationOperation, "Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language")
-            .def_readwrite("allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variableAccess", &ConfigurableOptions::allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess, "Defines whether an access on the assigned to signal parts of an assigned is allowed in variable accesses defined in any operand of the assignment. For further details we refer to the semantics of the SyReC language.")
+            .def_readwrite("allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variable_access", &ConfigurableOptions::allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess, "Defines whether an access on the assigned to signal parts of an assigned is allowed in variable accesses defined in any operand of the assignment. For further details we refer to the semantics of the SyReC language.")
             .def_readwrite("main_module_identifier", &ConfigurableOptions::optionalProgramEntryPointModuleIdentifier, "Define the identifier of the module serving as the entry-point of the to be processed SyReC program")
             .def_readwrite("generate_inlined_qubit_debug_information", &ConfigurableOptions::generatedInlinedQubitDebugInformation, "Should debug information for the qubits associated with the local variables of a SyReC module be generated");
 

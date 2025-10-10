@@ -11,7 +11,13 @@
 #pragma once
 
 namespace syrec {
+    /**
+     * An object to store collected statistics during parsing/synthesis.
+     */
     struct Statistics {
+        /**
+         * The measured runtime in milliseconds.
+         */
         double runtimeInMilliseconds = 0;
     };
 } // namespace syrec

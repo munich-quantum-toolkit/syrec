@@ -277,7 +277,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         update_configurable_options_modal = ConfigurableOptionsUpdated(
             self, self.configurable_parser_and_synthesis_options
         )
-        update_configurable_options_modal.setWindowTitle("Update synthesis settings")
+        update_configurable_options_modal.setWindowTitle("Update configurable options")
         update_configurable_options_modal.exec()
 
     def item_selected(self):
