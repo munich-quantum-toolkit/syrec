@@ -11,7 +11,6 @@
 #include "algorithms/simulation/simple_simulation.hpp"
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
-#include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/configurable_options.hpp"
 #include "core/n_bit_values_container.hpp"
@@ -29,7 +28,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h> // NOLINT(misc-include-cleaner)
-#include <string>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
