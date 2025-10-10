@@ -342,7 +342,7 @@
     ]
   },
   "RuntimeStatisticsRecordedDuringSynthesisIfOptionalResultContainerIsProvided": {
-    "inputCircuit": "module main(inout a(2)) for 14 do ++= a rof",
+    "inputCircuit": "module main(inout a(2)) for 336 do a += 1 rof",
     "simulationRuns": [
       {
         "in": "00",
