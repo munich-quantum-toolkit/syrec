@@ -1851,7 +1851,7 @@ namespace syrec {
 
         // Determine how many qubits are necessary to store the unrolled index to any element in the accessed variable
         const unsigned numElementsInAccessedVariable                               = determineNumberOfElementsInVariable(accessedVariable);
-        const unsigned numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable = determineNumberOfBitsRequiredToStoreValue(numElementsInAccessedVariable);
+        const unsigned numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable = determineNumberOfBitsRequiredToStoreValue(numElementsInAccessedVariable - 1U);
 
         // Generate ancillary qubits storing unrolled index
         bool synthesisOk = getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, containerToStoreUnrolledIndex);
@@ -1882,7 +1882,7 @@ namespace syrec {
                 compileTimeValueOfUnrolledIndex.reset();
 
                 // std::bit_width returns 0 bits are required to store the value 0. Note that this is only a fail safe check since a variable is not allowed to be declared with 0 values for any of its dimensions.
-                const auto             numQubitsRequiredToStoreAnyIndexForCurrentDimension = static_cast<std::size_t>(std::bit_width(accessedVariable.dimensions.at(i))) + static_cast<std::size_t>(accessedVariable.dimensions.at(i) == 0);
+                const auto             numQubitsRequiredToStoreAnyIndexForCurrentDimension = static_cast<std::size_t>(determineNumberOfBitsRequiredToStoreValue(accessedVariable.dimensions.at(i) - 1U));
                 const std::size_t      numOperationsPriorToSynthesisOfExpr                 = annotatableQuantumComputation.getNops();
                 std::vector<qc::Qubit> qubitsStoringSynthesizedExprOfDimension;
                 // We do not need to manually generate ancillary qubits here since they are generated during the synthesis of the expression (or qubits of a variable simply copied to our container in case of a variable access with only compile time constant expressions)
@@ -1972,7 +1972,7 @@ namespace syrec {
 
         bool              synthesisOk                                                 = true;
         const std::size_t numElementsInAccessedVariable                               = determineNumberOfElementsInVariable(accessedVariable);
-        const unsigned    numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable = determineNumberOfBitsRequiredToStoreValue(static_cast<unsigned>(numElementsInAccessedVariable));
+        const unsigned    numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable = determineNumberOfBitsRequiredToStoreValue(static_cast<unsigned>(numElementsInAccessedVariable - 1U));
 
         std::vector<qc::Qubit> ancillaryQubitsStoringCurrentIndex;
         synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, ancillaryQubitsStoringCurrentIndex);

@@ -89,7 +89,7 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .export_values();
 
     py::class_<ConfigurableOptions, std::shared_ptr<ConfigurableOptions>>(m, "configurable_options")
-            .def(py::init<>(), "Constructs ReadProgramSettings object.")
+            .def(py::init<>(), "Constructs a configurable options object.")
             .def_readwrite("default_bitwidth", &ConfigurableOptions::defaultBitwidth, "Defines the default variable bitwidth used by the SyReC parser for variables whose bitwidth specification was omitted")
             .def_readwrite("integer_constant_truncation_operation", &ConfigurableOptions::integerConstantTruncationOperation, "Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language")
             .def_readwrite("allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variable_access", &ConfigurableOptions::allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess, "Defines whether an access on the assigned to signal parts of an assigned is allowed in variable accesses defined in any operand of the assignment. For further details we refer to the semantics of the SyReC language.")

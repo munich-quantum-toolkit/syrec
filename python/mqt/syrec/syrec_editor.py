@@ -969,9 +969,8 @@ class ConfigurableOptionsUpdated(QtWidgets.QDialog):  # type: ignore[misc]
         expected_main_module_identifier_label = QtWidgets.QLabel("Expected main module identifier:")
         self.expected_main_module_identifier_textbox = QtWidgets.QLineEdit()
         if self.configurable_parser_and_synthesis_options is not None:
-            self.expected_main_module_identifier_textbox.setText(
-                self.configurable_parser_and_synthesis_options.main_module_identifier
-            )
+            identifier: str | None = self.configurable_parser_and_synthesis_options.main_module_identifier
+            self.expected_main_module_identifier_textbox.setText(identifier or "")
 
         self.expected_main_module_identifier_textbox.setPlaceholderText(
             "Leave blank if last declared module of SyReC program should be used as main module..."
