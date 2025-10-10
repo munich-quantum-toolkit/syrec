@@ -361,12 +361,12 @@ TEST_F(SyrecParserErrorTestsFixture, SemanticErrorInClosingGuardConditionReporte
     performTestExecution("module main(out a[2](4)) if (a[0].1 > 2) then skip else skip fi (b[0].1 > 2)");
 }
 
-TEST_F(SyrecParserErrorTestsFixture, SemanticErrorInStatementOfSkipableTrueBranchCausesError) {
+TEST_F(SyrecParserErrorTestsFixture, SemanticErrorInStatementOfSkippableTrueBranchCausesError) {
     buildAndRecordExpectedSemanticError<SemanticError::AssignmentToReadonlyVariable>(Message::Position(1, 54), "b");
     performTestExecution("module main(inout a(4), in b(2)) if (#a < 2) then ++= b else ++= a fi (#a < 2)");
 }
 
-TEST_F(SyrecParserErrorTestsFixture, SemanticErrorInStatementOfSkipableFalseBranchCausesError) {
+TEST_F(SyrecParserErrorTestsFixture, SemanticErrorInStatementOfSkippableFalseBranchCausesError) {
     buildAndRecordExpectedSemanticError<SemanticError::AssignmentToReadonlyVariable>(Message::Position(1, 65), "b");
     performTestExecution("module main(inout a(4), in b(2)) if (#a > 2) then ++= a else ++= b fi (#a > 2)");
 }

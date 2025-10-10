@@ -192,7 +192,7 @@ namespace syrec {
         [[nodiscard]] bool    isQubitWithinRange(qc::Qubit qubit) const noexcept;
 
         std::unordered_set<qc::Qubit>                    aggregateOfPropagatedControlQubits;
-        std::vector<std::unordered_map<qc::Qubit, bool>> controlQubitPropgationScopes;
+        std::vector<std::unordered_map<qc::Qubit, bool>> controlQubitPropagationScopes;
         bool                                             canQubitsBeAddedToQuantumComputation = true;
 
         QuantumOperationAnnotationsLookup activateGlobalQuantumOperationAnnotations;
