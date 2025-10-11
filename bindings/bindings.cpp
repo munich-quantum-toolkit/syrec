@@ -102,7 +102,7 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .def("read", &Program::read, "filename"_a, "settings"_a = ConfigurableOptions{}, "Read and process a SyReC program from a file.")
             .def("read_from_string", &Program::readFromString, "stringifiedProgram"_a, "settings"_a = ConfigurableOptions(), "Process an already stringified SyReC program.");
 
-    m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = static_cast<Statistics*>(nullptr), "Cost-aware synthesis of the SyReC program.");
-    m.def("line_aware_synthesis", &LineAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = static_cast<Statistics*>(nullptr), "Line-aware synthesis of the SyReC program.");
-    m.def("simple_simulation", &simpleSimulation, "output"_a, "quantum_computation"_a, "input"_a, "optional_recorded_statistics"_a = static_cast<Statistics*>(nullptr), "Simulation of a synthesized SyReC program");
+    m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = nullptr, "Cost-aware synthesis of the SyReC program.");
+    m.def("line_aware_synthesis", &LineAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = nullptr, "Line-aware synthesis of the SyReC program.");
+    m.def("simple_simulation", &simpleSimulation, "output"_a, "quantum_computation"_a, "input"_a, "optional_recorded_statistics"_a = nullptr, "Simulation of a synthesized SyReC program");
 }

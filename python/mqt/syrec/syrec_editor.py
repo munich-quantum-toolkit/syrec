@@ -21,6 +21,16 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
+def show_error_dialog(title: str, message: str) -> None:
+    msg = QtWidgets.QMessageBox()
+    msg.setBaseSize(QtCore.QSize(300, 200))
+    msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
+    msg.setText(message)
+    msg.setWindowTitle(title)
+    msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+    msg.exec()
+
+
 class CircuitLineItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
     def __init__(self, index: int, width: int, parent: QtWidgets.QWidget | None = None) -> None:
         QtWidgets.QGraphicsItemGroup.__init__(self, parent)
@@ -921,17 +931,12 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         if update_combobox_selection:
             combobox_item_idx_matching_label = self.selectable_qubit_labels_combobox.findText(qubit_label)
             if combobox_item_idx_matching_label == -1:
-                msg = QtWidgets.QMessageBox()
-                msg.setBaseSize(QtCore.QSize(300, 200))
-                msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-                msg.setText(
+                show_error_dialog(
+                    "Error updating information for selected qubit",
                     "While the internal lookup information did contain a qubit with a label equal to "
                     + qubit_label
-                    + ", the combobox did not! This should not happen."
+                    + ", the combobox did not! This should not happen.",
                 )
-                msg.setWindowTitle("Error updating information for selected qubit")
-                msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                msg.exec()
                 self.selectable_qubit_labels_combobox.setCurrentIndex(-1)
                 self.qubit_info_widget.clear_and_hide_all_inline_data_controls()
                 return
@@ -1011,17 +1016,12 @@ class ConfigurableOptionsUpdated(QtWidgets.QDialog):  # type: ignore[misc]
             )
         )
         if to_be_selected_integer_constant_truncation_operation_idx == -1:
-            msg = QtWidgets.QMessageBox()
-            msg.setBaseSize(QtCore.QSize(300, 200))
-            msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-            msg.setText(
+            show_error_dialog(
+                "Error setting selected integer constant truncation operation in combobox",
                 "Failed to determine matching element for integer constant truncation operation '"
                 + self.configurable_parser_and_synthesis_options.integer_constant_truncation_operation.name
-                + "' in combobox, this should not happen! Defaulting to first entry of combobox"
+                + "' in combobox, this should not happen! Defaulting to first entry of combobox",
             )
-            msg.setWindowTitle("Error setting selected integer constant truncation operation in combobox")
-            msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-            msg.exec()
             to_be_selected_integer_constant_truncation_operation_idx = 0
 
         self.integer_constant_truncation_operation_combobox.setCurrentIndex(
@@ -1065,60 +1065,34 @@ class ConfigurableOptionsUpdated(QtWidgets.QDialog):  # type: ignore[misc]
         self.setLayout(layout)
 
     def save_settings(self) -> QtWidgets.QDialog.DialogCode:
-        if self.configurable_parser_and_synthesis_options is not None:
-            mapped_to_integer_constant_truncation_operation: syrec.integer_constant_truncation_operation | None = None
-            selected_stringified_integer_constant_truncation_operation = (
-                self.integer_constant_truncation_operation_combobox.currentText()
+        mapped_to_integer_constant_truncation_operation: syrec.integer_constant_truncation_operation | None = None
+        try:
+            mapped_to_integer_constant_truncation_operation = getattr(
+                syrec.integer_constant_truncation_operation,
+                self.integer_constant_truncation_operation_combobox.currentText(),
             )
-            if (
-                selected_stringified_integer_constant_truncation_operation
-                == syrec.integer_constant_truncation_operation.bitwise_and.name
-            ):
-                # self.configurable_parser_and_synthesis_options.integer_constant_truncation_operation = syrec.integer_constant_truncation_operation.bitwise_and
-                mapped_to_integer_constant_truncation_operation = (
-                    syrec.integer_constant_truncation_operation.bitwise_and
-                )
-            elif (
-                selected_stringified_integer_constant_truncation_operation
-                == syrec.integer_constant_truncation_operation.modulo.name
-            ):
-                # self.configurable_parser_and_synthesis_options.integer_constant_truncation_operation = syrec.integer_constant_truncation_operation.modulo
-                mapped_to_integer_constant_truncation_operation = syrec.integer_constant_truncation_operation.modulo
-            else:
-                msg = QtWidgets.QMessageBox()
-                msg.setBaseSize(QtCore.QSize(300, 200))
-                msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-                msg.setText(
-                    "Failed to map selected integer constant truncation operation '"
-                    + self.integer_constant_truncation_operation_combobox.currentText()
-                    + "' to matching enum value! This should not happen."
-                )
-                msg.setWindowTitle("Error updating integer constant truncation operation")
-                msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                msg.exec()
-                return self.reject()
+        except AttributeError:
+            show_error_dialog(
+                "Error updating integer constant truncation operation",
+                "Failed to map selected integer constant truncation operation '"
+                + self.integer_constant_truncation_operation_combobox.currentText()
+                + "' to matching enum value! This should not happen.",
+            )
+            return self.reject()
 
-            if not self.expected_main_module_identifier_textbox.hasAcceptableInput():
-                msg = QtWidgets.QMessageBox()
-                msg.setBaseSize(QtCore.QSize(300, 200))
-                msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-                msg.setText(
-                    "Invalid main module identifier '" + self.expected_main_module_identifier_textbox.text() + "'"
-                )
-                msg.setWindowTitle("Error updating expected main module identifier")
-                msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                msg.exec()
-                return self.reject()
+        if not self.expected_main_module_identifier_textbox.hasAcceptableInput():
+            show_error_dialog(
+                "Error updating expected main module identifier",
+                "Invalid main module identifier '" + self.expected_main_module_identifier_textbox.text() + "'",
+            )
+            return self.reject()
 
-            if not self.default_bitwidth_textbox.hasAcceptableInput():
-                msg = QtWidgets.QMessageBox()
-                msg.setBaseSize(QtCore.QSize(300, 200))
-                msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-                msg.setText("Invalid default bitwidth '" + self.default_bitwidth_textbox.text() + "'")
-                msg.setWindowTitle("Error updating default bitwidth")
-                msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                msg.exec()
-                return self.reject()
+        if not self.default_bitwidth_textbox.hasAcceptableInput():
+            show_error_dialog(
+                "Error updating default bitwidth",
+                "Invalid default bitwidth '" + self.default_bitwidth_textbox.text() + "'",
+            )
+            return self.reject()
 
         self.configurable_parser_and_synthesis_options.main_module_identifier = (
             self.expected_main_module_identifier_textbox.text() or None
