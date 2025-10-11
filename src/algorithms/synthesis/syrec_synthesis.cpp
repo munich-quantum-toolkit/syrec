@@ -845,15 +845,15 @@ namespace syrec {
             return false;
         }
 
-        unsigned expectedOperandsBitwidth = 1U;
+        std::optional<unsigned> expectedOperandsBitwidth;
         if (!isBinaryOperationLogicalOperation(expression.binaryOperation)) {
             if (lhsOperandAsNumericExpr == nullptr && rhsOperandAsNumericExpr != nullptr) {
                 expectedOperandsBitwidth = expression.lhs->bitwidth();
             } else if (lhsOperandAsNumericExpr != nullptr && rhsOperandAsNumericExpr == nullptr) {
                 expectedOperandsBitwidth = expression.rhs->bitwidth();
-            } else {
-                expectedOperandsBitwidth = expression.bitwidth();
             }
+        } else {
+            expectedOperandsBitwidth = 1U;
         }
 
         std::vector<qc::Qubit> lhs;
