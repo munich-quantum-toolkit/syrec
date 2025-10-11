@@ -1711,17 +1711,17 @@
     ]
   },
   "UnaryAssignmentToBitrangeWithDimensionAccessOfAssignedToVariableContainingNonCompileTimeConstantExpressions": {
-    "inputCircuit": "module main(inout a[2][2](4)) wire b(2) ++= a[b][b].1:2",
+    "inputCircuit": "module main(inout a[2][2](4)) wire b(1) ++= a[b][b].1:2",
     "simulationRuns": [
       {
         "debugHelper": "b=0, ++= a[0][0].1:2",
-        "in": "111100001111000000",
-        "out": "100100001111000000"
+        "in": "11110000111100000",
+        "out": "10010000111100000"
       },
       {
         "debugHelper": "b=1, ++= a[1][1].1:2",
-        "in": "111100001111000010",
-        "out": "111100001111010010"
+        "in": "11110000111100001",
+        "out": "11110000111101001"
       }
     ]
   }

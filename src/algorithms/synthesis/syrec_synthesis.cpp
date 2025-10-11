@@ -30,7 +30,6 @@
 #include <bit>
 #include <cassert>
 #include <chrono>
-#include <cmath>
 #include <cstddef>
 #include <functional>
 #include <iostream>
@@ -120,6 +119,18 @@ namespace {
 
     [[nodiscard]] constexpr bool isBinaryOperationLogicalOperation(const syrec::BinaryExpression::BinaryOperation binaryOperation) {
         return binaryOperation == syrec::BinaryExpression::BinaryOperation::LogicalAnd || binaryOperation == syrec::BinaryExpression::BinaryOperation::LogicalOr;
+    }
+
+    [[nodiscard]] std::size_t determinePositionOfFirstOneBitInValueStartingFromLSB(unsigned value) {
+        // We could use the https://en.cppreference.com/w/cpp/numeric/countr_zero.html function to implement the same functionality. However, said function will be detected as a typo by the pre-commit checks.
+        // To fix this false positive typo one would have to add a separate configuration file for the typo checks (see https://github.com/crate-ci/typos/discussions/907). One could also use std::log2(...)
+        // but using such a complex function for rather simple functionality seems overkill.
+        std::size_t positionOfFirstOneBit = 0U;
+        while ((value & 1U) == 0U) {
+            ++positionOfFirstOneBit;
+            value >>= 1U;
+        }
+        return positionOfFirstOneBit;
     }
 } // namespace
 
@@ -583,7 +594,7 @@ namespace syrec {
         std::vector<qc::Qubit> d;
         opRhsLhsExpression(statement.rhs, d);
 
-        const std::size_t      accessedBitrangeLengthOfLhsOperand = dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess.getNumberOfAccessedBits();
+        const std::size_t      numAccessedBitsInLhsOperand = dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess.getNumberOfAccessedBits();
         std::vector<qc::Qubit> rhs;
 
         // In some cases the expected bitwidth of the assigned to variable parts of the assignment are not known to the parser (e.g. when a loop variable is used in either the dimension access of bitrange component of a variable access) that
@@ -591,7 +602,7 @@ namespace syrec {
         // truncation of integer constant is performed. An example for such a case is the SyReC module 'module main(inout a(4)) for $i = 0 to 2 do a.$i:($i + 1) += 120 rof'.
         // The bitwidth of the assigned to variable parts is equal to 2 while the bitwidth of the right hand side of the expression is 32 due to the assumed bitwidth chosen for integer constants. To satisfy the invariant that both operands need
         // to have the same bitwidth, a truncation of the integer constant to the expected bitwidth of 2 needs to be performed.
-        synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, accessedBitrangeLengthOfLhsOperand, rhs, qubitsStoringSelectedValueOfVariable, statement.assignOperation);
+        synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, numAccessedBitsInLhsOperand, rhs, qubitsStoringSelectedValueOfVariable, statement.assignOperation);
         // We should validate that the invariant that both sides of the assignment have the same bitwidth is satisfied but due to some weird implementation details of the line aware synthesis, which might be modified to fix issue #280, this cannot be done without risking
         // that some assignment variants cannot be synthesized anymore. This hopefully changes in the future.
         opVec.clear();
@@ -1895,8 +1906,8 @@ namespace syrec {
                 // The bitwidth of synthesized expression could be smaller/larger than the one storing the unrolled index with the former needing to be truncated/enlarged so that the subsequent addition operation can be synthesized
                 // with the addition operation requiring the same operand bitwidth. Due to this condition, we think that bitwidth of the index expression should not be larger than the bitwidth required to store the unrolled index.
                 // A smaller bitwidth should be allowed but needs to be padded to the required bitwidth.
-                if (qubitsStoringSynthesizedExprOfDimension.size() > numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) { // An index out of range value should have been already detected during the evaluation and validation of the dimension access that is assumed to have been performed prior to this call.
-                    std::cerr << "Bitwidth of expression (" << std::to_string(qubitsStoringSynthesizedExprOfDimension.size()) << ") can be at most be as large as the number of qubits (" << std::to_string(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) << ") required to store the maximum possible unrolled index in the accessed variable " << accessedVariable.name << "\n";
+                if (qubitsStoringSynthesizedExprOfDimension.size() > numQubitsRequiredToStoreAnyIndexForCurrentDimension) { // An index out of range value should have been already detected during the evaluation and validation of the dimension access that is assumed to have been performed prior to this call.
+                    std::cerr << "Bitwidth of expression (" << std::to_string(qubitsStoringSynthesizedExprOfDimension.size()) << ") can be at most be as large as the number of qubits (" << std::to_string(numQubitsRequiredToStoreAnyIndexForCurrentDimension) << ") required to store the maximum possible unrolled index in the accessed variable " << accessedVariable.name << "\n";
                     return false;
                 }
 
@@ -1915,9 +1926,7 @@ namespace syrec {
                     qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex = qubitsStoringSynthesizedExprOfDimension;
                 } else if (std::has_single_bit(offsetToNextElementOfDimensionInNumberOfArrayElements)) {
                     numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
-                    // We cannot use the https://en.cppreference.com/w/cpp/numeric/countr_zero.html instead of std::log2(...) because the former will be detected as a typo by the pre-commit checks.
-                    // To fix this false positive typo one would have to add a separate configuration file for the typo checks (see https://github.com/crate-ci/typos/discussions/907)
-                    const auto shiftAmount = static_cast<unsigned>(std::log2(offsetToNextElementOfDimensionInNumberOfArrayElements));
+                    const auto shiftAmount                                   = static_cast<unsigned>(determinePositionOfFirstOneBitInValueStartingFromLSB(offsetToNextElementOfDimensionInNumberOfArrayElements));
                     synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) &&
                                    leftShift(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, shiftAmount);
                     numOperationsAfterSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();

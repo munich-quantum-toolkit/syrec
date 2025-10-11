@@ -1783,32 +1783,32 @@
     ]
   },
   "UsageOfVariableAccessWithNonCompileTimeConstantExpressionIndicesInLhsOperandOfBinaryExpression": {
-    "inputCircuit": "module main(inout a[2][3](2)) wire b(2) a[0][2] += ((a[0][b] + 1) + a[b][0])",
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(1) a[0][2] += ((a[0][b] + 1) + a[b][0])",
     "simulationRuns": [
       {
         "debugHelper": "b=0, a[0][2] += ((a[0][0] + 1) + a[0][0])",
-        "in": "10001111001100",
-        "out": "10000111001100"
+        "in": "1000111100110",
+        "out": "1000011100110"
       },
       {
         "debugHelper": "b=1, a[0][2] += ((a[0][1] + 1) + a[1][0])",
-        "in": "11010111001110",
-        "out": "11010011001110"
+        "in": "1101011100111",
+        "out": "1101001100111"
       }
     ]
   },
   "UsageOfVariableAccessWithNonCompileTimeConstantExpressionIndicesInRhsOperandOfBinaryExpression": {
-    "inputCircuit": "module main(inout a[2][3](2)) wire b(2) a[0][2] += (a[b][0] + (a[0][b] + 1))",
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(1) a[0][2] += (a[b][0] + (a[0][b] + 1))",
     "simulationRuns": [
       {
         "debugHelper": "b=0, a[0][2] += (a[0][0] + (a[0][0] + 1))",
-        "in": "10001111001100",
-        "out": "10000111001100"
+        "in": "1000111100110",
+        "out": "1000011100110"
       },
       {
         "debugHelper": "b=1, a[0][2] += (a[1][0] + (a[0][1] + 1))",
-        "in": "11010111001110",
-        "out": "11010011001110"
+        "in": "1101011100111",
+        "out": "1101001100111"
       }
     ]
   }
