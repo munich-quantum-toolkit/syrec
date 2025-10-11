@@ -99,7 +99,7 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
     py::class_<Program>(m, "program")
             .def(py::init<>(), "Constructs SyReC program object.")
             .def("add_module", &Program::addModule)
-            .def("read", &Program::read, "filename"_a, "settings"_a = ConfigurableOptions{}, "Read and process a SyReC program from a file.")
+            .def("read", &Program::read, "filename"_a, "settings"_a = ConfigurableOptions(), "Read and process a SyReC program from a file.")
             .def("read_from_string", &Program::readFromString, "stringifiedProgram"_a, "settings"_a = ConfigurableOptions(), "Process an already stringified SyReC program.");
 
     m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "settings"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = nullptr, "Cost-aware synthesis of the SyReC program.");

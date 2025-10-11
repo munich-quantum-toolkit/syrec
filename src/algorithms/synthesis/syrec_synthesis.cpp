@@ -1892,7 +1892,6 @@ namespace syrec {
             } else {
                 compileTimeValueOfUnrolledIndex.reset();
 
-                // std::bit_width returns 0 bits are required to store the value 0. Note that this is only a fail safe check since a variable is not allowed to be declared with 0 values for any of its dimensions.
                 const auto             numQubitsRequiredToStoreAnyIndexForCurrentDimension = static_cast<std::size_t>(determineNumberOfBitsRequiredToStoreValue(accessedVariable.dimensions.at(i) - 1U));
                 const std::size_t      numOperationsPriorToSynthesisOfExpr                 = annotatableQuantumComputation.getNops();
                 std::vector<qc::Qubit> qubitsStoringSynthesizedExprOfDimension;
@@ -1903,11 +1902,11 @@ namespace syrec {
                 }
 
                 const std::size_t numOperationsAfterSynthesisOfExpr = annotatableQuantumComputation.getNops();
-                // The bitwidth of synthesized expression could be smaller/larger than the one storing the unrolled index with the former needing to be truncated/enlarged so that the subsequent addition operation can be synthesized
-                // with the addition operation requiring the same operand bitwidth. Due to this condition, we think that bitwidth of the index expression should not be larger than the bitwidth required to store the unrolled index.
+                // The bitwidth of synthesized expression could be smaller/larger than both the bithwidth for storing the unrolled index as well as the maximum index for the currently processed dimension with the expression bitwidth needing to be truncated/enlarged so that the subsequent addition operation can be synthesized
+                // with the addition operation requiring the same operand bitwidth. Due to this condition, we think that bitwidth of the index expression should not be larger than the bitwidth required to store the unrolled index as well as the maximum index for the currently processed dimension.
                 // A smaller bitwidth should be allowed but needs to be padded to the required bitwidth.
                 if (qubitsStoringSynthesizedExprOfDimension.size() > numQubitsRequiredToStoreAnyIndexForCurrentDimension) { // An index out of range value should have been already detected during the evaluation and validation of the dimension access that is assumed to have been performed prior to this call.
-                    std::cerr << "Bitwidth of expression (" << std::to_string(qubitsStoringSynthesizedExprOfDimension.size()) << ") can be at most be as large as the number of qubits (" << std::to_string(numQubitsRequiredToStoreAnyIndexForCurrentDimension) << ") required to store the maximum possible unrolled index in the accessed variable " << accessedVariable.name << "\n";
+                    std::cerr << "Bitwidth of expression (" << std::to_string(qubitsStoringSynthesizedExprOfDimension.size()) << ") can be at most be as large as the number of qubits (" << std::to_string(numQubitsRequiredToStoreAnyIndexForCurrentDimension) << ") required to store the maximum index to an element in the " + std::to_string(i) + "-th dimension of the accessed variable " << accessedVariable.name << "\n";
                     return false;
                 }
 
