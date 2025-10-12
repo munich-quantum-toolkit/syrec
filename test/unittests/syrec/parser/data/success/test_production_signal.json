@@ -392,7 +392,7 @@
   },
   "hexLiteralUsableInBitrangeAccess": {
     "inputCircuit": "module main(inout a(28)) a[0].0xC:0x1B += 2",
-    "expectedCircuit": "module main(inout a(28)) a[0].26:27 += 2"
+    "expectedCircuit": "module main(inout a(28)) a[0].12:27 += 2"
   },
   "binaryLiteralUsableInBitrangeAccess": {
     "inputCircuit": "module main(inout a(8)) a[0].0b010:0b101 += 2",

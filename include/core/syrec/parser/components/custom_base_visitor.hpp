@@ -97,12 +97,12 @@ namespace syrec_parser {
             viewOfStringifiedConstantValue.remove_suffix(viewOfStringifiedConstantValue.size() - (numTrailingWhitespaces != std::string::npos ? (numTrailingWhitespaces + 1) : viewOfStringifiedConstantValue.size()));
 
             if (base == 16) {
-                if (viewOfStringifiedConstantValue.find_first_of("0x") == std::string::npos) {
+                if (!viewOfStringifiedConstantValue.starts_with("0x") && !viewOfStringifiedConstantValue.starts_with("0X")) {
                     return std::nullopt;
                 }
                 viewOfStringifiedConstantValue.remove_prefix(2U);
             } else if (base == 2) {
-                if (viewOfStringifiedConstantValue.find_first_of("0b") == std::string::npos) {
+                if (!viewOfStringifiedConstantValue.starts_with("0b")) {
                     return std::nullopt;
                 }
                 viewOfStringifiedConstantValue.remove_prefix(2U);
