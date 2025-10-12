@@ -506,5 +506,5 @@ The parser will not report an overlap in the assignment due to the index of the 
 
 - In addition to integer literals also hexadecimal and binary literals can be defined (a custom extension of the reference SyReC grammar).
 - Hexadecimal literals are defined using the prefix ('0x' or '0X') followed by at least one digit or one of the letters (A,B,C,D,E,F) with the latter not being case-sensitive. The first number after the prefix '0x' is the most significant one (e.g. 0x1A is equal to the integer 26).
-- Binary literals are defined using the prefix '0b' followed by at least one binary value (0, 1) with the most significant bit being defined immediately after the prefix '0b' (e.g. 0b00011010 is equal to the integer 26).
+- Binary literals are defined using the prefix ('0b' or '0B') followed by at least one binary value (0, 1) with the most significant bit being defined immediately after the prefix '0b' (e.g. 0b00011010 is equal to the integer 26).
 - Hexadecimal and binary literals cannot be used to define the number of values in a dimension or the bitwidth of a SyReC module parameter or local variable.

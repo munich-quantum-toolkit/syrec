@@ -102,7 +102,7 @@ namespace syrec_parser {
                 }
                 viewOfStringifiedConstantValue.remove_prefix(2U);
             } else if (base == 2) {
-                if (!viewOfStringifiedConstantValue.starts_with("0b")) {
+                if (!viewOfStringifiedConstantValue.starts_with("0b") && !viewOfStringifiedConstantValue.starts_with("0B")) {
                     return std::nullopt;
                 }
                 viewOfStringifiedConstantValue.remove_prefix(2U);
