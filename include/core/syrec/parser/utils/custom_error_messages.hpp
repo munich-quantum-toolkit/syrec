@@ -43,7 +43,8 @@ namespace syrec_parser {
         NoModuleMatchingUserDefinedProgramEntryPoint,
         ReservedIdentifierPrefixUsed,
         InvalidUserDefinedProgramEntryPointModuleIdentifier,
-        DeclaredNumberOfElementsInVariableTooLarge
+        DeclaredNumberOfElementsInVariableTooLarge,
+        ExpectedBaseDidNotMatchDeterminedPrefixInStringifiedNumber
     };
 
     /// Get the identifier associated with a given semantic error
@@ -111,6 +112,8 @@ namespace syrec_parser {
                 return "SEM28";
             case SemanticError::DeclaredNumberOfElementsInVariableTooLarge:
                 return "SEM29";
+            case SemanticError::ExpectedBaseDidNotMatchDeterminedPrefixInStringifiedNumber:
+                return "SEM30";
             default:
                 return "";
         }
@@ -180,6 +183,8 @@ namespace syrec_parser {
                 return "User defined program entry point defined as module identifier '{:s}' was not valid!";
             case SemanticError::DeclaredNumberOfElementsInVariableTooLarge:
                 return "A variable can at most contain {:d} elements";
+            case SemanticError::ExpectedBaseDidNotMatchDeterminedPrefixInStringifiedNumber:
+                return "Expected base of number ({:d}) did not match its determined prefix, processed stringified number was '{:s}'";
             default:
                 return "";
         }

@@ -93,4 +93,6 @@ MULTI_LINE_COMMENT: '/*' .*? '*/' -> channel(HIDDEN) ;
 fragment LETTER : 'a'..'z' | 'A'..'Z' ;
 fragment DIGIT : '0'..'9' ;
 IDENT : ( '_' | LETTER ) ( '_' | LETTER | DIGIT )* ;
+HEX_LITERAL: '0x' ('0' .. '9' | 'A' .. 'F')+ ;
+BINARY_LITERAL: '0b' ('0'|'1')+ ;
 INT : DIGIT+ ;

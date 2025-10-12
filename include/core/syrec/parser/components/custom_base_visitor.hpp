@@ -76,7 +76,18 @@ namespace syrec_parser {
             return Message::Position(token.getLine(), token.getCharPositionInLine());
         }
 
-        [[nodiscard]] static std::optional<unsigned int> deserializeConstantFromString(const std::string_view& stringifiedConstantValue, bool* didDeserializationFailDueToOverflow) {
+        /**
+         * Deserialize a number from a given string.
+         * @param stringifiedConstantValue The stringified number to process whose whitespace prefix and/or suffix is trimmed prior to processing.
+         * @param didDeserializationFailDueToOverflow An optional flag indicating whether the deserialized number was larger than the maximum allowed value UINT_MAX.
+         * @param base The expected base of the \p stringifiedConstantValue (10 for integers, 16 for hexadecimal and 2 for binary literals). Must be either 2, 10 or 16.
+         * @return The deserialized number if the detected prefix (base=2 => '0b', base=10 => None, base=16 => '0x') in the \p stringifiedConstantValue matched the expected \p base and the deserialized value was not larger than the maximum allowed value, otherwise std::nullopt.
+         */
+        [[nodiscard]] static std::optional<unsigned int> deserializeConstantFromString(const std::string_view& stringifiedConstantValue, bool* didDeserializationFailDueToOverflow, const int base = 10) {
+            if (base != 2 && base != 10 && base != 16) {
+                return std::nullopt;
+            }
+
             std::string_view viewOfStringifiedConstantValue = stringifiedConstantValue;
             // Trim leading and trailing whitespaces from given std::string prior to the actual deserialization call
             const std::size_t numLeadingWhitespaces = viewOfStringifiedConstantValue.find_first_not_of(' ');
@@ -85,8 +96,22 @@ namespace syrec_parser {
             const std::size_t numTrailingWhitespaces = viewOfStringifiedConstantValue.find_last_not_of(' ');
             viewOfStringifiedConstantValue.remove_suffix(viewOfStringifiedConstantValue.size() - (numTrailingWhitespaces != std::string::npos ? (numTrailingWhitespaces + 1) : viewOfStringifiedConstantValue.size()));
 
+            if (base == 16) {
+                const std::size_t hexLiteralPrefix = viewOfStringifiedConstantValue.find_first_of("0x");
+                if (hexLiteralPrefix == std::string::npos) {
+                    return std::nullopt;
+                }
+                viewOfStringifiedConstantValue.remove_prefix(hexLiteralPrefix);
+            } else if (base == 2) {
+                const std::size_t binaryLiteralPrefix = viewOfStringifiedConstantValue.find_first_of("0b");
+                if (binaryLiteralPrefix == std::string::npos) {
+                    return std::nullopt;
+                }
+                viewOfStringifiedConstantValue.remove_prefix(binaryLiteralPrefix);
+            }
+
             unsigned int constantValue                                 = 0;
-            auto [pointerToLastNonNumericCharacterInString, errorCode] = std::from_chars(viewOfStringifiedConstantValue.data(), viewOfStringifiedConstantValue.data() + viewOfStringifiedConstantValue.size(), constantValue);
+            auto [pointerToLastNonNumericCharacterInString, errorCode] = std::from_chars(viewOfStringifiedConstantValue.data(), viewOfStringifiedConstantValue.data() + viewOfStringifiedConstantValue.size(), constantValue, base);
             if (errorCode == std::errc::result_out_of_range || errorCode == std::errc::invalid_argument) {
                 if (didDeserializationFailDueToOverflow != nullptr && errorCode == std::errc::result_out_of_range) {
                     *didDeserializationFailDueToOverflow = true;
@@ -135,10 +160,10 @@ namespace syrec_parser {
 
         /**
          * @brief Build and record a semantic error of a specific type whose message template accepts one or more arguments
-         * @tparam ...T The types of the arguments provided to the template parameter pack
+         * @tparam T The types of the arguments provided to the template parameter pack
          * @tparam semanticError The kind of semantic error to create
          * @param messagePosition The origin of the semantic error in the SyReC program
-         * @param ...args User-provided arguments that will be used to replace the placeholders in the message template of the semantic error
+         * @param args User-provided arguments that will be used to replace the placeholders in the message template of the semantic error
          */
         template<SemanticError semanticError, typename... T>
         void recordSemanticError(Message::Position messagePosition, T&&... args) const {

@@ -16,7 +16,9 @@ options {
 
 /* Number production */
 number:
-	INT								# NumberFromConstant
+    HEX_LITERAL                     # NumberFromHexLiteral
+    | BINARY_LITERAL                # NumberFromBinaryLiteral
+	| INT							# NumberFromInteger
 	| SIGNAL_WIDTH_PREFIX IDENT		# NumberFromSignalwidth
 	| LOOP_VARIABLE_PREFIX IDENT	# NumberFromLoopVariable
 	| ( OPEN_RBRACKET lhsOperand=number op=( OP_PLUS | OP_MINUS | OP_MULTIPLY | OP_DIVISION ) rhsOperand=number CLOSE_RBRACKET ) # NumberFromExpression

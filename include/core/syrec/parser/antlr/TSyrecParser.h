@@ -92,7 +92,9 @@ namespace syrec_parser {
             LineComment          = 58,
             Multilinecomment     = 59,
             Ident                = 60,
-            Int                  = 61
+            HexLiteral           = 61,
+            BinaryLiteral        = 62,
+            Int                  = 63
         };
 
         enum : std::uint8_t {
@@ -167,6 +169,20 @@ namespace syrec_parser {
             [[nodiscard]] size_t getRuleIndex() const override;
         };
 
+        class NumberFromHexLiteralContext: public NumberContext {
+        public:
+            explicit NumberFromHexLiteralContext(NumberContext* ctx);
+
+            [[nodiscard]] antlr4::tree::TerminalNode* hexLiteral() const;
+        };
+
+        class NumberFromBinaryLiteralContext: public NumberContext {
+        public:
+            explicit NumberFromBinaryLiteralContext(NumberContext* ctx);
+
+            [[nodiscard]] antlr4::tree::TerminalNode* binaryLiteral() const;
+        };
+
         class NumberFromSignalwidthContext: public NumberContext {
         public:
             explicit NumberFromSignalwidthContext(NumberContext* ctx);
@@ -183,11 +199,11 @@ namespace syrec_parser {
             [[nodiscard]] antlr4::tree::TerminalNode* literalIdent() const;
         };
 
-        class NumberFromConstantContext: public NumberContext {
+        class NumberFromIntegerContext: public NumberContext {
         public:
-            explicit NumberFromConstantContext(NumberContext* ctx);
+            explicit NumberFromIntegerContext(NumberContext* ctx);
 
-            [[nodiscard]] antlr4::tree::TerminalNode* literalInt() const;
+            [[nodiscard]] antlr4::tree::TerminalNode* integerLiteral() const;
         };
 
         class NumberFromExpressionContext: public NumberContext {

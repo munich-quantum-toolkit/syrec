@@ -45,7 +45,9 @@ namespace syrec_parser {
         [[nodiscard]] std::optional<syrec::Expression::ptr>        visitShiftExpressionTyped(const TSyrecParser::ShiftExpressionContext* context, std::optional<DeterminedExpressionOperandBitwidthInformation>& optionalDeterminedOperandBitwidth);
         [[maybe_unused]] std::optional<syrec::VariableAccess::ptr> visitSignalTyped(const TSyrecParser::SignalContext* context, std::optional<DeterminedExpressionOperandBitwidthInformation>* optionalDeterminedOperandBitwidth);
         [[nodiscard]] std::optional<syrec::Number::ptr>            visitNumberTyped(const TSyrecParser::NumberContext* context) const;
-        [[nodiscard]] std::optional<syrec::Number::ptr>            visitNumberFromConstantTyped(const TSyrecParser::NumberFromConstantContext* context) const;
+        [[nodiscard]] std::optional<syrec::Number::ptr>            visitNumberFromIntegerTyped(const TSyrecParser::NumberFromIntegerContext* context) const;
+        [[nodiscard]] std::optional<syrec::Number::ptr>            visitNumberFromHexLiteralTyped(const TSyrecParser::NumberFromHexLiteralContext* context) const;
+        [[nodiscard]] std::optional<syrec::Number::ptr>            visitNumberFromBinaryLiteralTyped(const TSyrecParser::NumberFromBinaryLiteralContext* context) const;
         [[nodiscard]] std::optional<syrec::Number::ptr>            visitNumberFromSignalwidthTyped(const TSyrecParser::NumberFromSignalwidthContext* context) const;
         [[nodiscard]] std::optional<syrec::Number::ptr>            visitNumberFromExpressionTyped(const TSyrecParser::NumberFromExpressionContext* context) const;
         [[nodiscard]] std::optional<syrec::Number::ptr>            visitNumberFromLoopVariableTyped(const TSyrecParser::NumberFromLoopVariableContext* context) const;
@@ -68,7 +70,8 @@ namespace syrec_parser {
         std::optional<utils::IfStatementExpressionComponentsRecorder::ptr> optionalIfStatementExpressionComponentsRecorder;
         bool                                                               isCurrentlyProcessingDimensionAccessOfVariableAccessFlag = false;
 
-        void recordExpressionComponent(const utils::IfStatementExpressionComponentsRecorder::ExpressionComponent& expressionComponent) const;
+        void                                            recordExpressionComponent(const utils::IfStatementExpressionComponentsRecorder::ExpressionComponent& expressionComponent) const;
+        [[nodiscard]] std::optional<syrec::Number::ptr> tryParseNumberFromString(const std::string_view& stringifiedNumber, int expectedBaseOfStringifiedNumber, const Message::Position& reportedErrorPositionOnOverflow) const;
 
         [[nodiscard]] static std::optional<syrec::BinaryExpression::BinaryOperation>     mapTokenToBinaryOperation(const TSyrecParser::BinaryExpressionContext& binaryExpressionContext);
         [[nodiscard]] static std::optional<syrec::ShiftExpression::ShiftOperation>       mapTokenToShiftOperation(const TSyrecParser::ShiftExpressionContext& shiftExpressionContext);
@@ -77,7 +80,7 @@ namespace syrec_parser {
         [[nodiscard]] static std::optional<syrec::Expression::ptr>                       trySimplifyBinaryExpressionWithConstantValueOfOneOperandKnown(unsigned int knownOperandValue, syrec::BinaryExpression::BinaryOperation binaryOperation, const syrec::Expression::ptr& unknownOperandValue, bool isValueOfLhsOperandKnown);
         [[nodiscard]] static std::optional<syrec::Expression::ptr>                       trySimplifyShiftExpression(const syrec::ShiftExpression& shiftExpr, const std::optional<unsigned int>& optionalBitwidthOfOperandsInExpression);
         [[nodiscard]] static std::optional<syrec::Expression::ptr>                       trySimplifyBinaryExpression(const syrec::BinaryExpression& binaryExpr, const std::optional<unsigned int>& optionalBitwidthOfOperandsInExpression, bool* detectedDivisionByZero);
-        [[nodiscard]] static constexpr bool                                              isBinaryOperationARelationalOrLogicalOne(syrec::BinaryExpression::BinaryOperation binaryOperation) {
+        [[nodiscard]] static constexpr bool                                              isBinaryOperationARelationalOrLogicalOne(const syrec::BinaryExpression::BinaryOperation binaryOperation) {
             switch (binaryOperation) {
                 case syrec::BinaryExpression::BinaryOperation::Equals:
                 case syrec::BinaryExpression::BinaryOperation::GreaterThan:
