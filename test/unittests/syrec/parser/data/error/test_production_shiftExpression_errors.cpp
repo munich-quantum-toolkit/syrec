@@ -39,7 +39,7 @@ TEST_F(SyrecParserErrorTestsFixture, OmittingLhsOperandOfShiftExpressionCausesEr
 }
 
 TEST_F(SyrecParserErrorTestsFixture, OmittingRhsOperandOfShiftExpressionCausesError) {
-    recordSyntaxError(Message::Position(1, 56), "mismatched input ')' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 56), "mismatched input ')' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(out a(4), out b[2](4)) a += (b[1] + (b[0] >>))");
 }
 

@@ -308,5 +308,13 @@
   "expectedOperandBitwidthSetByBinaryOperationUsingRelationalOperationResetIfBothOperandsEvaluatedToAConstant": {
     "inputCircuit": "module main(inout a(4), in b(2)) a.0:1 += ((#a > 2) + b)",
     "expectedCircuit": "module main(inout a(4), in b(2)) a[0].0:1 += (1 + b[0])"
+  },
+  "hexLiteralUsableAsOperandInBinaryExpression": {
+    "inputCircuit": "module main(inout a(8), in b(8)) a[0] += (b[0] - 0x1A)",
+    "expectedCircuit": "module main(inout a(8), in b(8)) a[0] += (b[0] - 26)"
+  },
+  "binaryLiteralUsableAsOperandInBinaryExpression": {
+    "inputCircuit": "module main(inout a(4)) if ((a > 0b101) && (0b110 > a)) then ++= a[0] else skip fi ((a > 0b101) && (0b110 > a))",
+    "expectedCircuit": "module main(inout a(4)) if ((a[0] > 5) && (6 > a[0])) then ++= a[0] else skip fi ((a[0] > 5) && (6 > a[0]))"
   }
 }

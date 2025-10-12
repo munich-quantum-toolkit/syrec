@@ -17,7 +17,7 @@
 using namespace syrec_parser_error_tests;
 
 TEST_F(SyrecParserErrorTestsFixture, UsageOfUnknownUnaryOperationInUnaryExpressionCausesError) {
-    recordSyntaxError(Message::Position(1, 36), "extraneous input '^' expecting {'!', '~', '$', '#', '(', IDENT, INT}");
+    recordSyntaxError(Message::Position(1, 36), "extraneous input '^' expecting {'!', '~', '$', '#', '(', IDENT, HEX_LITERAL, BINARY_LITERAL, INT}");
     buildAndRecordExpectedSemanticError<SemanticError::IfGuardExpressionMismatch>(Message::Position(1, 36));
     performTestExecution("module main(inout a(1), in b(1)) if ^(a && b) then ++= a else --= a fi !(a && b)");
 }
@@ -28,7 +28,7 @@ TEST_F(SyrecParserErrorTestsFixture, MissingOpeningBracketInUnaryExpressionWhenU
 }
 
 TEST_F(SyrecParserErrorTestsFixture, InvalidOpeningBracketInUnaryExpressionWhenUsingLogicalNegationCausesError) {
-    recordSyntaxError(Message::Position(1, 37), "extraneous input '[' expecting {'!', '~', '$', '#', '(', IDENT, INT}");
+    recordSyntaxError(Message::Position(1, 37), "extraneous input '[' expecting {'!', '~', '$', '#', '(', IDENT, HEX_LITERAL, BINARY_LITERAL, INT}");
     recordSyntaxError(Message::Position(1, 40), "mismatched input '&&' expecting 'then'");
     performTestExecution("module main(inout a(1), in b(1)) if ![a && b)) then ++= a else --= a fi !(a && b)");
 }

@@ -57,8 +57,9 @@ std::optional<syrec::Expression::ptr> CustomExpressionVisitor::visitExpressionTy
     }
 
     // We should not have to report an error at this position since the tokenizer should already report an error if the currently processed token is
-    // not in the union of the FIRST sets of the potential alternatives.
-    //recordCustomError(Message::Position(0, 0), "Unhandled expression context variant. This should not happen");
+    // not in the union of the FIRST sets of the potential alternatives. However, if the defined variant is not handled by the visitor then this check could help to detect this issue
+    // which normally should not happen.
+    //recordCustomError(mapTokenPositionToMessagePosition(*context->getStart()), "Unhandled expression context variant. This should not happen");
     return std::nullopt;
 }
 
@@ -315,6 +316,12 @@ std::optional<syrec::Number::ptr> CustomExpressionVisitor::visitNumberTyped(cons
     if (const auto* const numberFromConstantContext = dynamic_cast<const TSyrecParser::NumberFromIntegerContext*>(context); numberFromConstantContext != nullptr) {
         return visitNumberFromIntegerTyped(numberFromConstantContext);
     }
+    if (const auto* const numberFromHexadecimalLiteralContext = dynamic_cast<const TSyrecParser::NumberFromHexLiteralContext*>(context); numberFromHexadecimalLiteralContext != nullptr) {
+        return visitNumberFromHexLiteralTyped(numberFromHexadecimalLiteralContext);
+    }
+    if (const auto* const numberFromBinaryLiteralContext = dynamic_cast<const TSyrecParser::NumberFromBinaryLiteralContext*>(context); numberFromBinaryLiteralContext != nullptr) {
+        return visitNumberFromBinaryLiteralTyped(numberFromBinaryLiteralContext);
+    }
     if (const auto* const numberFromExpressionContext = dynamic_cast<const TSyrecParser::NumberFromExpressionContext*>(context); numberFromExpressionContext != nullptr) {
         return visitNumberFromExpressionTyped(numberFromExpressionContext);
     }
@@ -325,8 +332,9 @@ std::optional<syrec::Number::ptr> CustomExpressionVisitor::visitNumberTyped(cons
         return visitNumberFromSignalwidthTyped(numberFromSignalWidthContext);
     }
     // We should not have to report an error at this position since the tokenizer should already report an error if the currently processed token is
-    // not in the union of the FIRST sets of the potential alternatives.
-    //recordCustomError(Message::Position(0, 0), "Unhandled number context variant. This should not happen");
+    // not in the union of the FIRST sets of the potential alternatives. However, if the defined variant is not handled by the visitor then this check could help to detect this issue
+    // which normally should not happen.
+    //recordCustomError(mapTokenPositionToMessagePosition(*context->getStart()), "Unhandled number context variant. This should not happen");
     return std::nullopt;
 }
 

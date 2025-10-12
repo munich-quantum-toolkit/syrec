@@ -29,7 +29,7 @@ TEST_F(SyrecParserErrorTestsFixture, InvalidForStatementKeywordCausesError) {
 }
 
 TEST_F(SyrecParserErrorTestsFixture, OmittingLoopVariableIdentPrefixCausesError) {
-    recordSyntaxError(Message::Position(1, 35), "mismatched input 'i' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 35), "mismatched input 'i' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for i = 0 to 3 do b.$i ^= 1 rof");
 }
 
@@ -39,7 +39,7 @@ TEST_F(SyrecParserErrorTestsFixture, OmittingLoopVariableInitialValueInitializat
 }
 
 TEST_F(SyrecParserErrorTestsFixture, NonNumericLoopVariableInitialValueInitializationCausesError) {
-    recordSyntaxError(Message::Position(1, 40), "mismatched input 'b' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 40), "mismatched input 'b' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for $i = b to 3 do b.$i ^= 1 rof");
 }
 
@@ -64,22 +64,22 @@ TEST_F(SyrecParserErrorTestsFixture, OmittingToKeywordInForLoopIterationNumbersC
 }
 
 TEST_F(SyrecParserErrorTestsFixture, NonNumericLoopIterationNumberStartValueInLoopVariableInitializationCausesError) {
-    recordSyntaxError(Message::Position(1, 38), "mismatched input 'b' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 38), "mismatched input 'b' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for $i=b to 3 do b.$i ^= 1 rof");
 }
 
 TEST_F(SyrecParserErrorTestsFixture, NonNumericLoopIterationNumberStartValueCausesError) {
-    recordSyntaxError(Message::Position(1, 35), "mismatched input 'b' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 35), "mismatched input 'b' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for b to 3 do b.0 ^= 1 rof");
 }
 
 TEST_F(SyrecParserErrorTestsFixture, NonNumericLoopIterationNumberEndValueCausesError) {
-    recordSyntaxError(Message::Position(1, 40), "mismatched input 'b' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 40), "mismatched input 'b' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for 2 to b do b.0 ^= 1 rof");
 }
 
 TEST_F(SyrecParserErrorTestsFixture, NonNumericLoopVariableEndValueCausesError) {
-    recordSyntaxError(Message::Position(1, 45), "mismatched input 'b' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 45), "mismatched input 'b' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for $i = 0 to b do b.$i ^= 1 rof");
 }
 
@@ -89,7 +89,7 @@ TEST_F(SyrecParserErrorTestsFixture, InvalidForLoopStepSizeKeywordCausesError) {
 }
 
 TEST_F(SyrecParserErrorTestsFixture, NonNumericLoopVariableStepsizeValueCausesError) {
-    recordSyntaxError(Message::Position(1, 42), "mismatched input 'b' expecting {'-', '$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 42), "mismatched input 'b' expecting {'-', '$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for 3 step b do b.0 ^= 1 rof");
 }
 
@@ -99,7 +99,7 @@ TEST_F(SyrecParserErrorTestsFixture, UsingNonMinusSymbolAfterStepKeywordCausesEr
 }
 
 TEST_F(SyrecParserErrorTestsFixture, UsingMultipleMinusSymbolsAfterStepkeywordCausesError) {
-    recordSyntaxError(Message::Position(1, 43), "extraneous input '-' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 43), "extraneous input '-' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for 3 step --1 do b.0 ^= 1 rof");
 }
 
@@ -134,17 +134,17 @@ TEST_F(SyrecParserErrorTestsFixture, UsageOfLoopVariableOfNestedLoopOutsideOfLoo
 }
 
 TEST_F(SyrecParserErrorTestsFixture, UsageOfNonNumericExpressionInLoopVariableInitializationCausesError) {
-    recordSyntaxError(Message::Position(1, 41), "mismatched input 'b' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 41), "mismatched input 'b' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for $i = (b - 2) to 3 step 1 do skip rof");
 }
 
 TEST_F(SyrecParserErrorTestsFixture, UsageOfNonNumericExpressionInLoopVariableEndValueDefinitionCausesError) {
-    recordSyntaxError(Message::Position(1, 46), "mismatched input 'b' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 46), "mismatched input 'b' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for $i = 0 to (b - 2) step 1 do skip rof");
 }
 
 TEST_F(SyrecParserErrorTestsFixture, UsageOfNonNumericExpressionInLoopVariableStepsizeDefinitionCausesError) {
-    recordSyntaxError(Message::Position(1, 43), "mismatched input 'b' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 43), "mismatched input 'b' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for 3 step (b - 2) do skip rof");
 }
 
@@ -154,12 +154,12 @@ TEST_F(SyrecParserErrorTestsFixture, UsageOfNonNumericExpressionInForLoopIterati
 }
 
 TEST_F(SyrecParserErrorTestsFixture, UsageOfNonNumericExpressionInForLoopIterationNumberEndValueDefinitionCausesError) {
-    recordSyntaxError(Message::Position(1, 41), "mismatched input 'b' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 41), "mismatched input 'b' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for 0 to (b - 2) step 1 do skip rof");
 }
 
 TEST_F(SyrecParserErrorTestsFixture, UsageOfNonNumericExpressionInForLoopIterationNumberStepsizeDefinitionCausesError) {
-    recordSyntaxError(Message::Position(1, 48), "mismatched input 'b' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 48), "mismatched input 'b' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(in a(4), out b(4)) for 0 to 3 step (b - 2) do skip rof");
 }
 

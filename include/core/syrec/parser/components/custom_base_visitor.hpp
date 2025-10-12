@@ -97,17 +97,15 @@ namespace syrec_parser {
             viewOfStringifiedConstantValue.remove_suffix(viewOfStringifiedConstantValue.size() - (numTrailingWhitespaces != std::string::npos ? (numTrailingWhitespaces + 1) : viewOfStringifiedConstantValue.size()));
 
             if (base == 16) {
-                const std::size_t hexLiteralPrefix = viewOfStringifiedConstantValue.find_first_of("0x");
-                if (hexLiteralPrefix == std::string::npos) {
+                if (viewOfStringifiedConstantValue.find_first_of("0x") == std::string::npos) {
                     return std::nullopt;
                 }
-                viewOfStringifiedConstantValue.remove_prefix(hexLiteralPrefix);
+                viewOfStringifiedConstantValue.remove_prefix(2U);
             } else if (base == 2) {
-                const std::size_t binaryLiteralPrefix = viewOfStringifiedConstantValue.find_first_of("0b");
-                if (binaryLiteralPrefix == std::string::npos) {
+                if (viewOfStringifiedConstantValue.find_first_of("0b") == std::string::npos) {
                     return std::nullopt;
                 }
-                viewOfStringifiedConstantValue.remove_prefix(binaryLiteralPrefix);
+                viewOfStringifiedConstantValue.remove_prefix(2U);
             }
 
             unsigned int constantValue                                 = 0;

@@ -23,7 +23,7 @@ TEST_F(SyrecParserErrorTestsFixture, OmittingIfKeywordCausesError) {
 }
 
 TEST_F(SyrecParserErrorTestsFixture, InvalidIfKeywordCausesError) {
-    recordSyntaxError(Message::Position(1, 24), "extraneous input '-' expecting {'!', '~', '$', '#', '(', IDENT, INT}");
+    recordSyntaxError(Message::Position(1, 24), "extraneous input '-' expecting {'!', '~', '$', '#', '(', IDENT, HEX_LITERAL, BINARY_LITERAL, INT}");
     buildAndRecordExpectedSemanticError<SemanticError::NoVariableMatchingIdentifier>(Message::Position(1, 25), "cond");
     recordSyntaxError(Message::Position(1, 30), "mismatched input '(' expecting 'then'");
     performTestExecution("module main(out a(4)) if-cond (a.1 > 2) then skip else skip fi (a.1 > 2)");

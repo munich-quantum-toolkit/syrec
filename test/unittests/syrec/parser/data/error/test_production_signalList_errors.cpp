@@ -177,3 +177,23 @@ TEST_F(SyrecParserErrorTestsFixture, LocalVariableBitwidthTakenFromUserConfigura
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredVariableBitwidthTooLarge>(Message::Position(1, 61), defaultSignalBitwidth, 32);
     performTestExecution("module main(inout b(2), out c(4)) wire test(2), x, y(4) wire t, z(1) skip", userProvidedParserConfiguration);
 }
+
+TEST_F(SyrecParserErrorTestsFixture, HexLiteralInValueOfDimensionDeclarationOfLocalModuleVariableCausesError) {
+    recordSyntaxError(Message::Position(1, 25), "mismatched input '0x2A' expecting INT");
+    performTestExecution("module main(in a) wire b[0x2A] skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, HexLiteralInVariableBitwidthDeclarationOfLocalModuleVariableCausesError) {
+    recordSyntaxError(Message::Position(1, 25), "mismatched input '0x2A' expecting INT");
+    performTestExecution("module main(in a) wire b(0x2A) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, BinaryLiteralInValueOfDimensionDeclarationOfLocalModuleVariableCausesError) {
+    recordSyntaxError(Message::Position(1, 26), "mismatched input '0b1011' expecting INT");
+    performTestExecution("module main(in a) state b[0b1011] skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, BinaryLiteralInVariableBitwidthDeclarationOfLocalModuleVariableCausesError) {
+    recordSyntaxError(Message::Position(1, 26), "mismatched input '0b1011' expecting INT");
+    performTestExecution("module main(in a) state b(0b1011) skip");
+}

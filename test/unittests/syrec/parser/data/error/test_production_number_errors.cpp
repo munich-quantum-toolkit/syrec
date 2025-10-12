@@ -88,3 +88,13 @@ TEST_F(SyrecParserErrorTestsFixture, UserDefinedIntegerConstantDefinedInProgramT
     buildAndRecordExpectedSemanticError<SemanticError::ValueOverflowDueToNoImplicitTruncationPerformed>(Message::Position(1, 27), "34359738368", UINT_MAX);
     performTestExecution("module main(out a(4)) a += 34359738368");
 }
+
+TEST_F(SyrecParserErrorTestsFixture, UserDefinedHexLiteralDefinedInProgramTooLargeToBeConvertedToUnsignedIntegerCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ValueOverflowDueToNoImplicitTruncationPerformed>(Message::Position(1, 27), "0x800000000", UINT_MAX);
+    performTestExecution("module main(out a(4)) a += 0x800000000");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, UserDefinedBinaryLiteralDefinedInProgramTooLargeToBeConvertedToUnsignedIntegerCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ValueOverflowDueToNoImplicitTruncationPerformed>(Message::Position(1, 27), "0b100000000000000000000000000000000000", UINT_MAX);
+    performTestExecution("module main(out a(4)) a += 0b100000000000000000000000000000000000");
+}

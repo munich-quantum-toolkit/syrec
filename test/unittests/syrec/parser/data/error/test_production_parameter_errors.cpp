@@ -185,3 +185,25 @@ TEST_F(SyrecParserErrorTestsFixture, NumberOfElementsOfLocalModuleVariableTooLar
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredNumberOfElementsInVariableTooLarge>(Message::Position(1, 51), UINT_MAX);
     performTestExecution("module main(in b(4), inout a[2](4)) wire c(4) wire d[" + std::to_string(UINT_MAX / 2) + "][" + std::to_string(UINT_MAX / 2) + "][2](4), e(4) skip");
 }
+
+TEST_F(SyrecParserErrorTestsFixture, HexLiteralInValueOfDimensionDeclarationOfModuleParameterCausesError) {
+    recordSyntaxError(Message::Position(1, 20), "mismatched input '0x2A' expecting INT");
+    performTestExecution("module main(inout a[0x2A]) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, HexLiteralInVariableBitwidthDeclarationOfModuleParameterCausesError) {
+    recordSyntaxError(Message::Position(1, 20), "mismatched input '0x2A' expecting INT");
+    recordSyntaxError(Message::Position(1, 25), "extraneous input ')' expecting {'++=', '--=', '~=', 'call', 'uncall', 'wire', 'state', 'for', 'if', 'skip', IDENT}");
+    performTestExecution("module main(inout a(0x2A)) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, BinaryLiteralInValueOfDimensionDeclarationOfModuleParameterCausesError) {
+    recordSyntaxError(Message::Position(1, 20), "mismatched input '0b1011' expecting INT");
+    performTestExecution("module main(inout a[0b1011]) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, BinaryLiteralInVariableBitwidthDeclarationOfModuleParameterCausesError) {
+    recordSyntaxError(Message::Position(1, 20), "mismatched input '0b1011' expecting INT");
+    recordSyntaxError(Message::Position(1, 27), "extraneous input ')' expecting {'++=', '--=', '~=', 'call', 'uncall', 'wire', 'state', 'for', 'if', 'skip', IDENT}");
+    performTestExecution("module main(inout a(0b1011)) skip");
+}

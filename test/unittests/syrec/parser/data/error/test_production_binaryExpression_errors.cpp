@@ -34,7 +34,7 @@ TEST_F(SyrecParserErrorTestsFixture, OmittingOpeningBracketOfBinaryExpressionCau
 }
 
 TEST_F(SyrecParserErrorTestsFixture, InvalidOpeningBracketOfBinaryExpressionCausesError) {
-    recordSyntaxError(Message::Position(1, 36), "extraneous input '[' expecting {'!', '~', '$', '#', '(', IDENT, INT}");
+    recordSyntaxError(Message::Position(1, 36), "extraneous input '[' expecting {'!', '~', '$', '#', '(', IDENT, HEX_LITERAL, BINARY_LITERAL, INT}");
     recordSyntaxError(Message::Position(1, 39), "extraneous input '+' expecting {<EOF>, 'module'}");
     performTestExecution("module main(out b(4), in a(4)) b += [a + 2)");
 }
