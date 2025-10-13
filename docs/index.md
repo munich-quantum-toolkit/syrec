@@ -25,6 +25,7 @@ self
 installation
 description_and_features
 syrec_language_semantics
+antlr_grammar_modifications
 references
 ```
 
