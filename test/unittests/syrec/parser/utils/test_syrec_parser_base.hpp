@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "core/configurable_options.hpp"
 #include "core/syrec/parser/utils/base_syrec_ir_entity_stringifier.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"
 #include "core/syrec/program.hpp"
@@ -54,7 +55,7 @@ protected:
 
     TestFromJson                              loadedTestCaseData;
     syrec::Program                            parserInstance;
-    std::optional<syrec::ReadProgramSettings> userDefinedParserConfiguration;
+    std::optional<syrec::ConfigurableOptions> userDefinedParserConfiguration;
 
     void SetUp() override {
         const TestFromJsonConfig& testParameterData     = GetParam();
@@ -100,7 +101,7 @@ protected:
     }
 
     void loadUserDefinedParserConfigurationFromJson(const json& jsonObject) {
-        userDefinedParserConfiguration = syrec::ReadProgramSettings();
+        userDefinedParserConfiguration = syrec::ConfigurableOptions();
         ASSERT_TRUE(jsonObject.is_object()) << "User defined parser configuration needs to be defined as a json object";
         if (jsonObject.contains(jsonKeyInTestCaseDataForDefaultSignalBitwidthInParserConfig)) {
             ASSERT_TRUE(jsonObject.at(jsonKeyInTestCaseDataForDefaultSignalBitwidthInParserConfig).is_number_unsigned()) << "User defined default variable bitwidth needs to be defined as an unsigned integer";
@@ -129,7 +130,7 @@ protected:
     }
 
     virtual void performTestExecution() {
-        const syrec::ReadProgramSettings& parserConfiguration = userDefinedParserConfiguration.value_or(syrec::ReadProgramSettings());
+        const syrec::ConfigurableOptions& parserConfiguration = userDefinedParserConfiguration.value_or(syrec::ConfigurableOptions());
         std::string                       aggregateOfDetectedErrorsDuringProcessingOfUserProvidedSyrecProgram;
         ASSERT_NO_FATAL_FAILURE(aggregateOfDetectedErrorsDuringProcessingOfUserProvidedSyrecProgram = parserInstance.readFromString(loadedTestCaseData.stringifiedSyrecProgramToProcess, parserConfiguration));
         ASSERT_TRUE(aggregateOfDetectedErrorsDuringProcessingOfUserProvidedSyrecProgram.empty()) << "Expected no errors to be reported when parsing the given SyReC program but actual found errors where: " << aggregateOfDetectedErrorsDuringProcessingOfUserProvidedSyrecProgram;

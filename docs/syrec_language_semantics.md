@@ -11,7 +11,7 @@ We start by defining the semantics of the highest-level entity of a SyReC progra
 
 ## Module
 
-- The RevLib project (v2.0.1, section 2.1) {cite:p}`wille2008revlib` states that the entry point of a well-formed SyReC program is either defined explicitly by a module with an identifier _main_ or is implicitly chosen as the last defined module of the program. Additionally, one can also specify the identifier of the module serving as the entry point of the SyReC program in the {doc}`parser configuration <library/Settings>`. With such an entry configured, only one module matching said identifier is allowed in the SyReC program (the same restriction applies if no such entry was configured and a module with identifier 'main' was defined).
+- The RevLib project (v2.0.1, section 2.1) {cite:p}`wille2008revlib` states that the entry point of a well-formed SyReC program is either defined explicitly by a module with an identifier _main_ or is implicitly chosen as the last defined module of the program. Additionally, one can also specify the identifier of the module serving as the entry point of the SyReC program in the {doc}`parser configuration <library/ConfigurableOptions>`. With such an entry configured, only one module matching said identifier is allowed in the SyReC program (the same restriction applies if no such entry was configured and a module with identifier 'main' was defined).
 
 - Omitting the specification of the dimensionality of any variable (i.e., the number of dimensions and the number of values per dimension) will cause the variable to be considered as a 1D variable storing a single value; The following example shows the two equivalent specifications:
 
@@ -27,7 +27,7 @@ We start by defining the semantics of the highest-level entity of a SyReC progra
 
 - The value of every variable with bitwidth {math}`b` is assumed to be an unsigned integer and thus must be in the range {math}`[0, 2^b]`.
 - The maximum supported bitwidth of any variable is equal to 32.
-- If the bitwidth of a variable is not declared then it is assumed to be equal to a {doc}`configurable default value <library/Settings>`.
+- If the bitwidth of a variable is not declared then it is assumed to be equal to a {doc}`configurable default value <library/ConfigurableOptions>`.
 - The parameter and variable identifiers must be unique in a SyReC module.
 - If the synthesized version of a SyReC program should be compatible with the OpenQASM 2.0 standard then variable identifiers are only allowed to start with one of the following characters: {code}`[a-z]` {cite:p}`cross2017openquantumassemblylanguage`.
 - The identifier of the module and any of its parameters and local variables cannot start with the prefix {code}`__q` that is reserved for internal use.
@@ -112,7 +112,7 @@ We start by defining the semantics of the highest-level entity of a SyReC progra
     a[0].1:2 += b[(a[0].0:2 + 2)]
   ```
 
-  The reversibility of the assignment depends on whether the expression in the dimension access on the right-hand side of the assignment can be synthesized without leading to an assignment in which a qubit is assigned to itself (i.e. _a[0].1 += a[0].1_). Thus, the user must specify via the {doc}`parser configuration <library/Settings>` whether an overlapping access on the assigned to variable parts is allowed in a dimension access. By default, such an access is assumed to be not allowed. The same restrictions also apply to both sides of a _SwapStatement_ with the validity of the _SwapStatements_ in the example below depending on the used parser configuration.
+  The reversibility of the assignment depends on whether the expression in the dimension access on the right-hand side of the assignment can be synthesized without leading to an assignment in which a qubit is assigned to itself (i.e. _a[0].1 += a[0].1_). Thus, the user must specify via the {doc}`parser configuration <library/ConfigurableOptions>` whether an overlapping access on the assigned to variable parts is allowed in a dimension access. By default, such an access is assumed to be not allowed. The same restrictions also apply to both sides of a _SwapStatement_ with the validity of the _SwapStatements_ in the example below depending on the used parser configuration.
 
   ```text
   module main(inout a(4), in b[3](2))
@@ -300,7 +300,7 @@ The parser will not report an overlap in the assignment due to the index of the 
 ### SwapStatement
 
 - Both operands of the swap operation must have the same bitwidth.
-- Whether the access on the assigned to variable parts in the dimension access of any _VariableAccess_ on the opposite side of the SwapStatement is allowed depends on the value of the corresponding flag in the parser configuration (see {doc}`flag <library/Settings>`).
+- Whether the access on the assigned to variable parts in the dimension access of any _VariableAccess_ on the opposite side of the SwapStatement is allowed depends on the value of the corresponding flag in the parser configuration (see {doc}`flag <library/ConfigurableOptions>`).
 - Assignments to the same variable parts between the two sides of the SwapStatement are not allowed and a semantic error is reported if the parser can detect such an overlap.
 - Since the indices of the accessed dimension of a variable can be defined as a non-compile time constant expression and due to the inability to evaluate said expressions one is able to define a SwapStatement that operates on the same qubits in both operands as shown in the following example:
 
@@ -359,7 +359,7 @@ The parser will not report an overlap in the assignment due to the index of the 
   ```
 
   While the right-hand side expression of the assignment is simplified to the integer constant _0_, the semantic error causes by the out-of-range index access in the _VariableAccess_ _a[2]_ is still reported.
-  - All operands of an expression must have the same bitwidth (excluding constant integers which are truncated to the expected bitwidth using the {doc}`configured truncation operation <library/Settings>`), with the parser using the first bitrange with known bounds as the reference bitwidth (if such an access exists in the operands). Any bit access will set the expected operand bitwidth of a _VariableAccess_ to 1.
+  - All operands of an expression must have the same bitwidth (excluding constant integers which are truncated to the expected bitwidth using the {doc}`configured truncation operation <library/ConfigurableOptions>`), with the parser using the first bitrange with known bounds as the reference bitwidth (if such an access exists in the operands). Any bit access will set the expected operand bitwidth of a _VariableAccess_ to 1.
 
     ```{note}
     Logical and relational operations will 'truncate' the expected bitwidth of its result to 1.
@@ -502,3 +502,10 @@ The parser will not report an overlap in the assignment due to the index of the 
 
 - Expressions with constant integer operands are evaluated using the C++ semantics for unsigned integers.
 - Operands of an expression using the relational (`<`, `>`, `<=`, `>=`, `=`, `!=`), logical (`||`, `&&`) or the unary operation (`!`) must to have a bitwidth equal to 1.
+
+## Numbers
+
+- In addition to integer literals also hexadecimal and binary literals can be defined (a custom extension of the reference SyReC grammar).
+- Hexadecimal literals are defined using the prefix ('0x' or '0X') followed by at least one digit or one of the letters (A,B,C,D,E,F) with the latter not being case-sensitive. The first number after the prefix '0x' is the most significant one (e.g. 0x1A is equal to the integer 26).
+- Binary literals are defined using the prefix ('0b' or '0B') followed by at least one binary value (0, 1) with the most significant bit being defined immediately after the prefix '0b' (e.g. 0b00011010 is equal to the integer 26).
+- Hexadecimal and binary literals cannot be used to define the number of values in a dimension or the bitwidth of a SyReC module parameter or local variable.

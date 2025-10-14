@@ -46,5 +46,21 @@
   "simplificationInNestedConstantExpressionNotDroppedDueToParentExpressionNotAllowingSimplification": {
     "inputCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do a += (($i - (#b - 2)) * b) rof",
     "expectedCircuit": "module main(inout a(4), in b(4)) for $i = 0 to 3 step 1 do a[0] += (($i - 2) * b[0]) rof"
+  },
+  "mixtureOfDifferentNumericLiteralTypesPossible": {
+    "inputCircuit": "module main(inout a(5)) a += ((0x1A - 12) + 0b101)",
+    "expectedCircuit": "module main(inout a(5)) a[0] += 19"
+  },
+  "lowercaseHexadecimalLettersAllowed": {
+    "inputCircuit": "module main(inout a(17)) a += 0x1AbcE",
+    "expectedCircuit": "module main(inout a(17)) a[0] += 109518"
+  },
+  "prefixOfHexadecimalLiteralIsNotCaseSensitive": {
+    "inputCircuit": "module main(inout a(5)) a += 0x1A; a += 0X1A",
+    "expectedCircuit": "module main(inout a(5)) a[0] += 26; a[0] += 26"
+  },
+  "prefixOfBinaryLiteralIsNotCaseSensitive": {
+    "inputCircuit": "module main(inout a(3)) a += 0b101; a += 0B101",
+    "expectedCircuit": "module main(inout a(3)) a[0] += 5; a[0] += 5"
   }
 }

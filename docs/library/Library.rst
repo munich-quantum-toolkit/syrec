@@ -1,13 +1,14 @@
 Library
-=======
++++++++
 
 .. toctree::
     :maxdepth: 4
 
     AnnotatableQuantumComputation
+    ConfigurableSettings
     NBitValuesContainer
     Parser
     InlinedQubitInformation
-    Settings
     Simulation
+    Statistics
     Synthesis

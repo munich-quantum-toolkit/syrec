@@ -12,6 +12,7 @@
 
 #include "TSyrecParser.h"
 #include "algorithms/synthesis/internal_qubit_label_builder.hpp"
+#include "core/configurable_options.hpp"
 #include "core/syrec/module.hpp"
 #include "core/syrec/parser/components/custom_base_visitor.hpp"
 #include "core/syrec/parser/components/custom_statement_visitor.hpp"
@@ -29,7 +30,7 @@
 namespace syrec_parser {
     class CustomModuleVisitor: protected CustomBaseVisitor {
     public:
-        CustomModuleVisitor(const std::shared_ptr<ParserMessagesContainer>& sharedMessagesContainerInstance, const syrec::ReadProgramSettings& userProvidedParserSettings):
+        CustomModuleVisitor(const std::shared_ptr<ParserMessagesContainer>& sharedMessagesContainerInstance, const syrec::ConfigurableOptions& userProvidedParserSettings):
             CustomBaseVisitor(sharedMessagesContainerInstance, std::make_shared<utils::BaseSymbolTable>(), userProvidedParserSettings),
             defaultVariableBitwidth(userProvidedParserSettings.defaultBitwidth),
             statementVisitorInstance(std::make_unique<CustomStatementVisitor>(sharedGeneratedMessageContainerInstance, this->symbolTable, userProvidedParserSettings)) {}

@@ -12,7 +12,8 @@
 
 #include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
-#include "core/properties.hpp"
+#include "core/configurable_options.hpp"
+#include "core/statistics.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
@@ -28,7 +29,7 @@ namespace syrec {
     public:
         using SyrecSynthesis::SyrecSynthesis;
 
-        static bool synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const Properties::ptr& settings = std::make_shared<Properties>(), const Properties::ptr& statistics = std::make_shared<Properties>());
+        static bool synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const ConfigurableOptions& settings = ConfigurableOptions(), Statistics* optionalRecordedStatistics = nullptr);
 
     protected:
         bool processStatement(const Statement::ptr& statement) override;

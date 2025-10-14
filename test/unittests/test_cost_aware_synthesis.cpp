@@ -10,6 +10,7 @@
 
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
+#include "core/configurable_options.hpp"
 #include "core/syrec/program.hpp"
 
 #include <algorithm>
@@ -86,12 +87,12 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecCostAwareSynthesisTest,
 TEST_P(SyrecCostAwareSynthesisTest, GenericSynthesisTest) {
     AnnotatableQuantumComputation annotatableQuantumComputation;
     Program                       prog;
-    const ReadProgramSettings     settings;
+    const ConfigurableOptions     settings;
     std::string                   errorString;
     ASSERT_NO_FATAL_FAILURE(errorString = prog.read(fileName, settings)) << "Unexpected crash during processing of SyReC program";
     ASSERT_TRUE(errorString.empty()) << "Found errors during processing of SyReC program: " << errorString;
 
-    ASSERT_TRUE(CostAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
+    ASSERT_TRUE(CostAwareSynthesis::synthesize(annotatableQuantumComputation, prog, settings));
     ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNops());
     ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNqubits());
 

@@ -11,7 +11,7 @@
 #include "algorithms/simulation/simple_simulation.hpp"
 #include "core/annotatable_quantum_computation.hpp"
 #include "core/n_bit_values_container.hpp"
-#include "core/properties.hpp"
+#include "core/statistics.hpp"
 #include "ir/Definitions.hpp"
 #include "ir/operations/Control.hpp"
 #include "ir/operations/OpType.hpp"
@@ -20,7 +20,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <gtest/gtest.h>
-#include <memory>
 #include <optional>
 
 using namespace syrec;
@@ -200,13 +199,10 @@ TEST(SimpleSimulationTests, SimulationRuntimePropertySet) {
     constexpr std::uint64_t   inputStateValue = 1;
     const NBitValuesContainer inputState(inputStateSize, inputStateValue); // 10
     NBitValuesContainer       outputState;
-    const Properties::ptr     statistics = std::make_shared<Properties>();
-
-    ASSERT_NO_FATAL_FAILURE(simpleSimulation(outputState, quantumComputation, inputState, statistics));
+    Statistics                statistics;
+    ASSERT_NO_FATAL_FAILURE(simpleSimulation(outputState, quantumComputation, inputState, &statistics));
 
     ASSERT_EQ(2, outputState.size());
     ASSERT_TRUE(outputState[0]);
     ASSERT_TRUE(outputState[1]);
-
-    ASSERT_NO_FATAL_FAILURE(statistics->get<double>("runtime"));
 }

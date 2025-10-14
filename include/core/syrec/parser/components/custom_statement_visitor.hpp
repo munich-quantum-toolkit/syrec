@@ -12,12 +12,12 @@
 
 #include "TSyrecParser.h"
 #include "Token.h"
+#include "core/configurable_options.hpp"
 #include "core/syrec/number.hpp"
 #include "core/syrec/parser/components/custom_base_visitor.hpp"
 #include "core/syrec/parser/components/custom_expression_visitor.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
 #include "core/syrec/parser/utils/symbolTable/base_symbol_table.hpp"
-#include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
 #include "core/syrec/variable.hpp"
 
@@ -63,7 +63,7 @@ namespace syrec_parser {
                 signatureOfModuleContainingCallStatement(std::move(signatureOfModuleContainingCallStatement)) {}
         };
 
-        CustomStatementVisitor(const std::shared_ptr<ParserMessagesContainer>& sharedMessagesContainerInstance, const std::shared_ptr<utils::BaseSymbolTable>& sharedSymbolTableInstance, const syrec::ReadProgramSettings& parserConfiguration):
+        CustomStatementVisitor(const std::shared_ptr<ParserMessagesContainer>& sharedMessagesContainerInstance, const std::shared_ptr<utils::BaseSymbolTable>& sharedSymbolTableInstance, const syrec::ConfigurableOptions& parserConfiguration):
             CustomBaseVisitor(sharedMessagesContainerInstance, sharedSymbolTableInstance, parserConfiguration),
             expressionVisitorInstance(std::make_unique<CustomExpressionVisitor>(sharedMessagesContainerInstance, sharedSymbolTableInstance, parserConfiguration)) {}
 

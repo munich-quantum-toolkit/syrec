@@ -8,9 +8,9 @@
  * Licensed under the MIT License
  */
 
+#include "core/configurable_options.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
-#include "core/syrec/program.hpp"
 #include "test_syrec_parser_errors_base.hpp"
 
 #include <climits>
@@ -123,8 +123,9 @@ TEST_F(SyrecParserErrorTestsFixture, DeclaredParameterBitwidthLongerThanMaximumS
 }
 
 TEST_F(SyrecParserErrorTestsFixture, ParameterBitwidthTakenFromUserConfigLongerThanMaximumSupportedValueCausesError) {
-    constexpr unsigned int defaultSignalBitwidth           = 33;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 33;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredVariableBitwidthTooLarge>(Message::Position(1, 15), defaultSignalBitwidth, 32);
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredVariableBitwidthTooLarge>(Message::Position(1, 34), defaultSignalBitwidth, 32);
@@ -142,16 +143,18 @@ TEST_F(SyrecParserErrorTestsFixture, ModuleLocalVariableDeclarationWithExplicitl
 }
 
 TEST_F(SyrecParserErrorTestsFixture, ModuleParameterDeclarationWithImplicitlyDefinedBitwidthOfZeroNotPossible) {
-    constexpr unsigned int defaultSignalBitwidth           = 0;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 0;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::VariableBitwidthEqualToZero>(Message::Position(1, 27));
     performTestExecution("module main(inout a(4), in b) ++= a", userProvidedParserConfiguration);
 }
 
 TEST_F(SyrecParserErrorTestsFixture, ModuleLocalVariableDeclarationWithImplicitlyDefinedBitwidthOfZeroNotPossible) {
-    constexpr unsigned int defaultSignalBitwidth           = 0;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 0;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::VariableBitwidthEqualToZero>(Message::Position(1, 29));
     performTestExecution("module main(inout a(4)) wire b ++= a", userProvidedParserConfiguration);
@@ -181,4 +184,26 @@ TEST_F(SyrecParserErrorTestsFixture, NumberOfElementsOfModuleParameterTooLargeWi
 TEST_F(SyrecParserErrorTestsFixture, NumberOfElementsOfLocalModuleVariableTooLargeWithVariableBeingDeclaredWithNDimensionsCausesError) {
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredNumberOfElementsInVariableTooLarge>(Message::Position(1, 51), UINT_MAX);
     performTestExecution("module main(in b(4), inout a[2](4)) wire c(4) wire d[" + std::to_string(UINT_MAX / 2) + "][" + std::to_string(UINT_MAX / 2) + "][2](4), e(4) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, HexLiteralInValueOfDimensionDeclarationOfModuleParameterCausesError) {
+    recordSyntaxError(Message::Position(1, 20), "mismatched input '0x2A' expecting INT");
+    performTestExecution("module main(inout a[0x2A]) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, HexLiteralInVariableBitwidthDeclarationOfModuleParameterCausesError) {
+    recordSyntaxError(Message::Position(1, 20), "mismatched input '0x2A' expecting INT");
+    recordSyntaxError(Message::Position(1, 25), "extraneous input ')' expecting {'++=', '--=', '~=', 'call', 'uncall', 'wire', 'state', 'for', 'if', 'skip', IDENT}");
+    performTestExecution("module main(inout a(0x2A)) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, BinaryLiteralInValueOfDimensionDeclarationOfModuleParameterCausesError) {
+    recordSyntaxError(Message::Position(1, 20), "mismatched input '0b1011' expecting INT");
+    performTestExecution("module main(inout a[0b1011]) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, BinaryLiteralInVariableBitwidthDeclarationOfModuleParameterCausesError) {
+    recordSyntaxError(Message::Position(1, 20), "mismatched input '0b1011' expecting INT");
+    recordSyntaxError(Message::Position(1, 27), "extraneous input ')' expecting {'++=', '--=', '~=', 'call', 'uncall', 'wire', 'state', 'for', 'if', 'skip', IDENT}");
+    performTestExecution("module main(inout a(0b1011)) skip");
 }

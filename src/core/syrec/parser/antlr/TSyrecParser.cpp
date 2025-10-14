@@ -125,84 +125,85 @@ namespace {
                         "KEYWORD_DO", "KEYWORD_TO", "KEYWORD_STEP", "KEYWORD_ROF", "KEYWORD_IF",
                         "KEYWORD_THEN", "KEYWORD_ELSE", "KEYWORD_FI", "KEYWORD_SKIP", "BITRANGE_START_PREFIX",
                         "BITRANGE_END_PREFIX", "SKIPABLEWHITSPACES", "LINE_COMMENT", "MULTI_LINE_COMMENT",
-                        "IDENT", "INT"});
+                        "IDENT", "HEX_LITERAL", "BINARY_LITERAL", "INT"});
         // Auto-generated constants that should not be changed except for when changes in the TSyrecParser.g4 file were made
-        static std::array<int32_t, 2036> serializedATNSegment = {
-                4, 1, 61, 235, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 4, 2, 5, 7, 5, 2, 6, 7, 6, 2,
+        static std::array<int32_t, 2064> serializedATNSegment = {
+                4, 1, 63, 237, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 4, 2, 5, 7, 5, 2, 6, 7, 6, 2,
                 7, 7, 7, 2, 8, 7, 8, 2, 9, 7, 9, 2, 10, 7, 10, 2, 11, 7, 11, 2, 12, 7, 12, 2, 13, 7, 13, 2, 14, 7,
                 14, 2, 15, 7, 15, 2, 16, 7, 16, 2, 17, 7, 17, 2, 18, 7, 18, 2, 19, 7, 19, 2, 20, 7, 20, 2, 21, 7,
-                21, 2, 22, 7, 22, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 3, 0, 58, 8, 0, 1,
-                1, 4, 1, 61, 8, 1, 11, 1, 12, 1, 62, 1, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 2, 3, 2, 71, 8, 2, 1, 2, 1, 2,
-                5, 2, 75, 8, 2, 10, 2, 12, 2, 78, 9, 2, 1, 2, 1, 2, 1, 3, 1, 3, 1, 3, 5, 3, 85, 8, 3, 10, 3, 12, 3,
-                88, 9, 3, 1, 4, 1, 4, 1, 4, 1, 5, 1, 5, 1, 5, 1, 5, 5, 5, 97, 8, 5, 10, 5, 12, 5, 100, 9, 5, 1, 6, 1,
-                6, 1, 6, 1, 6, 5, 6, 106, 8, 6, 10, 6, 12, 6, 109, 9, 6, 1, 6, 1, 6, 1, 6, 3, 6, 114, 8, 6, 1, 7, 1,
-                7, 1, 7, 5, 7, 119, 8, 7, 10, 7, 12, 7, 122, 9, 7, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 3, 8, 131,
-                8, 8, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 5, 9, 139, 8, 9, 10, 9, 12, 9, 142, 9, 9, 1, 9, 1, 9, 1, 10,
-                1, 10, 1, 10, 1, 10, 1, 11, 1, 11, 3, 11, 152, 8, 11, 1, 11, 1, 11, 1, 12, 1, 12, 3, 12, 158, 8,
-                12, 1, 12, 1, 12, 1, 12, 3, 12, 163, 8, 12, 1, 12, 1, 12, 3, 12, 167, 8, 12, 1, 12, 1, 12, 1, 12,
-                1, 12, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 14, 1, 14, 1, 14, 1, 15,
-                1, 15, 1, 15, 1, 15, 1, 16, 1, 16, 1, 16, 1, 16, 1, 17, 1, 17, 1, 18, 1, 18, 1, 18, 1, 18, 1, 18,
-                5, 18, 200, 8, 18, 10, 18, 12, 18, 203, 9, 18, 1, 18, 1, 18, 1, 18, 1, 18, 3, 18, 209, 8, 18,
-                3, 18, 211, 8, 18, 1, 19, 1, 19, 1, 19, 1, 19, 1, 19, 3, 19, 218, 8, 19, 1, 20, 1, 20, 1, 20, 1,
-                20, 1, 20, 1, 20, 1, 21, 1, 21, 1, 21, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 0, 0, 23,
-                0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 0, 9, 2,
-                0, 7, 9, 11, 11, 1, 0, 31, 33, 1, 0, 34, 35, 1, 0, 29, 30, 1, 0, 1, 3, 1, 0, 4, 6, 4, 0, 7, 12, 16,
-                23, 25, 25, 27, 28, 2, 0, 24, 24, 26, 26, 1, 0, 13, 14, 240, 0, 57, 1, 0, 0, 0, 2, 60, 1, 0, 0,
-                0, 4, 66, 1, 0, 0, 0, 6, 81, 1, 0, 0, 0, 8, 89, 1, 0, 0, 0, 10, 92, 1, 0, 0, 0, 12, 101, 1, 0, 0, 0,
-                14, 115, 1, 0, 0, 0, 16, 130, 1, 0, 0, 0, 18, 132, 1, 0, 0, 0, 20, 145, 1, 0, 0, 0, 22, 149, 1,
-                0, 0, 0, 24, 155, 1, 0, 0, 0, 26, 172, 1, 0, 0, 0, 28, 181, 1, 0, 0, 0, 30, 184, 1, 0, 0, 0, 32,
-                188, 1, 0, 0, 0, 34, 192, 1, 0, 0, 0, 36, 194, 1, 0, 0, 0, 38, 217, 1, 0, 0, 0, 40, 219, 1, 0, 0,
-                0, 42, 225, 1, 0, 0, 0, 44, 228, 1, 0, 0, 0, 46, 58, 5, 61, 0, 0, 47, 48, 5, 37, 0, 0, 48, 58, 5,
-                60, 0, 0, 49, 50, 5, 36, 0, 0, 50, 58, 5, 60, 0, 0, 51, 52, 5, 40, 0, 0, 52, 53, 3, 0, 0, 0, 53,
-                54, 7, 0, 0, 0, 54, 55, 3, 0, 0, 0, 55, 56, 5, 41, 0, 0, 56, 58, 1, 0, 0, 0, 57, 46, 1, 0, 0, 0, 57,
-                47, 1, 0, 0, 0, 57, 49, 1, 0, 0, 0, 57, 51, 1, 0, 0, 0, 58, 1, 1, 0, 0, 0, 59, 61, 3, 4, 2, 0, 60,
-                59, 1, 0, 0, 0, 61, 62, 1, 0, 0, 0, 62, 60, 1, 0, 0, 0, 62, 63, 1, 0, 0, 0, 63, 64, 1, 0, 0, 0, 64,
-                65, 5, 0, 0, 1, 65, 3, 1, 0, 0, 0, 66, 67, 5, 44, 0, 0, 67, 68, 5, 60, 0, 0, 68, 70, 5, 40, 0, 0,
-                69, 71, 3, 6, 3, 0, 70, 69, 1, 0, 0, 0, 70, 71, 1, 0, 0, 0, 71, 72, 1, 0, 0, 0, 72, 76, 5, 41, 0,
-                0, 73, 75, 3, 10, 5, 0, 74, 73, 1, 0, 0, 0, 75, 78, 1, 0, 0, 0, 76, 74, 1, 0, 0, 0, 76, 77, 1, 0,
-                0, 0, 77, 79, 1, 0, 0, 0, 78, 76, 1, 0, 0, 0, 79, 80, 3, 14, 7, 0, 80, 5, 1, 0, 0, 0, 81, 86, 3, 8,
-                4, 0, 82, 83, 5, 39, 0, 0, 83, 85, 3, 8, 4, 0, 84, 82, 1, 0, 0, 0, 85, 88, 1, 0, 0, 0, 86, 84, 1,
-                0, 0, 0, 86, 87, 1, 0, 0, 0, 87, 7, 1, 0, 0, 0, 88, 86, 1, 0, 0, 0, 89, 90, 7, 1, 0, 0, 90, 91, 3,
-                12, 6, 0, 91, 9, 1, 0, 0, 0, 92, 93, 7, 2, 0, 0, 93, 98, 3, 12, 6, 0, 94, 95, 5, 39, 0, 0, 95, 97,
-                3, 12, 6, 0, 96, 94, 1, 0, 0, 0, 97, 100, 1, 0, 0, 0, 98, 96, 1, 0, 0, 0, 98, 99, 1, 0, 0, 0, 99,
-                11, 1, 0, 0, 0, 100, 98, 1, 0, 0, 0, 101, 107, 5, 60, 0, 0, 102, 103, 5, 42, 0, 0, 103, 104, 5,
-                61, 0, 0, 104, 106, 5, 43, 0, 0, 105, 102, 1, 0, 0, 0, 106, 109, 1, 0, 0, 0, 107, 105, 1, 0, 0,
-                0, 107, 108, 1, 0, 0, 0, 108, 113, 1, 0, 0, 0, 109, 107, 1, 0, 0, 0, 110, 111, 5, 40, 0, 0, 111,
-                112, 5, 61, 0, 0, 112, 114, 5, 41, 0, 0, 113, 110, 1, 0, 0, 0, 113, 114, 1, 0, 0, 0, 114, 13,
-                1, 0, 0, 0, 115, 120, 3, 16, 8, 0, 116, 117, 5, 38, 0, 0, 117, 119, 3, 16, 8, 0, 118, 116, 1,
-                0, 0, 0, 119, 122, 1, 0, 0, 0, 120, 118, 1, 0, 0, 0, 120, 121, 1, 0, 0, 0, 121, 15, 1, 0, 0, 0,
-                122, 120, 1, 0, 0, 0, 123, 131, 3, 18, 9, 0, 124, 131, 3, 24, 12, 0, 125, 131, 3, 26, 13, 0,
-                126, 131, 3, 28, 14, 0, 127, 131, 3, 30, 15, 0, 128, 131, 3, 32, 16, 0, 129, 131, 3, 34, 17,
-                0, 130, 123, 1, 0, 0, 0, 130, 124, 1, 0, 0, 0, 130, 125, 1, 0, 0, 0, 130, 126, 1, 0, 0, 0, 130,
-                127, 1, 0, 0, 0, 130, 128, 1, 0, 0, 0, 130, 129, 1, 0, 0, 0, 131, 17, 1, 0, 0, 0, 132, 133, 7,
-                3, 0, 0, 133, 134, 5, 60, 0, 0, 134, 135, 5, 40, 0, 0, 135, 140, 5, 60, 0, 0, 136, 137, 5, 39,
-                0, 0, 137, 139, 5, 60, 0, 0, 138, 136, 1, 0, 0, 0, 139, 142, 1, 0, 0, 0, 140, 138, 1, 0, 0, 0,
-                140, 141, 1, 0, 0, 0, 141, 143, 1, 0, 0, 0, 142, 140, 1, 0, 0, 0, 143, 144, 5, 41, 0, 0, 144,
-                19, 1, 0, 0, 0, 145, 146, 5, 36, 0, 0, 146, 147, 5, 60, 0, 0, 147, 148, 5, 20, 0, 0, 148, 21,
-                1, 0, 0, 0, 149, 151, 5, 48, 0, 0, 150, 152, 5, 8, 0, 0, 151, 150, 1, 0, 0, 0, 151, 152, 1, 0,
-                0, 0, 152, 153, 1, 0, 0, 0, 153, 154, 3, 0, 0, 0, 154, 23, 1, 0, 0, 0, 155, 162, 5, 45, 0, 0, 156,
-                158, 3, 20, 10, 0, 157, 156, 1, 0, 0, 0, 157, 158, 1, 0, 0, 0, 158, 159, 1, 0, 0, 0, 159, 160,
-                3, 0, 0, 0, 160, 161, 5, 47, 0, 0, 161, 163, 1, 0, 0, 0, 162, 157, 1, 0, 0, 0, 162, 163, 1, 0,
-                0, 0, 163, 164, 1, 0, 0, 0, 164, 166, 3, 0, 0, 0, 165, 167, 3, 22, 11, 0, 166, 165, 1, 0, 0, 0,
-                166, 167, 1, 0, 0, 0, 167, 168, 1, 0, 0, 0, 168, 169, 5, 46, 0, 0, 169, 170, 3, 14, 7, 0, 170,
-                171, 5, 49, 0, 0, 171, 25, 1, 0, 0, 0, 172, 173, 5, 50, 0, 0, 173, 174, 3, 38, 19, 0, 174, 175,
-                5, 51, 0, 0, 175, 176, 3, 14, 7, 0, 176, 177, 5, 52, 0, 0, 177, 178, 3, 14, 7, 0, 178, 179, 5,
-                53, 0, 0, 179, 180, 3, 38, 19, 0, 180, 27, 1, 0, 0, 0, 181, 182, 7, 4, 0, 0, 182, 183, 3, 36,
-                18, 0, 183, 29, 1, 0, 0, 0, 184, 185, 3, 36, 18, 0, 185, 186, 7, 5, 0, 0, 186, 187, 3, 38, 19,
-                0, 187, 31, 1, 0, 0, 0, 188, 189, 3, 36, 18, 0, 189, 190, 5, 15, 0, 0, 190, 191, 3, 36, 18, 0,
-                191, 33, 1, 0, 0, 0, 192, 193, 5, 54, 0, 0, 193, 35, 1, 0, 0, 0, 194, 201, 5, 60, 0, 0, 195, 196,
-                5, 42, 0, 0, 196, 197, 3, 38, 19, 0, 197, 198, 5, 43, 0, 0, 198, 200, 1, 0, 0, 0, 199, 195, 1,
-                0, 0, 0, 200, 203, 1, 0, 0, 0, 201, 199, 1, 0, 0, 0, 201, 202, 1, 0, 0, 0, 202, 210, 1, 0, 0, 0,
-                203, 201, 1, 0, 0, 0, 204, 205, 5, 55, 0, 0, 205, 208, 3, 0, 0, 0, 206, 207, 5, 56, 0, 0, 207,
-                209, 3, 0, 0, 0, 208, 206, 1, 0, 0, 0, 208, 209, 1, 0, 0, 0, 209, 211, 1, 0, 0, 0, 210, 204, 1,
-                0, 0, 0, 210, 211, 1, 0, 0, 0, 211, 37, 1, 0, 0, 0, 212, 218, 3, 0, 0, 0, 213, 218, 3, 36, 18,
-                0, 214, 218, 3, 40, 20, 0, 215, 218, 3, 42, 21, 0, 216, 218, 3, 44, 22, 0, 217, 212, 1, 0, 0,
-                0, 217, 213, 1, 0, 0, 0, 217, 214, 1, 0, 0, 0, 217, 215, 1, 0, 0, 0, 217, 216, 1, 0, 0, 0, 218,
-                39, 1, 0, 0, 0, 219, 220, 5, 40, 0, 0, 220, 221, 3, 38, 19, 0, 221, 222, 7, 6, 0, 0, 222, 223,
-                3, 38, 19, 0, 223, 224, 5, 41, 0, 0, 224, 41, 1, 0, 0, 0, 225, 226, 7, 7, 0, 0, 226, 227, 3, 38,
-                19, 0, 227, 43, 1, 0, 0, 0, 228, 229, 5, 40, 0, 0, 229, 230, 3, 38, 19, 0, 230, 231, 7, 8, 0,
-                0, 231, 232, 3, 0, 0, 0, 232, 233, 5, 41, 0, 0, 233, 45, 1, 0, 0, 0, 19, 57, 62, 70, 76, 86, 98,
-                107, 113, 120, 130, 140, 151, 157, 162, 166, 201, 208, 210, 217};
+                21, 2, 22, 7, 22, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 3, 0,
+                60, 8, 0, 1, 1, 4, 1, 63, 8, 1, 11, 1, 12, 1, 64, 1, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 2, 3, 2, 73, 8, 2,
+                1, 2, 1, 2, 5, 2, 77, 8, 2, 10, 2, 12, 2, 80, 9, 2, 1, 2, 1, 2, 1, 3, 1, 3, 1, 3, 5, 3, 87, 8, 3, 10,
+                3, 12, 3, 90, 9, 3, 1, 4, 1, 4, 1, 4, 1, 5, 1, 5, 1, 5, 1, 5, 5, 5, 99, 8, 5, 10, 5, 12, 5, 102, 9,
+                5, 1, 6, 1, 6, 1, 6, 1, 6, 5, 6, 108, 8, 6, 10, 6, 12, 6, 111, 9, 6, 1, 6, 1, 6, 1, 6, 3, 6, 116, 8,
+                6, 1, 7, 1, 7, 1, 7, 5, 7, 121, 8, 7, 10, 7, 12, 7, 124, 9, 7, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 1,
+                8, 3, 8, 133, 8, 8, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 5, 9, 141, 8, 9, 10, 9, 12, 9, 144, 9, 9, 1,
+                9, 1, 9, 1, 10, 1, 10, 1, 10, 1, 10, 1, 11, 1, 11, 3, 11, 154, 8, 11, 1, 11, 1, 11, 1, 12, 1, 12,
+                3, 12, 160, 8, 12, 1, 12, 1, 12, 1, 12, 3, 12, 165, 8, 12, 1, 12, 1, 12, 3, 12, 169, 8, 12, 1,
+                12, 1, 12, 1, 12, 1, 12, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 13, 1, 14, 1,
+                14, 1, 14, 1, 15, 1, 15, 1, 15, 1, 15, 1, 16, 1, 16, 1, 16, 1, 16, 1, 17, 1, 17, 1, 18, 1, 18, 1,
+                18, 1, 18, 1, 18, 5, 18, 202, 8, 18, 10, 18, 12, 18, 205, 9, 18, 1, 18, 1, 18, 1, 18, 1, 18, 3,
+                18, 211, 8, 18, 3, 18, 213, 8, 18, 1, 19, 1, 19, 1, 19, 1, 19, 1, 19, 3, 19, 220, 8, 19, 1, 20,
+                1, 20, 1, 20, 1, 20, 1, 20, 1, 20, 1, 21, 1, 21, 1, 21, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22, 1, 22,
+                1, 22, 0, 0, 23, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40,
+                42, 44, 0, 9, 2, 0, 7, 9, 11, 11, 1, 0, 31, 33, 1, 0, 34, 35, 1, 0, 29, 30, 1, 0, 1, 3, 1, 0, 4, 6,
+                4, 0, 7, 12, 16, 23, 25, 25, 27, 28, 2, 0, 24, 24, 26, 26, 1, 0, 13, 14, 244, 0, 59, 1, 0, 0, 0,
+                2, 62, 1, 0, 0, 0, 4, 68, 1, 0, 0, 0, 6, 83, 1, 0, 0, 0, 8, 91, 1, 0, 0, 0, 10, 94, 1, 0, 0, 0, 12,
+                103, 1, 0, 0, 0, 14, 117, 1, 0, 0, 0, 16, 132, 1, 0, 0, 0, 18, 134, 1, 0, 0, 0, 20, 147, 1, 0, 0,
+                0, 22, 151, 1, 0, 0, 0, 24, 157, 1, 0, 0, 0, 26, 174, 1, 0, 0, 0, 28, 183, 1, 0, 0, 0, 30, 186,
+                1, 0, 0, 0, 32, 190, 1, 0, 0, 0, 34, 194, 1, 0, 0, 0, 36, 196, 1, 0, 0, 0, 38, 219, 1, 0, 0, 0, 40,
+                221, 1, 0, 0, 0, 42, 227, 1, 0, 0, 0, 44, 230, 1, 0, 0, 0, 46, 60, 5, 61, 0, 0, 47, 60, 5, 62, 0,
+                0, 48, 60, 5, 63, 0, 0, 49, 50, 5, 37, 0, 0, 50, 60, 5, 60, 0, 0, 51, 52, 5, 36, 0, 0, 52, 60, 5,
+                60, 0, 0, 53, 54, 5, 40, 0, 0, 54, 55, 3, 0, 0, 0, 55, 56, 7, 0, 0, 0, 56, 57, 3, 0, 0, 0, 57, 58,
+                5, 41, 0, 0, 58, 60, 1, 0, 0, 0, 59, 46, 1, 0, 0, 0, 59, 47, 1, 0, 0, 0, 59, 48, 1, 0, 0, 0, 59, 49,
+                1, 0, 0, 0, 59, 51, 1, 0, 0, 0, 59, 53, 1, 0, 0, 0, 60, 1, 1, 0, 0, 0, 61, 63, 3, 4, 2, 0, 62, 61,
+                1, 0, 0, 0, 63, 64, 1, 0, 0, 0, 64, 62, 1, 0, 0, 0, 64, 65, 1, 0, 0, 0, 65, 66, 1, 0, 0, 0, 66, 67,
+                5, 0, 0, 1, 67, 3, 1, 0, 0, 0, 68, 69, 5, 44, 0, 0, 69, 70, 5, 60, 0, 0, 70, 72, 5, 40, 0, 0, 71,
+                73, 3, 6, 3, 0, 72, 71, 1, 0, 0, 0, 72, 73, 1, 0, 0, 0, 73, 74, 1, 0, 0, 0, 74, 78, 5, 41, 0, 0, 75,
+                77, 3, 10, 5, 0, 76, 75, 1, 0, 0, 0, 77, 80, 1, 0, 0, 0, 78, 76, 1, 0, 0, 0, 78, 79, 1, 0, 0, 0, 79,
+                81, 1, 0, 0, 0, 80, 78, 1, 0, 0, 0, 81, 82, 3, 14, 7, 0, 82, 5, 1, 0, 0, 0, 83, 88, 3, 8, 4, 0, 84,
+                85, 5, 39, 0, 0, 85, 87, 3, 8, 4, 0, 86, 84, 1, 0, 0, 0, 87, 90, 1, 0, 0, 0, 88, 86, 1, 0, 0, 0, 88,
+                89, 1, 0, 0, 0, 89, 7, 1, 0, 0, 0, 90, 88, 1, 0, 0, 0, 91, 92, 7, 1, 0, 0, 92, 93, 3, 12, 6, 0, 93,
+                9, 1, 0, 0, 0, 94, 95, 7, 2, 0, 0, 95, 100, 3, 12, 6, 0, 96, 97, 5, 39, 0, 0, 97, 99, 3, 12, 6, 0,
+                98, 96, 1, 0, 0, 0, 99, 102, 1, 0, 0, 0, 100, 98, 1, 0, 0, 0, 100, 101, 1, 0, 0, 0, 101, 11, 1,
+                0, 0, 0, 102, 100, 1, 0, 0, 0, 103, 109, 5, 60, 0, 0, 104, 105, 5, 42, 0, 0, 105, 106, 5, 63,
+                0, 0, 106, 108, 5, 43, 0, 0, 107, 104, 1, 0, 0, 0, 108, 111, 1, 0, 0, 0, 109, 107, 1, 0, 0, 0,
+                109, 110, 1, 0, 0, 0, 110, 115, 1, 0, 0, 0, 111, 109, 1, 0, 0, 0, 112, 113, 5, 40, 0, 0, 113,
+                114, 5, 63, 0, 0, 114, 116, 5, 41, 0, 0, 115, 112, 1, 0, 0, 0, 115, 116, 1, 0, 0, 0, 116, 13,
+                1, 0, 0, 0, 117, 122, 3, 16, 8, 0, 118, 119, 5, 38, 0, 0, 119, 121, 3, 16, 8, 0, 120, 118, 1,
+                0, 0, 0, 121, 124, 1, 0, 0, 0, 122, 120, 1, 0, 0, 0, 122, 123, 1, 0, 0, 0, 123, 15, 1, 0, 0, 0,
+                124, 122, 1, 0, 0, 0, 125, 133, 3, 18, 9, 0, 126, 133, 3, 24, 12, 0, 127, 133, 3, 26, 13, 0,
+                128, 133, 3, 28, 14, 0, 129, 133, 3, 30, 15, 0, 130, 133, 3, 32, 16, 0, 131, 133, 3, 34, 17,
+                0, 132, 125, 1, 0, 0, 0, 132, 126, 1, 0, 0, 0, 132, 127, 1, 0, 0, 0, 132, 128, 1, 0, 0, 0, 132,
+                129, 1, 0, 0, 0, 132, 130, 1, 0, 0, 0, 132, 131, 1, 0, 0, 0, 133, 17, 1, 0, 0, 0, 134, 135, 7,
+                3, 0, 0, 135, 136, 5, 60, 0, 0, 136, 137, 5, 40, 0, 0, 137, 142, 5, 60, 0, 0, 138, 139, 5, 39,
+                0, 0, 139, 141, 5, 60, 0, 0, 140, 138, 1, 0, 0, 0, 141, 144, 1, 0, 0, 0, 142, 140, 1, 0, 0, 0,
+                142, 143, 1, 0, 0, 0, 143, 145, 1, 0, 0, 0, 144, 142, 1, 0, 0, 0, 145, 146, 5, 41, 0, 0, 146,
+                19, 1, 0, 0, 0, 147, 148, 5, 36, 0, 0, 148, 149, 5, 60, 0, 0, 149, 150, 5, 20, 0, 0, 150, 21,
+                1, 0, 0, 0, 151, 153, 5, 48, 0, 0, 152, 154, 5, 8, 0, 0, 153, 152, 1, 0, 0, 0, 153, 154, 1, 0,
+                0, 0, 154, 155, 1, 0, 0, 0, 155, 156, 3, 0, 0, 0, 156, 23, 1, 0, 0, 0, 157, 164, 5, 45, 0, 0, 158,
+                160, 3, 20, 10, 0, 159, 158, 1, 0, 0, 0, 159, 160, 1, 0, 0, 0, 160, 161, 1, 0, 0, 0, 161, 162,
+                3, 0, 0, 0, 162, 163, 5, 47, 0, 0, 163, 165, 1, 0, 0, 0, 164, 159, 1, 0, 0, 0, 164, 165, 1, 0,
+                0, 0, 165, 166, 1, 0, 0, 0, 166, 168, 3, 0, 0, 0, 167, 169, 3, 22, 11, 0, 168, 167, 1, 0, 0, 0,
+                168, 169, 1, 0, 0, 0, 169, 170, 1, 0, 0, 0, 170, 171, 5, 46, 0, 0, 171, 172, 3, 14, 7, 0, 172,
+                173, 5, 49, 0, 0, 173, 25, 1, 0, 0, 0, 174, 175, 5, 50, 0, 0, 175, 176, 3, 38, 19, 0, 176, 177,
+                5, 51, 0, 0, 177, 178, 3, 14, 7, 0, 178, 179, 5, 52, 0, 0, 179, 180, 3, 14, 7, 0, 180, 181, 5,
+                53, 0, 0, 181, 182, 3, 38, 19, 0, 182, 27, 1, 0, 0, 0, 183, 184, 7, 4, 0, 0, 184, 185, 3, 36,
+                18, 0, 185, 29, 1, 0, 0, 0, 186, 187, 3, 36, 18, 0, 187, 188, 7, 5, 0, 0, 188, 189, 3, 38, 19,
+                0, 189, 31, 1, 0, 0, 0, 190, 191, 3, 36, 18, 0, 191, 192, 5, 15, 0, 0, 192, 193, 3, 36, 18, 0,
+                193, 33, 1, 0, 0, 0, 194, 195, 5, 54, 0, 0, 195, 35, 1, 0, 0, 0, 196, 203, 5, 60, 0, 0, 197, 198,
+                5, 42, 0, 0, 198, 199, 3, 38, 19, 0, 199, 200, 5, 43, 0, 0, 200, 202, 1, 0, 0, 0, 201, 197, 1,
+                0, 0, 0, 202, 205, 1, 0, 0, 0, 203, 201, 1, 0, 0, 0, 203, 204, 1, 0, 0, 0, 204, 212, 1, 0, 0, 0,
+                205, 203, 1, 0, 0, 0, 206, 207, 5, 55, 0, 0, 207, 210, 3, 0, 0, 0, 208, 209, 5, 56, 0, 0, 209,
+                211, 3, 0, 0, 0, 210, 208, 1, 0, 0, 0, 210, 211, 1, 0, 0, 0, 211, 213, 1, 0, 0, 0, 212, 206, 1,
+                0, 0, 0, 212, 213, 1, 0, 0, 0, 213, 37, 1, 0, 0, 0, 214, 220, 3, 0, 0, 0, 215, 220, 3, 36, 18,
+                0, 216, 220, 3, 40, 20, 0, 217, 220, 3, 42, 21, 0, 218, 220, 3, 44, 22, 0, 219, 214, 1, 0, 0,
+                0, 219, 215, 1, 0, 0, 0, 219, 216, 1, 0, 0, 0, 219, 217, 1, 0, 0, 0, 219, 218, 1, 0, 0, 0, 220,
+                39, 1, 0, 0, 0, 221, 222, 5, 40, 0, 0, 222, 223, 3, 38, 19, 0, 223, 224, 7, 6, 0, 0, 224, 225,
+                3, 38, 19, 0, 225, 226, 5, 41, 0, 0, 226, 41, 1, 0, 0, 0, 227, 228, 7, 7, 0, 0, 228, 229, 3, 38,
+                19, 0, 229, 43, 1, 0, 0, 0, 230, 231, 5, 40, 0, 0, 231, 232, 3, 38, 19, 0, 232, 233, 7, 8, 0,
+                0, 233, 234, 3, 0, 0, 0, 234, 235, 5, 41, 0, 0, 235, 45, 1, 0, 0, 0, 19, 59, 64, 72, 78, 88, 100,
+                109, 115, 122, 132, 142, 153, 159, 164, 168, 203, 210, 212, 219};
         staticData->serializedATN = atn::SerializedATNView(serializedATNSegment.data(), serializedATNSegment.size());
 
         const atn::ATNDeserializer deserializer;
@@ -270,6 +271,26 @@ void TSyrecParser::NumberContext::copyFrom(NumberContext* ctx) {
     ParserRuleContext::copyFrom(ctx);
 }
 
+//----------------- NumberFromHexLiteralContext ------------------------------------------------------------------
+
+tree::TerminalNode* TSyrecParser::NumberFromHexLiteralContext::hexLiteral() const {
+    return getToken(HexLiteral, 0);
+}
+
+TSyrecParser::NumberFromHexLiteralContext::NumberFromHexLiteralContext(NumberContext* ctx) {
+    copyFrom(ctx);
+}
+
+//----------------- NumberFromBinaryLiteralContext ------------------------------------------------------------------
+
+tree::TerminalNode* TSyrecParser::NumberFromBinaryLiteralContext::binaryLiteral() const {
+    return getToken(BinaryLiteral, 0);
+}
+
+TSyrecParser::NumberFromBinaryLiteralContext::NumberFromBinaryLiteralContext(NumberContext* ctx) {
+    copyFrom(ctx);
+}
+
 //----------------- NumberFromSignalwidthContext ------------------------------------------------------------------
 
 tree::TerminalNode* TSyrecParser::NumberFromSignalwidthContext::literalSignalWidthPrefix() const {
@@ -298,11 +319,11 @@ TSyrecParser::NumberFromLoopVariableContext::NumberFromLoopVariableContext(Numbe
 }
 //----------------- NumberFromConstantContext ------------------------------------------------------------------
 
-tree::TerminalNode* TSyrecParser::NumberFromConstantContext::literalInt() const {
+tree::TerminalNode* TSyrecParser::NumberFromIntegerContext::integerLiteral() const {
     return getToken(Int, 0);
 }
 
-TSyrecParser::NumberFromConstantContext::NumberFromConstantContext(NumberContext* ctx) {
+TSyrecParser::NumberFromIntegerContext::NumberFromIntegerContext(NumberContext* ctx) {
     copyFrom(ctx);
 }
 //----------------- NumberFromExpressionContext ------------------------------------------------------------------
@@ -340,57 +361,71 @@ TSyrecParser::NumberContext* TSyrecParser::number() {
     });
 
     try {
-        setState(57);
+        setState(59);
         _errHandler->sync(this);
         switch (_input->LA(1)) {
-            case Int: {
-                localCtx = _tracker.createInstance<NumberFromConstantContext>(localCtx);
+            case HexLiteral: {
+                localCtx = _tracker.createInstance<NumberFromHexLiteralContext>(localCtx);
                 enterOuterAlt(localCtx, 1);
                 setState(46);
+                match(HexLiteral);
+                break;
+            }
+
+            case BinaryLiteral: {
+                localCtx = _tracker.createInstance<NumberFromBinaryLiteralContext>(localCtx);
+                enterOuterAlt(localCtx, 2);
+                setState(47);
+                match(BinaryLiteral);
+                break;
+            }
+            case Int: {
+                localCtx = _tracker.createInstance<NumberFromIntegerContext>(localCtx);
+                enterOuterAlt(localCtx, 3);
+                setState(48);
                 match(Int);
                 break;
             }
 
             case SignalWidthPrefix: {
                 localCtx = _tracker.createInstance<NumberFromSignalwidthContext>(localCtx);
-                enterOuterAlt(localCtx, 2);
-                setState(47);
+                enterOuterAlt(localCtx, 4);
+                setState(49);
                 match(SignalWidthPrefix);
-                setState(48);
+                setState(50);
                 match(Ident);
                 break;
             }
 
             case LoopVariablePrefix: {
                 localCtx = _tracker.createInstance<NumberFromLoopVariableContext>(localCtx);
-                enterOuterAlt(localCtx, 3);
-                setState(49);
+                enterOuterAlt(localCtx, 5);
+                setState(51);
                 match(LoopVariablePrefix);
-                setState(50);
+                setState(52);
                 match(Ident);
                 break;
             }
 
             case OpenRBracket: {
-                size_t lookahead = 0;
-                localCtx         = _tracker.createInstance<NumberFromExpressionContext>(localCtx);
-                enterOuterAlt(localCtx, 4);
-                setState(51);
-                match(OpenRBracket);
-                setState(52);
-                antlrcpp::downCast<NumberFromExpressionContext*>(localCtx)->lhsOperand = number();
+                localCtx = _tracker.createInstance<NumberFromExpressionContext>(localCtx);
+                enterOuterAlt(localCtx, 6);
                 setState(53);
+                match(OpenRBracket);
+                setState(54);
+                antlrcpp::downCast<NumberFromExpressionContext*>(localCtx)->lhsOperand = number();
+                setState(55);
                 antlrcpp::downCast<NumberFromExpressionContext*>(localCtx)->op = _input->LT(1);
-                lookahead                                                      = _input->LA(1);
+                const std::size_t lookahead                                    = _input->LA(1);
                 if (!((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 2944) != 0))) {
                     antlrcpp::downCast<NumberFromExpressionContext*>(localCtx)->op = _errHandler->recoverInline(this);
                 } else {
                     _errHandler->reportMatch(this);
                     consume();
                 }
-                setState(54);
+                setState(56);
                 antlrcpp::downCast<NumberFromExpressionContext*>(localCtx)->rhsOperand = number();
-                setState(55);
+                setState(57);
                 match(CloseRBracket);
                 break;
             }
@@ -432,19 +467,19 @@ TSyrecParser::ProgramContext* TSyrecParser::program() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(60);
+        setState(62);
         _errHandler->sync(this);
 
         size_t lookahead = KeywordModule;
         while (lookahead == KeywordModule) {
-            setState(59);
+            setState(61);
             module();
-            setState(62);
+            setState(64);
             _errHandler->sync(this);
             lookahead = _input->LA(1);
         }
-        setState(64);
-        match(TSyrecParser::EOF);
+        setState(66);
+        match(EOF);
 
     } catch (RecognitionException& e) {
         _errHandler->reportError(this, e);
@@ -492,33 +527,33 @@ TSyrecParser::ModuleContext* TSyrecParser::module() {
     try {
         size_t lookahead = 0;
         enterOuterAlt(localCtx, 1);
-        setState(66);
-        match(KeywordModule);
-        setState(67);
-        match(Ident);
         setState(68);
-        match(OpenRBracket);
+        match(KeywordModule);
+        setState(69);
+        match(Ident);
         setState(70);
+        match(OpenRBracket);
+        setState(72);
         _errHandler->sync(this);
 
         lookahead = _input->LA(1);
         if ((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 15032385536) != 0)) {
-            setState(69);
+            setState(71);
             parameterList();
         }
-        setState(72);
+        setState(74);
         match(CloseRBracket);
-        setState(76);
+        setState(78);
         _errHandler->sync(this);
         lookahead = _input->LA(1);
         while (lookahead == VarTypeWire || lookahead == VarTypeState) {
-            setState(73);
+            setState(75);
             signalList();
-            setState(78);
+            setState(80);
             _errHandler->sync(this);
             lookahead = _input->LA(1);
         }
-        setState(79);
+        setState(81);
         statementList();
 
     } catch (RecognitionException& e) {
@@ -554,17 +589,17 @@ TSyrecParser::ParameterListContext* TSyrecParser::parameterList() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(81);
+        setState(83);
         parameter();
-        setState(86);
+        setState(88);
         _errHandler->sync(this);
         std::size_t lookahead = _input->LA(1);
         while (lookahead == ParameterDelimiter) {
-            setState(82);
+            setState(84);
             match(ParameterDelimiter);
-            setState(83);
+            setState(85);
             parameter();
-            setState(88);
+            setState(90);
             _errHandler->sync(this);
             lookahead = _input->LA(1);
         }
@@ -614,7 +649,7 @@ TSyrecParser::ParameterContext* TSyrecParser::parameter() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(89);
+        setState(91);
         const std::size_t lookahead = _input->LA(1);
         if (!((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 15032385536) != 0))) {
             _errHandler->recoverInline(this);
@@ -622,7 +657,7 @@ TSyrecParser::ParameterContext* TSyrecParser::parameter() {
             _errHandler->reportMatch(this);
             consume();
         }
-        setState(90);
+        setState(92);
         signalDeclaration();
 
     } catch (RecognitionException& e) {
@@ -666,7 +701,7 @@ TSyrecParser::SignalListContext* TSyrecParser::signalList() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(92);
+        setState(94);
         std::size_t lookahead = _input->LA(1);
         if (lookahead != VarTypeWire && lookahead != VarTypeState) {
             _errHandler->recoverInline(this);
@@ -674,17 +709,17 @@ TSyrecParser::SignalListContext* TSyrecParser::signalList() {
             _errHandler->reportMatch(this);
             consume();
         }
-        setState(93);
+        setState(95);
         signalDeclaration();
-        setState(98);
+        setState(100);
         _errHandler->sync(this);
         lookahead = _input->LA(1);
         while (lookahead == ParameterDelimiter) {
-            setState(94);
+            setState(96);
             match(ParameterDelimiter);
-            setState(95);
+            setState(97);
             signalDeclaration();
-            setState(100);
+            setState(102);
             _errHandler->sync(this);
             lookahead = _input->LA(1);
         }
@@ -722,33 +757,33 @@ TSyrecParser::SignalDeclarationContext* TSyrecParser::signalDeclaration() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(101);
+        setState(103);
         match(Ident);
-        setState(107);
+        setState(109);
         _errHandler->sync(this);
         std::size_t lookahead = _input->LA(1);
         while (lookahead == OpenSBracket) {
-            setState(102);
+            setState(104);
             match(OpenSBracket);
-            setState(103);
+            setState(105);
             antlrcpp::downCast<SignalDeclarationContext*>(localCtx)->intToken = match(Int);
             antlrcpp::downCast<SignalDeclarationContext*>(localCtx)->dimensionTokens.push_back(antlrcpp::downCast<SignalDeclarationContext*>(localCtx)->intToken);
-            setState(104);
+            setState(106);
             match(CloseSBracket);
-            setState(109);
+            setState(111);
             _errHandler->sync(this);
             lookahead = _input->LA(1);
         }
-        setState(113);
+        setState(115);
         _errHandler->sync(this);
 
         lookahead = _input->LA(1);
         if (lookahead == OpenRBracket) {
-            setState(110);
-            match(OpenRBracket);
-            setState(111);
-            antlrcpp::downCast<SignalDeclarationContext*>(localCtx)->signalWidthToken = match(Int);
             setState(112);
+            match(OpenRBracket);
+            setState(113);
+            antlrcpp::downCast<SignalDeclarationContext*>(localCtx)->signalWidthToken = match(Int);
+            setState(114);
             match(CloseRBracket);
         }
 
@@ -781,19 +816,19 @@ TSyrecParser::StatementListContext* TSyrecParser::statementList() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(115);
+        setState(117);
         antlrcpp::downCast<StatementListContext*>(localCtx)->statementContext = statement();
         antlrcpp::downCast<StatementListContext*>(localCtx)->stmts.push_back(antlrcpp::downCast<StatementListContext*>(localCtx)->statementContext);
-        setState(120);
+        setState(122);
         _errHandler->sync(this);
         std::size_t lookahead = _input->LA(1);
         while (lookahead == StatementDelimiter) {
-            setState(116);
+            setState(118);
             match(StatementDelimiter);
-            setState(117);
+            setState(119);
             antlrcpp::downCast<StatementListContext*>(localCtx)->statementContext = statement();
             antlrcpp::downCast<StatementListContext*>(localCtx)->stmts.push_back(antlrcpp::downCast<StatementListContext*>(localCtx)->statementContext);
-            setState(122);
+            setState(124);
             _errHandler->sync(this);
             lookahead = _input->LA(1);
         }
@@ -854,48 +889,48 @@ TSyrecParser::StatementContext* TSyrecParser::statement() {
     });
 
     try {
-        setState(130);
+        setState(132);
         _errHandler->sync(this);
         switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 9, _ctx)) {
             case 1: {
                 enterOuterAlt(localCtx, 1);
-                setState(123);
+                setState(125);
                 callStatement();
                 break;
             }
             case 2: {
                 enterOuterAlt(localCtx, 2);
-                setState(124);
+                setState(126);
                 forStatement();
                 break;
             }
             case 3: {
                 enterOuterAlt(localCtx, 3);
-                setState(125);
+                setState(127);
                 ifStatement();
                 break;
             }
             case 4: {
                 enterOuterAlt(localCtx, 4);
-                setState(126);
+                setState(128);
                 unaryStatement();
                 break;
             }
             case 5: {
                 enterOuterAlt(localCtx, 5);
-                setState(127);
+                setState(129);
                 assignStatement();
                 break;
             }
             case 6: {
                 enterOuterAlt(localCtx, 6);
-                setState(128);
+                setState(130);
                 swapStatement();
                 break;
             }
             case 7: {
                 enterOuterAlt(localCtx, 7);
-                setState(129);
+                setState(131);
                 skipStatement();
                 break;
             }
@@ -940,7 +975,7 @@ TSyrecParser::CallStatementContext* TSyrecParser::callStatement() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(132);
+        setState(134);
         std::size_t lookahead = _input->LA(1);
         if (lookahead != OpCall && lookahead != OpUncall) {
             _errHandler->recoverInline(this);
@@ -948,27 +983,27 @@ TSyrecParser::CallStatementContext* TSyrecParser::callStatement() {
             _errHandler->reportMatch(this);
             consume();
         }
-        setState(133);
-        antlrcpp::downCast<CallStatementContext*>(localCtx)->moduleIdent = match(Ident);
-        setState(134);
-        match(OpenRBracket);
         setState(135);
+        antlrcpp::downCast<CallStatementContext*>(localCtx)->moduleIdent = match(Ident);
+        setState(136);
+        match(OpenRBracket);
+        setState(137);
         antlrcpp::downCast<CallStatementContext*>(localCtx)->identToken = match(Ident);
         antlrcpp::downCast<CallStatementContext*>(localCtx)->callerArguments.push_back(antlrcpp::downCast<CallStatementContext*>(localCtx)->identToken);
-        setState(140);
+        setState(142);
         _errHandler->sync(this);
         lookahead = _input->LA(1);
         while (lookahead == ParameterDelimiter) {
-            setState(136);
+            setState(138);
             match(ParameterDelimiter);
-            setState(137);
+            setState(139);
             antlrcpp::downCast<CallStatementContext*>(localCtx)->identToken = match(Ident);
             antlrcpp::downCast<CallStatementContext*>(localCtx)->callerArguments.push_back(antlrcpp::downCast<CallStatementContext*>(localCtx)->identToken);
-            setState(142);
+            setState(144);
             _errHandler->sync(this);
             lookahead = _input->LA(1);
         }
-        setState(143);
+        setState(145);
         match(CloseRBracket);
 
     } catch (RecognitionException& e) {
@@ -1004,11 +1039,11 @@ TSyrecParser::LoopVariableDefinitionContext* TSyrecParser::loopVariableDefinitio
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(145);
-        match(LoopVariablePrefix);
-        setState(146);
-        antlrcpp::downCast<LoopVariableDefinitionContext*>(localCtx)->variableIdent = match(Ident);
         setState(147);
+        match(LoopVariablePrefix);
+        setState(148);
+        antlrcpp::downCast<LoopVariableDefinitionContext*>(localCtx)->variableIdent = match(Ident);
+        setState(149);
         match(OpEqual);
 
     } catch (RecognitionException& e) {
@@ -1048,15 +1083,15 @@ TSyrecParser::LoopStepsizeDefinitionContext* TSyrecParser::loopStepsizeDefinitio
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(149);
-        match(KeywordStep);
         setState(151);
+        match(KeywordStep);
+        setState(153);
         _errHandler->sync(this);
         if (const std::size_t lookahead = _input->LA(1); lookahead == OpMinus) {
-            setState(150);
+            setState(152);
             match(OpMinus);
         }
-        setState(153);
+        setState(155);
         number();
 
     } catch (RecognitionException& e) {
@@ -1104,38 +1139,38 @@ TSyrecParser::ForStatementContext* TSyrecParser::forStatement() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(155);
+        setState(157);
         match(KeywordFor);
-        setState(162);
+        setState(164);
         _errHandler->sync(this);
 
         if (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 13, _ctx) == 1) {
-            setState(157);
+            setState(159);
             _errHandler->sync(this);
 
             if (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 12, _ctx) == 1) {
-                setState(156);
+                setState(158);
                 loopVariableDefinition();
             }
-            setState(159);
+            setState(161);
             antlrcpp::downCast<ForStatementContext*>(localCtx)->startValue = number();
-            setState(160);
+            setState(162);
             match(KeywordTo);
         }
-        setState(164);
-        antlrcpp::downCast<ForStatementContext*>(localCtx)->endValue = number();
         setState(166);
+        antlrcpp::downCast<ForStatementContext*>(localCtx)->endValue = number();
+        setState(168);
         _errHandler->sync(this);
 
         if (const std::size_t lookahead = _input->LA(1); lookahead == KeywordStep) {
-            setState(165);
+            setState(167);
             loopStepsizeDefinition();
         }
-        setState(168);
-        match(KeywordDo);
-        setState(169);
-        statementList();
         setState(170);
+        match(KeywordDo);
+        setState(171);
+        statementList();
+        setState(172);
         match(KeywordRof);
 
     } catch (RecognitionException& e) {
@@ -1167,21 +1202,21 @@ TSyrecParser::IfStatementContext* TSyrecParser::ifStatement() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(172);
-        match(KeywordIf);
-        setState(173);
-        antlrcpp::downCast<IfStatementContext*>(localCtx)->guardCondition = expression();
         setState(174);
-        match(KeywordThen);
+        match(KeywordIf);
         setState(175);
-        antlrcpp::downCast<IfStatementContext*>(localCtx)->trueBranchStmts = statementList();
+        antlrcpp::downCast<IfStatementContext*>(localCtx)->guardCondition = expression();
         setState(176);
-        match(KeywordElse);
+        match(KeywordThen);
         setState(177);
-        antlrcpp::downCast<IfStatementContext*>(localCtx)->falseBranchStmts = statementList();
+        antlrcpp::downCast<IfStatementContext*>(localCtx)->trueBranchStmts = statementList();
         setState(178);
-        match(KeywordFi);
+        match(KeywordElse);
         setState(179);
+        antlrcpp::downCast<IfStatementContext*>(localCtx)->falseBranchStmts = statementList();
+        setState(180);
+        match(KeywordFi);
+        setState(181);
         antlrcpp::downCast<IfStatementContext*>(localCtx)->matchingGuardExpression = expression();
 
     } catch (RecognitionException& e) {
@@ -1229,7 +1264,7 @@ TSyrecParser::UnaryStatementContext* TSyrecParser::unaryStatement() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(181);
+        setState(183);
         antlrcpp::downCast<UnaryStatementContext*>(localCtx)->unaryOp = _input->LT(1);
         const std::size_t lookahead                                   = _input->LA(1);
         if (!((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 14) != 0))) {
@@ -1238,7 +1273,7 @@ TSyrecParser::UnaryStatementContext* TSyrecParser::unaryStatement() {
             _errHandler->reportMatch(this);
             consume();
         }
-        setState(182);
+        setState(184);
         signal();
 
     } catch (RecognitionException& e) {
@@ -1290,9 +1325,9 @@ TSyrecParser::AssignStatementContext* TSyrecParser::assignStatement() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(184);
+        setState(186);
         signal();
-        setState(185);
+        setState(187);
         antlrcpp::downCast<AssignStatementContext*>(localCtx)->assignmentOp = _input->LT(1);
         const std::size_t lookahead                                         = _input->LA(1);
         if (!((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 112) != 0))) {
@@ -1301,7 +1336,7 @@ TSyrecParser::AssignStatementContext* TSyrecParser::assignStatement() {
             _errHandler->reportMatch(this);
             consume();
         }
-        setState(186);
+        setState(188);
         expression();
 
     } catch (RecognitionException& e) {
@@ -1333,11 +1368,11 @@ TSyrecParser::SwapStatementContext* TSyrecParser::swapStatement() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(188);
-        antlrcpp::downCast<SwapStatementContext*>(localCtx)->lhsOperand = signal();
-        setState(189);
-        match(OpSwap);
         setState(190);
+        antlrcpp::downCast<SwapStatementContext*>(localCtx)->lhsOperand = signal();
+        setState(191);
+        match(OpSwap);
+        setState(192);
         antlrcpp::downCast<SwapStatementContext*>(localCtx)->rhsOperand = signal();
 
     } catch (RecognitionException& e) {
@@ -1369,7 +1404,7 @@ TSyrecParser::SkipStatementContext* TSyrecParser::skipStatement() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(192);
+        setState(194);
         match(KeywordSkip);
 
     } catch (RecognitionException& e) {
@@ -1405,40 +1440,40 @@ TSyrecParser::SignalContext* TSyrecParser::signal() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(194);
+        setState(196);
         match(Ident);
-        setState(201);
+        setState(203);
         _errHandler->sync(this);
         std::size_t lookahead = _input->LA(1);
         while (lookahead == OpenSBracket) {
-            setState(195);
+            setState(197);
             match(OpenSBracket);
-            setState(196);
+            setState(198);
             antlrcpp::downCast<SignalContext*>(localCtx)->expressionContext = expression();
             antlrcpp::downCast<SignalContext*>(localCtx)->accessedDimensions.push_back(antlrcpp::downCast<SignalContext*>(localCtx)->expressionContext);
-            setState(197);
+            setState(199);
             match(CloseSBracket);
-            setState(203);
+            setState(205);
             _errHandler->sync(this);
             lookahead = _input->LA(1);
         }
-        setState(210);
+        setState(212);
         _errHandler->sync(this);
 
         lookahead = _input->LA(1);
         if (lookahead == BitrangeStartPrefix) {
-            setState(204);
+            setState(206);
             match(BitrangeStartPrefix);
-            setState(205);
+            setState(207);
             antlrcpp::downCast<SignalContext*>(localCtx)->bitStart = number();
-            setState(208);
+            setState(210);
             _errHandler->sync(this);
 
             lookahead = _input->LA(1);
             if (lookahead == BitrangEndPrefix) {
-                setState(206);
+                setState(208);
                 match(BitrangEndPrefix);
-                setState(207);
+                setState(209);
                 antlrcpp::downCast<SignalContext*>(localCtx)->bitRangeEnd = number();
             }
         }
@@ -1521,13 +1556,13 @@ TSyrecParser::ExpressionContext* TSyrecParser::expression() {
     });
 
     try {
-        setState(217);
+        setState(219);
         _errHandler->sync(this);
         switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 18, _ctx)) {
             case 1: {
                 localCtx = _tracker.createInstance<ExpressionFromNumberContext>(localCtx);
                 enterOuterAlt(localCtx, 1);
-                setState(212);
+                setState(214);
                 number();
                 break;
             }
@@ -1535,7 +1570,7 @@ TSyrecParser::ExpressionContext* TSyrecParser::expression() {
             case 2: {
                 localCtx = _tracker.createInstance<ExpressionFromSignalContext>(localCtx);
                 enterOuterAlt(localCtx, 2);
-                setState(213);
+                setState(215);
                 signal();
                 break;
             }
@@ -1543,7 +1578,7 @@ TSyrecParser::ExpressionContext* TSyrecParser::expression() {
             case 3: {
                 localCtx = _tracker.createInstance<ExpressionFromBinaryExpressionContext>(localCtx);
                 enterOuterAlt(localCtx, 3);
-                setState(214);
+                setState(216);
                 binaryExpression();
                 break;
             }
@@ -1551,7 +1586,7 @@ TSyrecParser::ExpressionContext* TSyrecParser::expression() {
             case 4: {
                 localCtx = _tracker.createInstance<ExpressionFromUnaryExpressionContext>(localCtx);
                 enterOuterAlt(localCtx, 4);
-                setState(215);
+                setState(217);
                 unaryExpression();
                 break;
             }
@@ -1559,7 +1594,7 @@ TSyrecParser::ExpressionContext* TSyrecParser::expression() {
             case 5: {
                 localCtx = _tracker.createInstance<ExpressionFromShiftExpressionContext>(localCtx);
                 enterOuterAlt(localCtx, 5);
-                setState(216);
+                setState(218);
                 shiftExpression();
                 break;
             }
@@ -1665,11 +1700,11 @@ TSyrecParser::BinaryExpressionContext* TSyrecParser::binaryExpression() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(219);
-        match(OpenRBracket);
-        setState(220);
-        antlrcpp::downCast<BinaryExpressionContext*>(localCtx)->lhsOperand = expression();
         setState(221);
+        match(OpenRBracket);
+        setState(222);
+        antlrcpp::downCast<BinaryExpressionContext*>(localCtx)->lhsOperand = expression();
+        setState(223);
         antlrcpp::downCast<BinaryExpressionContext*>(localCtx)->binaryOperation = _input->LT(1);
         const std::size_t lookahead                                             = _input->LA(1);
         if (!((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 452927360) != 0))) {
@@ -1678,9 +1713,9 @@ TSyrecParser::BinaryExpressionContext* TSyrecParser::binaryExpression() {
             _errHandler->reportMatch(this);
             consume();
         }
-        setState(222);
+        setState(224);
         antlrcpp::downCast<BinaryExpressionContext*>(localCtx)->rhsOperand = expression();
-        setState(223);
+        setState(225);
         match(CloseRBracket);
 
     } catch (RecognitionException& e) {
@@ -1724,7 +1759,7 @@ TSyrecParser::UnaryExpressionContext* TSyrecParser::unaryExpression() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(225);
+        setState(227);
         antlrcpp::downCast<UnaryExpressionContext*>(localCtx)->unaryOperation = _input->LT(1);
         const std::size_t lookahead                                           = _input->LA(1);
         if (lookahead != OpLogicalNegation && lookahead != OpBitwiseNegation) {
@@ -1733,7 +1768,7 @@ TSyrecParser::UnaryExpressionContext* TSyrecParser::unaryExpression() {
             _errHandler->reportMatch(this);
             consume();
         }
-        setState(226);
+        setState(228);
         expression();
 
     } catch (RecognitionException& e) {
@@ -1781,11 +1816,11 @@ TSyrecParser::ShiftExpressionContext* TSyrecParser::shiftExpression() {
 
     try {
         enterOuterAlt(localCtx, 1);
-        setState(228);
-        match(OpenRBracket);
-        setState(229);
-        expression();
         setState(230);
+        match(OpenRBracket);
+        setState(231);
+        expression();
+        setState(232);
         antlrcpp::downCast<ShiftExpressionContext*>(localCtx)->shiftOperation = _input->LT(1);
         if (const std::size_t lookahead = _input->LA(1); lookahead != OpLeftShift && lookahead != OpRightShift) {
             antlrcpp::downCast<ShiftExpressionContext*>(localCtx)->shiftOperation = _errHandler->recoverInline(this);
@@ -1793,9 +1828,9 @@ TSyrecParser::ShiftExpressionContext* TSyrecParser::shiftExpression() {
             _errHandler->reportMatch(this);
             consume();
         }
-        setState(231);
+        setState(233);
         number();
-        setState(232);
+        setState(233);
         match(CloseRBracket);
 
     } catch (RecognitionException& e) {

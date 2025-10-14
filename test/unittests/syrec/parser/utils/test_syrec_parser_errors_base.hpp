@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "core/configurable_options.hpp"
 #include "core/syrec/parser/utils/base_syrec_ir_entity_stringifier.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
@@ -49,7 +50,7 @@ namespace syrec_parser_error_tests {
             expectedErrorMessages.emplace_back(Message::Type::Error, "SYNTAX", messagePosition, messageText);
         }
 
-        void performTestExecution(const std::string& stringifiedSyrecProgramToProcess, const syrec::ReadProgramSettings& userProvidedParserConfiguration = syrec::ReadProgramSettings()) const {
+        void performTestExecution(const std::string& stringifiedSyrecProgramToProcess, const syrec::ConfigurableOptions& userProvidedParserConfiguration = syrec::ConfigurableOptions()) const {
             syrec::Program program;
 
             std::string aggregateOfDetectedErrorsDuringProcessingOfSyrecProgram;

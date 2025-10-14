@@ -14,8 +14,9 @@
 #include "algorithms/synthesis/internal_qubit_label_builder.hpp"
 #include "algorithms/synthesis/statement_execution_order_stack.hpp"
 #include "core/annotatable_quantum_computation.hpp"
-#include "core/properties.hpp"
+#include "core/configurable_options.hpp"
 #include "core/qubit_inlining_stack.hpp"
+#include "core/statistics.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/number.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"
@@ -113,7 +114,23 @@ namespace {
     }
 
     [[nodiscard]] unsigned determineNumberOfBitsRequiredToStoreValue(const unsigned value) {
-        return static_cast<unsigned>(std::bit_width(value));
+        return value == 0U ? 1U : static_cast<unsigned>(std::bit_width(value));
+    }
+
+    [[nodiscard]] constexpr bool isBinaryOperationLogicalOperation(const syrec::BinaryExpression::BinaryOperation binaryOperation) {
+        return binaryOperation == syrec::BinaryExpression::BinaryOperation::LogicalAnd || binaryOperation == syrec::BinaryExpression::BinaryOperation::LogicalOr;
+    }
+
+    [[nodiscard]] std::size_t determinePositionOfFirstOneBitInValueStartingFromLSB(unsigned value) {
+        // We could use the https://en.cppreference.com/w/cpp/numeric/countr_zero.html function to implement the same functionality. However, said function will be detected as a typo by the pre-commit checks.
+        // To fix this false positive typo one would have to add a separate configuration file for the typo checks (see https://github.com/crate-ci/typos/discussions/907). One could also use std::log2(...)
+        // but using such a complex function for rather simple functionality seems overkill.
+        std::size_t positionOfFirstOneBit = 0U;
+        while ((value & 1U) == 0U) {
+            ++positionOfFirstOneBit;
+            value >>= 1U;
+        }
+        return positionOfFirstOneBit;
     }
 } // namespace
 
@@ -130,7 +147,7 @@ namespace syrec {
         modules.push(mainModule);
     }
 
-    bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
+    bool SyrecSynthesis::synthesize(SyrecSynthesis* synthesizer, const Program& program, const ConfigurableOptions& settings, Statistics* optionalRecordedStatistics) {
         if (synthesizer == nullptr) {
             std::cerr << "Please use a valid synthesizer instance when trying to synthesis a SyReC program\n";
             return false;
@@ -157,14 +174,11 @@ namespace syrec {
             return false;
         }
 
-        // Run-time measuring
-        const TimeStamp simulationStartTime = std::chrono::steady_clock::now();
-
         // Validation of optional defined main module identifier of synthesis settings
         const std::string&         defaultMainModuleIdentifier = "main";
         std::optional<std::string> expectedMainModuleIdentifier;
-        if (settings != nullptr && settings->get<std::string>(MAIN_MODULE_IDENTIFIER_CONFIG_KEY).has_value()) {
-            expectedMainModuleIdentifier = settings->get<std::string>(MAIN_MODULE_IDENTIFIER_CONFIG_KEY);
+        if (settings.optionalProgramEntryPointModuleIdentifier.has_value()) {
+            expectedMainModuleIdentifier = settings.optionalProgramEntryPointModuleIdentifier;
             if (expectedMainModuleIdentifier.value().empty()) {
                 std::cerr << "Expected main module identifier defined in synthesis settings must have a value\n";
                 return false;
@@ -181,6 +195,10 @@ namespace syrec {
                 expectedMainModuleIdentifier = program.modules().back()->name;
             }
         }
+
+        synthesizer->integerConstantTruncationOperation = settings.integerConstantTruncationOperation;
+        // Run-time measuring
+        const TimeStamp simulationStartTime = std::chrono::steady_clock::now();
 
         // get the main module
         Module::ptr main;
@@ -210,7 +228,7 @@ namespace syrec {
 
         // declare as top module
         synthesizer->setMainModule(main);
-        if (settings != nullptr && settings->get<bool>(GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY, false)) {
+        if (settings.generatedInlinedQubitDebugInformation) {
             auto mainModuleCallStackEntry         = QubitInliningStack::QubitInliningStackEntry();
             mainModuleCallStackEntry.targetModule = main;
 
@@ -241,10 +259,10 @@ namespace syrec {
             return false;
         }
 
-        if (statistics != nullptr) {
-            const TimeStamp simulationEndTime = std::chrono::steady_clock::now();
-            const auto      simulationRunTime = std::chrono::duration_cast<std::chrono::milliseconds>(simulationEndTime - simulationStartTime);
-            statistics->set("runtime", static_cast<double>(simulationRunTime.count()));
+        if (optionalRecordedStatistics != nullptr) {
+            const TimeStamp simulationEndTime                 = std::chrono::steady_clock::now();
+            const auto      simulationRunTime                 = std::chrono::duration_cast<std::chrono::milliseconds>(simulationEndTime - simulationStartTime);
+            optionalRecordedStatistics->runtimeInMilliseconds = static_cast<double>(simulationRunTime.count());
         }
         return synthesisOfMainModuleOk;
     }
@@ -557,8 +575,17 @@ namespace syrec {
         std::vector<qc::Qubit> d;
         opRhsLhsExpression(statement.rhs, d);
 
+        const std::size_t      numAccessedBitsInLhsOperand = dataOfEvaluatedLhsOperand.evaluatedBitrangeAccess.getNumberOfAccessedBits();
         std::vector<qc::Qubit> rhs;
-        synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, rhs, qubitsStoringSelectedValueOfVariable, statement.assignOperation);
+
+        // In some cases the expected bitwidth of the assigned to variable parts of the assignment are not known to the parser (e.g. when a loop variable is used in either the dimension access of bitrange component of a variable access) that
+        // in combination with the assumed default bitwidth of compile time integer constants and the requirement that the operands on the left and right hand side of the assignment have the same bitwidth can result in a synthesis error if no
+        // truncation of integer constant is performed. An example for such a case is the SyReC module 'module main(inout a(4)) for $i = 0 to 2 do a.$i:($i + 1) += 120 rof'.
+        // The bitwidth of the assigned to variable parts is equal to 2 while the bitwidth of the right hand side of the expression is 32 due to the assumed bitwidth chosen for integer constants. To satisfy the invariant that both operands need
+        // to have the same bitwidth, a truncation of the integer constant to the expected bitwidth of 2 needs to be performed.
+        synthesisOfAssignmentOk &= SyrecSynthesis::onExpression(statement.rhs, numAccessedBitsInLhsOperand, rhs, qubitsStoringSelectedValueOfVariable, statement.assignOperation);
+        // We should validate that the invariant that both sides of the assignment have the same bitwidth is satisfied but due to some weird implementation details of the line aware synthesis, which might be modified to fix issue #280, this cannot be done without risking
+        // that some assignment variants cannot be synthesized anymore. This hopefully changes in the future.
         opVec.clear();
 
         switch (statement.assignOperation) {
@@ -597,7 +624,7 @@ namespace syrec {
 
         // calculate expression
         std::vector<qc::Qubit> guardExpressionQubits;
-        bool                   synthesisOfGuardExprOk = onExpression(statement.condition, guardExpressionQubits, {}, guardExpressionTopLevelOperation);
+        bool                   synthesisOfGuardExprOk = onExpression(statement.condition, 1U, guardExpressionQubits, {}, guardExpressionTopLevelOperation);
         assert(guardExpressionQubits.size() == 1U);
 
         // We need to create the ancillary qubit used to store the synthesis result of the variable expression since the onExpression(...) function does not create this ancillary qubit
@@ -693,28 +720,49 @@ namespace syrec {
         return true;
     }
 
-    bool SyrecSynthesis::onExpression(const Expression::ptr& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, const OperationVariant operationVariant) {
-        if (auto const* numeric = dynamic_cast<NumericExpression*>(expression.get()); numeric != nullptr) {
-            return onExpression(*numeric, lines);
+    bool SyrecSynthesis::onExpression(const Expression::ptr& expression, const std::optional<unsigned>& optionalExpectedOperandBitwidth, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, const OperationVariant operationVariant) {
+        // At the moment it makes no difference whether the evaluation of compile time constant expressions (CTCE) used as the operands of the current expression is performed here or in the overloaded for the concrete
+        // expression type, if it were performed in the latter the code for the evaluation would be smaller since only the specific expression type needs to be handled but no other improvement would result from this.
+        // However, we would still need a generic function that is able to handle all supported expression types.
+        // If arithmetic, logical or other optimizations are performed in the future then moving the evaluation of CTCEs into the overload for the concrete expression type would make sense.
+        //
+        // Why do we need to perform the evaluation of CTCE which we assume to also perform a truncation of compile time integer constant values before trying to synthesize the expression itself?
+        // Let us use the SyReC module 'module main(inout a(2)) for $i = 0 to 2 step 1 do a += (($i + 2) + 3) rof' as an example.
+        //
+        // If we would not have evaluated the CTCE before trying to synthesize the topmost binary expression '(($i + 2) + 3)' then the following would have happened:
+        // Due to the SyrecSynthesis::onExpression(...) variants only allowing to return the result in the form of the qubits storing said result, compile time constant integer values cannot be propagated up in the expression tree.
+        // Additionally, since the parser might not be able to determine the expected operand bitwidth for the operands of an expression (e.g. if a loop variable is used in the dimension or bit range component of a variable access) then
+        // a default bitwidth for compile time integer constant values has to be assumed which is equal to the maximum supported bitwidth (=32). Thus to propagate this integer constant in the expression tree, 32 ancillary qubits are needed.
+        // However, since all operands of a SyReC operation with more than two operands must have the same bitwidth, only 2 ancillary qubits would be needed to propagate the integer constant.
+        //
+        // The assumed bitwidth for integer constant values leads to a second problem, if no truncation is performed, that can be explained with the example 'module main(inout a(1), in b(4)) for $i = 0 to 2 step 1 do a += (b.$i:($i + 1) > 120) rof'.
+        // Since the bitwidth of the operand 'b.$i:($i + 1)' is only known during synthesis no truncation of any integer constant value in the right hand side operand of the binary expression 'b.$i:($i + 1) > 120' is performed thus the bitwidth of the operand '120'
+        // is assumed to be equal to 32 which in turn will lead to a synthesis error due to the operand bitwidths not being equal (lhs=2, rhs=32) if no truncation of integer constant values is performed during the evaluation of CTCEs.
+        const Expression::ptr simplifiedExpr = performCompileTimeSimplificationsOfExpression(expression, loopMap).value_or(expression);
+        if (simplifiedExpr == nullptr) {
+            return false;
         }
-        if (auto const* variable = dynamic_cast<VariableExpression*>(expression.get()); variable != nullptr) {
-            return onExpression(*variable, lines);
+        if (auto const* exprAsNumericExpr = dynamic_cast<NumericExpression*>(simplifiedExpr.get()); exprAsNumericExpr != nullptr) {
+            return onExpression(*exprAsNumericExpr, optionalExpectedOperandBitwidth, lines);
         }
-        if (auto const* binary = dynamic_cast<BinaryExpression*>(expression.get()); binary != nullptr) {
-            return onExpression(*binary, lines, lhsStat, operationVariant);
+        if (auto const* exprAsVariableExpr = dynamic_cast<VariableExpression*>(simplifiedExpr.get()); exprAsVariableExpr != nullptr) {
+            return onExpression(*exprAsVariableExpr, lines);
         }
-        if (auto const* shift = dynamic_cast<ShiftExpression*>(expression.get()); shift != nullptr) {
-            return onExpression(*shift, lines, lhsStat, operationVariant);
+        if (auto const* exprAsBinaryExpr = dynamic_cast<BinaryExpression*>(simplifiedExpr.get()); exprAsBinaryExpr != nullptr) {
+            return onExpression(*exprAsBinaryExpr, lines, lhsStat, operationVariant);
         }
-        if (auto const* unary = dynamic_cast<UnaryExpression*>(expression.get()); unary != nullptr) {
-            return onExpression(*unary, lines, lhsStat, operationVariant);
+        if (auto const* exprAsShiftExpr = dynamic_cast<ShiftExpression*>(simplifiedExpr.get()); exprAsShiftExpr != nullptr) {
+            return onExpression(*exprAsShiftExpr, lines, lhsStat, operationVariant);
+        }
+        if (auto const* exprAsUnaryExpr = dynamic_cast<UnaryExpression*>(simplifiedExpr.get()); exprAsUnaryExpr != nullptr) {
+            return onExpression(*exprAsUnaryExpr, lines, lhsStat, operationVariant);
         }
         return false;
     }
 
     bool SyrecSynthesis::onExpression(const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, const OperationVariant operationVariant) {
         std::vector<qc::Qubit> lhs;
-        if (!onExpression(expression.lhs, lhs, lhsStat, operationVariant)) {
+        if (!onExpression(expression.lhs, std::nullopt, lhs, lhsStat, operationVariant)) {
             return false;
         }
 
@@ -732,7 +780,7 @@ namespace syrec {
 
     bool SyrecSynthesis::onExpression(const UnaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, const OperationVariant operationVariant) {
         std::vector<qc::Qubit> innerExprLines;
-        if (!onExpression(expression.expr, innerExprLines, lhsStat, operationVariant)) {
+        if (!onExpression(expression.expr, std::nullopt, innerExprLines, lhsStat, operationVariant)) {
             return false;
         }
 
@@ -751,8 +799,15 @@ namespace syrec {
         return synthesisOk && bitwiseNegation(annotatableQuantumComputation, lines);
     }
 
-    bool SyrecSynthesis::onExpression(const NumericExpression& expression, std::vector<qc::Qubit>& lines) {
-        return getConstantLines(expression.bitwidth(), expression.value->evaluate(loopMap), lines);
+    bool SyrecSynthesis::onExpression(const NumericExpression& expression, const std::optional<unsigned>& optionalExpectedOperandBitwidth, std::vector<qc::Qubit>& lines) {
+        if (const std::optional<unsigned> compileTimeValueOfNumericExpression = expression.value->tryEvaluate(loopMap); compileTimeValueOfNumericExpression.has_value()) {
+            if (optionalExpectedOperandBitwidth.has_value()) {
+                const unsigned truncatedCompileTimeValue = utils::truncateConstantValueToExpectedBitwidth(*compileTimeValueOfNumericExpression, *optionalExpectedOperandBitwidth, integerConstantTruncationOperation);
+                return getConstantLines(*optionalExpectedOperandBitwidth, truncatedCompileTimeValue, lines);
+            }
+            return getConstantLines(32U, *compileTimeValueOfNumericExpression, lines);
+        }
+        return false;
     }
 
     bool SyrecSynthesis::onExpression(const VariableExpression& expression, std::vector<qc::Qubit>& lines) {
@@ -760,10 +815,31 @@ namespace syrec {
     }
 
     bool SyrecSynthesis::onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, const OperationVariant operationVariant) {
+        if (expression.lhs == nullptr || expression.rhs == nullptr) {
+            return false;
+        }
+
+        const auto* const lhsOperandAsNumericExpr = dynamic_cast<const NumericExpression*>(expression.lhs.get());
+        const auto* const rhsOperandAsNumericExpr = dynamic_cast<const NumericExpression*>(expression.rhs.get());
+        // Subexpressions containing only values evaluable during synthesis should have been simplified, otherwise 32 ancillary qubits are generated for an arbitrary integer constant value (the default bitwidth assumed for such a value)
+        if (lhsOperandAsNumericExpr != nullptr && rhsOperandAsNumericExpr != nullptr) {
+            return false;
+        }
+
+        std::optional<unsigned> expectedOperandsBitwidth;
+        if (!isBinaryOperationLogicalOperation(expression.binaryOperation)) {
+            if (lhsOperandAsNumericExpr == nullptr && rhsOperandAsNumericExpr != nullptr) {
+                expectedOperandsBitwidth = expression.lhs->bitwidth();
+            } else if (lhsOperandAsNumericExpr != nullptr && rhsOperandAsNumericExpr == nullptr) {
+                expectedOperandsBitwidth = expression.rhs->bitwidth();
+            }
+        } else {
+            expectedOperandsBitwidth = 1U;
+        }
+
         std::vector<qc::Qubit> lhs;
         std::vector<qc::Qubit> rhs;
-
-        if (!onExpression(expression.lhs, lhs, lhsStat, operationVariant) || !onExpression(expression.rhs, rhs, lhsStat, operationVariant)) {
+        if (!onExpression(expression.lhs, expectedOperandsBitwidth, lhs, lhsStat, operationVariant) || !onExpression(expression.rhs, expectedOperandsBitwidth, rhs, lhsStat, operationVariant) || lhs.size() != rhs.size()) {
             return false;
         }
 
@@ -1239,6 +1315,82 @@ namespace syrec {
         return true;
     }
 
+    std::optional<Expression::ptr> SyrecSynthesis::performCompileTimeSimplificationsOfExpression(const Expression::ptr& expression, const Number::LoopVariableMapping& loopVariableValueLookup) {
+        if (expression == nullptr) {
+            return std::nullopt;
+        }
+
+        if (auto const* exprAsNumericExpr = dynamic_cast<NumericExpression*>(expression.get()); exprAsNumericExpr != nullptr) {
+            if (exprAsNumericExpr->value->isConstant()) {
+                return expression;
+            }
+            if (const std::optional<unsigned> compileTimeValueOfNumericExpression = exprAsNumericExpr->value->tryEvaluate(loopVariableValueLookup); compileTimeValueOfNumericExpression.has_value()) {
+                return std::make_shared<NumericExpression>(std::make_shared<Number>(*compileTimeValueOfNumericExpression), 32U);
+            }
+        } else if (auto const* exprAsVariableExpr = dynamic_cast<VariableExpression*>(expression.get()); exprAsVariableExpr != nullptr) {
+            return expression;
+        } else if (auto const* exprAsBinaryExpr = dynamic_cast<BinaryExpression*>(expression.get()); exprAsBinaryExpr != nullptr) {
+            const std::optional<Expression::ptr> simplifiedLhsOperand = performCompileTimeSimplificationsOfExpression(exprAsBinaryExpr->lhs, loopVariableValueLookup);
+            const std::optional<Expression::ptr> simplifiedRhsOperand = performCompileTimeSimplificationsOfExpression(exprAsBinaryExpr->rhs, loopVariableValueLookup);
+            if (!simplifiedLhsOperand.has_value() || !simplifiedRhsOperand.has_value()) {
+                return std::nullopt;
+            }
+
+            // In the future one could perform arithmetic or logical simplifications if only one of the operands evaluates to an integer constant at compile time.
+            // Currently we the compile time value of the binary expression is only calculated if both operands evaluate to an integer constant at compile time.
+            const auto* const simplifiedLhsOperandAsNumericExpr = dynamic_cast<const NumericExpression*>(simplifiedLhsOperand.value().get());
+            const auto* const simplifiedRhsOperandAsNumericExpr = dynamic_cast<const NumericExpression*>(simplifiedRhsOperand.value().get());
+            if (simplifiedLhsOperandAsNumericExpr != nullptr || simplifiedRhsOperandAsNumericExpr != nullptr) {
+                const std::optional<unsigned> compileTimeConstantValueOfLhsOperand = simplifiedLhsOperandAsNumericExpr != nullptr ? simplifiedLhsOperandAsNumericExpr->value.get()->tryEvaluate(loopVariableValueLookup) : std::nullopt;
+                const std::optional<unsigned> compileTimeConstantValueOfRhsOperand = simplifiedRhsOperandAsNumericExpr != nullptr ? simplifiedRhsOperandAsNumericExpr->value.get()->tryEvaluate(loopVariableValueLookup) : std::nullopt;
+                if (const std::optional<unsigned> compileTimeValueOfExpr = utils::tryEvaluate(compileTimeConstantValueOfLhsOperand, exprAsBinaryExpr->binaryOperation, compileTimeConstantValueOfRhsOperand); compileTimeValueOfExpr.has_value()) {
+                    return std::make_shared<NumericExpression>(std::make_shared<Number>(*compileTimeValueOfExpr), 32U);
+                }
+            }
+            // Even if we cannot determine the compile time value of the binary expression we could still generate a simplified expression if the simplification of the operands of the original expression resulted in simplified operands.
+            if (*simplifiedLhsOperand != exprAsBinaryExpr->lhs || *simplifiedRhsOperand != exprAsBinaryExpr->rhs) {
+                return std::make_shared<BinaryExpression>(*simplifiedLhsOperand, exprAsBinaryExpr->binaryOperation, *simplifiedRhsOperand);
+            }
+            return expression;
+        } else if (auto const* exprAsShiftExpr = dynamic_cast<ShiftExpression*>(expression.get()); exprAsShiftExpr != nullptr) {
+            const std::optional<Expression::ptr> simplifiedToBeShiftedOperand = performCompileTimeSimplificationsOfExpression(exprAsShiftExpr->lhs, loopVariableValueLookup);
+            if (!simplifiedToBeShiftedOperand.has_value()) {
+                return std::nullopt;
+            }
+
+            if (const auto* const simplifiedToBeShiftedOperandAsNumericExpr = dynamic_cast<const NumericExpression*>(simplifiedToBeShiftedOperand.value().get()); simplifiedToBeShiftedOperandAsNumericExpr != nullptr) {
+                const std::optional<unsigned> compileTimeConstantValueOfToBeShiftedOperand = simplifiedToBeShiftedOperandAsNumericExpr->value->tryEvaluate(loopVariableValueLookup);
+                const std::optional<unsigned> compileTimeConstantValueOfShiftAmount        = exprAsShiftExpr->rhs->tryEvaluate(loopVariableValueLookup);
+                if (const std::optional<unsigned> compileTimeValueOfExpr = utils::tryEvaluate(compileTimeConstantValueOfToBeShiftedOperand, exprAsShiftExpr->shiftOperation, compileTimeConstantValueOfShiftAmount); compileTimeValueOfExpr.has_value()) {
+                    return std::make_shared<NumericExpression>(std::make_shared<Number>(*compileTimeValueOfExpr), 32U);
+                }
+            }
+            // Similarly to the binary expression a new shift expression can be generated if the simplification of the lhs operand of the original shift expression could be simplifiied.
+            if (*simplifiedToBeShiftedOperand != exprAsShiftExpr->lhs) {
+                return std::make_shared<ShiftExpression>(*simplifiedToBeShiftedOperand, exprAsShiftExpr->shiftOperation, exprAsShiftExpr->rhs);
+            }
+            return expression;
+        } else if (auto const* exprAsUnaryExpr = dynamic_cast<UnaryExpression*>(expression.get()); exprAsUnaryExpr != nullptr) {
+            const std::optional<Expression::ptr> simplifiedUnaryExprOperand = performCompileTimeSimplificationsOfExpression(exprAsUnaryExpr->expr, loopVariableValueLookup);
+            if (!simplifiedUnaryExprOperand.has_value()) {
+                return std::nullopt;
+            }
+
+            if (const auto* const simplifiedUnaryEpxrAsNumericExpr = dynamic_cast<const NumericExpression*>(simplifiedUnaryExprOperand.value().get()); simplifiedUnaryEpxrAsNumericExpr != nullptr) {
+                const std::optional<unsigned> compileTimeConstantValueOfUnaryExprOperand = simplifiedUnaryEpxrAsNumericExpr->value->tryEvaluate(loopVariableValueLookup);
+                if (const std::optional<unsigned> compileTimeConstantValueOfUnaryExpr = utils::tryEvaluate(exprAsUnaryExpr->unaryOperation, compileTimeConstantValueOfUnaryExprOperand); compileTimeConstantValueOfUnaryExpr.has_value()) {
+                    return std::make_shared<NumericExpression>(std::make_shared<Number>(*compileTimeConstantValueOfUnaryExpr), 32U);
+                }
+            }
+            // If the compile time value of the unary expression cannot be determined one can create a new unary expression if its operand could be simplified.
+            if (*simplifiedUnaryExprOperand != exprAsUnaryExpr->expr) {
+                return std::make_shared<UnaryExpression>(exprAsUnaryExpr->unaryOperation, *simplifiedUnaryExprOperand);
+            }
+            return expression;
+        }
+        return std::nullopt;
+    }
+
     bool SyrecSynthesis::createQuantumRegistersForSyrecVariables(const Variable::vec& variables) const {
         if (firstVariableQubitOffsetLookup == nullptr) {
             return false;
@@ -1333,7 +1485,7 @@ namespace syrec {
         for (qc::Qubit firstAncillaryQubit = *actualQubitIndexForFirstAddedAncillaryQubit; firstAncillaryQubit < *actualQubitIndexForFirstAddedAncillaryQubit + bitwidth && couldAncillaryQubitsBeAdded; ++firstAncillaryQubit) {
             lines.emplace_back(firstAncillaryQubit);
         }
-        return true;
+        return couldAncillaryQubitsBeAdded;
     }
 
     std::optional<AssignStatement::AssignOperation> SyrecSynthesis::tryMapBinaryToAssignmentOperation(BinaryExpression::BinaryOperation binaryOperation) noexcept {
@@ -1682,7 +1834,7 @@ namespace syrec {
 
         // Determine how many qubits are necessary to store the unrolled index to any element in the accessed variable
         const unsigned numElementsInAccessedVariable                               = determineNumberOfElementsInVariable(accessedVariable);
-        const unsigned numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable = determineNumberOfBitsRequiredToStoreValue(numElementsInAccessedVariable);
+        const unsigned numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable = determineNumberOfBitsRequiredToStoreValue(numElementsInAccessedVariable - 1U);
 
         // Generate ancillary qubits storing unrolled index
         bool synthesisOk = getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, containerToStoreUnrolledIndex);
@@ -1696,13 +1848,12 @@ namespace syrec {
             // if no bitwidth restriction exists (i.e. defined by the bitwidth of the assigned to variable of an assignment). However, to calculate the unrolled index one or more addition/multiplication operations need to be synthesized
             // with the addition operation requiring that both summands have the same bitwidth thus we need to truncate the bitwidth and value of the integer constant to the required bitwidth which is equal to the bitwidth required to
             // store the index to any value of the accessed variable (i.e. for a variable a[2][3](<BITWIDTH>) one would need 3 bits to store the maximum possible index value 5 [assuming zero-based indexing]).
-            if (const auto* userDefinedIndexExprAsNumericOne = dynamic_cast<NumericExpression*>(accessedIndexPerDimension.at(i).get()); userDefinedIndexExprAsNumericOne != nullptr && userDefinedIndexExprAsNumericOne->bitwidth() > numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) {
+            if (const auto* userDefinedIndexExprAsNumericOne = dynamic_cast<NumericExpression*>(accessedIndexPerDimension.at(i).get()); userDefinedIndexExprAsNumericOne != nullptr) {
                 const std::optional<unsigned> constantValueOfExprEvaluatedToCompileTime = evaluatedVariableAccess.evaluatedDimensionAccess.accessedValuePerDimension.at(i);
                 assert(constantValueOfExprEvaluatedToCompileTime.has_value());
 
-                // TODO: Integer truncation operation is currently hard coded but option from synthesis settings should be use if available in the future
-                unsigned evaluatedCompileTimeValueOfExpr = utils::truncateConstantValueToExpectedBitwidth(*constantValueOfExprEvaluatedToCompileTime, numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, utils::IntegerConstantTruncationOperation::Modulo);
-                evaluatedCompileTimeValueOfExpr          = utils::truncateConstantValueToExpectedBitwidth(evaluatedCompileTimeValueOfExpr * offsetToNextElementOfDimensionInNumberOfArrayElements, numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, utils::IntegerConstantTruncationOperation::Modulo);
+                unsigned evaluatedCompileTimeValueOfExpr = utils::truncateConstantValueToExpectedBitwidth(*constantValueOfExprEvaluatedToCompileTime, numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, integerConstantTruncationOperation);
+                evaluatedCompileTimeValueOfExpr          = utils::truncateConstantValueToExpectedBitwidth(evaluatedCompileTimeValueOfExpr * offsetToNextElementOfDimensionInNumberOfArrayElements, numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, integerConstantTruncationOperation);
                 // We might be able to compute parts of the unrolled index at compile time.
                 if (compileTimeValueOfUnrolledIndex.has_value()) {
                     compileTimeValueOfUnrolledIndex = *compileTimeValueOfUnrolledIndex + evaluatedCompileTimeValueOfExpr;
@@ -1713,20 +1864,21 @@ namespace syrec {
             } else {
                 compileTimeValueOfUnrolledIndex.reset();
 
-                const std::size_t      numOperationsPriorToSynthesisOfExpr = annotatableQuantumComputation.getNops();
+                const auto             numQubitsRequiredToStoreAnyIndexForCurrentDimension = static_cast<std::size_t>(determineNumberOfBitsRequiredToStoreValue(accessedVariable.dimensions.at(i) - 1U));
+                const std::size_t      numOperationsPriorToSynthesisOfExpr                 = annotatableQuantumComputation.getNops();
                 std::vector<qc::Qubit> qubitsStoringSynthesizedExprOfDimension;
                 // We do not need to manually generate ancillary qubits here since they are generated during the synthesis of the expression (or qubits of a variable simply copied to our container in case of a variable access with only compile time constant expressions)
-                if (!onExpression(accessedIndexPerDimension.at(i), qubitsStoringSynthesizedExprOfDimension, {}, BinaryExpression::BinaryOperation::Add)) {
+                if (!onExpression(accessedIndexPerDimension.at(i), numQubitsRequiredToStoreAnyIndexForCurrentDimension, qubitsStoringSynthesizedExprOfDimension, {}, BinaryExpression::BinaryOperation::Add)) {
                     std::cerr << "Failed to synthesis index expression for dimension " << std::to_string(i) << " of dimension access for variable access on variable " << accessedVariable.name << "\n";
                     return false;
                 }
 
                 const std::size_t numOperationsAfterSynthesisOfExpr = annotatableQuantumComputation.getNops();
-                // The bitwidth of synthesized expression could be smaller/larger than the one storing the unrolled index with the former needing to be truncated/enlarged so that the subsequent addition operation can be synthesized
-                // with the addition operation requiring the same operand bitwidth. Due to this condition, we think that bitwidth of the index expression should not be larger than the bitwidth required to store the unrolled index.
+                // The bitwidth of synthesized expression could be smaller/larger than both the bithwidth for storing the unrolled index as well as the maximum index for the currently processed dimension with the expression bitwidth needing to be truncated/enlarged so that the subsequent addition operation can be synthesized
+                // with the addition operation requiring the same operand bitwidth. Due to this condition, we think that bitwidth of the index expression should not be larger than the bitwidth required to store the unrolled index as well as the maximum index for the currently processed dimension.
                 // A smaller bitwidth should be allowed but needs to be padded to the required bitwidth.
-                if (qubitsStoringSynthesizedExprOfDimension.size() > numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) { // An index out of range value should have been already detected during the evaluation and validation of the dimension access that is assumed to have been performed prior to this call.
-                    std::cerr << "Bitwidth of expression (" << std::to_string(qubitsStoringSynthesizedExprOfDimension.size()) << ") can be at most be as large as the number of qubits (" << std::to_string(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable) << ") required to store the maximum possible unrolled index in the accessed variable " << accessedVariable.name << "\n";
+                if (qubitsStoringSynthesizedExprOfDimension.size() > numQubitsRequiredToStoreAnyIndexForCurrentDimension) { // An index out of range value should have been already detected during the evaluation and validation of the dimension access that is assumed to have been performed prior to this call.
+                    std::cerr << "Bitwidth of expression (" << std::to_string(qubitsStoringSynthesizedExprOfDimension.size()) << ") can be at most be as large as the number of qubits (" << std::to_string(numQubitsRequiredToStoreAnyIndexForCurrentDimension) << ") required to store the maximum index to an element in the " + std::to_string(i) + "-th dimension of the accessed variable " << accessedVariable.name << "\n";
                     return false;
                 }
 
@@ -1745,7 +1897,9 @@ namespace syrec {
                     qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex = qubitsStoringSynthesizedExprOfDimension;
                 } else if (std::has_single_bit(offsetToNextElementOfDimensionInNumberOfArrayElements)) {
                     numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
-                    synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) && leftShift(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, offsetToNextElementOfDimensionInNumberOfArrayElements / 2);
+                    const auto shiftAmount                                   = static_cast<unsigned>(determinePositionOfFirstOneBitInValueStartingFromLSB(offsetToNextElementOfDimensionInNumberOfArrayElements));
+                    synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) &&
+                                   leftShift(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, shiftAmount);
                     numOperationsAfterSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
                 } else {
                     numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
@@ -1798,7 +1952,7 @@ namespace syrec {
 
         bool              synthesisOk                                                 = true;
         const std::size_t numElementsInAccessedVariable                               = determineNumberOfElementsInVariable(accessedVariable);
-        const unsigned    numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable = determineNumberOfBitsRequiredToStoreValue(static_cast<unsigned>(numElementsInAccessedVariable));
+        const unsigned    numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable = determineNumberOfBitsRequiredToStoreValue(static_cast<unsigned>(numElementsInAccessedVariable - 1U));
 
         std::vector<qc::Qubit> ancillaryQubitsStoringCurrentIndex;
         synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, ancillaryQubitsStoringCurrentIndex);
@@ -1852,10 +2006,15 @@ namespace syrec {
 
         unsigned    currBitIdx = bitrangeStart;
         std::vector containerForAccessedBits(bitrangeStartAndEndIdxDifference + 1U, 0U);
-        for (qc::Qubit& bitIdx: containerForAccessedBits) {
+        for (unsigned& bitIdx: containerForAccessedBits) {
             bitIdx     = currBitIdx;
             currBitIdx = bitrangeStartIdxLargerThanEnd ? currBitIdx - 1U : currBitIdx + 1U;
         }
         return containerForAccessedBits;
     }
+
+    std::size_t SyrecSynthesis::EvaluatedBitrangeAccess::getNumberOfAccessedBits() const {
+        return static_cast<std::size_t>(bitrangeStart > bitrangeEnd ? bitrangeStart - bitrangeEnd : bitrangeEnd - bitrangeStart) + 1U;
+    }
+
 } // namespace syrec

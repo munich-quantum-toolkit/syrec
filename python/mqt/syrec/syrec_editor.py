@@ -57,6 +57,16 @@ class CircuitViewQubitLabel:
         return CircuitViewQubitLabel(associated_qubit, input_string[qubit_value_and_label_delimiter + 1 :].strip())
 
 
+def show_error_dialog(title: str, message: str) -> None:
+    msg = QtWidgets.QMessageBox()
+    msg.setBaseSize(QtCore.QSize(300, 200))
+    msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
+    msg.setText(message)
+    msg.setWindowTitle(title)
+    msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+    msg.exec()
+
+
 class CircuitLineItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
     def __init__(self, index: int, width: int, parent: QtWidgets.QWidget | None = None) -> None:
         QtWidgets.QGraphicsItemGroup.__init__(self, parent)
@@ -159,17 +169,19 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
         graphics_view_position_of_click: QtCore.QPoint = event.pos()
         item: QtWidgets.QGraphicsTextItem | None = self.itemAt(graphics_view_position_of_click)
 
-        # TODO: Should we log /display an error and not emit the event?
-        destringified_qubit_label: CircuitViewQubitLabel | None = (
-            CircuitViewQubitLabel.load_from_string(item.toPlainText())
-            if item is not None and isinstance(item, QtWidgets.QGraphicsTextItem)
-            else None
-        )
-        if (
-            destringified_qubit_label is not None
-            and destringified_qubit_label.associated_qubit not in self.non_ancillary_or_garbage_qubits_lookup
-        ):
-            self.qubit_label_clicked.emit(str(destringified_qubit_label))
+        if item is not None and isinstance(item, QtWidgets.QGraphicsTextItem):
+            destringified_qubit_label: CircuitViewQubitLabel | None = CircuitViewQubitLabel.load_from_string(
+                item.toPlainText()
+            )
+            if destringified_qubit_label is None:
+                show_error_dialog(
+                    "Error handling click on circuit view qubit label",
+                    "Failed to convert the circuit view qubit label\n"
+                    + item.toPlainText()
+                    + "\nto internal DTO. This should not happen!",
+                )
+            elif destringified_qubit_label.associated_qubit not in self.non_ancillary_or_garbage_qubits_lookup:
+                self.qubit_label_clicked.emit(str(destringified_qubit_label))
 
         super().mousePressEvent(event)
 
@@ -185,9 +197,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
             self.lines.append(line)
             self.scene().addItem(line)
 
-            circuit_view_qubit_label = CircuitViewQubitLabel(i, "<UNKNOWN>")
-
-            # TODO: What is io_qubit_label cannot be generated
+            circuit_view_qubit_label = CircuitViewQubitLabel(i, "")
             internal_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
                 i, syrec.qubit_label_type.internal
             )
@@ -319,16 +329,18 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
 
         self.stat_action.triggered.connect(self.stat)
 
-        self.synthesis_settings = syrec.properties()
-        self.synthesis_settings.set_bool(syrec.SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION, False)
+        self.configurable_parser_and_synthesis_options = syrec.configurable_options()
+        self.configurable_parser_and_synthesis_options_update_button = QtWidgets.QPushButton(
+            "Update configurable options", self
+        )
+        self.configurable_parser_and_synthesis_options_update_button.clicked.connect(self.update_configurable_options)
 
-        self.synthesis_settings_update_button = QtWidgets.QPushButton("Update synthesis settings", self)
-        self.synthesis_settings_update_button.clicked.connect(self.update_synthesis_settings)
-
-    def update_synthesis_settings(self) -> None:
-        update_synthesis_settings_modal = SynthesisSettingsUpdater(self, self.synthesis_settings)
-        update_synthesis_settings_modal.setWindowTitle("Update synthesis settings")
-        update_synthesis_settings_modal.exec()
+    def update_configurable_options(self) -> None:
+        update_configurable_options_modal = ConfigurableOptionsUpdated(
+            self, self.configurable_parser_and_synthesis_options
+        )
+        update_configurable_options_modal.setWindowTitle("Update configurable options")
+        update_configurable_options_modal.exec()
 
     def item_selected(self):
         # Disable sim and stat function
@@ -380,7 +392,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
 
         self.prog = syrec.program()
 
-        error_string = self.prog.read_from_string(self.getText())
+        error_string = self.prog.read_from_string(self.getText(), self.configurable_parser_and_synthesis_options)
 
         if error_string == "PARSE_STRING_FAILED":
             if self.parser_failed is not None:
@@ -394,9 +406,13 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
 
         self.annotatable_quantum_computation = syrec.annotatable_quantum_computation()
         if self.cost_aware_synthesis:
-            syrec.cost_aware_synthesis(self.annotatable_quantum_computation, self.prog, self.synthesis_settings)
+            syrec.cost_aware_synthesis(
+                self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options
+            )
         else:
-            syrec.line_aware_synthesis(self.annotatable_quantum_computation, self.prog, self.synthesis_settings)
+            syrec.line_aware_synthesis(
+                self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options
+            )
 
         self.sim_action.setDisabled(False)
         self.stat_action.setDisabled(False)
@@ -488,12 +504,10 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         final_inp = []
         final_out = []
 
-        settings = syrec.properties()
-
         for i in input_list:
             my_inp_bitset = syrec.n_bit_values_container(no_of_bits, i)
             my_out_bitset = syrec.n_bit_values_container(no_of_bits)
-            syrec.simple_simulation(my_out_bitset, self.annotatable_quantum_computation, my_inp_bitset, settings)
+            syrec.simple_simulation(my_out_bitset, self.annotatable_quantum_computation, my_inp_bitset)
 
             inp_bitset_with_ancillaes_set = syrec.n_bit_values_container(no_of_bits, i + bit1_mask)
             combination_inp.append(str(inp_bitset_with_ancillaes_set))
@@ -531,10 +545,15 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
                 if self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i)
                 else syrec.qubit_label_type.user_declared
             )
-            # TODO: What is io_qubit_label cannot be generated
             io_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
                 i, to_be_displayed_qubit_label_type
             )
+
+            # Fetching the matching label for a qubit of the annotatable quantum computation should not fail but in case it does, assume a default qubit label <UNKNOWN>.
+            # We still display the column in any case because otherwise the user would be shown a different number of qubits than the number of qubits that actual exist in the annotatable quantum computation.
+            if io_qubit_label is None:
+                io_qubit_label = "<UNKNOWN>"
+
             input_signal = QtWidgets.QTableWidgetItem(io_qubit_label)
             input_signal.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             self.table.setItem(1, i, QtWidgets.QTableWidgetItem(input_signal))
@@ -784,7 +803,7 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
         layout.addLayout(inline_stack_tree_layout)
 
         self.help_text_label = QtWidgets.QLabel(
-            "Select a garbage of ancillary qubit from the combobox or click on the label of the qubit in the circuit view. This information is not generated by default and needs to be enabled in the synthesis settings."
+            "Select a garbage or ancillary qubit from the combobox or click on the label of the qubit in the circuit view. This information is not generated by default and needs to be enabled in the configurable options."
         )
         self.help_text_label.setWordWrap(True)
         layout.addWidget(self.help_text_label, QtCore.Qt.AlignmentFlag.AlignCenter)
@@ -944,53 +963,40 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
 
         sorted_qubit_labels: list[str] = []
         for i in range(self.annotatable_quantum_computation.num_qubits):
-            # TODO: What is io_qubit_label cannot be generated
             internal_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
                 i, syrec.qubit_label_type.internal
             )
+
+            # Fetching the internal qubit label for a valid qubit of the annotatable quantum computation should not fail but wee handle the error case nevertheless.
             if internal_qubit_label is None:
-                msg = QtWidgets.QMessageBox()
-                msg.setBaseSize(QtCore.QSize(400, 200))
-                msg.setWindowTitle("Error generating qubit label")
-                msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-                msg.setInformativeText(
-                    "Failed to build internal qubit label for qubit " + str(i) + "! This should not happen."
+                show_error_dialog(
+                    "Error generating internal qubit label",
+                    "Failed to build internal qubit label for qubit " + str(i) + "! This should not happen.",
                 )
-                msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                msg.exec()
-                # TODO: How should we continue here?
                 continue
 
             if self.annotatable_quantum_computation.is_circuit_qubit_garbage(
                 i
             ) or self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i):
                 self.qubits_labels_of_local_variables_lookup.add(internal_qubit_label)
-                # TODO: Update comment
-                # With the assumption that the internal qubit label contains the current number (referred to as D) of qubits of the quantum computation
-                # in the label prefix we assume that a higher index in the qubit labels collection is equal to a higher value of D thus the qubit labels are already
-                # sorted in ascending order (based on the value of D).
                 sorted_qubit_labels.append(str(CircuitViewQubitLabel(i, internal_qubit_label)))
 
         self.selectable_qubit_labels_combobox.insertItems(0, sorted_qubit_labels)
         if self.selectable_qubit_labels_combobox.count() > 0:
             self.selectable_qubit_labels_combobox.setDisabled(False)
-            # TODO: The destringification should not but could fail
             destringified_combo_box_item_data: CircuitViewQubitLabel | None = CircuitViewQubitLabel.load_from_string(
                 self.selectable_qubit_labels_combobox.itemText(0)
             )
+
+            # The destringification should not but could fail but we handle the error case nevertheless.
             if destringified_combo_box_item_data is None:
-                msg = QtWidgets.QMessageBox()
-                msg.setBaseSize(QtCore.QSize(400, 200))
-                msg.setWindowTitle("Error setting initially select qubit in combobox")
-                msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-                msg.setInformativeText(
+                show_error_dialog(
+                    "Error setting initially select qubit in combobox",
                     "Failed to convert the text of the chosen default selected element of the combobox: \n"
                     + self.selectable_qubit_labels_combobox.itemText(0)
                     + "\n"
-                    + "into its internal DTO representation! This should not happen and indicates an internal error!"
+                    + "into its internal DTO representation! This should not happen and indicates an internal error!",
                 )
-                msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                msg.exec()
                 self.search_and_display_information_for_qubit(CircuitViewQubitLabel(-1, ""), True)
             else:
                 self.search_and_display_information_for_qubit(destringified_combo_box_item_data, True)
@@ -1016,18 +1022,13 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 str(qubit_internal_label_and_index)
             )
             if combobox_item_idx_matching_label == -1:
-                msg = QtWidgets.QMessageBox()
-                msg.setBaseSize(QtCore.QSize(300, 200))
-                msg.setWindowTitle("Error updating information for selected qubit")
-                msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-                msg.setInformativeText(
+                show_error_dialog(
+                    "Error updating information for selected qubit",
                     "Could not find matching item for qubit:\n"
                     + str(qubit_internal_label_and_index)
                     + "\nin combobox defining qubits for which inline information can be displayed!\n"
-                    + "This should not happen and is an internal error!"
+                    + "This should not happen and is an internal error!",
                 )
-                msg.exec()
                 self.selectable_qubit_labels_combobox.setCurrentIndex(-1)
                 self.qubit_info_widget.clear_and_hide_all_inline_data_controls()
                 return
@@ -1061,42 +1062,35 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         if new_combobox_idx == -1:
             return
 
-        # TODO: Get qubit for qubit label for select combobox item, 0 is only placeholder value
         destringified_combobox_label_data: CircuitViewQubitLabel | None = CircuitViewQubitLabel.load_from_string(
             self.selectable_qubit_labels_combobox.itemText(new_combobox_idx)
         )
         if destringified_combobox_label_data is not None:
             self.search_and_display_information_for_qubit(destringified_combobox_label_data, False)
         else:
-            msg = QtWidgets.QMessageBox()
-            msg.setBaseSize(QtCore.QSize(300, 200))
-            msg.setWindowTitle("Error during qubit label combobox selection change")
-            msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-            msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-            msg.setInformativeText(
+            show_error_dialog(
+                "Error during qubit label combobox selection change",
                 "Failed to map combobox item (index="
                 + str(new_combobox_idx)
                 + ") text:\n"
                 + self.selectable_qubit_labels_combobox.itemText(new_combobox_idx)
-                + "\nto internal DTO! This should not happen and is an internal error!"
+                + "\nto internal DTO! This should not happen and is an internal error!",
             )
-            msg.exec()
 
 
-class SynthesisSettingsUpdater(QtWidgets.QDialog):  # type: ignore[misc]
-    def __init__(self, parent: QtWidgets.QWidget, synthesis_settings: syrec.properties) -> None:
+class ConfigurableOptionsUpdated(QtWidgets.QDialog):  # type: ignore[misc]
+    def __init__(self, parent: QtWidgets.QWidget, configurable_settings: syrec.configurable_options) -> None:
         super().__init__()
         self.parent = parent
-        self.synthesis_settings = synthesis_settings
+        self.configurable_parser_and_synthesis_options = configurable_settings
 
         layout = QtWidgets.QVBoxLayout(self)
         expected_main_module_identifier_layout = QtWidgets.QHBoxLayout()
         expected_main_module_identifier_label = QtWidgets.QLabel("Expected main module identifier:")
         self.expected_main_module_identifier_textbox = QtWidgets.QLineEdit()
-        if synthesis_settings.contains(syrec.SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER):
-            self.expected_main_module_identifier_textbox.setText(
-                synthesis_settings.get_string(syrec.SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER)
-            )
+        if self.configurable_parser_and_synthesis_options is not None:
+            identifier: str | None = self.configurable_parser_and_synthesis_options.main_module_identifier
+            self.expected_main_module_identifier_textbox.setText(identifier or "")
 
         self.expected_main_module_identifier_textbox.setPlaceholderText(
             "Leave blank if last declared module of SyReC program should be used as main module..."
@@ -1111,7 +1105,7 @@ class SynthesisSettingsUpdater(QtWidgets.QDialog):  # type: ignore[misc]
         generate_inlined_qubit_debug_information_layout = QtWidgets.QHBoxLayout()
         generate_inlined_qubit_debug_information_label = QtWidgets.QLabel("Generate inlined qubit debug information:")
         self.generate_inlined_qubit_debug_information_checkbox = QtWidgets.QCheckBox()
-        if synthesis_settings.get_bool(syrec.SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION):
+        if self.configurable_parser_and_synthesis_options.generate_inlined_qubit_debug_information:
             self.generate_inlined_qubit_debug_information_checkbox.setCheckState(QtCore.Qt.CheckState.Checked)
         else:
             self.generate_inlined_qubit_debug_information_checkbox.setCheckState(QtCore.Qt.CheckState.Unchecked)
@@ -1121,6 +1115,53 @@ class SynthesisSettingsUpdater(QtWidgets.QDialog):  # type: ignore[misc]
             self.generate_inlined_qubit_debug_information_checkbox
         )
         generate_inlined_qubit_debug_information_layout.addStretch()
+
+        integer_constant_truncation_operation_selection_layout = QtWidgets.QHBoxLayout()
+        integer_constant_truncation_operation_combobox_label = QtWidgets.QLabel(
+            "Integer constant truncation operation:"
+        )
+        self.integer_constant_truncation_operation_combobox = QtWidgets.QComboBox()
+        self.integer_constant_truncation_operation_combobox.addItems([
+            syrec.integer_constant_truncation_operation.bitwise_and.name,
+            syrec.integer_constant_truncation_operation.modulo.name,
+        ])
+        to_be_selected_integer_constant_truncation_operation_idx: int = (
+            self.integer_constant_truncation_operation_combobox.findText(
+                self.configurable_parser_and_synthesis_options.integer_constant_truncation_operation.name
+            )
+        )
+        if to_be_selected_integer_constant_truncation_operation_idx == -1:
+            show_error_dialog(
+                "Error setting selected integer constant truncation operation in combobox",
+                "Failed to determine matching element for integer constant truncation operation '"
+                + self.configurable_parser_and_synthesis_options.integer_constant_truncation_operation.name
+                + "' in combobox, this should not happen! Defaulting to first entry of combobox",
+            )
+            to_be_selected_integer_constant_truncation_operation_idx = 0
+
+        self.integer_constant_truncation_operation_combobox.setCurrentIndex(
+            to_be_selected_integer_constant_truncation_operation_idx
+        )
+
+        integer_constant_truncation_operation_selection_layout.addWidget(
+            integer_constant_truncation_operation_combobox_label
+        )
+        integer_constant_truncation_operation_selection_layout.addWidget(
+            self.integer_constant_truncation_operation_combobox
+        )
+        integer_constant_truncation_operation_selection_layout.addStretch()
+
+        default_bitwidth_layout = QtWidgets.QHBoxLayout()
+        default_bitwidth_label = QtWidgets.QLabel("Default signal bitwidth:")
+        self.default_bitwidth_textbox = QtWidgets.QLineEdit()
+        self.default_bitwidth_textbox.setText(str(self.configurable_parser_and_synthesis_options.default_bitwidth))
+        self.default_bitwidth_textbox.setPlaceholderText("Valid value range is [1, 2^31)")
+        # The value range of the default bitwidth is restricted due to python having no built-in unsigned integer type.
+        self.default_bitwidth_textbox.setValidator(QtGui.QIntValidator(1, 2147483647))
+
+        default_bitwidth_layout.addWidget(default_bitwidth_label)
+        default_bitwidth_layout.addWidget(self.default_bitwidth_textbox)
+        default_bitwidth_layout.addStretch()
 
         save_settings_button_layout = QtWidgets.QHBoxLayout()
         save_settings_button_layout.addStretch()
@@ -1132,24 +1173,52 @@ class SynthesisSettingsUpdater(QtWidgets.QDialog):  # type: ignore[misc]
 
         layout.addLayout(expected_main_module_identifier_layout)
         layout.addLayout(generate_inlined_qubit_debug_information_layout)
+        layout.addLayout(integer_constant_truncation_operation_selection_layout)
+        layout.addLayout(default_bitwidth_layout)
         layout.addLayout(save_settings_button_layout)
         layout.addStretch()
         self.setLayout(layout)
 
     def save_settings(self) -> QtWidgets.QDialog.DialogCode:
-        if self.synthesis_settings is not None:
-            if self.expected_main_module_identifier_textbox.hasAcceptableInput():
-                user_defined_main_module_identifier: str = self.expected_main_module_identifier_textbox.text()
-                if not user_defined_main_module_identifier:
-                    self.synthesis_settings.remove(syrec.SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER)
-                else:
-                    self.synthesis_settings.set_string(
-                        syrec.SYNTHESIS_CONFIG_KEY_MAIN_MODULE_IDENTIFIER, user_defined_main_module_identifier
-                    )
-            self.synthesis_settings.set_bool(
-                syrec.SYNTHESIS_CONFIG_KEY_GENERATE_INLINE_DEBUG_INFORMATION,
-                self.generate_inlined_qubit_debug_information_checkbox.isChecked(),
+        mapped_to_integer_constant_truncation_operation: syrec.integer_constant_truncation_operation | None = None
+        try:
+            mapped_to_integer_constant_truncation_operation = getattr(
+                syrec.integer_constant_truncation_operation,
+                self.integer_constant_truncation_operation_combobox.currentText(),
             )
+        except AttributeError:
+            show_error_dialog(
+                "Error updating integer constant truncation operation",
+                "Failed to map selected integer constant truncation operation '"
+                + self.integer_constant_truncation_operation_combobox.currentText()
+                + "' to matching enum value! This should not happen.",
+            )
+            return self.reject()
+
+        if not self.expected_main_module_identifier_textbox.hasAcceptableInput():
+            show_error_dialog(
+                "Error updating expected main module identifier",
+                "Invalid main module identifier '" + self.expected_main_module_identifier_textbox.text() + "'",
+            )
+            return self.reject()
+
+        if not self.default_bitwidth_textbox.hasAcceptableInput():
+            show_error_dialog(
+                "Error updating default bitwidth",
+                "Invalid default bitwidth '" + self.default_bitwidth_textbox.text() + "'",
+            )
+            return self.reject()
+
+        self.configurable_parser_and_synthesis_options.main_module_identifier = (
+            self.expected_main_module_identifier_textbox.text() or None
+        )
+        self.configurable_parser_and_synthesis_options.generate_inlined_qubit_debug_information = (
+            self.generate_inlined_qubit_debug_information_checkbox.isChecked()
+        )
+        self.configurable_parser_and_synthesis_options.integer_constant_truncation_operation = (
+            mapped_to_integer_constant_truncation_operation
+        )
+        self.configurable_parser_and_synthesis_options.default_bitwidth = int(self.default_bitwidth_textbox.text())
         return self.accept()
 
 
@@ -1200,18 +1269,13 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         )
 
         if destringified_circuit_view_qubit_label is None:
-            msg = QtWidgets.QMessageBox()
-            msg.setBaseSize(QtCore.QSize(400, 200))
-            msg.setWindowTitle("Error during parsing of clicked qubit label of circuit view")
-            msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-            msg.setInformativeText(
+            show_error_dialog(
+                "Error during parsing of clicked qubit label of circuit view",
                 "Failed to convert the clicked qubit label in the circuit view: \n"
                 + stringified_circuit_view_qubit_label
                 + "\n"
-                + "into its internal DTO representation! This should not happen and indicates an internal error!"
+                + "into its internal DTO representation! This should not happen and indicates an internal error!",
             )
-            msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-            msg.exec()
         else:
             self.qubits_information_lookup.search_and_display_information_for_qubit(
                 destringified_circuit_view_qubit_label, True
@@ -1246,7 +1310,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         toolbar.addAction(self.editor.stat_action)
         toolbar.addWidget(self.editor.buttonCostAware)
         toolbar.addWidget(self.editor.buttonLineAware)
-        toolbar.addWidget(self.editor.synthesis_settings_update_button)
+        toolbar.addWidget(self.editor.configurable_parser_and_synthesis_options_update_button)
 
 
 def main() -> int:

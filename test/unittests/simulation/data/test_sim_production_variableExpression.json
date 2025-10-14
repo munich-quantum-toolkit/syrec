@@ -767,82 +767,82 @@
     ]
   },
   "DimensionAccessDefiningMultipleNonCompileTimeConstantExpressionsAsIndex": {
-    "inputCircuit": "module main(inout a[2][3][2](2)) wire b(2), c(2) a[((b + 1) - 1)][(b + c)][1].1 ^= 1",
+    "inputCircuit": "module main(inout a[2][3][2](2)) wire b(1), c(2) for $i = 1 to 2 step 2 do a[((b + 1) - 1)][((c + $i) - 1)][1].1 ^= 1 rof",
     "simulationRuns": [
       {
         "debugHelper": "First 24 qubits are var 'a', a[0][0][1].1 ^= 1",
-        "in": "0000000000000000000000000000",
-        "out": "0001000000000000000000000000"
+        "in": "000000000000000000000000000",
+        "out": "000100000000000000000000000"
       },
       {
         "debugHelper": "First 24 qubits are var 'a', a[0][1][1].1 ^= 1",
-        "in": "0000000100000000000000000010",
-        "out": "0000000000000000000000000010"
+        "in": "000000010000000000000000010",
+        "out": "000000000000000000000000010"
       },
       {
         "debugHelper": "First 24 qubits are var 'a', a[0][2][1].1 ^= 1",
-        "in": "0000000000000000000000000001",
-        "out": "0000000000010000000000000001"
+        "in": "000000000000000000000000001",
+        "out": "000000000001000000000000001"
       },
       {
         "debugHelper": "First 24 qubits are var 'a', a[1][1][1].1 ^= 1",
-        "in": "0000000000000000000000001000",
-        "out": "0000000000000000000100001000"
+        "in": "000000000000000000000000110",
+        "out": "000000000000000000010000110"
       },
       {
         "debugHelper": "First 24 qubits are var 'a', a[1][2][1].1 ^= 1",
-        "in": "0000000000000000000000001010",
-        "out": "0000000000000000000000011010"
+        "in": "000000000000000000000000101",
+        "out": "000000000000000000000001101"
       }
     ]
   },
   "IndexExpressionInDimensionAccessContainingVariableAccessWithNonCompileTimeConstantExpressionIndex": {
-    "inputCircuit": "module main(inout a[2][3](2)) wire b[2](2), c(2) a[0][b[c]] ^= 2",
+    "inputCircuit": "module main(inout a[2][3](2)) wire b[2](2), c(1) a[0][b[c]] ^= 2",
     "simulationRuns": [
       {
         "debugHelper": "First 12 qubits are var 'a', c=0, b[0]=2, a[0][2] ^= 2",
-        "in": "000000000000010000",
-        "out": "000001000000010000"
+        "in": "00000000000001000",
+        "out": "00000100000001000"
       },
       {
         "debugHelper": "First 12 qubits are var 'a', c=1, b[0]=1, a[0][1] ^= 2",
-        "in": "000000000000001010",
-        "out": "000100000000001010"
+        "in": "00000000000000101",
+        "out": "00010000000000101"
       }
     ]
   },
   "AccessOnEveryElementOfVariableUsingNonCompileTimeConstantExpressionInDimensionAccess": {
-    "inputCircuit": "module main(inout a[2][3](2)) wire b(2), c(2) a[b][c] ^= 2",
+    "inputCircuit": "module main(inout a[2][3](2)) wire b(1), c(2) a[b][c] ^= 2",
     "simulationRuns": [
       {
         "debugHelper": "First 12 qubits are var 'a', c=0, b=0, a[0][0] ^= 2",
-        "in": "0000000000000000",
-        "out": "0100000000000000"
+        "in": "000000000000000",
+        "out": "010000000000000"
       },
       {
         "debugHelper": "First 12 qubits are var 'a', c=1, b=0, a[0][1] ^= 2",
-        "in": "0000000000000010",
-        "out": "0001000000000010"
+        "in": "000000000000010",
+        "out": "000100000000010"
       },
       {
         "debugHelper": "First 12 qubits are var 'a', c=2, b=0, a[0][2] ^= 2",
-        "in": "0000000000000001",
-        "out": "0000010000000001"
+        "in": "000000000000001",
+        "out": "000001000000001"
       },
       {
         "debugHelper": "First 12 qubits are var 'a', c=0, b=1, a[1][0] ^= 2",
-        "in": "0000000000001000",
-        "out": "0000000100001000"
+        "in": "000000000000100",
+        "out": "000000010000100"
       },
       {
         "debugHelper": "First 12 qubits are var 'a', c=1, b=1, a[1][1] ^= 2",
-        "in": "0000000000001010",
-        "out": "0000000001001010"
+        "in": "000000000000110",
+        "out": "000000000100110"
       },
       {
         "debugHelper": "First 12 qubits are var 'a', c=2, b=1, a[1][2] ^= 2",
-        "in": "0000000000001001",
-        "out": "0000000000011001"
+        "in": "000000000000101",
+        "out": "000000000001101"
       }
     ]
   },

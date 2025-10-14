@@ -12,7 +12,8 @@
 
 #include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
-#include "core/properties.hpp"
+#include "core/configurable_options.hpp"
+#include "core/statistics.hpp"
 #include "core/syrec/program.hpp"
 #include "ir/Definitions.hpp"
 
@@ -40,8 +41,8 @@ namespace syrec {
             && bitwiseCnot(annotatableQuantumComputation, lines, rhs);
     }
 
-    bool CostAwareSynthesis::synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics) {
+    bool CostAwareSynthesis::synthesize(AnnotatableQuantumComputation& annotatableQuantumComputation, const Program& program, const ConfigurableOptions& settings, Statistics* optionalRecordedStatistics) {
         CostAwareSynthesis synthesizer(annotatableQuantumComputation);
-        return SyrecSynthesis::synthesize(&synthesizer, program, settings, statistics);
+        return SyrecSynthesis::synthesize(&synthesizer, program, settings, optionalRecordedStatistics);
     }
 } // namespace syrec

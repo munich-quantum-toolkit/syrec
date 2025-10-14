@@ -8,10 +8,10 @@
  * Licensed under the MIT License
  */
 
+#include "core/configurable_options.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"
-#include "core/syrec/program.hpp"
 #include "test_syrec_parser_errors_base.hpp"
 
 #include <gtest/gtest.h>
@@ -39,7 +39,7 @@ TEST_F(SyrecParserErrorTestsFixture, OmittingLhsOperandOfShiftExpressionCausesEr
 }
 
 TEST_F(SyrecParserErrorTestsFixture, OmittingRhsOperandOfShiftExpressionCausesError) {
-    recordSyntaxError(Message::Position(1, 56), "mismatched input ')' expecting {'$', '#', '(', INT}");
+    recordSyntaxError(Message::Position(1, 56), "mismatched input ')' expecting {'$', '#', '(', HEX_LITERAL, BINARY_LITERAL, INT}");
     performTestExecution("module main(out a(4), out b[2](4)) a += (b[1] + (b[0] >>))");
 }
 
@@ -54,14 +54,18 @@ TEST_F(SyrecParserErrorTestsFixture, UsageOfNon1DVariableUsedAsLhsOperandOfShift
 }
 
 TEST_F(SyrecParserErrorTestsFixture, DivisionByZeroDetectedDueToTruncationOfConstantValuesUsingModuloOperationInLhsOfShiftExpression) {
-    const auto customParserConfig = syrec::ReadProgramSettings(32, utils::IntegerConstantTruncationOperation::Modulo);
+    syrec::ConfigurableOptions customParserConfig;
+    customParserConfig.integerConstantTruncationOperation = utils::IntegerConstantTruncationOperation::Modulo;
+
     buildAndRecordExpectedSemanticError<SemanticError::ExpressionEvaluationFailedDueToDivisionByZero>(Message::Position(1, 71));
     buildAndRecordExpectedSemanticError<SemanticError::ExpressionEvaluationFailedDueToDivisionByZero>(Message::Position(1, 132));
     performTestExecution("module main(inout a(4), in b(2), in c[4](1)) for $i = 0 to 1 do if c[(((b.$i:1 / 7) + a.0:2) << 2)] then ++= a.0:1 else skip fi c[(((b.$i:1 / 7) + a.0:2) << 2)] rof", customParserConfig);
 }
 
 TEST_F(SyrecParserErrorTestsFixture, DivisionByZeroDetectedDueToTruncationOfConstantValuesUsingBitwiseAndOperationInLhsOfShiftExpression) {
-    const auto customParserConfig = syrec::ReadProgramSettings(32, utils::IntegerConstantTruncationOperation::BitwiseAnd);
+    syrec::ConfigurableOptions customParserConfig;
+    customParserConfig.integerConstantTruncationOperation = utils::IntegerConstantTruncationOperation::BitwiseAnd;
+
     buildAndRecordExpectedSemanticError<SemanticError::ExpressionEvaluationFailedDueToDivisionByZero>(Message::Position(1, 71));
     buildAndRecordExpectedSemanticError<SemanticError::ExpressionEvaluationFailedDueToDivisionByZero>(Message::Position(1, 132));
     performTestExecution("module main(inout a(4), in b(2), in c[4](1)) for $i = 0 to 1 do if c[(((b.$i:1 / 8) + a.1:3) << 2)] then ++= a.0:1 else skip fi c[(((b.$i:1 / 8) + a.1:3) << 2)] rof", customParserConfig);

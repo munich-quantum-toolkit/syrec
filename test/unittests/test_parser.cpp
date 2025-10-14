@@ -8,6 +8,7 @@
  * Licensed under the MIT License
  */
 
+#include "core/configurable_options.hpp"
 #include "core/syrec/program.hpp"
 
 #include <algorithm>
@@ -61,7 +62,7 @@ INSTANTIATE_TEST_SUITE_P(SyrecParserTest, SyrecParserTest,
 
 TEST_P(SyrecParserTest, GenericParserTest) {
     Program                   prog;
-    const ReadProgramSettings settings;
+    const ConfigurableOptions settings;
     std::string               errorString;
     errorString = prog.read(fileName, settings);
     EXPECT_TRUE(errorString.empty());

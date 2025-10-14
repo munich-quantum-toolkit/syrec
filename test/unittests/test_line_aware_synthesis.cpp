@@ -10,6 +10,7 @@
 
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
 #include "core/annotatable_quantum_computation.hpp"
+#include "core/configurable_options.hpp"
 #include "core/syrec/program.hpp"
 
 #include <algorithm>
@@ -86,12 +87,12 @@ INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecLineAwareSynthesisTest,
 TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisTest) {
     AnnotatableQuantumComputation annotatableQuantumComputation;
     Program                       prog;
-    const ReadProgramSettings     settings;
+    const ConfigurableOptions     settings;
     std::string                   errorString;
     ASSERT_NO_FATAL_FAILURE(errorString = prog.read(fileName, settings)) << "Unexpected crash during processing of SyReC program";
     ASSERT_TRUE(errorString.empty()) << "Found errors during processing of SyReC program: " << errorString;
 
-    ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
+    ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog, settings));
     ASSERT_EQ(expectedNumGates, annotatableQuantumComputation.getNops());
     ASSERT_EQ(expectedNumLines, annotatableQuantumComputation.getNqubits());
 
@@ -104,13 +105,13 @@ TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisTest) {
 TEST_P(SyrecLineAwareSynthesisTest, GenericSynthesisQASMTest) {
     AnnotatableQuantumComputation annotatableQuantumComputation;
     Program                       prog;
-    const ReadProgramSettings     settings;
+    const ConfigurableOptions     settings;
 
     std::string errorString;
     ASSERT_NO_FATAL_FAILURE(errorString = prog.read(fileName, settings)) << "Unexpected crash during processing of SyReC program";
     ASSERT_TRUE(errorString.empty()) << "Found errors during processing of SyReC program: " << errorString;
     // We are not asserting that the synthesis completes successfully since the 'dump' of the circuit into the .qasm file might help debugging the error.
-    ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog));
+    ASSERT_TRUE(LineAwareSynthesis::synthesize(annotatableQuantumComputation, prog, settings));
 
     const auto lastIndex      = fileName.find_last_of('.');
     const auto outputFileName = fileName.substr(0, lastIndex);

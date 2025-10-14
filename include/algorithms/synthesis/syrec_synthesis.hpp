@@ -13,22 +13,24 @@
 #include "algorithms/synthesis/first_variable_qubit_offset_lookup.hpp"
 #include "algorithms/synthesis/statement_execution_order_stack.hpp"
 #include "core/annotatable_quantum_computation.hpp"
-#include "core/properties.hpp"
+#include "core/configurable_options.hpp"
 #include "core/qubit_inlining_stack.hpp"
+#include "core/statistics.hpp"
 #include "core/syrec/expression.hpp"
 #include "core/syrec/module.hpp"
 #include "core/syrec/number.hpp"
+#include "core/syrec/parser/utils/syrec_operation_utils.hpp"
 #include "core/syrec/program.hpp"
 #include "core/syrec/statement.hpp"
 #include "core/syrec/variable.hpp"
 #include "ir/Definitions.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <stack>
-#include <string>
 #include <string_view>
 #include <variant>
 #include <vector>
@@ -36,9 +38,6 @@
 namespace syrec {
     class SyrecSynthesis {
     public:
-        inline static const std::string MAIN_MODULE_IDENTIFIER_CONFIG_KEY            = "main_module";
-        inline static const std::string GENERATE_INLINE_DEBUG_INFORMATION_CONFIG_KEY = "create_qubit_inline_debug_information";
-
         std::stack<BinaryExpression::BinaryOperation>  expOpp;
         std::stack<std::vector<unsigned>>              expLhss;
         std::stack<std::vector<unsigned>>              expRhss;
@@ -52,10 +51,8 @@ namespace syrec {
         explicit SyrecSynthesis(AnnotatableQuantumComputation& annotatableQuantumComputation);
         virtual ~SyrecSynthesis() = default;
 
-        // TODO: Should be unified or set via synthesis settings
-        void setMainModule(const Module::ptr& mainModule);
-
-        [[maybe_unused]] static bool synthesize(SyrecSynthesis* synthesizer, const Program& program, const Properties::ptr& settings, const Properties::ptr& statistics);
+        void                         setMainModule(const Module::ptr& mainModule);
+        [[maybe_unused]] static bool synthesize(SyrecSynthesis* synthesizer, const Program& program, const ConfigurableOptions& settings = ConfigurableOptions(), Statistics* optionalRecordedStatistics = nullptr);
 
     protected:
         constexpr static std::string_view GATE_ANNOTATION_KEY_ASSOCIATED_STATEMENT_LINE_NUMBER = "lno";
@@ -82,10 +79,10 @@ namespace syrec {
         virtual bool assignSubtract(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation) = 0;
         virtual bool assignExor(std::vector<qc::Qubit>& lhs, std::vector<qc::Qubit>& rhs, [[maybe_unused]] AssignStatement::AssignOperation assignOperation)     = 0;
 
-        virtual bool onExpression(const Expression::ptr& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
+        virtual bool onExpression(const Expression::ptr& expression, const std::optional<unsigned>& optionalExpectedOperandBitwidth, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
         virtual bool onExpression(const BinaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
         virtual bool onExpression(const ShiftExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
-        virtual bool onExpression(const NumericExpression& expression, std::vector<qc::Qubit>& lines);
+        virtual bool onExpression(const NumericExpression& expression, const std::optional<unsigned>& optionalExpectedOperandBitwidth, std::vector<qc::Qubit>& lines);
         virtual bool onExpression(const VariableExpression& expression, std::vector<qc::Qubit>& lines);
         virtual bool onExpression(const UnaryExpression& expression, std::vector<qc::Qubit>& lines, std::vector<qc::Qubit> const& lhsStat, OperationVariant operationVariant);
 
@@ -139,7 +136,15 @@ namespace syrec {
         static bool leftShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount);  // <<
         static bool rightShift(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::vector<qc::Qubit>& dest, const std::vector<qc::Qubit>& toBeShiftedQubits, unsigned qubitIndexShiftAmount); // >>
 
-        [[nodiscard]] bool createQuantumRegistersForSyrecVariables(const Variable::vec& variables) const;
+        /**
+         * Perform compile time simplifications of the operands of the expressions.
+         * @param expression The expression to simplify.
+         * @param loopVariableValueLookup A lookup for the current value of the active loop variables.
+         * @return std::nullopt if the expression type could not be handled or if an evaluation of a compile time constant expression failed, otherwise either the original expression (if no simplification could be performed) or its simplification.
+         * @remark The truncation of compile time constant integer values/bitwidth used in subexpressions of the expression to simplify is also considered a simplification since this will help to reduce the number of ancillary qubits needed to synthesis the integer value.
+         */
+        [[nodiscard]] static std::optional<Expression::ptr> performCompileTimeSimplificationsOfExpression(const Expression::ptr& expression, const Number::LoopVariableMapping& loopVariableValueLookup);
+        [[nodiscard]] bool                                  createQuantumRegistersForSyrecVariables(const Variable::vec& variables) const;
 
         /**
          * Get the qubits accessed by the defined variable access.
@@ -168,6 +173,7 @@ namespace syrec {
             unsigned bitrangeEnd;
 
             [[nodiscard]] std::vector<unsigned> getIndicesOfAccessedBits() const;
+            [[nodiscard]] std::size_t           getNumberOfAccessedBits() const;
         };
 
         struct EvaluatedDimensionAccess {
@@ -239,7 +245,7 @@ namespace syrec {
          * Calculate the index of the accessed value in the unrolled variable if the evaluated variable access contained a non-compile time constant expression in any of its accessed dimensions.
          * @param evaluatedVariableAccess The evaluated variable access whose accessed index should be calculated.
          * @param containerToStoreUnrolledIndex The container storing the qubits storing the calculated index. Must be passed as an empty container.
-         * @return Whether the index of the accessed element in the provided variable access could be calculcated.
+         * @return Whether the index of the accessed element in the provided variable access could be calculated.
          * @remark Note that the value of the calculated index is not known at compile time, e.g. the unrolled index of the element 'a[1][2][1]' in 'a[2][4][3]' is equal to 19 (1*12 + 2*3 + 1)
          */
         [[nodiscard]] bool calculateSymbolicUnrolledIndexForElementInVariable(const EvaluatedVariableAccess& evaluatedVariableAccess, std::vector<qc::Qubit>& containerToStoreUnrolledIndex);
@@ -262,5 +268,7 @@ namespace syrec {
         std::optional<std::vector<QubitInliningStack::ptr>> moduleCallStackInstances;
         std::unique_ptr<StatementExecutionOrderStack>       statementExecutionOrderStack;
         std::unique_ptr<FirstVariableQubitOffsetLookup>     firstVariableQubitOffsetLookup;
+
+        utils::IntegerConstantTruncationOperation integerConstantTruncationOperation = utils::IntegerConstantTruncationOperation::BitwiseAnd;
     };
 } // namespace syrec

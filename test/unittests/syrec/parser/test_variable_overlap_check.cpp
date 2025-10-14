@@ -89,7 +89,7 @@ namespace {
         ASSERT_NO_FATAL_FAILURE(actualVariableAccessOverlapCheckResult = utils::checkOverlapBetweenVariableAccesses(lhsOperand, rhsOperand));
         ASSERT_FALSE(actualVariableAccessOverlapCheckResult.has_value());
 
-        // Operation must be symmmetric (a OP b) = (b OP a)
+        // Operation must be symmetric (a OP b) = (b OP a)
         ASSERT_NO_FATAL_FAILURE(actualVariableAccessOverlapCheckResult = utils::checkOverlapBetweenVariableAccesses(lhsOperand, rhsOperand));
         ASSERT_FALSE(actualVariableAccessOverlapCheckResult.has_value());
     }

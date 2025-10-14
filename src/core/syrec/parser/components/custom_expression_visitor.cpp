@@ -57,8 +57,11 @@ std::optional<syrec::Expression::ptr> CustomExpressionVisitor::visitExpressionTy
     }
 
     // We should not have to report an error at this position since the tokenizer should already report an error if the currently processed token is
-    // not in the union of the FIRST sets of the potential alternatives.
-    //recordCustomError(Message::Position(0, 0), "Unhandled expression context variant. This should not happen");
+    // not in the union of the FIRST sets of the potential alternatives. However, if the defined variant is not handled by the visitor then this check could help to detect this issue
+    // which normally should not happen. Note that a syntax error in the given expression can also trigger this branch since the parser might be "forced" to call this visitor function
+    // since it is the only alternative at the current position in the processed non-terminal symbol of the grammar with the syntax error causing the expression to not match any
+    // of the defined alternatives.
+    //recordCustomError(mapTokenPositionToMessagePosition(*context->getStart()), "Unhandled expression context variant. This should not happen");
     return std::nullopt;
 }
 
@@ -312,8 +315,14 @@ std::optional<syrec::Number::ptr> CustomExpressionVisitor::visitNumberTyped(cons
         return std::nullopt;
     }
 
-    if (const auto* const numberFromConstantContext = dynamic_cast<const TSyrecParser::NumberFromConstantContext*>(context); numberFromConstantContext != nullptr) {
-        return visitNumberFromConstantTyped(numberFromConstantContext);
+    if (const auto* const numberFromConstantContext = dynamic_cast<const TSyrecParser::NumberFromIntegerContext*>(context); numberFromConstantContext != nullptr) {
+        return visitNumberFromIntegerTyped(numberFromConstantContext);
+    }
+    if (const auto* const numberFromHexadecimalLiteralContext = dynamic_cast<const TSyrecParser::NumberFromHexLiteralContext*>(context); numberFromHexadecimalLiteralContext != nullptr) {
+        return visitNumberFromHexLiteralTyped(numberFromHexadecimalLiteralContext);
+    }
+    if (const auto* const numberFromBinaryLiteralContext = dynamic_cast<const TSyrecParser::NumberFromBinaryLiteralContext*>(context); numberFromBinaryLiteralContext != nullptr) {
+        return visitNumberFromBinaryLiteralTyped(numberFromBinaryLiteralContext);
     }
     if (const auto* const numberFromExpressionContext = dynamic_cast<const TSyrecParser::NumberFromExpressionContext*>(context); numberFromExpressionContext != nullptr) {
         return visitNumberFromExpressionTyped(numberFromExpressionContext);
@@ -325,29 +334,45 @@ std::optional<syrec::Number::ptr> CustomExpressionVisitor::visitNumberTyped(cons
         return visitNumberFromSignalwidthTyped(numberFromSignalWidthContext);
     }
     // We should not have to report an error at this position since the tokenizer should already report an error if the currently processed token is
-    // not in the union of the FIRST sets of the potential alternatives.
-    //recordCustomError(Message::Position(0, 0), "Unhandled number context variant. This should not happen");
+    // not in the union of the FIRST sets of the potential alternatives. However, if the defined variant is not handled by the visitor then this check could help to detect this issue
+    // which normally should not happen. Note that a syntax error in the given number can also trigger this branch since the parser might be "forced" to call this visitor function
+    // since it is the only alternative at the current position in the processed non-terminal symbol of the grammar with the syntax error causing the number to not match any
+    // of the defined alternatives.
+    //recordCustomError(mapTokenPositionToMessagePosition(*context->getStart()), "Unhandled number context variant. This should not happen");
     return std::nullopt;
 }
 
-std::optional<syrec::Number::ptr> CustomExpressionVisitor::visitNumberFromConstantTyped(const TSyrecParser::NumberFromConstantContext* context) const {
+std::optional<syrec::Number::ptr> CustomExpressionVisitor::visitNumberFromIntegerTyped(const TSyrecParser::NumberFromIntegerContext* context) const {
     // Production should only be called if the token contains only numeric characters and thus deserialization should only fail if an overflow occurs.
     // Leading and trailing whitespace should also be trimmed from the token text by the parser. If the text of the token contains non-numeric characters,
     // the deserialization will not throw an exception.
-    if (context == nullptr || context->literalInt() == nullptr) {
+    if (context == nullptr || context->integerLiteral() == nullptr) {
         return std::nullopt;
     }
+    constexpr int expectedBaseOfStringifiedNumber = 10;
+    return tryParseNumberFromString(context->integerLiteral()->getText(), expectedBaseOfStringifiedNumber, mapTokenPositionToMessagePosition(*context->integerLiteral()->getSymbol()));
+}
 
-    bool didSerializationOfIntegerFromStringFailDueToValueOverflow = false;
-    if (const std::optional<unsigned int> constantValue = deserializeConstantFromString(context->literalInt()->getText(), &didSerializationOfIntegerFromStringFailDueToValueOverflow); constantValue.has_value() && !didSerializationOfIntegerFromStringFailDueToValueOverflow) {
-        recordExpressionComponent(*constantValue);
-        return std::make_shared<syrec::Number>(*constantValue);
+std::optional<syrec::Number::ptr> CustomExpressionVisitor::visitNumberFromBinaryLiteralTyped(const TSyrecParser::NumberFromBinaryLiteralContext* context) const {
+    // Production should only be called if the token contains only a binary literal defined as '0xb(0|1)+' and thus deserialization should only fail if an overflow occurs.
+    // Leading and trailing whitespace should also be trimmed from the token text by the parser. If the text of the token contains non-numeric characters,
+    // the deserialization will not throw an exception.
+    if (context == nullptr || context->binaryLiteral() == nullptr) {
+        return std::nullopt;
     }
+    constexpr int expectedBaseOfStringifiedNumber = 2;
+    return tryParseNumberFromString(context->binaryLiteral()->getText(), expectedBaseOfStringifiedNumber, mapTokenPositionToMessagePosition(*context->binaryLiteral()->getSymbol()));
+}
 
-    if (didSerializationOfIntegerFromStringFailDueToValueOverflow) {
-        recordSemanticError<SemanticError::ValueOverflowDueToNoImplicitTruncationPerformed>(mapTokenPositionToMessagePosition(*context->literalInt()->getSymbol()), context->literalInt()->getText(), UINT_MAX);
+std::optional<syrec::Number::ptr> CustomExpressionVisitor::visitNumberFromHexLiteralTyped(const TSyrecParser::NumberFromHexLiteralContext* context) const {
+    // Production should only be called if the token contains only a hexadecimal literal defined as '0x((0..9|A..F)+' and thus deserialization should only fail if an overflow occurs.
+    // Leading and trailing whitespace should also be trimmed from the token text by the parser. If the text of the token contains non-numeric characters,
+    // the deserialization will not throw an exception.
+    if (context == nullptr || context->hexLiteral() == nullptr) {
+        return std::nullopt;
     }
-    return std::nullopt;
+    constexpr int expectedBaseOfStringifiedNumber = 16;
+    return tryParseNumberFromString(context->hexLiteral()->getText(), expectedBaseOfStringifiedNumber, mapTokenPositionToMessagePosition(*context->hexLiteral()->getSymbol()));
 }
 
 std::optional<syrec::Number::ptr> CustomExpressionVisitor::visitNumberFromExpressionTyped(const TSyrecParser::NumberFromExpressionContext* context) const {
@@ -795,6 +820,22 @@ void CustomExpressionVisitor::recordExpressionComponent(const utils::IfStatement
         return;
     }
     optionalIfStatementExpressionComponentsRecorder->get()->recordExpressionComponent(expressionComponent);
+}
+
+std::optional<syrec::Number::ptr> CustomExpressionVisitor::tryParseNumberFromString(const std::string_view& stringifiedNumber, const int expectedBaseOfStringifiedNumber, const Message::Position& reportedErrorPositionOnOverflow) const {
+    bool didDeserializationFailDueToOverflow = false;
+    if (const std::optional<unsigned int> constantValue = deserializeConstantFromString(stringifiedNumber, &didDeserializationFailDueToOverflow, expectedBaseOfStringifiedNumber); constantValue.has_value() && !didDeserializationFailDueToOverflow) {
+        recordExpressionComponent(*constantValue);
+        return std::make_shared<syrec::Number>(*constantValue);
+    }
+
+    if (didDeserializationFailDueToOverflow) {
+        recordSemanticError<SemanticError::ValueOverflowDueToNoImplicitTruncationPerformed>(reportedErrorPositionOnOverflow, stringifiedNumber, UINT_MAX);
+    } else {
+        // An error case that under normal circumstances should not happen but could if the expected base of the stringified number is set to a 'wrong' value or if the prefixes for binary or hexadecimal literals changes from the current values ('0b...' and '0x...' respectively).
+        recordSemanticError<SemanticError::ExpectedBaseDidNotMatchDeterminedPrefixInStringifiedNumber>(reportedErrorPositionOnOverflow, expectedBaseOfStringifiedNumber, stringifiedNumber);
+    }
+    return std::nullopt;
 }
 
 std::optional<syrec::BinaryExpression::BinaryOperation> CustomExpressionVisitor::mapTokenToBinaryOperation(const TSyrecParser::BinaryExpressionContext& binaryExpressionContext) {

@@ -9,9 +9,9 @@
  */
 
 #include "algorithms/synthesis/internal_qubit_label_builder.hpp"
+#include "core/configurable_options.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
-#include "core/syrec/program.hpp"
 #include "test_syrec_parser_errors_base.hpp"
 
 #include <climits>
@@ -164,32 +164,36 @@ TEST_F(SyrecParserErrorTestsFixture, AccessingTooManyDimensionsOfANDSignalInVari
 }
 
 TEST_F(SyrecParserErrorTestsFixture, AccessingOutOfRangeBitOfVariableWithBitwidthTakenFromUserConfiguration) {
-    constexpr unsigned int defaultSignalBitwidth           = 3;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 3;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::IndexOfAccessedBitOutOfRange>(Message::Position(1, 25), 5, defaultSignalBitwidth);
     performTestExecution("module main(out a) ++= a.5", userProvidedParserConfiguration);
 }
 
 TEST_F(SyrecParserErrorTestsFixture, AccessingOutOfRangeStartBitInBitrangeWithKnownBoundsOfVariableWithBitwidthTakenFromUserConfiguration) {
-    constexpr unsigned int defaultSignalBitwidth           = 3;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 3;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::IndexOfAccessedBitOutOfRange>(Message::Position(1, 25), 5, defaultSignalBitwidth);
     performTestExecution("module main(out a) ++= a.5:2", userProvidedParserConfiguration);
 }
 
 TEST_F(SyrecParserErrorTestsFixture, AccessingOutOfRangeEndBitInBitrangeWithKnownBoundsOfVariableWithBitwidthTakenFromUserConfiguration) {
-    constexpr unsigned int defaultSignalBitwidth           = 3;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 3;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::IndexOfAccessedBitOutOfRange>(Message::Position(1, 27), 5, defaultSignalBitwidth);
     performTestExecution("module main(out a) ++= a.2:5", userProvidedParserConfiguration);
 }
 
 TEST_F(SyrecParserErrorTestsFixture, AccessingOutOfRangeStartAndEndBitInBitrangeWithKnownBoundsOfVariableWithBitwidthTakenFromUserConfiguration) {
-    constexpr unsigned int defaultSignalBitwidth           = 3;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 3;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::IndexOfAccessedBitOutOfRange>(Message::Position(1, 25), 7, defaultSignalBitwidth);
     buildAndRecordExpectedSemanticError<SemanticError::IndexOfAccessedBitOutOfRange>(Message::Position(1, 27), 5, defaultSignalBitwidth);
@@ -197,16 +201,18 @@ TEST_F(SyrecParserErrorTestsFixture, AccessingOutOfRangeStartAndEndBitInBitrange
 }
 
 TEST_F(SyrecParserErrorTestsFixture, AccessingOutOfRangeStartBitInBitrangeWithUnknownEndBoundOfVariableWithBitwidthTakenFromUserConfiguration) {
-    constexpr unsigned int defaultSignalBitwidth           = 3;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 3;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::IndexOfAccessedBitOutOfRange>(Message::Position(1, 44), 5, defaultSignalBitwidth);
     performTestExecution("module main(out a) for $i = 0 to 3 do ++= a.5:$i rof", userProvidedParserConfiguration);
 }
 
 TEST_F(SyrecParserErrorTestsFixture, AccessingOutOfRangeEndBitInBitrangeWithUnknownStartBoundOfVariableWithBitwidthTakenFromUserConfiguration) {
-    constexpr unsigned int defaultSignalBitwidth           = 3;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 3;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::IndexOfAccessedBitOutOfRange>(Message::Position(1, 47), 5, defaultSignalBitwidth);
     performTestExecution("module main(out a) for $i = 0 to 3 do ++= a.$i:5 rof", userProvidedParserConfiguration);

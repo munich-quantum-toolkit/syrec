@@ -9,9 +9,9 @@
  */
 
 #include "algorithms/synthesis/internal_qubit_label_builder.hpp"
+#include "core/configurable_options.hpp"
 #include "core/syrec/parser/utils/custom_error_messages.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
-#include "core/syrec/program.hpp"
 #include "test_syrec_parser_errors_base.hpp"
 
 #include <gtest/gtest.h>
@@ -159,8 +159,9 @@ TEST_F(SyrecParserErrorTestsFixture, DeclaredLocalVariableBitwidthInSignalListLo
 }
 
 TEST_F(SyrecParserErrorTestsFixture, LocalVariableBitwidthTakenFromUserConfigurationLongerThanMaximumSupportedValueCausesError) {
-    constexpr unsigned int defaultSignalBitwidth           = 33;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 33;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredVariableBitwidthTooLarge>(Message::Position(1, 39), defaultSignalBitwidth, 32);
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredVariableBitwidthTooLarge>(Message::Position(1, 46), defaultSignalBitwidth, 32);
@@ -168,10 +169,31 @@ TEST_F(SyrecParserErrorTestsFixture, LocalVariableBitwidthTakenFromUserConfigura
 }
 
 TEST_F(SyrecParserErrorTestsFixture, LocalVariableBitwidthTakenFromUserConfigurationInSignalListLongerThanMaximumSupportedValueCausesError) {
-    constexpr unsigned int defaultSignalBitwidth           = 33;
-    const auto             userProvidedParserConfiguration = syrec::ReadProgramSettings(defaultSignalBitwidth);
+    constexpr unsigned int     defaultSignalBitwidth = 33;
+    syrec::ConfigurableOptions userProvidedParserConfiguration;
+    userProvidedParserConfiguration.defaultBitwidth = defaultSignalBitwidth;
 
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredVariableBitwidthTooLarge>(Message::Position(1, 48), defaultSignalBitwidth, 32);
     buildAndRecordExpectedSemanticError<SemanticError::DeclaredVariableBitwidthTooLarge>(Message::Position(1, 61), defaultSignalBitwidth, 32);
     performTestExecution("module main(inout b(2), out c(4)) wire test(2), x, y(4) wire t, z(1) skip", userProvidedParserConfiguration);
+}
+
+TEST_F(SyrecParserErrorTestsFixture, HexLiteralInValueOfDimensionDeclarationOfLocalModuleVariableCausesError) {
+    recordSyntaxError(Message::Position(1, 25), "mismatched input '0x2A' expecting INT");
+    performTestExecution("module main(in a) wire b[0x2A] skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, HexLiteralInVariableBitwidthDeclarationOfLocalModuleVariableCausesError) {
+    recordSyntaxError(Message::Position(1, 25), "mismatched input '0x2A' expecting INT");
+    performTestExecution("module main(in a) wire b(0x2A) skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, BinaryLiteralInValueOfDimensionDeclarationOfLocalModuleVariableCausesError) {
+    recordSyntaxError(Message::Position(1, 26), "mismatched input '0b1011' expecting INT");
+    performTestExecution("module main(in a) state b[0b1011] skip");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, BinaryLiteralInVariableBitwidthDeclarationOfLocalModuleVariableCausesError) {
+    recordSyntaxError(Message::Position(1, 26), "mismatched input '0b1011' expecting INT");
+    performTestExecution("module main(in a) state b(0b1011) skip");
 }

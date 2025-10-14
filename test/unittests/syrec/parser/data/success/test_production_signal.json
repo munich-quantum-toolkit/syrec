@@ -323,7 +323,7 @@
       "constValTruncationOp": "modulo"
     }
   },
-  "simplficationOfBinaryExpressionPerformedAfterOperandBitwidthRestrictionWasSetInNestedExpressionUsingModuloOperation": {
+  "simplificationOfBinaryExpressionPerformedAfterOperandBitwidthRestrictionWasSetInNestedExpressionUsingModuloOperation": {
     "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 do ++= a[((b.0:$i + 1) * (b.0:1 * 3))] rof",
     "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do ++= a[0] rof",
     "parserConfig": {
@@ -358,28 +358,52 @@
       "constValTruncationOp": "modulo"
     }
   },
-  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingLeftShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitAccess": {
+  "shiftAmountLargerThanOperandBitwidthInShiftExpressionUsingLeftShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitAccess": {
     "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 do ++= a[((b.$i + 2) << 2)] rof",
     "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do ++= a[0] rof"
   },
-  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingLeftShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitrangeAccess": {
+  "shiftAmountLargerThanOperandBitwidthInShiftExpressionUsingLeftShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitrangeAccess": {
     "inputCircuit": "module main(inout a(4), in b(4)) ++= a[((b.1:3 >> 1) << 3)]",
     "expectedCircuit": "module main(inout a(4), in b(4)) ++= a[0]"
   },
-  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingLeftShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetFullBitwidthAccess": {
+  "shiftAmountLargerThanOperandBitwidthInShiftExpressionUsingLeftShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetFullBitwidthAccess": {
     "inputCircuit": "module main(inout a(4), in b(4)) ++= a[((b - 1) << 5)]",
     "expectedCircuit": "module main(inout a(4), in b(4)) ++= a[0]"
   },
-  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingRightShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitAccess": {
+  "shiftAmountLargerThanOperandBitwidthInShiftExpressionUsingRightShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitAccess": {
     "inputCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 do ++= a[((b.$i + 2) >> 2)] rof",
     "expectedCircuit": "module main(inout a(4), in b(2)) for $i = 0 to 1 step 1 do ++= a[0] rof"
   },
-  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingRightShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitrangeAccess": {
+  "shiftAmountLargerThanOperandBitwidthInShiftExpressionUsingRightShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetByBitrangeAccess": {
     "inputCircuit": "module main(inout a(4), in b(4)) ++= a[((b.1:3 >> 1) >> 3)]",
     "expectedCircuit": "module main(inout a(4), in b(4)) ++= a[0]"
   },
-  "shiftAmountLargerThanOperandbitwidthInShiftExpressionUsingRightShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetFullBitwidthAccess": {
+  "shiftAmountLargerThanOperandBitwidthInShiftExpressionUsingRightShiftOperationEvaluationExpressionToZeroWithOperandBitwidthSetFullBitwidthAccess": {
     "inputCircuit": "module main(inout a(4), in b(4)) ++= a[((b - 1) >> 5)]",
     "expectedCircuit": "module main(inout a(4), in b(4)) ++= a[0]"
+  },
+  "hexLiteralUsableInBitAccess": {
+    "inputCircuit": "module main(inout a(28)) ++= a[0].0x1B",
+    "expectedCircuit": "module main(inout a(28)) ++= a[0].27"
+  },
+  "binaryLiteralUsableInBitAccess": {
+    "inputCircuit": "module main(inout a(28)) ++= a[0].0b00011011",
+    "expectedCircuit": "module main(inout a(28)) ++= a[0].27"
+  },
+  "hexLiteralUsableInBitrangeAccess": {
+    "inputCircuit": "module main(inout a(28)) a[0].0xC:0x1B += 2",
+    "expectedCircuit": "module main(inout a(28)) a[0].12:27 += 2"
+  },
+  "binaryLiteralUsableInBitrangeAccess": {
+    "inputCircuit": "module main(inout a(8)) a[0].0b010:0b101 += 2",
+    "expectedCircuit": "module main(inout a(8)) a[0].2:5 += 2"
+  },
+  "hexLiteralUsableAsIndexInDimensionAccess": {
+    "inputCircuit": "module main(inout a[28](4)) ++= a[0x1B]",
+    "expectedCircuit": "module main(inout a[28](4)) ++= a[27]"
+  },
+  "binaryLiteralUsableAsIndexInDimensionAccess": {
+    "inputCircuit": "module main(inout a[8](1)) a[0b010] ^= 1",
+    "expectedCircuit": "module main(inout a[8](1)) a[2] ^= 1"
   }
 }

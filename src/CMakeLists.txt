@@ -95,7 +95,6 @@ if(NOT TARGET ${MQT_SYREC_TARGET_NAME}-synthesis)
     ${MQT_SYREC_INCLUDE_BUILD_DIR}/algorithms/synthesis/internal_qubit_label_builder.hpp
     ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/annotatable_quantum_computation.hpp
     ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/n_bit_values_container.hpp
-    ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/properties.hpp
     ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/qubit_inlining_stack.hpp
     ${MQT_SYREC_INCLUDE_BUILD_DIR}/core/truthTable/truth_table.hpp)
 

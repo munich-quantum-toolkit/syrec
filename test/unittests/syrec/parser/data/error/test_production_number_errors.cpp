@@ -88,3 +88,23 @@ TEST_F(SyrecParserErrorTestsFixture, UserDefinedIntegerConstantDefinedInProgramT
     buildAndRecordExpectedSemanticError<SemanticError::ValueOverflowDueToNoImplicitTruncationPerformed>(Message::Position(1, 27), "34359738368", UINT_MAX);
     performTestExecution("module main(out a(4)) a += 34359738368");
 }
+
+TEST_F(SyrecParserErrorTestsFixture, UserDefinedHexLiteralDefinedInProgramTooLargeToBeConvertedToUnsignedIntegerCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ValueOverflowDueToNoImplicitTruncationPerformed>(Message::Position(1, 27), "0x800000000", UINT_MAX);
+    performTestExecution("module main(out a(4)) a += 0x800000000");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, UserDefinedBinaryLiteralDefinedInProgramTooLargeToBeConvertedToUnsignedIntegerCausesError) {
+    buildAndRecordExpectedSemanticError<SemanticError::ValueOverflowDueToNoImplicitTruncationPerformed>(Message::Position(1, 27), "0b100000000000000000000000000000000000", UINT_MAX);
+    performTestExecution("module main(out a(4)) a += 0b100000000000000000000000000000000000");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, InvalidValueInBinaryLiteralCausesError) {
+    recordSyntaxError(Message::Position(1, 33), "extraneous input 'A' expecting {<EOF>, 'module'}");
+    performTestExecution("module main(out a[1](4)) a += 0b1A");
+}
+
+TEST_F(SyrecParserErrorTestsFixture, InvalidLetterInHexadecimalLiteralCausesError) {
+    recordSyntaxError(Message::Position(1, 34), "extraneous input 'TE' expecting {<EOF>, 'module'}");
+    performTestExecution("module main(out a[1](4)) a += 0x1ATE");
+}

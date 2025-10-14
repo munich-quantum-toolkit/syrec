@@ -46,6 +46,10 @@ std::optional<syrec::Statement::vec> CustomStatementVisitor::visitStatementListT
 }
 
 std::optional<syrec::Statement::ptr> CustomStatementVisitor::visitStatementTyped(const TSyrecParser::StatementContext* context) {
+    if (context == nullptr) {
+        return std::nullopt;
+    }
+
     std::optional<syrec::Statement::ptr> generatedStatement;
     if (context->callStatement() != nullptr) {
         generatedStatement = visitCallStatementTyped(context->callStatement());
@@ -63,11 +67,15 @@ std::optional<syrec::Statement::ptr> CustomStatementVisitor::visitStatementTyped
         generatedStatement = visitSkipStatementTyped(context->skipStatement());
     } else {
         // We should not have to report an error at this position since the tokenizer should already report an error if the currently processed token is
-        // not in the union of the FIRST sets of the potential alternatives.
+        // not in the union of the FIRST sets of the potential alternatives. However, if the defined variant is not handled by the visitor then this check could help to detect this issue
+        // which normally should not happen. Note that a syntax error in the given statement can also trigger this branch since the parser might be "forced" to call this visitor function
+        // since it is the only alternative at the current position in the processed non-terminal symbol of the grammar with the syntax error causing the statement to not match any
+        // of the defined alternatives.
+        //recordCustomError(mapTokenPositionToMessagePosition(*context->getStart()), "Unhandled statement context variant. This should not happen");
         return std::nullopt;
     }
 
-    if (generatedStatement.has_value() && *generatedStatement != nullptr && context != nullptr && context->getStart() != nullptr) {
+    if (generatedStatement.has_value() && *generatedStatement != nullptr && context->getStart() != nullptr) {
         generatedStatement->get()->lineNumber = static_cast<unsigned>(context->getStart()->getLine());
     }
     return generatedStatement;

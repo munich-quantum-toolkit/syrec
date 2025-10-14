@@ -133,5 +133,212 @@
         "out": "01"
       }
     ]
+  },
+  "TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingBitwiseAndIntegerTruncationOperation": {
+    "inputCircuit": "module main(inout a(3)) a += 10",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "010"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingModuloIntegerTruncationOperation": {
+    "inputCircuit": "module main(inout a(3)) a += 10",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "010"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBit": {
+    "inputCircuit": "module main(inout a(3)) a.1 += 3",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "010"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitDefinedAsIntegerConstantExpression": {
+    "inputCircuit": "module main(inout a(3)) a.(#a - 1) += 5",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "001"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithKnownBounds": {
+    "inputCircuit": "module main(inout a(4)) a.2:3 += 9",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0010"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartLargerThanEndAndStartDefinedAsIntegerConstantExpression": {
+    "inputCircuit": "module main(inout a(4)) a.(#a - 1):2 += 9",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0001"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartSmallerThanEndAndEndDefinedAsIntegerConstantExpression": {
+    "inputCircuit": "module main(inout a(4)) a.2:(#a - 1) += 9",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0010"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantInShiftExpression": {
+    "inputCircuit": "module main(inout a(2)) wire b(3) a.1 += (((b + 13) << 1) > 1)",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "01"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantInUnaryExpression": {
+    "inputCircuit": "module main(inout a(2)) wire b(3) for $i = 1 to 3 step 1 do if (b < ~($i + 1)) then ++= a else skip fi (b < ~($i + 1)) rof",
+    "simulationRuns": [
+      {
+        "in": "00",
+        "out": "11"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantInLhsOperandOfBinaryExpression": {
+    "inputCircuit": "module main(inout a(3)) wire b(3) for $i = 2 to 3 step 2 do a += ((b.0:$i + 13) + 1) rof",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "011"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantInRhsOperandOfBinaryExpression": {
+    "inputCircuit": "module main(inout a(3)) wire b(3) for $i = 2 to 3 step 2 do a += (1 + (b.0:$i + 13)) rof",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "011"
+      }
+    ]
+  },
+  "LogicalOperandModifiesExpectedBitwidthForIntegerTruncationInNestedExpressionOfBinaryExpression": {
+    "inputCircuit": "module main(inout a(1)) wire b(3) a += ((b < 13) && (14 > b))",
+    "simulationRuns": [
+      {
+        "in": "0",
+        "out": "1"
+      }
+    ]
+  },
+  "TruncationOfCompileTimeConstantExpressionInNestedExpressionOfBinaryExpression": {
+    "inputCircuit": "module main(inout a(2)) wire b(3) a.1 += (b < ((#a - 1) * 2))",
+    "simulationRuns": [
+      {
+        "in": "00000",
+        "out": "01000"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantInGuardConditionOfIfStatement": {
+    "inputCircuit": "module main(inout a(3)) if ((a + 13) < 7) then ++= a else --= a fi ((a + 13) < 7)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "100"
+      }
+    ]
+  },
+  "TruncationOfIntegerConstantInExpressionUsedInDimensionAccessOfVariableAccess": {
+    "inputCircuit": "module main(inout a[3](2)) wire b(2) ++= a[(b + 5)]",
+    "simulationRuns": [
+      {
+        "in": "000000",
+        "out": "001000"
+      }
+    ]
+  },
+  "IntegerConstantTruncationOnlyPerformedAfterCompileTimeConstantExpressionWasEvaluatedNotDuringEvaluation": {
+    "inputCircuit": "module main(inout a(3)) a += (((#a + 1) + 1) + 1)",
+    "simulationRuns": [
+      {
+        "in": "000",
+        "out": "011"
+      }
+    ]
+  },
+  "PartialSimplificationInNestedExpressionOfUnaryExpressionPerformedDueToIntegerConstantTruncation": {
+    "inputCircuit": "module main(inout a(2), in b(2)) if !(b > ((b + a) * (#b - #a))) then ++= a else --= a fi !(b > ((b + a) * (#b - #a)))",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "1000"
+      },
+      {
+        "in": "1000",
+        "out": "0100"
+      },
+      {
+        "in": "0100",
+        "out": "1100"
+      },
+      {
+        "in": "1100",
+        "out": "0000"
+      }
+    ]
+  },
+  "PartialSimplificationInNestedExpressionOfBinaryExpressionPerformedDueToIntegerConstantTruncation": {
+    "inputCircuit": "module main(inout a(2), in b(2)) if (b > (b * (#a - #b))) then ++= a else --= a fi (b > (b * (#a - #b)))",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "1100"
+      },
+      {
+        "in": "0010",
+        "out": "1010"
+      },
+      {
+        "in": "0001",
+        "out": "1001"
+      },
+      {
+        "in": "0011",
+        "out": "1011"
+      }
+    ]
+  },
+  "PartialSimplificationInNestedExpressionOfShiftExpressionPerformedDueToIntegerConstantTruncation": {
+    "inputCircuit": "module main(inout a(2), in b(2)) a += ((b + (3 + #b)) << 1)",
+    "simulationRuns": [
+      {
+        "in": "0000",
+        "out": "0100"
+      },
+      {
+        "in": "0010",
+        "out": "0010"
+      },
+      {
+        "in": "0001",
+        "out": "0101"
+      },
+      {
+        "in": "0011",
+        "out": "0011"
+      }
+    ]
   }
 }

@@ -14,6 +14,7 @@
 #include "CommonTokenStream.h"
 #include "TSyrecLexer.h"
 #include "TSyrecParser.h"
+#include "core/configurable_options.hpp"
 #include "core/syrec/parser/components/custom_error_listener.hpp"
 #include "core/syrec/parser/components/custom_module_visitor.hpp"
 #include "core/syrec/parser/utils/parser_messages_container.hpp"
@@ -29,7 +30,7 @@
 #include <string_view>
 
 namespace syrec {
-    std::string Program::read(const std::string& filename, const ReadProgramSettings& settings) {
+    std::string Program::read(const std::string& filename, const ConfigurableOptions& settings) {
         std::string foundErrorWhileReadingFileContent;
         if (const std::optional<std::string> readFileContent = tryReadFileContent(filename, &foundErrorWhileReadingFileContent); readFileContent.has_value() && foundErrorWhileReadingFileContent.empty()) {
             readProgramFromString(*readFileContent, settings, foundErrorWhileReadingFileContent);
@@ -37,18 +38,18 @@ namespace syrec {
         return foundErrorWhileReadingFileContent;
     }
 
-    std::string Program::readFromString(const std::string_view& stringifiedProgram, const ReadProgramSettings& settings) {
+    std::string Program::readFromString(const std::string_view& stringifiedProgram, const ConfigurableOptions& settings) {
         std::string foundErrorWhileReadingFileContent;
         readProgramFromString(stringifiedProgram, settings, foundErrorWhileReadingFileContent);
         return foundErrorWhileReadingFileContent;
     }
 
-    bool Program::readFile(const std::string& filename, const ReadProgramSettings& settings, std::string& error) {
+    bool Program::readFile(const std::string& filename, const ConfigurableOptions& settings, std::string& error) {
         error = read(filename, settings);
         return error.empty();
     }
 
-    bool Program::readProgramFromString(const std::string_view& content, const ReadProgramSettings& settings, std::string& error) {
+    bool Program::readProgramFromString(const std::string_view& content, const ConfigurableOptions& settings, std::string& error) {
         antlr4::ANTLRInputStream   input(content);
         syrec_parser::TSyrecLexer  lexer(&input);
         antlr4::CommonTokenStream  tokens(&lexer);
