@@ -67,6 +67,10 @@ def show_error_dialog(title: str, message: str) -> None:
     msg.exec()
 
 
+def does_qubit_label_start_with_internal_qubit_label_prefix(qubit_label: str) -> bool:
+    return qubit_label.startswith("__q")
+
+
 class CircuitLineItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
     def __init__(self, index: int, width: int, parent: QtWidgets.QWidget | None = None) -> None:
         QtWidgets.QGraphicsItemGroup.__init__(self, parent)
@@ -205,12 +209,16 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
                 "<UNKNOWN>" if internal_qubit_label is None else internal_qubit_label
             )
 
-            should_qubit_line_text_be_clickable = self.annotatable_quantum_computation.is_circuit_qubit_ancillary(
-                circuit_view_qubit_label.associated_qubit
-            ) or self.annotatable_quantum_computation.is_circuit_qubit_garbage(
-                circuit_view_qubit_label.associated_qubit
-            )
-            if not should_qubit_line_text_be_clickable or internal_qubit_label is None:
+            # Since the qubits generated for SyReC variables of type 'in' are also considered garbage we need to also filter the clickable qubits to only consider qubits whose label starts with the prefix "__q" (marking qubits generated for local variables of a SyReC module).
+            should_qubit_line_text_be_clickable = (
+                self.annotatable_quantum_computation.is_circuit_qubit_ancillary(
+                    circuit_view_qubit_label.associated_qubit
+                )
+                or self.annotatable_quantum_computation.is_circuit_qubit_garbage(
+                    circuit_view_qubit_label.associated_qubit
+                )
+            ) and does_qubit_label_start_with_internal_qubit_label_prefix(circuit_view_qubit_label.internal_qubit_label)
+            if not should_qubit_line_text_be_clickable:
                 self.non_ancillary_or_garbage_qubits_lookup.add(circuit_view_qubit_label.associated_qubit)
 
             input_qubit_line_text_item = self.add_line_label(
@@ -975,9 +983,11 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 )
                 continue
 
-            if self.annotatable_quantum_computation.is_circuit_qubit_garbage(
-                i
-            ) or self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i):
+            # Since the qubits generated for SyReC variables of type 'in' are also considered garbage we need to also filter the clickable qubits to only consider qubits whose label starts with the prefix "__q" (marking qubits generated for local variables of a SyReC module).
+            if (
+                self.annotatable_quantum_computation.is_circuit_qubit_garbage(i)
+                or self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i)
+            ) and does_qubit_label_start_with_internal_qubit_label_prefix(internal_qubit_label):
                 self.qubits_labels_of_local_variables_lookup.add(internal_qubit_label)
                 sorted_qubit_labels.append(str(CircuitViewQubitLabel(i, internal_qubit_label)))
 
@@ -1035,8 +1045,6 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
             self.selectable_qubit_labels_combobox.setCurrentIndex(combobox_item_idx_matching_label)
 
         self.qubit_info_widget.toggle_all_inline_information_controls(True)
-        # Sort combobox qubit labels according to prefix __q<NUM>
-
         inline_information_of_qubit: syrec.inlined_qubit_information | None = (
             self.annotatable_quantum_computation.get_inlined_qubit_information(
                 qubit_internal_label_and_index.associated_qubit
@@ -1045,18 +1053,18 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
             else None
         )
 
-        inline_stack_of_qubit: syrec.qubit_inlining_stack | None = (
-            inline_information_of_qubit.inline_stack if inline_information_of_qubit is not None else None
-        )
-        user_declared_qubit_label: str | None = (
-            inline_information_of_qubit.user_declared_qubit_label if inline_information_of_qubit is not None else None
-        )
-
-        self.qubit_info_widget.update_information(
-            qubit_internal_label_and_index.internal_qubit_label,
-            user_declared_qubit_label,
-            inline_stack_of_qubit,
-        )
+        if inline_information_of_qubit is not None:
+            self.qubit_info_widget.update_information(
+                qubit_internal_label_and_index.internal_qubit_label,
+                inline_information_of_qubit.user_declared_qubit_label,
+                inline_information_of_qubit.inline_stack,
+            )
+        else:
+            self.qubit_info_widget.update_information(
+                qubit_internal_label_and_index.internal_qubit_label,
+                None,
+                None,
+            )
 
     def handle_combobox_selection_change(self, new_combobox_idx: int) -> None:
         if new_combobox_idx == -1:

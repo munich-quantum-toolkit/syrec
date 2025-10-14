@@ -166,7 +166,7 @@ namespace syrec {
         /**
          * Determine the label of a qubit based on its location and the associated variable layout of the SyReC variable stored in the quantum register that stores the qubit.
          * @param qubit The qubit whose label shall be determined.
-         * @param qubitLabelType The type of qubit label to generated. Can either be the internally or user declared one.
+         * @param qubitLabelType The type of qubit label to generated. Can either be the internal or user declared one.
          * @return Returns the label of the qubit in the form of a stringified syrec::VariableAccess (e.g. the label generated for qubit 3 of the syrec::Variable a[2][3](2) is equal to a[0][1].1), otherwise std::nullopt.
          */
         [[nodiscard]] std::optional<std::string> getQubitLabel(qc::Qubit qubit, QubitLabelType qubitLabelType) const;
