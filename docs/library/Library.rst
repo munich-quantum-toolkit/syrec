@@ -5,7 +5,7 @@ Library
     :maxdepth: 4
 
     AnnotatableQuantumComputation
-    ConfigurableSettings
+    ConfigurableOptions
     NBitValuesContainer
     Parser
     InlinedQubitInformation

@@ -12,9 +12,3 @@ The following enum defines the integer constant truncation operations supported 
     .. autoclass:: mqt.syrec.pysyrec.integer_constant_truncation_operation
         :undoc-members:
         :members:
-
-An object that stores statistics collected during parsing/synthesis.
-
-    .. autoclass:: mqt.syrec.statistics
-        :undoc-members:
-        :members:
