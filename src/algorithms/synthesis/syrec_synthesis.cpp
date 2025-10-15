@@ -241,12 +241,12 @@ namespace syrec {
 
         synthesizer->firstVariableQubitOffsetLookup->openNewVariableQubitOffsetScope();
         if (!synthesizer->createQuantumRegistersForSyrecVariables(main->parameters)) {
-            std::cerr << "Failed to create qubits for local variables of main module of SyReC program\n";
+            std::cerr << "Failed to create qubits for parameters of main module of SyReC program\n";
             return false;
         }
 
         if (!synthesizer->createQuantumRegistersForSyrecVariables(main->variables)) {
-            std::cerr << "Failed to create qubits for parameters of main module of SyReC program\n";
+            std::cerr << "Failed to create qubits for local variables of main module of SyReC program\n";
             return false;
         }
 
@@ -1471,7 +1471,7 @@ namespace syrec {
         // Ancillary qubits generated for an integer larger than 1 all share the same origin and thus will reuse the same module call stack in its inline information
         auto initialValuesOfAncillaryQubits = std::vector(bitwidth, false);
         for (std::size_t i = 0; i < initialValuesOfAncillaryQubits.size(); ++i) {
-            initialValuesOfAncillaryQubits[i] = (value & (1 << i)) != 0;
+            initialValuesOfAncillaryQubits[i] = (value & (1U << i)) != 0U;
         }
 
         const auto        expectedQubitIndexForFirstAddedAncillaryQubit = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
@@ -1646,11 +1646,12 @@ namespace syrec {
                 if (const auto& reverseStatement = (*it)->reverse(); reverseStatement.has_value()) {
                     synthesisOfModuleBodyOk = processStatement(*reverseStatement);
                 } else {
-                    const auto offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule = static_cast<std::size_t>(std::distance(statements.rend(), it));
+                    const auto        offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule = static_cast<std::size_t>(std::distance(statements.rbegin(), it));
+                    const std::size_t idxOfStatementInSequentialExecutionOrder                  = statements.size() - offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule;
                     if (callStmt != nullptr) {
-                        std::cerr << "Failed to create inverse of statement at index " << std::to_string(statements.size() - offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule) << " in body of called module " << targetModule->name << "(CALL @ " << std::to_string(it->get()->lineNumber) << ")";
+                        std::cerr << "Failed to create inverse of statement at index " << std::to_string(idxOfStatementInSequentialExecutionOrder) << " in body of called module " << targetModule->name << "(CALL @ " << std::to_string(it->get()->lineNumber) << ")";
                     } else {
-                        std::cerr << "Failed to create inverse of statement at index " << std::to_string(statements.size() - offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule) << " in body of uncalled module " << targetModule->name << "(UNCALL @ " << std::to_string(it->get()->lineNumber) << ")";
+                        std::cerr << "Failed to create inverse of statement at index " << std::to_string(idxOfStatementInSequentialExecutionOrder) << " in body of uncalled module " << targetModule->name << "(UNCALL @ " << std::to_string(it->get()->lineNumber) << ")";
                     }
                     synthesisOfModuleBodyOk = false;
                 }

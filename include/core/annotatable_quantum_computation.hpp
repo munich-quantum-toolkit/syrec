@@ -39,7 +39,7 @@ namespace syrec {
         using SynthesisCostMetricValue          = std::uint64_t;
 
         /**
-         * A wrapper for a qubit index range [first, last] in which the first qubit index is assumed to be smaller or equal to the last index.
+         * A wrapper for a qubit index range [first, last] where firstQubitIndex ≤ lastQubitIndex.
          */
         struct QubitIndexRange {
             /**
@@ -152,7 +152,7 @@ namespace syrec {
          * @param quantumRegisterLabel The label for the created quantum register. A new quantum register is only created if the ancillary qubits could not be appended to an adjacent ancillary qubit register.
          * @param initialStateOfAncillaryQubits A collection defining how many ancillary qubits should be added but also their initial values (each ancillary qubit initialized with '1' will cause the addition of a controlled X gate to the quantum computation). Cannot be empty.
          * @param sharedInliningInformation The inline information recorded for all ancillary qubits generated with this call.
-         * @return The index of the first generated ancillary qubits. If more than one ancillary qubits wa added then their indices are adjacent to the return index.
+         * @return The index of the first generated ancillary qubits. If more than one ancillary qubits was added then their indices are adjacent to the return index.
          * @remark If no more qubits are to be added to the quantum computation then the preliminary ancillary qubits need to be promoted to actual ancillary qubits with a call to AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits().
          */
         [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryRegisterOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation);
@@ -326,6 +326,14 @@ namespace syrec {
                 storedQubitIndices(storedQubitIndices), quantumRegisterLabel(std::move(quantumRegisterLabel)) {}
 
             virtual ~BaseQuantumRegisterVariableLayout() = default;
+            // Prevent object slicing when trying to copy assign or copy construct base class object from derived class object.
+            // (see C++ core guidelines: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#c67-a-polymorphic-class-should-suppress-public-copymove and https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es63-dont-slice)
+            // Additionally, explicitly define remaining rule of 5 member functions (destructor, copy constructor, copy assignment operator, move constructor, and move assignment operator.)
+            BaseQuantumRegisterVariableLayout(const BaseQuantumRegisterVariableLayout&)            = delete;
+            BaseQuantumRegisterVariableLayout& operator=(const BaseQuantumRegisterVariableLayout&) = delete;
+            BaseQuantumRegisterVariableLayout(BaseQuantumRegisterVariableLayout&&)                 = default;
+            BaseQuantumRegisterVariableLayout& operator=(BaseQuantumRegisterVariableLayout&&)      = default;
+
             /**
              * Determine various information about a given qubit in the variable layout of the quantum register.
              * @param qubit The qubit whose quantum register variable layout information should be determined.
@@ -363,7 +371,7 @@ namespace syrec {
 
             /**
              * Create a new variable layout for a non-ancillary quantum register storing the qubits of a syrec::Variable.
-             * @param coveredQubitIndicesOfQuantumRegister The covered qubit index range of the ancillary quantum register. The first qubit index is assumed to be larger or equal to the last qubit index.
+             * @param coveredQubitIndicesOfQuantumRegister The covered qubit index range of the ancillary quantum register. The first qubit index is assumed to be smaller or equal to the last qubit index.
              * @param quantumRegisterLabel The label of the ancillary quantum register. Must not be empty.
              * @param numValuesPerDimensionOfVariable The number of values per dimension of the associated syrec::Variable.
              * @param qubitSizeOfElementInVariable The bitwidth of every element in the syrec::Variable.
@@ -390,7 +398,7 @@ namespace syrec {
 
             /**
              * Append a qubit index range to the ancillary quantum register
-             * @param qubitIndexRange The qubit index range to append. The first qubit index must be larger or equal to its last qubit index while the first qubit index must be the next qubit after the current last qubit in the ancillary quantum register.
+             * @param qubitIndexRange The qubit index range to append. The first qubit index must be smaller or equal to its last qubit index while the first qubit index must be the next qubit after the current last qubit in the ancillary quantum register.
              * @param sharedInlinedQubitInformation The inline qubit information of the to be added qubits.
              * @return Whether the qubit index range could be appended.
              */
@@ -398,7 +406,7 @@ namespace syrec {
 
             /**
              * Create a new variable layout for a ancillary quantum register.
-             * @param coveredQubitIndicesOfQuantumRegister The covered qubit index range of the ancillary quantum register. The first qubit index is assumed to be larger or equal to the last qubit index.
+             * @param coveredQubitIndicesOfQuantumRegister The covered qubit index range of the ancillary quantum register. The first qubit index is assumed to be smaller or equal to the last qubit index.
              * @param quantumRegisterLabel The label of the ancillary quantum register. Must not be empty.
              * @param sharedInlinedQubitInformation The inline qubit information of the associated qubit index range.
              */

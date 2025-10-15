@@ -27,6 +27,8 @@ class CircuitViewQubitLabel:
     associated_qubit: int
     internal_qubit_label: str
 
+    stringified_label_components_extractor: re.Pattern[str] = re.compile(r"^Q:\s*(?P<q>\d+)\s*\|\s*(?P<label>.+)$")
+
     def __str__(self) -> str:
         return "Q: " + str(self.associated_qubit) + " | " + self.internal_qubit_label
 
@@ -36,25 +38,10 @@ class CircuitViewQubitLabel:
     # the import (from __future__ import annotations) needs to be used
     @classmethod
     def load_from_string(cls, input_string: str) -> CircuitViewQubitLabel | None:
-        qubit_value_substring_pos: int = input_string.find("Q:")
-        if (
-            qubit_value_substring_pos == -1
-            or qubit_value_substring_pos == (len(input_string) - 1)
-            or qubit_value_substring_pos == (len(input_string) - 2)
-        ):
-            return None
-
-        qubit_value_and_label_delimiter: int = input_string.find("|", qubit_value_substring_pos + 2)
-        if qubit_value_and_label_delimiter == -1 or qubit_value_and_label_delimiter == (len(input_string) - 1):
-            return None
-
-        associated_qubit: int = -1
-        try:
-            associated_qubit = int(input_string[qubit_value_substring_pos + 2 : qubit_value_and_label_delimiter - 1])
-        except ValueError:
-            return None
-
-        return CircuitViewQubitLabel(associated_qubit, input_string[qubit_value_and_label_delimiter + 1 :].strip())
+        m = cls.stringified_label_components_extractor.match(input_string)
+        if m is not None:
+            return CircuitViewQubitLabel(int(m.group("q")), m.group("label").strip())
+        return None
 
 
 def show_error_dialog(title: str, message: str) -> None:
@@ -1007,11 +994,15 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                     + "\n"
                     + "into its internal DTO representation! This should not happen and indicates an internal error!",
                 )
-                self.search_and_display_information_for_qubit(CircuitViewQubitLabel(-1, ""), True)
+                self.search_and_display_information_for_qubit(
+                    CircuitViewQubitLabel(-1, ""), update_combobox_selection=True
+                )
             else:
-                self.search_and_display_information_for_qubit(destringified_combo_box_item_data, True)
+                self.search_and_display_information_for_qubit(
+                    destringified_combo_box_item_data, update_combobox_selection=True
+                )
         else:
-            self.search_and_display_information_for_qubit(CircuitViewQubitLabel(-1, ""), True)
+            self.search_and_display_information_for_qubit(CircuitViewQubitLabel(-1, ""), update_combobox_selection=True)
 
     def clear(self) -> None:
         self.qubits_labels_of_local_variables_lookup.clear()
@@ -1103,7 +1094,7 @@ class ConfigurableOptionsUpdated(QtWidgets.QDialog):  # type: ignore[misc]
         self.expected_main_module_identifier_textbox.setPlaceholderText(
             "Leave blank if last declared module of SyReC program should be used as main module..."
         )
-        module_identifier_regular_expr = QtCore.QRegularExpression(R"(^($|^(_|[a-zA-Z])+\w*))")
+        module_identifier_regular_expr = QtCore.QRegularExpression(R"(^([_A-Za-z]\w*)?$)")
         module_identifier_validator = QtGui.QRegularExpressionValidator(module_identifier_regular_expr, self)
         self.expected_main_module_identifier_textbox.setValidator(module_identifier_validator)
 
@@ -1286,7 +1277,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
             )
         else:
             self.qubits_information_lookup.search_and_display_information_for_qubit(
-                destringified_circuit_view_qubit_label, True
+                destringified_circuit_view_qubit_label, update_combobox_selection=True
             )
 
     def filter_and_record_parser_errors(self, aggregate_error_string: str) -> None:

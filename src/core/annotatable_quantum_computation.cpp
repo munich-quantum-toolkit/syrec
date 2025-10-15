@@ -481,11 +481,6 @@ bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(cons
         idxOfLastGateToAnnotate  = fromQuantumOperationIndex;
     }
 
-    QuantumOperationAnnotationsLookup gateAnnotations = userProvidedAnnotationsPerQuantumOperation;
-    for (const auto& [annotationKey, annotationValue]: activateGlobalQuantumOperationAnnotations) {
-        gateAnnotations[annotationKey] = annotationValue;
-    }
-
     for (std::size_t i = idxOfFirstGateToAnnotate; i <= idxOfLastGateToAnnotate; ++i) {
         annotationsPerQuantumOperation[i].insert(userProvidedAnnotationsPerQuantumOperation.cbegin(), userProvidedAnnotationsPerQuantumOperation.cend());
         annotationsPerQuantumOperation[i].insert(activateGlobalQuantumOperationAnnotations.cbegin(), activateGlobalQuantumOperationAnnotations.cend());
@@ -493,7 +488,7 @@ bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(cons
     return true;
 }
 
-// BEGIN Quantum register variable alyout functionality
+// BEGIN Quantum register variable layout functionality
 AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::NonAncillaryQuantumRegisterVariableLayout(const QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, const unsigned qubitSizeOfElementInVariable, const std::optional<InlinedQubitInformation>& optionalSharedInlinedQubitInformation):
     BaseQuantumRegisterVariableLayout(coveredQubitIndicesOfQuantumRegister, quantumRegisterLabel), elementQubitSize(qubitSizeOfElementInVariable), numValuesPerDimensionOfVariable(numValuesPerDimensionOfVariable), optionalSharedInlinedQubitInformation(optionalSharedInlinedQubitInformation) {
     offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths = std::vector(numValuesPerDimensionOfVariable.size(), 1U);
