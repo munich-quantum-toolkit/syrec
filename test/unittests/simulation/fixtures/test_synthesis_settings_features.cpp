@@ -10,9 +10,11 @@
 
 #include "algorithms/synthesis/syrec_cost_aware_synthesis.hpp"
 #include "algorithms/synthesis/syrec_line_aware_synthesis.hpp"
+#include "algorithms/synthesis/syrec_synthesis.hpp"
 #include "base_simulation_test_fixture.hpp"
 #include "core/configurable_options.hpp"
 #include "core/syrec/parser/utils/syrec_operation_utils.hpp"
+#include "ir/Definitions.hpp"
 
 #include <gtest/gtest.h>
 #include <optional>
@@ -207,6 +209,37 @@ TYPED_TEST_P(BaseSimulationTestFixture, PartialSimplificationInNestedExpressionO
     }
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsQubits) {
+    ASSERT_NO_FATAL_FAILURE(this->annotatableQuantumComputation.addAncillaryQubit(0U, std::nullopt));
+    ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
+    ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, this->annotatableQuantumComputation));
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsOperations) {
+    constexpr qc::Qubit alreadyExistingQubit = 0U;
+    ASSERT_NO_FATAL_FAILURE(this->annotatableQuantumComputation.addAncillaryQubit(alreadyExistingQubit, std::nullopt));
+    ASSERT_TRUE(this->annotatableQuantumComputation.addOperationsImplementingNotGate(alreadyExistingQubit)) << "Failed to insert NOT operation into annotatable quantum computation";
+
+    ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
+    ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, this->annotatableQuantumComputation));
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfEmptySyrecProgramNotPossible) {
+    ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, this->annotatableQuantumComputation));
+}
+
+TYPED_TEST_P(BaseSimulationTestFixture, InvalidSynthesizerInstanceNotUsableToSynthesizeSyrecProgram) {
+    ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
+
+    if (this->isTestingLineAwareSynthesis()) {
+        syrec::LineAwareSynthesis* synthesizer = nullptr;
+        ASSERT_FALSE(syrec::SyrecSynthesis::synthesize(synthesizer, this->syrecProgramInstance));
+    } else {
+        syrec::CostAwareSynthesis* synthesizer = nullptr;
+        ASSERT_FALSE(syrec::SyrecSynthesis::synthesize(synthesizer, this->syrecProgramInstance));
+    }
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesModuleWithMainIdentiferAsMainModule,
                             OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMainExists,
@@ -241,7 +274,12 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
 
                             PartialSimplificationInNestedExpressionOfUnaryExpressionPerformedDueToIntegerConstantTruncation,
                             PartialSimplificationInNestedExpressionOfBinaryExpressionPerformedDueToIntegerConstantTruncation,
-                            PartialSimplificationInNestedExpressionOfShiftExpressionPerformedDueToIntegerConstantTruncation);
+                            PartialSimplificationInNestedExpressionOfShiftExpressionPerformedDueToIntegerConstantTruncation,
+
+                            SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsQubits,
+                            SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsOperations,
+                            SynthesisOfEmptySyrecProgramNotPossible,
+                            InvalidSynthesizerInstanceNotUsableToSynthesizeSyrecProgram);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );

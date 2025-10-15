@@ -100,6 +100,21 @@ public:
         return testing::UnitTest::GetInstance()->current_test_info()->name();
     }
 
+    [[nodiscard]] static bool performProgramSynthesis(const syrec::Program& program, syrec::AnnotatableQuantumComputation& annotatableQuantumComputation, const std::optional<syrec::ConfigurableOptions>& optionalSynthesisSettings = std::nullopt, syrec::Statistics* optionalRecordedStatistics = nullptr) {
+        const auto synthesisSettings = optionalSynthesisSettings.value_or(syrec::ConfigurableOptions());
+        if constexpr (std::is_same_v<T, syrec::CostAwareSynthesis>) {
+            return syrec::CostAwareSynthesis::synthesize(annotatableQuantumComputation, program, synthesisSettings, optionalRecordedStatistics);
+        } else {
+            return syrec::LineAwareSynthesis::synthesize(annotatableQuantumComputation, program, synthesisSettings, optionalRecordedStatistics);
+        }
+    }
+
+    static void parseInputCircuitFromString(const std::string_view& stringifiedSyrecProgram, syrec::Program& parserInstance, const std::optional<syrec::ConfigurableOptions>& optionalParserConfiguration = std::nullopt) {
+        std::string errorsOfReadInputCircuit;
+        ASSERT_NO_FATAL_FAILURE(errorsOfReadInputCircuit = parserInstance.readFromString(stringifiedSyrecProgram, optionalParserConfiguration.value_or(syrec::ConfigurableOptions())));
+        ASSERT_TRUE(errorsOfReadInputCircuit.empty()) << "Expected no errors in input circuits but actually found the following: " << errorsOfReadInputCircuit;
+    }
+
 protected:
     static void loadAndParseTestCaseDataFromJson(const std::string& pathToTestCaseDataJsonFile, const std::string& testcaseJsonKey, json& containerForJsonDataOfTestCase) {
         std::ifstream inputFileStream(pathToTestCaseDataJsonFile, std::ifstream::in | std::ifstream::binary);
@@ -132,15 +147,6 @@ protected:
 
             ASSERT_TRUE(jsonDataOfSimulationRun.contains(jsonKeyForStringifiedBinaryOutputState)) << "Entry for output state using key '" << jsonKeyForStringifiedBinaryInputState << "' was not found in the json";
             ASSERT_TRUE(jsonDataOfSimulationRun[jsonKeyForStringifiedBinaryOutputState].is_string()) << "Output state must be defined as a string of binary values in the json";
-        }
-    }
-
-    [[nodiscard]] static bool performProgramSynthesis(const syrec::Program& program, syrec::AnnotatableQuantumComputation& annotatableQuantumComputation, const std::optional<syrec::ConfigurableOptions>& optionalSynthesisSettings = std::nullopt, syrec::Statistics* optionalRecordedStatistics = nullptr) {
-        const auto synthesisSettings = optionalSynthesisSettings.value_or(syrec::ConfigurableOptions());
-        if constexpr (std::is_same_v<T, syrec::CostAwareSynthesis>) {
-            return syrec::CostAwareSynthesis::synthesize(annotatableQuantumComputation, program, synthesisSettings, optionalRecordedStatistics);
-        } else {
-            return syrec::LineAwareSynthesis::synthesize(annotatableQuantumComputation, program, synthesisSettings, optionalRecordedStatistics);
         }
     }
 
@@ -192,12 +198,6 @@ protected:
                 ASSERT_EQ(stringifiedBinaryState[i], '0') << "Only the characters '0' and '1' are allowed when defining the state of an output";
             }
         }
-    }
-
-    static void parseInputCircuitFromString(const std::string_view& stringifiedSyrecProgram, syrec::Program& parserInstance, const std::optional<syrec::ConfigurableOptions>& optionalParserConfiguration = std::nullopt) {
-        std::string errorsOfReadInputCircuit;
-        ASSERT_NO_FATAL_FAILURE(errorsOfReadInputCircuit = parserInstance.readFromString(stringifiedSyrecProgram, optionalParserConfiguration.value_or(syrec::ConfigurableOptions())));
-        ASSERT_TRUE(errorsOfReadInputCircuit.empty()) << "Expected no errors in input circuits but actually found the following: " << errorsOfReadInputCircuit;
     }
 
     std::string jsonKeyForInputCircuit                 = "inputCircuit";
