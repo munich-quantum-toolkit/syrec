@@ -1414,7 +1414,7 @@ namespace syrec {
                 //
                 // One caveat to remember is that the generated quantum computation can only be converted to its OpenQASM 3.0 representation but not the OpenQASM 2.0 due to the chosen internal variable identifier prefix '__q<curr_num_qubits>'
                 // not defining a valid OpenQASM 2.0 quantum register identifier.
-                quantumRegisterLabel = InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(annotatableQuantumComputation.getNqubits());
+                quantumRegisterLabel = InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(annotatableQuantumComputation.getQuantumRegisters().size());
 
                 optionalQubitInliningInformation                         = AnnotatableQuantumComputation::InlinedQubitInformation();
                 optionalQubitInliningInformation->userDeclaredQubitLabel = variable->name;
@@ -1455,7 +1455,7 @@ namespace syrec {
 
     std::optional<qc::Qubit> SyrecSynthesis::getConstantLine(bool value, const std::optional<QubitInliningStack::ptr>& inlinedQubitModuleCallStack) const {
         const auto        expectedAncillaryQubitIndex = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
-        const std::string quantumRegisterLabel        = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedAncillaryQubitIndex);
+        const std::string quantumRegisterLabel        = InternalQubitLabelBuilder::buildAncillaryQubitLabel(annotatableQuantumComputation.getQuantumRegisters().size());
         auto              inliningInformation         = AnnotatableQuantumComputation::InlinedQubitInformation();
         if (shouldQubitInlineInformationBeRecorded()) {
             inliningInformation.inlineStack = inlinedQubitModuleCallStack;
@@ -1475,7 +1475,7 @@ namespace syrec {
         }
 
         const auto        expectedQubitIndexForFirstAddedAncillaryQubit = static_cast<qc::Qubit>(annotatableQuantumComputation.getNqubits());
-        const std::string quantumRegisterLabel                          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(expectedQubitIndexForFirstAddedAncillaryQubit);
+        const std::string quantumRegisterLabel                          = InternalQubitLabelBuilder::buildAncillaryQubitLabel(annotatableQuantumComputation.getQuantumRegisters().size());
         auto              inliningInformation                           = AnnotatableQuantumComputation::InlinedQubitInformation();
         inliningInformation.inlineStack                                 = getLastCreatedModuleCallStackInstance();
 

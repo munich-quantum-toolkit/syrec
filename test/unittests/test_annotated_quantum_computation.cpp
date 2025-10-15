@@ -347,7 +347,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddQuantumRegisterForSyrecVari
     }
 }
 
-TEST_F(AnnotatableQuantumComputationTestsFixture, AddQuantumRegisterForSyrecVariableWithVariableBeingANDVariableAndQubitsNotBeingGarbage) {
+TEST_F(AnnotatableQuantumComputationTestsFixture, AddQuantumRegisterForSyrecVariableWithVariableBeingNDimensionalVariableAndQubitsNotBeingGarbage) {
     const auto         associatedVariableLayoutOfQuantumRegister = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = {3U, 4U, 2U}, .bitwidth = 4U});
     constexpr unsigned expectedNumQubitsInVariable               = 96;
 
@@ -370,7 +370,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddQuantumRegisterForSyrecVari
     }
 }
 
-TEST_F(AnnotatableQuantumComputationTestsFixture, AddQuantumRegisterForSyrecVariableWithVariableBeingANDVariableAndQubitsBeingGarbage) {
+TEST_F(AnnotatableQuantumComputationTestsFixture, AddQuantumRegisterForSyrecVariableWithVariableBeingNDimensionalVariableAndQubitsBeingGarbage) {
     const auto         associatedVariableLayoutOfQuantumRegister = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = {3U, 4U, 2U}, .bitwidth = 4U});
     constexpr unsigned expectedNumQubitsInVariable               = 96;
 
@@ -388,7 +388,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddQuantumRegisterForSyrecVari
     }
 }
 
-TEST_F(AnnotatableQuantumComputationTestsFixture, AddQuantumRegisterForSyrecVariableWithVariableBeingANDVariableAndNoInlinedQubitInformation) {
+TEST_F(AnnotatableQuantumComputationTestsFixture, AddQuantumRegisterForSyrecVariableWithVariableBeingNDimensionalVariableAndNoInlinedQubitInformation) {
     const auto         associatedVariableLayoutOfQuantumRegister = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = {3U, 4U, 2U}, .bitwidth = 4U});
     constexpr unsigned expectedNumQubitsInVariable               = 96;
 
@@ -991,7 +991,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, GetInternalQubitLabelOfQubitOf
     }
 }
 
-TEST_F(AnnotatableQuantumComputationTestsFixture, GetInternalQubitLabelOfQubitOfANDVariable) {
+TEST_F(AnnotatableQuantumComputationTestsFixture, GetInternalQubitLabelOfQubitOfNDimensionalVariable) {
     const std::string expectedQuantumRegisterLabel              = "regLabel";
     constexpr auto    expectedQubitRangeOfQuantumRegister       = AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 29U});
     const auto        associatedVariableLayoutOfQuantumRegister = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = {2U, 3U}, .bitwidth = 5U});
@@ -1069,7 +1069,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, GetUserDeclaredQubitLabelOfQub
     }
 }
 
-TEST_F(AnnotatableQuantumComputationTestsFixture, GetUserDeclaredQubitLabelOfQubitOfANDVariable) {
+TEST_F(AnnotatableQuantumComputationTestsFixture, GetUserDeclaredQubitLabelOfQubitOfNDimensionalVariable) {
     const std::string associatedVariableIdentifier = "varName";
 
     const auto inlineStack = std::make_shared<QubitInliningStack>();
@@ -3006,7 +3006,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, GetInlineQubitInformationOfQua
     ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, 3U, expectedInlineQubitInformationOfQubit3));
 }
 
-TEST_F(AnnotatableQuantumComputationTestsFixture, GetInlineQubitInformationOfQuantumRegisterAssociatedWithANDVariable) {
+TEST_F(AnnotatableQuantumComputationTestsFixture, GetInlineQubitInformationOfQuantumRegisterAssociatedWithNDimensionalVariable) {
     const auto sharedInlineStack     = std::make_shared<QubitInliningStack>();
     const auto firstInlineStackEntry = QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = 1U, .isTargetModuleAccessedViaCallStmt = true, .targetModule = std::make_shared<Module>("mainModule")});
     ASSERT_TRUE(sharedInlineStack->push(firstInlineStackEntry));

@@ -206,8 +206,8 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryR
 void AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits() {
     canQubitsBeAddedToQuantumComputation = false;
 
-    for (auto quantumRegisterIterator = quantumRegisterAssociatedVariableLayouts.begin(); quantumRegisterIterator != quantumRegisterAssociatedVariableLayouts.end(); ++quantumRegisterIterator) {
-        if (const auto* currQuantumRegisterAsAncillaryOne = dynamic_cast<const AncillaryQuantumRegisterVariableLayout*>(quantumRegisterIterator->get()); currQuantumRegisterAsAncillaryOne != nullptr) {
+    for (const auto& quantumRegister: quantumRegisterAssociatedVariableLayouts) {
+        if (const auto* currQuantumRegisterAsAncillaryOne = dynamic_cast<const AncillaryQuantumRegisterVariableLayout*>(quantumRegister.get()); currQuantumRegisterAsAncillaryOne != nullptr) {
             setLogicalQubitsAncillary(currQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex, currQuantumRegisterAsAncillaryOne->storedQubitIndices.lastQubitIndex);
         }
     }
