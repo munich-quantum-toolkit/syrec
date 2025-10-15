@@ -31,6 +31,15 @@
 #include <vector>
 
 namespace {
+    /**
+     * Find the index of the first qubit index range in the sorted collection that contains the given qubit.
+     * @tparam ForwardIterator Template type parameter defining the type of elements in the searched through collection.
+     * @param firstElementOfCollection An iterator defining the first element of the to be searched through collection.
+     * @param lastElementOfCollection An iterator defining the last element of the to be searched through collection.
+     * @param qubitToFind The qubit to find.
+     * @remark The collection is assumed to be sorted in ascending order based on first qubit index per qubit index range. Additionally, no overlaps or gaps between the elements of the collection are assumed to exist.
+     * @return The index of the element in the collection that contains \p qubitToFind, otherwise std::nullopt.
+     */
     template<class ForwardIterator>
     std::optional<std::size_t> findIndexOfElementContainingQubit(const ForwardIterator& firstElementOfCollection, const ForwardIterator& lastElementOfCollection, const qc::Qubit qubitToFind) {
         static_assert(std::is_same_v<syrec::AnnotatableQuantumComputation::QubitIndexRange, typename std::iterator_traits<ForwardIterator>::value_type>);
@@ -43,7 +52,7 @@ namespace {
             return std::nullopt;
         }
 
-        // Performs a binary search through the sorted collection of the syrec::AnnotatableQuantumComputation::QubitIndexRange elements, assumed to be sorted in ascending order based on the value of the start qubit of the index range, and returns the first element that is <= qubitToFind.
+        // Performs a binary search through the sorted collection of the syrec::AnnotatableQuantumComputation::QubitIndexRange elements, assumed to be sorted in ascending order based on the value of the start qubit of the index range, and returns an iterator to the first qubit index range whose lastQubitIndex >= qubitToFind..
         // At this point we already checked whether the qubitToFind is smaller than the lowest qubit in qubit index range collection, if the qubitToFind is larger than the largest qubit in the qubit index range collection than the std::end() iterator of the collection is return. Otherwise,
         // the iterator points to the qubit index range that contains the qubitToFind.
         const auto iteratorToRangeElementGreaterThanQubit = std::lower_bound(firstElementOfCollection, lastElementOfCollection, qubitToFind, [](const syrec::AnnotatableQuantumComputation::QubitIndexRange& qubitIndexRangeOfElement, const qc::Qubit qubitToFind) { return qubitIndexRangeOfElement.lastQubitIndex < qubitToFind; });
@@ -491,6 +500,8 @@ bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(cons
 // BEGIN Quantum register variable layout functionality
 AnnotatableQuantumComputation::NonAncillaryQuantumRegisterVariableLayout::NonAncillaryQuantumRegisterVariableLayout(const QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, const unsigned qubitSizeOfElementInVariable, const std::optional<InlinedQubitInformation>& optionalSharedInlinedQubitInformation):
     BaseQuantumRegisterVariableLayout(coveredQubitIndicesOfQuantumRegister, quantumRegisterLabel), elementQubitSize(qubitSizeOfElementInVariable), numValuesPerDimensionOfVariable(numValuesPerDimensionOfVariable), optionalSharedInlinedQubitInformation(optionalSharedInlinedQubitInformation) {
+    // Calculates the offset to the next element per dimension measured in the number of variable bitwidths starting with the second to last dimension, for the last dimension this value is always 1.
+    // E.g., for a SyReC variable with dimensions [2][3][4] the calculated offsets are [12, 4, 1].
     offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths = std::vector(numValuesPerDimensionOfVariable.size(), 1U);
     std::size_t dimensionIndex                                        = numValuesPerDimensionOfVariable.size() - 1U;
     for (auto offsetIterator = std::next(offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths.rbegin()); offsetIterator != offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths.rend(); ++offsetIterator) {
@@ -520,9 +531,9 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
         return std::nullopt;
     }
 
-    // I. Calculate offset to next element in dimension
+    // I. Calculate the offset to the next element in the current dimension
     // II. For each dimension perform a binary search to determine which element contains the qubit
-    // III. Use indices to build accessed values per dimension for qubit.
+    // III. Add determined index in current dimension to build full index (as one would define in a syrec::VariableAccess) to access the element containing the search for qubit.
     bool            couldRequiredValuePerDimensionBeDetermined = true;
     auto            requiredValuesPerDimension                 = std::vector(numValuesPerDimensionOfVariable.size(), 0U);
     const qc::Qubit qubitSizeOfElements                        = elementQubitSize;
@@ -530,12 +541,18 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
     for (std::size_t i = 0; i < requiredValuesPerDimension.size() && couldRequiredValuePerDimensionBeDetermined; ++i) {
         const unsigned qubitOffsetToNextElementInDimension = offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths[i] * qubitSizeOfElements;
 
+        // For each element in the current dimension determine its covered qubit index range.
         auto firstQubitIndexPerElementInDimension = std::vector(numValuesPerDimensionOfVariable.at(i), qubitOffsetToNextElementInDimension);
-        firstQubitIndexPerElementInDimension[0]   = storedQubitIndices.firstQubitIndex;
+        // Initialize the first covered qubit of the first element of the current dimension to the first qubit covered by the current quantum register.
+        firstQubitIndexPerElementInDimension[0] = storedQubitIndices.firstQubitIndex;
+        // Additionally, add the offset from the accessed value of the previous dimension/s.
         for (std::size_t j = 0; j < i; ++j) {
             firstQubitIndexPerElementInDimension[0] += (requiredValuesPerDimension[j] * offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths[j]) * qubitSizeOfElements;
         }
 
+        // We have now determine the value of the first qubit of the first element of the current dimension (based on the accessed values of the previous dimension) and can now simply
+        // determine the value of the first qubit for the remaining elements of the current dimension as: first_qubit[j] = first_qubit[j - 1] + offset_to_next_element_in_current_dimension.
+        // Note that we have initialized the vector storing the first qubit for each element with the offset to the next element in the current dimension.
         for (std::size_t j = 1; j < firstQubitIndexPerElementInDimension.size(); ++j) {
             firstQubitIndexPerElementInDimension[j] += firstQubitIndexPerElementInDimension[j - 1];
         }

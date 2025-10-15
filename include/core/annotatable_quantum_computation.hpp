@@ -39,7 +39,7 @@ namespace syrec {
         using SynthesisCostMetricValue          = std::uint64_t;
 
         /**
-         * A wrapper for a qubit index range [first, last] where firstQubitIndex ≤ lastQubitIndex.
+         * A wrapper for a qubit index range [first, last] in which the firstQubitIndex is smaller or equal than the last qubit index.
          */
         struct QubitIndexRange {
             /**
@@ -152,7 +152,7 @@ namespace syrec {
          * @param quantumRegisterLabel The label for the created quantum register. A new quantum register is only created if the ancillary qubits could not be appended to an adjacent ancillary qubit register.
          * @param initialStateOfAncillaryQubits A collection defining how many ancillary qubits should be added but also their initial values (each ancillary qubit initialized with '1' will cause the addition of a controlled X gate to the quantum computation). Cannot be empty.
          * @param sharedInliningInformation The inline information recorded for all ancillary qubits generated with this call.
-         * @return The index of the first generated ancillary qubits. If more than one ancillary qubits was added then their indices are adjacent to the return index.
+         * @return The index of the first generated ancillary qubits. If more than one ancillary qubits was added then their indices are adjacent to the returned index.
          * @remark If no more qubits are to be added to the quantum computation then the preliminary ancillary qubits need to be promoted to actual ancillary qubits with a call to AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits().
          */
         [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryRegisterOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation);

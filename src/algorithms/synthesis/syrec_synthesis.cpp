@@ -1482,8 +1482,10 @@ namespace syrec {
         const std::optional<qc::Qubit> actualQubitIndexForFirstAddedAncillaryQubit = annotatableQuantumComputation.addPreliminaryAncillaryRegisterOrAppendToAdjacentOne(quantumRegisterLabel, initialValuesOfAncillaryQubits, inliningInformation);
         const bool                     couldAncillaryQubitsBeAdded                 = actualQubitIndexForFirstAddedAncillaryQubit.has_value() && *actualQubitIndexForFirstAddedAncillaryQubit == expectedQubitIndexForFirstAddedAncillaryQubit;
 
-        for (qc::Qubit firstAncillaryQubit = *actualQubitIndexForFirstAddedAncillaryQubit; firstAncillaryQubit < *actualQubitIndexForFirstAddedAncillaryQubit + bitwidth && couldAncillaryQubitsBeAdded; ++firstAncillaryQubit) {
-            lines.emplace_back(firstAncillaryQubit);
+        const qc::Qubit firstGeneratedAncillaryQubitIndex = *actualQubitIndexForFirstAddedAncillaryQubit;
+        const qc::Qubit lastGeneratedAncillaryQubitIndex  = firstGeneratedAncillaryQubitIndex + (bitwidth - 1U);
+        for (qc::Qubit generatedAncillaryQubitIndex = firstGeneratedAncillaryQubitIndex; generatedAncillaryQubitIndex <= lastGeneratedAncillaryQubitIndex; ++generatedAncillaryQubitIndex) {
+            lines.emplace_back(generatedAncillaryQubitIndex);
         }
         return couldAncillaryQubitsBeAdded;
     }

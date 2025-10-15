@@ -836,7 +836,7 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
         inline_stack: syrec.qubit_inlining_stack | None,
     ) -> None:
         self.clear_inline_data_controls()
-        self.toggle_all_inline_information_controls(True)
+        self.toggle_all_inline_information_controls(show_inline_information=True)
 
         self.internal_qubit_label_value.setText(internal_qubit_label)
         # No user declared qubit label will exist for ancillary qubits
@@ -1035,7 +1035,7 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 return
             self.selectable_qubit_labels_combobox.setCurrentIndex(combobox_item_idx_matching_label)
 
-        self.qubit_info_widget.toggle_all_inline_information_controls(True)
+        self.qubit_info_widget.toggle_all_inline_information_controls(show_inline_information=True)
         inline_information_of_qubit: syrec.inlined_qubit_information | None = (
             self.annotatable_quantum_computation.get_inlined_qubit_information(
                 qubit_internal_label_and_index.associated_qubit
@@ -1065,7 +1065,9 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
             self.selectable_qubit_labels_combobox.itemText(new_combobox_idx)
         )
         if destringified_combobox_label_data is not None:
-            self.search_and_display_information_for_qubit(destringified_combobox_label_data, False)
+            self.search_and_display_information_for_qubit(
+                destringified_combobox_label_data, update_combobox_selection=False
+            )
         else:
             show_error_dialog(
                 "Error during qubit label combobox selection change",
