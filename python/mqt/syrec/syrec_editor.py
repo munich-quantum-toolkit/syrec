@@ -21,13 +21,15 @@ from mqt import syrec
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+STRINGIFIED_CIRCUIT_VIEW_QUBIT_LABEL_COMPONENTS_EXTRACTOR_REGEX: re.Pattern[str] = re.compile(
+    r"^Q:\s*(?P<q>\d+)\s*\|\s*(?P<label>.+)$"
+)
+
 
 @dataclass
 class CircuitViewQubitLabel:
     associated_qubit: int
     internal_qubit_label: str
-
-    stringified_label_components_extractor: re.Pattern[str] = re.compile(r"^Q:\s*(?P<q>\d+)\s*\|\s*(?P<label>.+)$")
 
     def __str__(self) -> str:
         return "Q: " + str(self.associated_qubit) + " | " + self.internal_qubit_label
@@ -38,7 +40,7 @@ class CircuitViewQubitLabel:
     # the import (from __future__ import annotations) needs to be used
     @classmethod
     def load_from_string(cls, input_string: str) -> CircuitViewQubitLabel | None:
-        m = cls.stringified_label_components_extractor.match(input_string)
+        m = STRINGIFIED_CIRCUIT_VIEW_QUBIT_LABEL_COMPONENTS_EXTRACTOR_REGEX.match(input_string)
         if m is not None:
             return CircuitViewQubitLabel(int(m.group("q")), m.group("label").strip())
         return None
@@ -962,7 +964,7 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
                 i, syrec.qubit_label_type.internal
             )
 
-            # Fetching the internal qubit label for a valid qubit of the annotatable quantum computation should not fail but wee handle the error case nevertheless.
+            # Fetching the internal qubit label for a valid qubit of the annotatable quantum computation should not fail but we handle the error case nevertheless.
             if internal_qubit_label is None:
                 show_error_dialog(
                     "Error generating internal qubit label",

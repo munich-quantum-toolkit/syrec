@@ -25,7 +25,7 @@ We start by defining the semantics of the highest-level entity of a SyReC progra
     ...
   ```
 
-- The value of every variable with bitwidth {math}`b` is assumed to be an unsigned integer and thus must be in the range {math}`[0, 2^b]`.
+- The value of every variable with bitwidth {math}`b` is assumed to be an unsigned integer and thus must be in the range {math}`[0, 2^{b} - 1]`.
 - The maximum supported bitwidth of any variable is equal to 32.
 - If the bitwidth of a variable is not declared then it is assumed to be equal to a {doc}`configurable default value <library/ConfigurableOptions>`.
 - The parameter and variable identifiers must be unique in a SyReC module.

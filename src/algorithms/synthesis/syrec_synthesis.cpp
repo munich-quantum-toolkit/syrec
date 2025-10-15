@@ -121,7 +121,11 @@ namespace {
         return binaryOperation == syrec::BinaryExpression::BinaryOperation::LogicalAnd || binaryOperation == syrec::BinaryExpression::BinaryOperation::LogicalOr;
     }
 
-    [[nodiscard]] std::size_t determinePositionOfFirstOneBitInValueStartingFromLSB(unsigned value) {
+    [[nodiscard]] std::optional<std::size_t> determinePositionOfFirstOneBitInValueStartingFromLSB(unsigned value) {
+        if (value == 0) {
+            return std::nullopt;
+        }
+
         // We could use the https://en.cppreference.com/w/cpp/numeric/countr_zero.html function to implement the same functionality. However, said function will be detected as a typo by the pre-commit checks.
         // To fix this false positive typo one would have to add a separate configuration file for the typo checks (see https://github.com/crate-ci/typos/discussions/907). One could also use std::log2(...)
         // but using such a complex function for rather simple functionality seems overkill.
@@ -1467,6 +1471,9 @@ namespace syrec {
 
     bool SyrecSynthesis::getConstantLines(const unsigned bitwidth, const qc::Qubit value, std::vector<qc::Qubit>& lines) const {
         assert(bitwidth <= 32);
+        if (bitwidth == 0) {
+            return false;
+        }
 
         // Ancillary qubits generated for an integer larger than 1 all share the same origin and thus will reuse the same module call stack in its inline information
         auto initialValuesOfAncillaryQubits = std::vector(bitwidth, false);
@@ -1649,7 +1656,7 @@ namespace syrec {
                     synthesisOfModuleBodyOk = processStatement(*reverseStatement);
                 } else {
                     const auto        offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule = static_cast<std::size_t>(std::distance(statements.rbegin(), it));
-                    const std::size_t idxOfStatementInSequentialExecutionOrder                  = statements.size() - offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule;
+                    const std::size_t idxOfStatementInSequentialExecutionOrder                  = statements.size() - 1U - offsetFromLastStmtToCurrentlyProcessedOneInUncalledModule;
                     if (callStmt != nullptr) {
                         std::cerr << "Failed to create inverse of statement at index " << std::to_string(idxOfStatementInSequentialExecutionOrder) << " in body of called module " << targetModule->name << "(CALL @ " << std::to_string(it->get()->lineNumber) << ")";
                     } else {
@@ -1900,9 +1907,9 @@ namespace syrec {
                     qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex = qubitsStoringSynthesizedExprOfDimension;
                 } else if (std::has_single_bit(offsetToNextElementOfDimensionInNumberOfArrayElements)) {
                     numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
-                    const auto shiftAmount                                   = static_cast<unsigned>(determinePositionOfFirstOneBitInValueStartingFromLSB(offsetToNextElementOfDimensionInNumberOfArrayElements));
-                    synthesisOk &= getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) &&
-                                   leftShift(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, shiftAmount);
+                    const auto shiftAmount                                   = static_cast<std::optional<unsigned>>(determinePositionOfFirstOneBitInValueStartingFromLSB(offsetToNextElementOfDimensionInNumberOfArrayElements));
+                    synthesisOk &= shiftAmount.has_value() && getConstantLines(numQubitsRequiredToStoreIndexToAnyElementInAccessedVariable, 0U, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex) &&
+                                   leftShift(annotatableQuantumComputation, qubitsStoringSymbolicValueOfSummandOfDimensionForUnrolledIndex, qubitsStoringSynthesizedExprOfDimension, *shiftAmount);
                     numOperationsAfterSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();
                 } else {
                     numOperationsPriorToSynthesisOfSummandInUnrolledIndexSum = annotatableQuantumComputation.getNops();

@@ -195,7 +195,7 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryR
         quantumRegisterAssociatedVariableLayouts.emplace_back(std::make_unique<AncillaryQuantumRegisterVariableLayout>(QubitIndexRange{.firstQubitIndex = addedQuantumRegister.getStartIndex(), .lastQubitIndex = addedQuantumRegister.getEndIndex()}, quantumRegisterLabel, sharedInliningInformation));
     }
 
-    for (qc::Qubit ancillaryQubitOffsetInQuantumRegister = 0; ancillaryQubitOffsetInQuantumRegister < initialStateOfAncillaryQubits.size(); ++ancillaryQubitOffsetInQuantumRegister) {
+    for (std::size_t ancillaryQubitOffsetInQuantumRegister = 0; ancillaryQubitOffsetInQuantumRegister < initialStateOfAncillaryQubits.size(); ++ancillaryQubitOffsetInQuantumRegister) {
         // Since ancillary qubits are assumed to have an initial value of
         // zero, we need to add an inversion gate to derive the correct
         // initial value of 1.
@@ -205,7 +205,7 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryR
             continue;
         }
 
-        if (!addOperationsImplementingNotGate(indexToFirstGeneratedAncillaryQubit + ancillaryQubitOffsetInQuantumRegister)) {
+        if (!addOperationsImplementingNotGate(indexToFirstGeneratedAncillaryQubit + static_cast<qc::Qubit>(ancillaryQubitOffsetInQuantumRegister))) {
             return std::nullopt;
         }
     }

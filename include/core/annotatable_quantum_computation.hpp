@@ -117,7 +117,7 @@ namespace syrec {
          * @param controlQubitOne The first control qubit of the Toffoli gate, said qubit must be in the range of the known qubits of the quantum computation. Cannot be equal to the \p targetQubit or \p controlQubitTwo.
          * @param controlQubitTwo The second control qubit of the Toffoli gate, said qubit must be in the range of the known qubits of the quantum computation. Cannot be equal to the \p targetQubit or \p controlQubitOne.
          * @param targetQubit The target qubit of the Toffoli gate, said qubit must be in the range of the known qubits of the quantum computation. Cannot be equal to the \p controlQubitOne or \p controlQubitTwo. Additionally, the target qubit cannot be equal to any control qubit currently registered to be propagated.
-         * @return Whether the quantum operation for the CNOT gate could be added to the quantum computation.
+         * @return Whether the quantum operation for the Toffoli gate could be added to the quantum computation.
          */
         [[nodiscard]] bool addOperationsImplementingToffoliGate(qc::Qubit controlQubitOne, qc::Qubit controlQubitTwo, qc::Qubit targetQubit);
 
@@ -140,7 +140,7 @@ namespace syrec {
         /**
          * Add a quantum register for the qubits of a SyReC variable to the quantum computation.
          * @param quantumRegisterLabel The label for the to be added quantum register. Must not be empty and no other qubit or quantum register with the same name must exist in the quantum computation.
-         * @param associatedVariableLayoutInformation Layout information about the associated SyReC variable that is used to detremine the number of qubits to generate. Total number of elements stored in variable must be larger than zero. Bitwidth of variable must be larger than 0.
+         * @param associatedVariableLayoutInformation Layout information about the associated SyReC variable that is used to determine the number of qubits to generate. Total number of elements stored in variable must be larger than zero. Bitwidth of variable must be larger than 0.
          * @param areGeneratedQubitsGarbage Whether the generated qubits are garbage qubits.
          * @param optionalInliningInformation Optional debug information to determine the origin of the qubits in the associated SyReC program.
          * @return The index of the first generated non-ancillary qubit for the \p variable in the quantum computation, std::nullopt if the validation of the \p quantumRegisterLabel or \p variable failed, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid or empty inline stack).
@@ -167,7 +167,7 @@ namespace syrec {
          * Determine the label of a qubit based on its location and the associated variable layout of the SyReC variable stored in the quantum register that stores the qubit.
          * @param qubit The qubit whose label shall be determined.
          * @param qubitLabelType The type of qubit label to generated. Can either be the internal or user declared one.
-         * @return Returns the label of the qubit in the form of a stringified syrec::VariableAccess (e.g. the label generated for qubit 3 of the syrec::Variable a[2][3](2) is equal to a[0][1].1), otherwise std::nullopt.
+         * @return Returns the label of the qubit in the form of a stringified syrec::VariableAccess (e.g. the label to generate for qubit 3 of the syrec::Variable a[2][3](2) is equal to a[0][1].1), otherwise std::nullopt.
          */
         [[nodiscard]] std::optional<std::string> getQubitLabel(qc::Qubit qubit, QubitLabelType qubitLabelType) const;
 
