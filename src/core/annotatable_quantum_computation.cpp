@@ -18,6 +18,7 @@
 #include "ir/operations/Operation.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <functional>
 #include <iterator>
@@ -43,7 +44,7 @@ namespace {
      */
     template<class ForwardIterator>
     std::optional<std::size_t> findIndexOfElementContainingQubit(const ForwardIterator& firstElementOfCollection, const ForwardIterator& lastElementOfCollection, const qc::Qubit qubitToFind) {
-        static_assert(std::is_same_v<syrec::AnnotatableQuantumComputation::QubitIndexRange, typename std::iterator_traits<ForwardIterator>::value_type>);
+        static_assert(std::is_same_v<syrec::AnnotatableQuantumComputation::QubitIndexRange, std::iter_value_t<ForwardIterator>>);
         if (std::distance(firstElementOfCollection, lastElementOfCollection) == 0) {
             return std::nullopt;
         }
@@ -88,7 +89,7 @@ namespace {
     }
 
     bool validateInlinedQubitInformationOfAncillaryQubit(const syrec::AnnotatableQuantumComputation::InlinedQubitInformation& inlinedQubitInformationOfAncillaryQubit) {
-        return inlinedQubitInformationOfAncillaryQubit.inlineStack.has_value() ? isDataOfInlineStackOk(inlinedQubitInformationOfAncillaryQubit.inlineStack.value()) && !inlinedQubitInformationOfAncillaryQubit.userDeclaredQubitLabel.has_value() : true;
+        return (!inlinedQubitInformationOfAncillaryQubit.inlineStack.has_value() || isDataOfInlineStackOk(inlinedQubitInformationOfAncillaryQubit.inlineStack.value())) && !inlinedQubitInformationOfAncillaryQubit.userDeclaredQubitLabel.has_value();
     }
 } // namespace
 
@@ -176,7 +177,17 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyr
 
     const unsigned numberOfElementsInVariable    = std::accumulate(associatedVariableLayoutInformation.numValuesPerDimension.cbegin(), associatedVariableLayoutInformation.numValuesPerDimension.cend(), 1U, std::multiplies());
     const unsigned totalNumberOfQubitsOfVariable = numberOfElementsInVariable * associatedVariableLayoutInformation.bitwidth;
-    const auto     addedQuantumRegister          = addQubitRegister(totalNumberOfQubitsOfVariable, quantumRegisterLabel);
+
+    const auto firstQubitOfNewQuantumRegister       = static_cast<qc::Qubit>(getNqubits());
+    const auto lastQubitOfNewQuantumRegister        = firstQubitOfNewQuantumRegister + totalNumberOfQubitsOfVariable - 1U;
+    const auto qubitRangeOfTemporaryQuantumRegister = QubitIndexRange{.firstQubitIndex = firstQubitOfNewQuantumRegister, .lastQubitIndex = lastQubitOfNewQuantumRegister};
+    if (!isQubitIndexRangeImmediateSuccessorOfCoveredRangeOfLastAddedQuantumRegister(qubitRangeOfTemporaryQuantumRegister)) {
+        return std::nullopt;
+    }
+
+    const auto addedQuantumRegister = addQubitRegister(totalNumberOfQubitsOfVariable, quantumRegisterLabel);
+    assert(addedQuantumRegister.getStartIndex() == qubitRangeOfTemporaryQuantumRegister.firstQubitIndex && addedQuantumRegister.getEndIndex() == qubitRangeOfTemporaryQuantumRegister.lastQubitIndex);
+
     if (areGeneratedQubitsGarbage) {
         setLogicalQubitsGarbage(addedQuantumRegister.getStartIndex(), addedQuantumRegister.getEndIndex());
     }
@@ -191,30 +202,43 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryR
         return std::nullopt;
     }
 
+    const auto firstQubitOfNewQuantumRegister       = static_cast<qc::Qubit>(getNqubits());
+    const auto lastQubitOfNewQuantumRegister        = firstQubitOfNewQuantumRegister + static_cast<qc::Qubit>(initialStateOfAncillaryQubits.size()) - 1U;
+    const auto qubitRangeOfTemporaryQuantumRegister = QubitIndexRange{.firstQubitIndex = firstQubitOfNewQuantumRegister, .lastQubitIndex = lastQubitOfNewQuantumRegister};
+    if (!isQubitIndexRangeImmediateSuccessorOfCoveredRangeOfLastAddedQuantumRegister(qubitRangeOfTemporaryQuantumRegister)) {
+        return std::nullopt;
+    }
+
     qc::Qubit                          indexToFirstGeneratedAncillaryQubit = 0U;
     BaseQuantumRegisterVariableLayout* lastAddedQuantumRegister            = quantumRegisterAssociatedVariableLayouts.empty() ? nullptr : quantumRegisterAssociatedVariableLayouts.back().get();
 
-    const auto& addedQuantumRegister    = addQubitRegister(initialStateOfAncillaryQubits.size(), quantumRegisterLabel);
+    // We need to create a temporary quantum register so that the qubits are added to the quantum computation (in the base class) but can then delete this temporary register and merge the adjacent ancillary quantum register with the now
+    // deleted one by updating the covered qubit range of the former. Additionally, we need to update the state of the now appended to quantum register in the annotatable quantum computation.
+    const auto& addedQuantumRegister = addQubitRegister(initialStateOfAncillaryQubits.size(), quantumRegisterLabel);
+    assert(addedQuantumRegister.getStartIndex() == qubitRangeOfTemporaryQuantumRegister.firstQubitIndex && addedQuantumRegister.getEndIndex() == qubitRangeOfTemporaryQuantumRegister.lastQubitIndex);
     indexToFirstGeneratedAncillaryQubit = addedQuantumRegister.getStartIndex();
 
     if (auto* lastAddedQuantumRegisterAsAncillaryOne = dynamic_cast<AncillaryQuantumRegisterVariableLayout*>(lastAddedQuantumRegister); lastAddedQuantumRegisterAsAncillaryOne != nullptr) {
-        const auto qubitRangeOfTemporaryQuantumRegister = QubitIndexRange{.firstQubitIndex = addedQuantumRegister.getStartIndex(), .lastQubitIndex = addedQuantumRegister.getEndIndex()};
-        const auto qubitRangeOfMergedQuantumRegisters   = QubitIndexRange{.firstQubitIndex = lastAddedQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex, .lastQubitIndex = addedQuantumRegister.getEndIndex()};
+        const auto qubitRangeOfMergedQuantumRegisters = QubitIndexRange{.firstQubitIndex = lastAddedQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex, .lastQubitIndex = addedQuantumRegister.getEndIndex()};
 
         // This check will only fail if an invalid internal state exists (e.g., the quantum registers of the base class do not match the registered quantum register variable layouts in the derived class) and would indicate an 'inconsistency' issue in the implementation but should normally not happen.
         if (!quantumRegisters.contains(lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel)) {
             return std::nullopt;
         }
 
-        // We need to create a temporary quantum register so that the qubits are added to the quantum computation (in the base class) but can then delete this temporary register and merge the adjacent ancillary quantum register with the now
-        // deleted one by updating the covered qubit range of the former. Additionally, we need to update the state of the now appended to quantum register in the annotatable quantum computation.
-        if (quantumRegisters.erase(quantumRegisterLabel) != 1U || !lastAddedQuantumRegisterAsAncillaryOne->appendQubitRange(qubitRangeOfTemporaryQuantumRegister, sharedInliningInformation)) {
+        // The append to the existing ancillary quantum registers should only fail (assuming that the internal state is valid) if the covered qubit index range of the new quantum register is not the adjacent to the covered range of the existing quantum register (i.e. there would be gaps between the two indices ranges).
+        // However, at this point said precondition were already verified thus the append operation should not fail under normal circumstances. We can then delete the temporary quantum register object in the base class.
+        const bool didAppendToExistingQuantumRegisterSucceed = lastAddedQuantumRegisterAsAncillaryOne->appendQubitRange(qubitRangeOfTemporaryQuantumRegister, sharedInliningInformation);
+        if (quantumRegisters.erase(quantumRegisterLabel) != 1U) {
             return std::nullopt;
         }
-        const auto newAncillaryRegisterSize = (qubitRangeOfMergedQuantumRegisters.lastQubitIndex - qubitRangeOfMergedQuantumRegisters.firstQubitIndex) + 1U;
-        // At this point we have deleted the temporary quantum register in the quantum register but also need to update the covered qubit range of the appended to adjacent quantum register in the quantum computation (the base class).
-        // This 'work around' is required since no quantum register can be deleted or modified using the public functions of the base quantum computation interface.
-        quantumRegisters.at(lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel) = qc::QuantumRegister(qubitRangeOfMergedQuantumRegisters.firstQubitIndex, newAncillaryRegisterSize, lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel);
+
+        if (didAppendToExistingQuantumRegisterSucceed) {
+            const auto newAncillaryRegisterSize = (qubitRangeOfMergedQuantumRegisters.lastQubitIndex - qubitRangeOfMergedQuantumRegisters.firstQubitIndex) + 1U;
+            // At this point we have deleted the temporary quantum register in the quantum computation (only the quantum register object but not the qubits) but also need to update the covered qubit range of the appended to adjacent quantum register in the quantum computation (the base class).
+            // This 'work around' is required since no quantum register can be deleted or modified using the public functions of the base quantum computation interface.
+            quantumRegisters.at(lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel) = qc::QuantumRegister(qubitRangeOfMergedQuantumRegisters.firstQubitIndex, newAncillaryRegisterSize, lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel);
+        }
     } else {
         quantumRegisterAssociatedVariableLayouts.emplace_back(std::make_unique<AncillaryQuantumRegisterVariableLayout>(QubitIndexRange{.firstQubitIndex = addedQuantumRegister.getStartIndex(), .lastQubitIndex = addedQuantumRegister.getEndIndex()}, quantumRegisterLabel, sharedInliningInformation));
     }
@@ -489,6 +513,10 @@ std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> Annotatabl
 // BEGIN NON-PUBLIC FUNCTIONALITY
 bool AnnotatableQuantumComputation::isQubitWithinRange(const qc::Qubit qubit) const noexcept {
     return qubit < getNqubits();
+}
+
+bool AnnotatableQuantumComputation::isQubitIndexRangeImmediateSuccessorOfCoveredRangeOfLastAddedQuantumRegister(const QubitIndexRange& toBeCheckedQubitIndexRange) const noexcept {
+    return quantumRegisterAssociatedVariableLayouts.empty() || toBeCheckedQubitIndexRange.firstQubitIndex == quantumRegisterAssociatedVariableLayouts.back()->storedQubitIndices.lastQubitIndex + 1U;
 }
 
 bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(const std::size_t fromQuantumOperationIndex, const std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation) {
