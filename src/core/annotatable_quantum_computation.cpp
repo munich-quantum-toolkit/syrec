@@ -12,6 +12,7 @@
 
 #include "core/qubit_inlining_stack.hpp"
 #include "ir/Definitions.hpp"
+#include "ir/QuantumComputation.hpp"
 #include "ir/operations/Control.hpp"
 #include "ir/operations/OpType.hpp"
 #include "ir/operations/Operation.hpp"
@@ -52,7 +53,7 @@ namespace {
             return std::nullopt;
         }
 
-        // Performs a binary search through the sorted collection of the syrec::AnnotatableQuantumComputation::QubitIndexRange elements, assumed to be sorted in ascending order based on the value of the start qubit of the index range, and returns an iterator to the first qubit index range whose lastQubitIndex >= qubitToFind..
+        // Performs a binary search through the sorted collection of the syrec::AnnotatableQuantumComputation::QubitIndexRange elements, assumed to be sorted in ascending order based on the value of the start qubit of the index range, and returns an iterator to the first qubit index range whose lastQubitIndex >= qubitToFind.
         // At this point we already checked whether the qubitToFind is smaller than the lowest qubit in qubit index range collection, if the qubitToFind is larger than the largest qubit in the qubit index range collection than the std::end() iterator of the collection is return. Otherwise,
         // the iterator points to the qubit index range that contains the qubitToFind.
         const auto iteratorToRangeElementGreaterThanQubit = std::lower_bound(firstElementOfCollection, lastElementOfCollection, qubitToFind, [](const syrec::AnnotatableQuantumComputation::QubitIndexRange& qubitIndexRangeOfElement, const qc::Qubit qubitToFind) { return qubitIndexRangeOfElement.lastQubitIndex < qubitToFind; });
@@ -70,6 +71,24 @@ namespace {
             allStackEntriesValid                                                            = inlineStackEntryAtIdx != nullptr && inlineStackEntryAtIdx->targetModule != nullptr;
         }
         return allStackEntriesValid;
+    }
+
+    bool validateVariableLayoutForSyrecVariable(const syrec::AnnotatableQuantumComputation::AssociatedVariableLayoutInformation& variableLayout, const std::optional<syrec::AnnotatableQuantumComputation::InlinedQubitInformation>& optionalInliningInformation) {
+        if (variableLayout.bitwidth == 0 || variableLayout.numValuesPerDimension.empty() || std::ranges::any_of(variableLayout.numValuesPerDimension, [](const unsigned numValuesOfDimension) { return numValuesOfDimension == 0; })) {
+            return false;
+        }
+        if (optionalInliningInformation.has_value()) {
+            return (optionalInliningInformation->inlineStack.has_value() ? isDataOfInlineStackOk(*optionalInliningInformation->inlineStack) : true) && !optionalInliningInformation->userDeclaredQubitLabel.value_or("").empty();
+        }
+        return true;
+    }
+
+    bool canQuantumRegisterLabelBeUsed(const std::string& quantumRegisterLabel, const qc::QuantumRegisterMap& existingQuantumRegisters) {
+        return !quantumRegisterLabel.empty() && !existingQuantumRegisters.contains(quantumRegisterLabel);
+    }
+
+    bool validateInlinedQubitInformationOfAncillaryQubit(const syrec::AnnotatableQuantumComputation::InlinedQubitInformation& inlinedQubitInformationOfAncillaryQubit) {
+        return inlinedQubitInformationOfAncillaryQubit.inlineStack.has_value() ? isDataOfInlineStackOk(inlinedQubitInformationOfAncillaryQubit.inlineStack.value()) && !inlinedQubitInformationOfAncillaryQubit.userDeclaredQubitLabel.has_value() : true;
     }
 } // namespace
 
@@ -151,7 +170,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
 }
 
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
-    if (!canQubitsBeAddedToQuantumComputation || associatedVariableLayoutInformation.bitwidth == 0 || associatedVariableLayoutInformation.numValuesPerDimension.empty() || std::ranges::any_of(associatedVariableLayoutInformation.numValuesPerDimension, [](const unsigned numberOfValuesOfDimension) { return numberOfValuesOfDimension == 0; }) || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || (optionalInliningInformation.has_value() && ((optionalInliningInformation->inlineStack.has_value() && !isDataOfInlineStackOk(optionalInliningInformation->inlineStack.value())) || !optionalInliningInformation->userDeclaredQubitLabel.has_value() || optionalInliningInformation->userDeclaredQubitLabel->empty()))) {
+    if (!canQubitsBeAddedToQuantumComputation || !canQuantumRegisterLabelBeUsed(quantumRegisterLabel, getQuantumRegisters()) || !validateVariableLayoutForSyrecVariable(associatedVariableLayoutInformation, optionalInliningInformation)) {
         return std::nullopt;
     }
 
@@ -168,7 +187,7 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyr
 }
 
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryRegisterOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation) {
-    if (!canQubitsBeAddedToQuantumComputation || quantumRegisterLabel.empty() || getQuantumRegisters().contains(quantumRegisterLabel) || initialStateOfAncillaryQubits.empty() || (sharedInliningInformation.inlineStack.has_value() && !isDataOfInlineStackOk(sharedInliningInformation.inlineStack.value())) || sharedInliningInformation.userDeclaredQubitLabel.has_value()) {
+    if (!canQubitsBeAddedToQuantumComputation || !canQuantumRegisterLabelBeUsed(quantumRegisterLabel, getQuantumRegisters()) || initialStateOfAncillaryQubits.empty() || !validateInlinedQubitInformationOfAncillaryQubit(sharedInliningInformation)) {
         return std::nullopt;
     }
 
@@ -182,9 +201,14 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryR
         const auto qubitRangeOfTemporaryQuantumRegister = QubitIndexRange{.firstQubitIndex = addedQuantumRegister.getStartIndex(), .lastQubitIndex = addedQuantumRegister.getEndIndex()};
         const auto qubitRangeOfMergedQuantumRegisters   = QubitIndexRange{.firstQubitIndex = lastAddedQuantumRegisterAsAncillaryOne->storedQubitIndices.firstQubitIndex, .lastQubitIndex = addedQuantumRegister.getEndIndex()};
 
-        // We need to create a temporary quantum register so that the qubits are added to the quantum computation but can then delete this temporary register and merge the adjacent ancillary quantum register with the now
+        // This check will only fail if an invalid internal state exists (e.g., the quantum registers of the base class do not match the registered quantum register variable layouts in the derived class) and would indicate an 'inconsistency' issue in the implementation but should normally not happen.
+        if (!quantumRegisters.contains(lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel)) {
+            return std::nullopt;
+        }
+
+        // We need to create a temporary quantum register so that the qubits are added to the quantum computation (in the base class) but can then delete this temporary register and merge the adjacent ancillary quantum register with the now
         // deleted one by updating the covered qubit range of the former. Additionally, we need to update the state of the now appended to quantum register in the annotatable quantum computation.
-        if (!quantumRegisters.contains(lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel) || !lastAddedQuantumRegisterAsAncillaryOne->appendQubitRange(qubitRangeOfTemporaryQuantumRegister, sharedInliningInformation) || quantumRegisters.erase(quantumRegisterLabel) != 1U) {
+        if (quantumRegisters.erase(quantumRegisterLabel) != 1U || !lastAddedQuantumRegisterAsAncillaryOne->appendQubitRange(qubitRangeOfTemporaryQuantumRegister, sharedInliningInformation)) {
             return std::nullopt;
         }
         const auto newAncillaryRegisterSize = (qubitRangeOfMergedQuantumRegisters.lastQubitIndex - qubitRangeOfMergedQuantumRegisters.firstQubitIndex) + 1U;
@@ -248,14 +272,12 @@ const qc::Operation* AnnotatableQuantumComputation::getQuantumOperation(const st
     return at(indexOfQuantumOperationInQuantumComputation).get();
 }
 
-bool AnnotatableQuantumComputation::replayOperationsAtGivenIndexRange(std::size_t indexOfFirstQuantumOperationToReplayInQuantumComputation, std::size_t indexOfLastQuantumOperationToReplayInQuantumComputation) {
+bool AnnotatableQuantumComputation::replayOperationsAtGivenIndexRange(const std::size_t indexOfFirstQuantumOperationToReplayInQuantumComputation, const std::size_t indexOfLastQuantumOperationToReplayInQuantumComputation) {
     if (indexOfFirstQuantumOperationToReplayInQuantumComputation >= getNops() || indexOfLastQuantumOperationToReplayInQuantumComputation >= getNops()) {
         return false;
     }
 
-    std::size_t idxOfFirstQuantumOperationToAnnotateAfterReplay = indexOfFirstQuantumOperationToReplayInQuantumComputation;
-    std::size_t idxOfLastQuantumOperationToAnnotateAfterReplay  = indexOfLastQuantumOperationToReplayInQuantumComputation;
-    std::size_t numQuantumOperationsToReplay                    = 0U;
+    std::size_t numQuantumOperationsToReplay = 0U;
     // Since we have already validated that the provided indices are within range and under the assumption that only valid quantum operations are stored in the quantum computation (i.e. no nullptrs)
     // then the result of the at(...) should return a valid quantum operation instance.
     // After the operations were replayed with the emplace_back(..) call of qc::QuantumComputation, the number of operations will be larger than the number of gate annotations since the annotations for the replayed operations are only
@@ -272,8 +294,8 @@ bool AnnotatableQuantumComputation::replayOperationsAtGivenIndexRange(std::size_
         }
     }
 
-    idxOfFirstQuantumOperationToAnnotateAfterReplay += numQuantumOperationsToReplay;
-    idxOfLastQuantumOperationToAnnotateAfterReplay += numQuantumOperationsToReplay;
+    const std::size_t idxOfFirstQuantumOperationToAnnotateAfterReplay = indexOfLastQuantumOperationToReplayInQuantumComputation + 1U;
+    const std::size_t idxOfLastQuantumOperationToAnnotateAfterReplay  = idxOfFirstQuantumOperationToAnnotateAfterReplay + (numQuantumOperationsToReplay - 1U);
     return annotateAllQuantumOperationsAtPositions(idxOfFirstQuantumOperationToAnnotateAfterReplay, idxOfLastQuantumOperationToAnnotateAfterReplay, {});
 }
 
@@ -557,11 +579,11 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
             firstQubitIndexPerElementInDimension[j] += firstQubitIndexPerElementInDimension[j - 1];
         }
 
-        const auto qubitIndexRangePerElementOfCollection = firstQubitIndexPerElementInDimension | std::views::transform([qubitOffsetToNextElementInDimension](const qc::Qubit firstQubitOfElement) { return QubitIndexRange{.firstQubitIndex = firstQubitOfElement, .lastQubitIndex = (firstQubitOfElement + qubitOffsetToNextElementInDimension) - 1U}; });
-        const auto indexOfElementContainingQubit         = static_cast<std::optional<unsigned>>(findIndexOfElementContainingQubit(qubitIndexRangePerElementOfCollection.begin(), qubitIndexRangePerElementOfCollection.end(), qubit));
+        const auto                       qubitIndexRangePerElementOfCollection = firstQubitIndexPerElementInDimension | std::views::transform([qubitOffsetToNextElementInDimension](const qc::Qubit firstQubitOfElement) { return QubitIndexRange{.firstQubitIndex = firstQubitOfElement, .lastQubitIndex = (firstQubitOfElement + qubitOffsetToNextElementInDimension) - 1U}; });
+        const std::optional<std::size_t> indexOfElementContainingQubit         = findIndexOfElementContainingQubit(qubitIndexRangePerElementOfCollection.begin(), qubitIndexRangePerElementOfCollection.end(), qubit);
 
         couldRequiredValuePerDimensionBeDetermined = indexOfElementContainingQubit.has_value();
-        requiredValuesPerDimension[i]              = indexOfElementContainingQubit.value_or(0);
+        requiredValuesPerDimension[i]              = static_cast<unsigned>(indexOfElementContainingQubit.value_or(0U));
     }
     return couldRequiredValuePerDimensionBeDetermined ? std::make_optional(requiredValuesPerDimension) : std::nullopt;
 }

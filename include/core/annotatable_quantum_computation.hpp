@@ -123,11 +123,11 @@ namespace syrec {
 
         /**
          * Add a quantum operation representing a multi-control Toffoli gate to the quantum computation.
-         * @param controlQubitsSet The set of control qubits of the multi-control Toffoli gate which must contain at least one control qubit. Cannot be equal to the \p targetQubit.
+         * @param controlQubits The set of control qubits of the multi-control Toffoli gate which must contain at least one control qubit. Cannot be equal to the \p targetQubit.
          * @param targetQubit The target qubit of the multi-control Toffoli gate, said qubit must be in the range of the known qubits of the quantum computation. Cannot be equal to any control qubit of \p controlQubitSet or currently registered to be propagated control qubits.
          * @return Whether the quantum operation for the multi-control Toffoli gate could be added to the quantum computation.
          */
-        [[nodiscard]] bool addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubitsSet, qc::Qubit targetQubit);
+        [[nodiscard]] bool addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubits, qc::Qubit targetQubit);
 
         /**
          * Add a quantum operation representing a Fredkin gate to the quantum computation.
