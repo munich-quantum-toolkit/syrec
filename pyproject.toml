@@ -20,7 +20,7 @@ license = "MIT"
 license-files = ["LICENSE.md"]
 
 classifiers = [
-    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Natural Language :: English",
     "Operating System :: POSIX :: Linux",
@@ -35,7 +35,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "Development Status :: 4 - Beta",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.10"
 dependencies = [
