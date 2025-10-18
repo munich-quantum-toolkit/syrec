@@ -60,7 +60,7 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
 
     py::class_<AnnotatableQuantumComputation, qc::QuantumComputation>(m, "annotatable_quantum_computation")
             .def(py::init<>(), "Constructs an annotatable quantum computation")
-            .def(py::init<bool>(), "Constructs an annotatable quantum computation while also specifying whether quantum operation annotations can be generated")
+            .def(py::init<bool>(), "generate_quantum_operation_annotations"_a, "Constructs an annotatable quantum computation while also specifying whether quantum operation annotations can be generated")
             .def("get_qubit_label", &AnnotatableQuantumComputation::getQubitLabel, "qubit"_a, "qubit_label_type"_a, "Get either the internal or user-declared label of a qubit as a stringified SyReC variable access based on its location in the quantum register storing the qubit and, optionally, the layout of the SyReC variable stored in the register.")
             .def("get_quantum_cost_for_synthesis", &AnnotatableQuantumComputation::getQuantumCostForSynthesis, "Get the quantum cost to synthesis the quantum computation")
             .def("get_transistor_cost_for_synthesis", &AnnotatableQuantumComputation::getTransistorCostForSynthesis, "Get the transistor cost to synthesis the quantum computation")
