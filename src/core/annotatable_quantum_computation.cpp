@@ -95,6 +95,10 @@ namespace {
 
 using namespace syrec;
 
+bool AnnotatableQuantumComputation::isGenerationOfQuantumOperationAnnotationsEnabled() const {
+    return generateQuantumOperationAnnotations;
+}
+
 bool AnnotatableQuantumComputation::addOperationsImplementingNotGate(const qc::Qubit targetQubit) {
     if (!isQubitWithinRange(targetQubit) || aggregateOfPropagatedControlQubits.contains(targetQubit)) {
         return false;
@@ -105,7 +109,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingNotGate(const qc::Q
     mcx(gateControlQubits, targetQubit);
 
     const std::size_t currNumQuantumOperations = getNops();
-    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
+    return currNumQuantumOperations > prevNumQuantumOperations && (!generateQuantumOperationAnnotations || annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {}));
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingCnotGate(const qc::Qubit controlQubit, const qc::Qubit targetQubit) {
@@ -120,7 +124,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingCnotGate(const qc::
     mcx(gateControlQubits, targetQubit);
 
     const std::size_t currNumQuantumOperations = getNops();
-    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
+    return currNumQuantumOperations > prevNumQuantumOperations && (!generateQuantumOperationAnnotations || annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {}));
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingToffoliGate(const qc::Qubit controlQubitOne, const qc::Qubit controlQubitTwo, const qc::Qubit targetQubit) {
@@ -136,7 +140,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingToffoliGate(const q
     mcx(gateControlQubits, targetQubit);
 
     const std::size_t currNumQuantumOperations = getNops();
-    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
+    return currNumQuantumOperations > prevNumQuantumOperations && (!generateQuantumOperationAnnotations || annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {}));
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoliGate(const qc::Controls& controlQubits, const qc::Qubit targetQubit) {
@@ -154,7 +158,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingMultiControlToffoli
     mcx(gateControlQubits, targetQubit);
 
     const std::size_t currNumQuantumOperations = getNops();
-    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
+    return currNumQuantumOperations > prevNumQuantumOperations && (!generateQuantumOperationAnnotations || annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {}));
 }
 
 bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const qc::Qubit targetQubitOne, const qc::Qubit targetQubitTwo) {
@@ -167,7 +171,7 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
     mcswap(gateControlQubits, targetQubitOne, targetQubitTwo);
 
     const std::size_t currNumQuantumOperations = getNops();
-    return currNumQuantumOperations > prevNumQuantumOperations && annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {});
+    return currNumQuantumOperations > prevNumQuantumOperations && (!generateQuantumOperationAnnotations || annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {}));
 }
 
 std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
@@ -318,13 +322,16 @@ bool AnnotatableQuantumComputation::replayOperationsAtGivenIndexRange(const std:
         }
     }
 
-    const std::size_t idxOfFirstQuantumOperationToAnnotateAfterReplay = indexOfLastQuantumOperationToReplayInQuantumComputation + 1U;
-    const std::size_t idxOfLastQuantumOperationToAnnotateAfterReplay  = idxOfFirstQuantumOperationToAnnotateAfterReplay + (numQuantumOperationsToReplay - 1U);
-    return annotateAllQuantumOperationsAtPositions(idxOfFirstQuantumOperationToAnnotateAfterReplay, idxOfLastQuantumOperationToAnnotateAfterReplay, {});
+    if (generateQuantumOperationAnnotations) {
+        const std::size_t idxOfFirstQuantumOperationToAnnotateAfterReplay = indexOfLastQuantumOperationToReplayInQuantumComputation + 1U;
+        const std::size_t idxOfLastQuantumOperationToAnnotateAfterReplay  = idxOfFirstQuantumOperationToAnnotateAfterReplay + (numQuantumOperationsToReplay - 1U);
+        return annotateAllQuantumOperationsAtPositions(idxOfFirstQuantumOperationToAnnotateAfterReplay, idxOfLastQuantumOperationToAnnotateAfterReplay, {});
+    }
+    return true;
 }
 
 AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation) const {
-    if (indexOfQuantumOperationInQuantumComputation >= annotationsPerQuantumOperation.size()) {
+    if (!generateQuantumOperationAnnotations || indexOfQuantumOperationInQuantumComputation >= annotationsPerQuantumOperation.size()) {
         return {};
     }
     return annotationsPerQuantumOperation[indexOfQuantumOperationInQuantumComputation];
@@ -461,6 +468,10 @@ bool AnnotatableQuantumComputation::registerControlQubitForPropagationInCurrentA
 }
 
 bool AnnotatableQuantumComputation::setOrUpdateGlobalQuantumOperationAnnotation(const std::string_view& key, const std::string& value) {
+    if (!generateQuantumOperationAnnotations) {
+        return false;
+    }
+
     auto existingAnnotationForKey = activateGlobalQuantumOperationAnnotations.find(key);
     if (existingAnnotationForKey != activateGlobalQuantumOperationAnnotations.end()) {
         existingAnnotationForKey->second = value;
@@ -471,6 +482,10 @@ bool AnnotatableQuantumComputation::setOrUpdateGlobalQuantumOperationAnnotation(
 }
 
 bool AnnotatableQuantumComputation::removeGlobalQuantumOperationAnnotation(const std::string_view& key) {
+    if (!generateQuantumOperationAnnotations) {
+        return false;
+    }
+
     // We utilize the ability to use a std::string_view to erase a matching element
     // of std::string in a std::map<std::string, ...> without needing to cast the
     // std::string_view to std::string for the std::map<>::erase() operation
@@ -484,7 +499,7 @@ bool AnnotatableQuantumComputation::removeGlobalQuantumOperationAnnotation(const
 }
 
 bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation, const std::string_view& annotationKey, const std::string& annotationValue) {
-    if (indexOfQuantumOperationInQuantumComputation >= annotationsPerQuantumOperation.size()) {
+    if (!generateQuantumOperationAnnotations || indexOfQuantumOperationInQuantumComputation >= annotationsPerQuantumOperation.size()) {
         return false;
     }
 
@@ -520,7 +535,7 @@ bool AnnotatableQuantumComputation::isQubitIndexRangeImmediateSuccessorOfCovered
 }
 
 bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(const std::size_t fromQuantumOperationIndex, const std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation) {
-    if (fromQuantumOperationIndex >= getNops() || toQuantumOperationIndex >= getNops()) {
+    if (!generateQuantumOperationAnnotations || fromQuantumOperationIndex >= getNops() || toQuantumOperationIndex >= getNops()) {
         return false;
     }
 
@@ -541,8 +556,12 @@ bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(cons
     }
 
     for (std::size_t i = idxOfFirstGateToAnnotate; i <= idxOfLastGateToAnnotate; ++i) {
-        annotationsPerQuantumOperation[i].insert(userProvidedAnnotationsPerQuantumOperation.cbegin(), userProvidedAnnotationsPerQuantumOperation.cend());
-        annotationsPerQuantumOperation[i].insert(activateGlobalQuantumOperationAnnotations.cbegin(), activateGlobalQuantumOperationAnnotations.cend());
+        for (const auto& [activateGlobalAnnotationKey, activateGlobalAnnotationValue]: activateGlobalQuantumOperationAnnotations) {
+            annotationsPerQuantumOperation.at(i).insert_or_assign(activateGlobalAnnotationKey, activateGlobalAnnotationValue);
+        }
+        for (const auto& [userProvidedAnnotationKey, userProvidedAnnotationValue]: userProvidedAnnotationsPerQuantumOperation) {
+            annotationsPerQuantumOperation.at(i).insert_or_assign(userProvidedAnnotationKey, userProvidedAnnotationValue);
+        }
     }
     return true;
 }

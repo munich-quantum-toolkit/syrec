@@ -60,6 +60,7 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
 
     py::class_<AnnotatableQuantumComputation, qc::QuantumComputation>(m, "annotatable_quantum_computation")
             .def(py::init<>(), "Constructs an annotatable quantum computation")
+            .def(py::init<bool>(), "Constructs an annotatable quantum computation while also specifying whether quantum operation annotations can be generated")
             .def("get_qubit_label", &AnnotatableQuantumComputation::getQubitLabel, "qubit"_a, "qubit_label_type"_a, "Get either the internal or user-declared label of a qubit as a stringified SyReC variable access based on its location in the quantum register storing the qubit and, optionally, the layout of the SyReC variable stored in the register.")
             .def("get_quantum_cost_for_synthesis", &AnnotatableQuantumComputation::getQuantumCostForSynthesis, "Get the quantum cost to synthesis the quantum computation")
             .def("get_transistor_cost_for_synthesis", &AnnotatableQuantumComputation::getTransistorCostForSynthesis, "Get the transistor cost to synthesis the quantum computation")
@@ -99,7 +100,8 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .def_readwrite("integer_constant_truncation_operation", &ConfigurableOptions::integerConstantTruncationOperation, "Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language")
             .def_readwrite("allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variable_access", &ConfigurableOptions::allowAccessOnAssignedToVariablePartsInDimensionAccessOfVariableAccess, "Defines whether an access on the assigned to signal parts of an assigned is allowed in variable accesses defined in any operand of the assignment. For further details we refer to the semantics of the SyReC language.")
             .def_readwrite("main_module_identifier", &ConfigurableOptions::optionalProgramEntryPointModuleIdentifier, "Define the identifier of the module serving as the entry-point of the to be processed SyReC program")
-            .def_readwrite("generate_inlined_qubit_debug_information", &ConfigurableOptions::generatedInlinedQubitDebugInformation, "Should debug information for the qubits associated with the local variables of a SyReC module be generated");
+            .def_readwrite("generate_inlined_qubit_debug_information", &ConfigurableOptions::generatedInlinedQubitDebugInformation, "Should debug information for the qubits associated with the local variables of a SyReC module be generated")
+            .def_readwrite("generate_quantum_operation_annotations", &ConfigurableOptions::generateQuantumOperationAnnotations, "Should the optional quantum operation annotations be generated during the synthesis of a SyReC program, disabled by default");
 
     py::class_<Program>(m, "program")
             .def(py::init<>(), "Constructs SyReC program object.")

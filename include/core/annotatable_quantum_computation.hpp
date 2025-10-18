@@ -97,6 +97,21 @@ namespace syrec {
             unsigned bitwidth;
         };
 
+        AnnotatableQuantumComputation() = default;
+
+        /**
+         * Initialize a new annotatable quantum computation.
+         * @param generateQuantumGateAnnotations Define whether this instance supports the generation of quantum operation annotations.
+         */
+        explicit AnnotatableQuantumComputation(const bool generateQuantumGateAnnotations):
+            generateQuantumOperationAnnotations(generateQuantumGateAnnotations) {}
+
+        /**
+         * Determine whether the generation of quantum operation annotations is supported by the annotatable quantum computation.
+         * @return Whether the generation of quantum operation annotations is supported.
+         */
+        [[nodiscard]] bool isGenerationOfQuantumOperationAnnotationsEnabled() const;
+
         /**
          * Add a quantum operation representing a NOT gate to the quantum computation.
          * @param targetQubit The target qubit of the NOT gate, said qubit must be in the range of the known qubits of the quantum computation.
@@ -254,14 +269,16 @@ namespace syrec {
          * Already existing quantum computations in the qc::QuantumComputation are not modified.
          * @param key The key of the global quantum operation annotation.
          * @param value The value of the global quantum operation annotation.
-         * @return Whether an existing global annotation was updated.
+         * @return If the generation of quantum gate annotations is enabled, returns whether an existing global annotation was updated. Otherwise, false is returned.
+         * @remark The generation of quantum gate annotations needs to be explicitly be enabled in the constructor of the annotatable quantum computation.
          */
         [[maybe_unused]] bool setOrUpdateGlobalQuantumOperationAnnotation(const std::string_view& key, const std::string& value);
 
         /**
          * Remove a global gate annotation. Existing annotations of the gates of the circuit are not modified.
          * @param key The key of the global gate annotation to be removed.
-         * @return Whether a global gate annotation was removed.
+         * @return If the generation of quantum gate annotations is enabled, returns whether a global gate annotation was removed. Otherwise, false is returned.
+         * @remark The generation of quantum gate annotations needs to be explicitly be enabled in the constructor of the annotatable quantum computation.
          */
         [[maybe_unused]] bool removeGlobalQuantumOperationAnnotation(const std::string_view& key);
 
@@ -270,7 +287,8 @@ namespace syrec {
          * @param indexOfQuantumOperationInQuantumComputation The index of the quantum operation in the quantum computation.
          * @param annotationKey The key of the quantum operation annotation.
          * @param annotationValue The value of the quantum operation annotation.
-         * @return Whether an operation at the user-provided index existed in the quantum operation.
+         * @return If the generation of quantum gate annotations is enabled, returns whether an operation at the user-provided index existed in the quantum computation. Otherwise, false is returned.
+         * @remark The generation of quantum gate annotations needs to be explicitly be enabled in the constructor of the annotatable quantum computation.
          */
         [[maybe_unused]] bool setOrUpdateAnnotationOfQuantumOperation(std::size_t indexOfQuantumOperationInQuantumComputation, const std::string_view& annotationKey, const std::string& annotationValue);
 
@@ -282,6 +300,15 @@ namespace syrec {
         [[nodiscard]] std::optional<InlinedQubitInformation> getInlinedQubitInformation(qc::Qubit qubit) const;
 
     protected:
+        /**
+         * Annotate all quantum operations in the range [\p fromQuantumOperationIndex, \p toQuantumOperationIndex] with the union of the \p userProvidedAnnotationsPerQuantumOperation and the currently activate global quantum operation annotations.
+         * @param fromQuantumOperationIndex The index of the first quantum operation in the quantum computation to annotate.
+         * @param toQuantumOperationIndex The index of the last quantum operation in the quantum computation to annotate.
+         * @param userProvidedAnnotationsPerQuantumOperation A set of unique quantum gate annotation key-value pairs.
+         * @return If the generation of quantum gate annotations is enabled, returns whether the index range [\p fromQuantumOperationIndex, \p toQuantumOperationIndex] was within the range of quantum operations of the quantum computation. Otherwise, false is returned.
+         * @remark Already existing quantum gate annotations that have a matching entry in the union of the \p userProvidedAnnotationsPerQuantumOperation and the activate global quantum operation annotations will be updated, new entries are simply inserted.
+         * @remark Activate global quantum operation annotations are processed before the user provided annotations ones.
+         */
         [[maybe_unused]] bool annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation);
         [[nodiscard]] bool    isQubitWithinRange(qc::Qubit qubit) const noexcept;
 
@@ -295,6 +322,7 @@ namespace syrec {
         std::unordered_set<qc::Qubit>                    aggregateOfPropagatedControlQubits;
         std::vector<std::unordered_map<qc::Qubit, bool>> controlQubitPropagationScopes;
         bool                                             canQubitsBeAddedToQuantumComputation = true;
+        bool                                             generateQuantumOperationAnnotations  = false;
 
         QuantumOperationAnnotationsLookup activateGlobalQuantumOperationAnnotations;
 

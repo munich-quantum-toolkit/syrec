@@ -32,6 +32,7 @@
 #include <chrono>
 #include <cstddef>
 #include <functional>
+#include <ios>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -159,6 +160,12 @@ namespace syrec {
 
         if (synthesizer->annotatableQuantumComputation.getNops() != 0 || synthesizer->annotatableQuantumComputation.getNqubits() != 0) {
             std::cerr << "Annotatable quantum computation must be empty prior to the synthesis of a SyReC program\n";
+            return false;
+        }
+
+        if (settings.generateQuantumOperationAnnotations != synthesizer->annotatableQuantumComputation.isGenerationOfQuantumOperationAnnotationsEnabled()) {
+            // We could have also used a simple function to stringify boolean values
+            std::cerr << "Configuration of generation of quantum gate annotations flag did not match between synthesizer (value: " << std::boolalpha << settings.generateQuantumOperationAnnotations << ") and annotatable quantum computation (value: " << synthesizer->annotatableQuantumComputation.isGenerationOfQuantumOperationAnnotationsEnabled() << std::noboolalpha << ")\n";
             return false;
         }
 

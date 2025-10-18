@@ -46,7 +46,7 @@ protected:
     std::unique_ptr<AnnotatableQuantumComputation> annotatedQuantumComputation;
 
     void SetUp() override {
-        annotatedQuantumComputation = std::make_unique<AnnotatableQuantumComputation>();
+        annotatedQuantumComputation = std::make_unique<AnnotatableQuantumComputation>(true);
     }
 
     static void assertThatOperationsOfQuantumComputationAreEqualToSequence(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::vector<std::unique_ptr<qc::Operation>>& expectedQuantumOperations) {
