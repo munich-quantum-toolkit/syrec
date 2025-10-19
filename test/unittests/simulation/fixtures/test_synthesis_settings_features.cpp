@@ -240,6 +240,20 @@ TYPED_TEST_P(BaseSimulationTestFixture, InvalidSynthesizerInstanceNotUsableToSyn
     }
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, MismatchBetweenQuantumOperationAnnotationsFeatureInAnnotatableQuantumComputationAndSynthesizerNotAllowed) {
+    ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
+
+    auto annotatableQuantumComputationWithQuantumOperationAnnotationFeatureDisabled                  = syrec::AnnotatableQuantumComputation(false);
+    auto synthesisOptionsWithQuantumOperationAnnotationFeatureEnabled                                = syrec::ConfigurableOptions();
+    synthesisOptionsWithQuantumOperationAnnotationFeatureEnabled.generateQuantumOperationAnnotations = true;
+    ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, annotatableQuantumComputationWithQuantumOperationAnnotationFeatureDisabled, synthesisOptionsWithQuantumOperationAnnotationFeatureEnabled));
+
+    auto annotatableQuantumComputationWithQuantumOperationAnnotationFeatureEnabled                    = syrec::AnnotatableQuantumComputation(true);
+    auto synthesisOptionsWithQuantumOperationAnnotationFeatureDisabled                                = syrec::ConfigurableOptions();
+    synthesisOptionsWithQuantumOperationAnnotationFeatureDisabled.generateQuantumOperationAnnotations = false;
+    ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, annotatableQuantumComputationWithQuantumOperationAnnotationFeatureEnabled, synthesisOptionsWithQuantumOperationAnnotationFeatureDisabled));
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesModuleWithMainIdentiferAsMainModule,
                             OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMainExists,
@@ -279,7 +293,8 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsQubits,
                             SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsOperations,
                             SynthesisOfEmptySyrecProgramNotPossible,
-                            InvalidSynthesizerInstanceNotUsableToSynthesizeSyrecProgram);
+                            InvalidSynthesizerInstanceNotUsableToSynthesizeSyrecProgram,
+                            MismatchBetweenQuantumOperationAnnotationsFeatureInAnnotatableQuantumComputationAndSynthesizerNotAllowed);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );

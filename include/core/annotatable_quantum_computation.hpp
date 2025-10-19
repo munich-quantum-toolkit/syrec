@@ -31,7 +31,7 @@
 
 namespace syrec {
     /**
-     * A class to build a MQT::Core QuantumComputation and offer functionality to annotate its quantum operations with string key-value pairs.
+     * A class to build a MQT::Core QuantumComputation and offer functionality to optionally annotate its quantum operations with string key-value pairs.
      */
     class AnnotatableQuantumComputation: public qc::QuantumComputation {
     public:
@@ -100,7 +100,9 @@ namespace syrec {
         AnnotatableQuantumComputation() = default;
 
         /**
-         * Initialize a new annotatable quantum computation.
+         * Initialize a new annotatable quantum computation. Since no quantum operation or any of its annotations can be removed via the public interface of this class, enabling or disabling the generation of
+         * quantum gate annotations can only be performed in this constructor. Additionally, since the annotations will almost always only be used for debugging purposes or are to be displayed in a GUI, users should be able to
+         * enable/disable the generation of this debug information depending on whether it is actually needed.
          * @param generateQuantumGateAnnotations Define whether this instance supports the generation of quantum operation annotations.
          */
         explicit AnnotatableQuantumComputation(const bool generateQuantumGateAnnotations):

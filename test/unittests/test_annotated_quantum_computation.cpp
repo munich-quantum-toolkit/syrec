@@ -1371,6 +1371,24 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingToffo
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
+TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingToffoliGateWithQuantumOperationAnnotationsFeatureDisabledPossible) {
+    auto                                        annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled = AnnotatableQuantumComputation(false);
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit controlQubitOneIndex = 0U;
+    constexpr qc::Qubit controlQubitTwoIndex = 1U;
+    constexpr qc::Qubit targetQubitIndex     = 2U;
+    ASSERT_NO_FATAL_FAILURE(create1DQuantumRegisterContainingNQubits(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 3U));
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingToffoliGate(controlQubitOneIndex, controlQubitTwoIndex, targetQubitIndex));
+
+    const auto expectedToffoliGateControlLines = qc::Controls({controlQubitOneIndex, controlQubitTwoIndex});
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(expectedToffoliGateControlLines, targetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+
+    const auto expectedAnnotationsOfAddedQuantumOperation = AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup();
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
+}
+
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingCnotGate) {
     constexpr qc::Qubit expectedControlQubitIndex = 0;
     constexpr qc::Qubit expectedTargetQubitIndex  = 1;
@@ -1555,6 +1573,23 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingCnotG
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
+TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingCnotGateWithQuantumOperationAnnotationsFeatureDisabledPossible) {
+    auto                                        annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled = AnnotatableQuantumComputation(false);
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit controlQubitIndex = 0U;
+    constexpr qc::Qubit targetQubitIndex  = 1U;
+    ASSERT_NO_FATAL_FAILURE(create1DQuantumRegisterContainingNQubits(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 2U));
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingCnotGate(controlQubitIndex, targetQubitIndex));
+
+    const auto expectedCnotGateControlLines = qc::Controls({controlQubitIndex});
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(expectedCnotGateControlLines, targetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+
+    const auto expectedAnnotationsOfAddedQuantumOperation = AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup();
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
+}
+
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingNotGate) {
     constexpr qc::Qubit expectedTargetQubitIndex = 0;
     ASSERT_NO_FATAL_FAILURE(create1DQuantumRegisterContainingNQubits(*annotatedQuantumComputation, 1U));
@@ -1632,6 +1667,21 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingNotGa
     std::vector<std::unique_ptr<qc::Operation>> expectedQuantumOperations;
     expectedQuantumOperations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), expectedTargetQubitIndex, qc::OpType::X));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
+}
+
+TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingNotGateWithQuantumOperationAnnotationsFeatureDisabledPossible) {
+    auto                                        annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled = AnnotatableQuantumComputation(false);
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit targetQubitIndex = 0U;
+    ASSERT_NO_FATAL_FAILURE(create1DQuantumRegisterContainingNQubits(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 1U));
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingNotGate(targetQubitIndex));
+
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+
+    const auto expectedAnnotationsOfAddedQuantumOperation = AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup();
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGate) {
@@ -1806,6 +1856,26 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingMulti
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumOperations);
 }
 
+TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingMultiControlToffoliGateWithQuantumOperationAnnotationsFeatureDisabledPossible) {
+    auto                                        annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled = AnnotatableQuantumComputation(false);
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit controlQubitOneIndex = 0U;
+    constexpr qc::Qubit controlQubitTwoIndex = 1U;
+    constexpr qc::Qubit targetQubitIndex     = 2U;
+    ASSERT_NO_FATAL_FAILURE(create1DQuantumRegisterContainingNQubits(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 3U));
+
+    const auto actualMultiControlToffoliGateControlLines = qc::Controls({controlQubitOneIndex, controlQubitTwoIndex});
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingMultiControlToffoliGate(actualMultiControlToffoliGateControlLines, targetQubitIndex));
+
+    const auto expectedToffoliGateControlLines = actualMultiControlToffoliGateControlLines;
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(expectedToffoliGateControlLines, targetQubitIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+
+    const auto expectedAnnotationsOfAddedQuantumOperation = AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup();
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
+}
+
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingFredkinGate) {
     constexpr qc::Qubit expectedTargetQubitIndexOne = 0;
     constexpr qc::Qubit expectedTargetQubitIndexTwo = 1;
@@ -1892,6 +1962,22 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingFredk
     auto operationImplementingSecondFredkinGate = std::make_unique<qc::StandardOperation>(qc::Controls({expectedControlQubitIndexTwo}), qc::Targets({overlappingTargetQubitIndex, notOverlappingTargetQubitIndex}), qc::OpType::SWAP);
     expectedQuantumComputations.emplace_back(std::move(operationImplementingSecondFredkinGate));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
+}
+
+TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingFredkinGateWithQuantumOperationAnnotationsFeatureDisabledPossible) {
+    auto                                        annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled = AnnotatableQuantumComputation(false);
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit targetQubitOne = 0U;
+    constexpr qc::Qubit targetQubitTwo = 1U;
+    ASSERT_NO_FATAL_FAILURE(create1DQuantumRegisterContainingNQubits(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 2U));
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingFredkinGate(targetQubitOne, targetQubitTwo));
+
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), qc::Targets({targetQubitOne, targetQubitTwo}), qc::OpType::SWAP));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+
+    const auto expectedAnnotationsOfAddedQuantumOperation = AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup();
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
 }
 // END AddXGate tests
 
@@ -2355,6 +2441,25 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, SetAnnotationsForQuantumOperat
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 }
 
+TEST_F(AnnotatableQuantumComputationTestsFixture, SettingAnnotationForQuantumOperationNotAllowedIfQuantumOperationAnnotationsCannotBeGenerated) {
+    auto                                        annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled = AnnotatableQuantumComputation(false);
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit targetQubitOneIndex = 0;
+    ASSERT_NO_FATAL_FAILURE(create1DQuantumRegisterContainingNQubits(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 1U));
+
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingNotGate(targetQubitOneIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitOneIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+
+    const auto expectedAnnotationsOfAddedQuantumOperation = AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup();
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
+
+    ASSERT_FALSE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.setOrUpdateAnnotationOfQuantumOperation(0U, "ANNOTATION_KEY", "ANNOTATION_VALUE"));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
+}
+
 TEST_F(AnnotatableQuantumComputationTestsFixture, SetGlobalQuantumOperationAnnotation) {
     std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
 
@@ -2505,6 +2610,25 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, RemoveNotExistingGlobalQuantum
     assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 1, expectedAnnotationsOfSecondQuantumComputation);
 }
 
+TEST_F(AnnotatableQuantumComputationTestsFixture, RemovalOfGlobalQuantumOperationAnnotationNotAllowedIfQuantumOperationAnnotationsCannotBeGenerated) {
+    auto                                        annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled = AnnotatableQuantumComputation(false);
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit targetQubitOneIndex = 0;
+    ASSERT_NO_FATAL_FAILURE(create1DQuantumRegisterContainingNQubits(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 1U));
+
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingNotGate(targetQubitOneIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitOneIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+
+    const auto expectedAnnotationsOfAddedQuantumOperation = AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup();
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
+
+    ASSERT_FALSE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.removeGlobalQuantumOperationAnnotation("NOT_EXISTING_KEY"));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
+}
+
 TEST_F(AnnotatableQuantumComputationTestsFixture, SetGlobalQuantumOperationAnnotationWithEmptyKey) {
     const std::string globalAnnotationKey          = "KEY_ONE";
     const std::string initialGlobalAnnotationValue = "InitialValue";
@@ -2565,6 +2689,25 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, SetGlobalQuantumOperationAnnot
     const AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup expectedAnnotationsOfSecondQuantumOperation = {{globalAnnotationKey, globalAnnotationValue}};
     assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 0, expectedAnnotationsOfFirstQuantumOperation);
     assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 1, expectedAnnotationsOfSecondQuantumOperation);
+}
+
+TEST_F(AnnotatableQuantumComputationTestsFixture, SettingGlobalQuantumOperationAnnotationNotAllowedIfQuantumOperationAnnotationsCannotBeGenerated) {
+    auto                                        annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled = AnnotatableQuantumComputation(false);
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit targetQubitOneIndex = 0;
+    ASSERT_NO_FATAL_FAILURE(create1DQuantumRegisterContainingNQubits(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 1U));
+
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingNotGate(targetQubitOneIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitOneIndex, qc::OpType::X));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+
+    const auto expectedAnnotationsOfAddedQuantumOperation = AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup();
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
+
+    ASSERT_FALSE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.setOrUpdateGlobalQuantumOperationAnnotation("NOT_EXISTING_KEY", "A_VALUE"));
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 0, expectedAnnotationsOfAddedQuantumOperation);
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, RemovingGlobalQuantumOperationAnnotationMatchingExistingAnnotationOfGateDoesNotRemoveTheLatter) {
@@ -2950,6 +3093,34 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, ReplayQuantumOperationsDoesNot
     assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 1, expectedAnnotationsOfSecondQuantumGate);
     assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 2, expectedAnnotationsForFirstReplayedQuantumGate);
     assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 3, expectedAnnotationsForSecondReplayedQuantumGate);
+}
+
+TEST_F(AnnotatableQuantumComputationTestsFixture, ReplayQuantumOperationsWithQuantumOperationAnnotationFeatureDisabledPossible) {
+    auto                                        annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled = AnnotatableQuantumComputation(false);
+    std::vector<std::unique_ptr<qc::Operation>> expectedQuantumComputations;
+
+    constexpr qc::Qubit firstGateTargetQubitIndex = 0;
+    ASSERT_NO_FATAL_FAILURE(create1DQuantumRegisterContainingNQubits(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, 2U));
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingNotGate(firstGateTargetQubitIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), firstGateTargetQubitIndex, qc::OpType::X));
+
+    constexpr qc::Qubit secondGateTargetQubitIndex = 1;
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingNotGate(secondGateTargetQubitIndex));
+    expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), secondGateTargetQubitIndex, qc::OpType::X));
+
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+    for (const auto quantumOperationIdx: std::views::iota(0U, 2U)) {
+        assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, quantumOperationIdx, {});
+    }
+
+    ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.replayOperationsAtGivenIndexRange(0U, 1U));
+    expectedQuantumComputations.emplace_back(expectedQuantumComputations.at(0)->clone());
+    expectedQuantumComputations.emplace_back(expectedQuantumComputations.at(1)->clone());
+    assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
+
+    for (const auto quantumOperationIdx: std::views::iota(0U, 4U)) {
+        assertThatAnnotationsOfQuantumOperationAreEqualTo(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, quantumOperationIdx, {});
+    }
 }
 // END Replay operations tests
 
