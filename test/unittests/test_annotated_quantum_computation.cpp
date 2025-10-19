@@ -68,9 +68,13 @@ protected:
     static void assertThatAnnotationsOfQuantumOperationAreEqualTo(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::size_t indexOfQuantumOperationInQuantumComputation, const AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup& expectedAnnotationsOfQuantumComputation) {
         ASSERT_TRUE(indexOfQuantumOperationInQuantumComputation < annotatedQuantumComputation.getNindividualOps());
         const auto& actualAnnotationsOfQuantumOperation = annotatedQuantumComputation.getAnnotationsOfQuantumOperation(indexOfQuantumOperationInQuantumComputation);
+        ASSERT_EQ(expectedAnnotationsOfQuantumComputation.size(), actualAnnotationsOfQuantumOperation.size()) << "Mismatch between the number of annotations of the quantum operation at index " << std::to_string(indexOfQuantumOperationInQuantumComputation) << " of the quantum computation";
+
         for (const auto& [expectedAnnotationKey, expectedAnnotationValue]: expectedAnnotationsOfQuantumComputation) {
-            ASSERT_TRUE(actualAnnotationsOfQuantumOperation.contains(expectedAnnotationKey)) << "Expected annotation with key '" << expectedAnnotationKey << "' was not found";
-            const auto& actualAnnotationValue = actualAnnotationsOfQuantumOperation.at(expectedAnnotationKey);
+            const auto& actualMatchingEntryForAnnotationKey = actualAnnotationsOfQuantumOperation.find(expectedAnnotationKey);
+            ASSERT_TRUE(actualMatchingEntryForAnnotationKey != actualAnnotationsOfQuantumOperation.cend()) << "Expected annotation with key '" << expectedAnnotationKey << "' was not found";
+
+            const auto& actualAnnotationValue = actualMatchingEntryForAnnotationKey->second;
             ASSERT_EQ(expectedAnnotationValue, actualAnnotationValue) << "Value for annotation with key '" << expectedAnnotationKey << "' did not match, expected: " << expectedAnnotationValue << " but was actually " << actualAnnotationValue;
         }
     }
@@ -2654,9 +2658,9 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, SetGlobalQuantumOperationAnnot
     expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(qc::Controls(), targetQubitTwoIndex, qc::OpType::X));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(*annotatedQuantumComputation, expectedQuantumComputations);
 
-    const AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup expectedAnnotationsOfSecondQuantumComputation = {{"", valueOfAnnotationWithEmptyKey}};
+    const AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup expectedAnnotationsOfSecondQuantumComputation = {{globalAnnotationKey, initialGlobalAnnotationValue}, {"", valueOfAnnotationWithEmptyKey}};
     assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 0, expectedAnnotationsOfFirstQuantumComputation);
-    assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 1, {});
+    assertThatAnnotationsOfQuantumOperationAreEqualTo(*annotatedQuantumComputation, 1, expectedAnnotationsOfSecondQuantumComputation);
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, SetGlobalQuantumOperationAnnotationMatchingExistingAnnotationOfGateDoesNotUpdateTheLatter) {
