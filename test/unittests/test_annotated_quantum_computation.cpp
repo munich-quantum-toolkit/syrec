@@ -1868,7 +1868,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddOperationsImplementingMulti
     const auto actualMultiControlToffoliGateControlLines = qc::Controls({controlQubitOneIndex, controlQubitTwoIndex});
     ASSERT_TRUE(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled.addOperationsImplementingMultiControlToffoliGate(actualMultiControlToffoliGateControlLines, targetQubitIndex));
 
-    const auto expectedToffoliGateControlLines = actualMultiControlToffoliGateControlLines;
+    const auto& expectedToffoliGateControlLines = actualMultiControlToffoliGateControlLines;
     expectedQuantumComputations.emplace_back(std::make_unique<qc::StandardOperation>(expectedToffoliGateControlLines, targetQubitIndex, qc::OpType::X));
     assertThatOperationsOfQuantumComputationAreEqualToSequence(annotatableQuantumComputationWithQuantumOperationAnnotationsGenerationDisabled, expectedQuantumComputations);
 
