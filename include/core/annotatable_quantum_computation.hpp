@@ -308,8 +308,8 @@ namespace syrec {
          * @param toQuantumOperationIndex The index of the last quantum operation in the quantum computation to annotate.
          * @param userProvidedAnnotationsPerQuantumOperation A set of unique quantum gate annotation key-value pairs.
          * @return If the generation of quantum gate annotations is enabled, returns whether the index range [\p fromQuantumOperationIndex, \p toQuantumOperationIndex] was within the range of quantum operations of the quantum computation. Otherwise, false is returned.
-         * @remark Already existing quantum gate annotations that have a matching entry in the union of the \p userProvidedAnnotationsPerQuantumOperation and the activate global quantum operation annotations will be updated, new entries are simply inserted.
-         * @remark Activate global quantum operation annotations are processed before the user provided annotations ones.
+         * @remark Already existing quantum gate annotations that have a matching entry in the union of the \p userProvidedAnnotationsPerQuantumOperation and the active global quantum operation annotations will be updated, new entries are simply inserted.
+         * @remark The currently active global quantum operation annotations are processed before the user provided ones.
          */
         [[maybe_unused]] bool annotateAllQuantumOperationsAtPositions(std::size_t fromQuantumOperationIndex, std::size_t toQuantumOperationIndex, const QuantumOperationAnnotationsLookup& userProvidedAnnotationsPerQuantumOperation);
         [[nodiscard]] bool    isQubitWithinRange(qc::Qubit qubit) const noexcept;
