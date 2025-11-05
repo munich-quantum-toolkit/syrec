@@ -24,7 +24,7 @@ namespace syrec {
      * @brief SyReC expression
      *
      * This abstract class represents the base of an SyReC expression.
-     * Eeach expression is derived from this class and has to
+     * Each expression is derived from this class and has to
      * implement the bitwidth() and the print() methods.
      */
     struct Expression {
