@@ -4,4 +4,4 @@
 # Contributing
 
 Thank you for your interest in contributing to MQT SyReC Synthesizer!
-An extensive contribution guide is available in our [documentation](https://mqt.readthedocs.io/projects/syrec/en/latest/CONTRIBUTING.html).
+An extensive contribution guide is available in our [documentation](https://mqt.readthedocs.io/projects/syrec/en/latest/contributing.html).
