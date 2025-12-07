@@ -541,15 +541,10 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         self.table.verticalHeader().setVisible(False)
 
         for i in range(no_of_bits):
-            to_be_displayed_qubit_label_type = (
-                syrec.qubit_label_type.internal
-                if self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i)
-                else syrec.qubit_label_type.user_declared
-            )
+            # One could display the user declared qubit label for the qubits of the local variables of a module but since these variable identifiers could be identical to ones from a different module, we display the internal qubit label instead.
             io_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
-                i, to_be_displayed_qubit_label_type
+                i, syrec.qubit_label_type.internal
             )
-
             # Fetching the matching label for a qubit of the annotatable quantum computation should not fail but in case it does, assume a default qubit label <UNKNOWN>.
             # We still display the column in any case because otherwise the user would be shown a different number of qubits than the number of qubits that actual exist in the annotatable quantum computation.
             if io_qubit_label is None:
