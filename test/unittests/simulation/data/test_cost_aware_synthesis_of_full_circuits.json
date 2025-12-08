@@ -54,11 +54,11 @@
     ]
   },
   "TestOfCircuitRor32": {
-    "inputCircuit": "module ror32(out o(3), in shift(2), in word(3)) for $i = 1 to 4 do if ($i = shift) then for $l = 0 to (#word - $i) do o.$l ^= word.($i + $l) rof; for $r = 0 to $i do o.((#word - $i) + $r) ^= word.$r rof else skip fi ($i = shift) rof",
+    "inputCircuit": "module ror32(out o(3), in shift(2), in word(3)) for $i = 0 to 4 do if ($i = shift) then for $l = 0 to (#word - $i) do o.$l ^= word.($i + $l) rof; for $r = 0 to $i do o.((#word - $i) + $r) ^= word.$r rof else skip fi ($i = shift) rof",
     "simulationRuns": [
       {
         "in": "00000101",
-        "out": "00000101"
+        "out": "10100101"
       },
       {
         "in": "00010101",

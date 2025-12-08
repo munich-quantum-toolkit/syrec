@@ -1744,7 +1744,7 @@ namespace syrec {
             if (const auto& dimensionExprAsNumericExpr = std::dynamic_pointer_cast<NumericExpression>(dimensionExpr); dimensionExprAsNumericExpr != nullptr) {
                 if (const std::optional<unsigned> evaluatedDimensionExpr = dimensionExprAsNumericExpr->value != nullptr ? dimensionExprAsNumericExpr->value->tryEvaluate(loopVariableValueLookup) : std::nullopt; evaluatedDimensionExpr.has_value()) {
                     if (*evaluatedDimensionExpr >= userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) {
-                        std::cerr << "Access on value " << std::to_string(*evaluatedDimensionExpr) << " of dimension " << std::to_string(dimensionIdx) << " was not within the valid range [0, " << std::to_string(userDefinedVariableAccess.var->dimensions.at(dimensionIdx) - 1U) << " in access on variable " << accessedVariableIdentifier << "\n";
+                        std::cerr << "Access on value " << std::to_string(*evaluatedDimensionExpr) << " of dimension " << std::to_string(dimensionIdx) << " was not within the valid range [0, " << std::to_string(userDefinedVariableAccess.var->dimensions.at(dimensionIdx) - 1U) << "] in access on variable " << accessedVariableIdentifier << "\n";
                         return std::nullopt;
                     }
                     evaluatedDimensionAccess.accessedValuePerDimension[dimensionIdx] = evaluatedDimensionExpr;
