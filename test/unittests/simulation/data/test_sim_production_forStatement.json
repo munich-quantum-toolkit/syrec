@@ -1,6 +1,6 @@
 {
   "NoLoopVariableAndOnlyIterationRangeStartValueDefinedInForStatement": {
-    "inputCircuit": "module main(inout a(3)) for 5 do ++= a rof; a.0 <=> a.2",
+    "inputCircuit": "module main(inout a(3)) for 6 do ++= a rof; a.0 <=> a.2",
     "simulationRuns": [
       {
         "in": "000",
@@ -9,7 +9,7 @@
     ]
   },
   "NoLoopVariableAndOnlyIterationRangeStartValueAndStepSizeDefinedInForStatement": {
-    "inputCircuit": "module main(inout a(3)) for 5 step 2 do ++= a rof; a.0 <=> a.2",
+    "inputCircuit": "module main(inout a(3)) for 6 step 2 do ++= a rof; a.0 <=> a.2",
     "simulationRuns": [
       {
         "in": "000",
@@ -18,7 +18,7 @@
     ]
   },
   "NoLoopVariableAndIterationRangeStartAndEndValueDefinedInForStatement": {
-    "inputCircuit": "module main(inout a(3)) for 0 to 3 do ++= a rof; a.0 <=> a.2",
+    "inputCircuit": "module main(inout a(3)) for 0 to 4 do ++= a rof; a.0 <=> a.2",
     "simulationRuns": [
       {
         "in": "000",
@@ -36,7 +36,7 @@
     ]
   },
   "NoLoopVariableAndIterationRangeWithStartLargerThanEndAndOnlyStartAndEndValueDefined": {
-    "inputCircuit": "module main(inout a(3)) for (#a - 1) to 0 do ++= a rof",
+    "inputCircuit": "module main(inout a(3)) for #a to 0 do ++= a rof",
     "simulationRuns": [
       {
         "in": "000",
@@ -73,7 +73,7 @@
     ]
   },
   "NoLoopVariableAndFullIterationRangeDefinitionWithStartLargerThanEnd": {
-    "inputCircuit": "module main(inout a(3)) for (#a - 1) to 0 step 2 do ++= a rof",
+    "inputCircuit": "module main(inout a(3)) for #a to 0 step 2 do ++= a rof",
     "simulationRuns": [
       {
         "in": "000",
@@ -197,7 +197,7 @@
     "simulationRuns": [
       {
         "in": "000",
-        "out": "011"
+        "out": "101"
       }
     ]
   },
@@ -206,7 +206,7 @@
     "simulationRuns": [
       {
         "in": "000",
-        "out": "011"
+        "out": "101"
       }
     ]
   },
@@ -215,7 +215,7 @@
     "simulationRuns": [
       {
         "in": "000",
-        "out": "110"
+        "out": "010"
       }
     ]
   },
@@ -224,12 +224,12 @@
     "simulationRuns": [
       {
         "in": "000",
-        "out": "010"
+        "out": "100"
       }
     ]
   },
   "UsageOfLoopVariableOfCurrentForStatementInIterationRangeEndDefinition": {
-    "inputCircuit": "module main(inout a(3)) for $i = 10 to ($i - 4) do if (($i % 2) = 0) then ++= a else skip fi (($i % 2) = 0) rof",
+    "inputCircuit": "module main(inout a(3)) for $i = 10 to ($i - 5) do if (($i % 2) = 0) then ++= a else skip fi (($i % 2) = 0) rof",
     "simulationRuns": [
       {
         "in": "000",
@@ -242,12 +242,12 @@
     "simulationRuns": [
       {
         "in": "000",
-        "out": "011"
+        "out": "101"
       }
     ]
   },
   "UsageOfParentLoopVariableInIterationRangeStartDefinition": {
-    "inputCircuit": "module main(inout a(3)) for $i = 0 to (#a - 1) do for $j = ($i + 4) to 0 do if (($i = $j) && ($i != 1)) then a.$i ^= 1 else skip fi (($i = $j) && ($i != 1)) rof rof",
+    "inputCircuit": "module main(inout a(3)) for $i = 0 to #a do for $j = ($i + 4) to 0 do if (($i = ($j - 1)) && ($i != 1)) then a.$i ^= 1 else skip fi (($i = ($j - 1)) && ($i != 1)) rof rof",
     "simulationRuns": [
       {
         "in": "000",
@@ -256,7 +256,7 @@
     ]
   },
   "UsageOfParentLoopVariableInIterationRangeEndDefinition": {
-    "inputCircuit": "module main(inout a(3)) for $i = 0 to (#a - 1) do for $j = 0 to ($i + 4) do if (($i = $j) && ($i != 1)) then a.$i ^= 1 else skip fi (($i = $j) && ($i != 1)) rof rof",
+    "inputCircuit": "module main(inout a(3)) for $i = 0 to #a do for $j = 0 to ($i + 4) do if (($i = $j) && ($i != 1)) then a.$i ^= 1 else skip fi (($i = $j) && ($i != 1)) rof rof",
     "simulationRuns": [
       {
         "in": "000",
@@ -301,35 +301,35 @@
       }
     ]
   },
-  "LoopIterationRangeWithStartEqualToEndAndNoStepsizeDefinitionPerformsOneIteration": {
+  "LoopIterationRangeWithStartEqualToEndAndNoStepsizeDefinitionPerformsNoIteration": {
     "inputCircuit": "module main(inout a(3)) for $i = 2 to (#a - 1) do a.0 <=> a.2 rof",
     "simulationRuns": [
       {
         "in": "110",
-        "out": "011"
+        "out": "110"
       }
     ]
   },
-  "LoopIterationRangeWithStartEqualToEndAndStepsizeDefinitionPerformsOneIteration": {
+  "LoopIterationRangeWithStartEqualToEndAndStepsizeDefinitionPerformsNoIteration": {
     "inputCircuit": "module main(inout a(3)) for 2 to 2 do ++= a rof",
     "simulationRuns": [
       {
         "in": "100",
-        "out": "010"
+        "out": "100"
       }
     ]
   },
-  "LoopIterationRangeWithStartEqualToEndDefinedUsingNotEqualConstantExpressionsAndNoStepsizeDefinitionPerformsOneIteration": {
+  "LoopIterationRangeWithStartEqualToEndDefinedUsingNotEqualConstantExpressionsAndNoStepsizeDefinitionPerformsNoIteration": {
     "inputCircuit": "module main(inout a(3)) wire b(3) for $i = (#a - 2) to ((2 * #a) - 5) do a.$i <=> a.0 rof",
     "simulationRuns": [
       {
         "in": "101",
-        "out": "011"
+        "out": "101"
       }
     ]
   },
   "ReuseOfSameLoopVariableIdentifierInNotNestedLoop": {
-    "inputCircuit": "module main(inout a(3)) wire b(3) for $i = 0 to (#b - 1) do ++= b rof; b -= 3; for $i = (#a - 1) to 0 step 2 do a.$i ^= 1 rof",
+    "inputCircuit": "module main(inout a(3)) wire b(3) for $i = 0 to #b do ++= b rof; b -= 3; for $i = #a to 0 step 2 do a.($i - 1) ^= 1 rof",
     "simulationRuns": [
       {
         "in": "000",

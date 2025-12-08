@@ -96,15 +96,15 @@ TYPED_TEST_P(BaseSimulationTestFixture, UsageOfParentLoopVariableInStepSizeDefin
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
-TYPED_TEST_P(BaseSimulationTestFixture, LoopIterationRangeWithStartEqualToEndAndNoStepsizeDefinitionPerformsOneIteration) {
+TYPED_TEST_P(BaseSimulationTestFixture, LoopIterationRangeWithStartEqualToEndAndNoStepsizeDefinitionPerformsNoIteration) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
-TYPED_TEST_P(BaseSimulationTestFixture, LoopIterationRangeWithStartEqualToEndAndStepsizeDefinitionPerformsOneIteration) {
+TYPED_TEST_P(BaseSimulationTestFixture, LoopIterationRangeWithStartEqualToEndAndStepsizeDefinitionPerformsNoIteration) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
-TYPED_TEST_P(BaseSimulationTestFixture, LoopIterationRangeWithStartEqualToEndDefinedUsingNotEqualConstantExpressionsAndNoStepsizeDefinitionPerformsOneIteration) {
+TYPED_TEST_P(BaseSimulationTestFixture, LoopIterationRangeWithStartEqualToEndDefinedUsingNotEqualConstantExpressionsAndNoStepsizeDefinitionPerformsNoIteration) {
     this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
 }
 
@@ -131,9 +131,9 @@ REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             UsageOfParentLoopVariableInIterationRangeStartDefinition,
                             UsageOfParentLoopVariableInIterationRangeEndDefinition,
                             UsageOfParentLoopVariableInStepSizeDefinition,
-                            LoopIterationRangeWithStartEqualToEndAndNoStepsizeDefinitionPerformsOneIteration,
-                            LoopIterationRangeWithStartEqualToEndAndStepsizeDefinitionPerformsOneIteration,
-                            LoopIterationRangeWithStartEqualToEndDefinedUsingNotEqualConstantExpressionsAndNoStepsizeDefinitionPerformsOneIteration,
+                            LoopIterationRangeWithStartEqualToEndAndNoStepsizeDefinitionPerformsNoIteration,
+                            LoopIterationRangeWithStartEqualToEndAndStepsizeDefinitionPerformsNoIteration,
+                            LoopIterationRangeWithStartEqualToEndDefinedUsingNotEqualConstantExpressionsAndNoStepsizeDefinitionPerformsNoIteration,
                             ReuseOfSameLoopVariableIdentifierInNotNestedLoop);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;

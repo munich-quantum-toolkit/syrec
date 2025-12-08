@@ -680,8 +680,12 @@ namespace syrec {
         const unsigned     step         = statement.step ? statement.step->evaluate(loopMap) : 1U; // default step is +1
         const std::string& loopVariable = statement.loopVariable;
 
-        if (from <= to) {
-            for (unsigned i = from; i <= to; i += step) {
+        if (from == to) {
+            return true;
+        }
+
+        if (from < to) {
+            for (unsigned i = from; i < to; i += step) {
                 // adjust loop variable if necessary
 
                 if (!loopVariable.empty()) {
@@ -694,10 +698,8 @@ namespace syrec {
                     }
                 }
             }
-        }
-
-        else if (from > to) {
-            for (auto i = static_cast<int>(from); std::cmp_greater_equal(i, to); i -= static_cast<int>(step)) {
+        } else {
+            for (auto i = static_cast<int>(from); std::cmp_greater(i, to); i -= static_cast<int>(step)) {
                 // adjust loop variable if necessary
 
                 if (!loopVariable.empty()) {
@@ -715,7 +717,6 @@ namespace syrec {
         if (!loopVariable.empty()) {
             assert(loopMap.erase(loopVariable) == 1U);
         }
-
         return true;
     }
 
@@ -1706,7 +1707,7 @@ namespace syrec {
         }
 
         if (evaluatedBitrangeStartValue >= accessedVariableBitwidth) {
-            std::cerr << "User defined bitrange start value '" << std::to_string(evaluatedBitrangeStartValue) << "' was not within the valid range [0, " << std::to_string(accessedVariableBitwidth) << "] in bitrange access on variable " << accessedVariableIdentifier << "\n";
+            std::cerr << "User defined bitrange start value '" << std::to_string(evaluatedBitrangeStartValue) << "' was not within the valid range [0, " << std::to_string(accessedVariableBitwidth - 1U) << "] in bitrange access on variable " << accessedVariableIdentifier << "\n";
             return std::nullopt;
         }
 
@@ -1718,7 +1719,7 @@ namespace syrec {
         }
 
         if (evaluatedBitrangeEndValue >= accessedVariableBitwidth) {
-            std::cerr << "User defined bitrange end value '" << std::to_string(evaluatedBitrangeEndValue) << "' was not within the valid range [0, " << std::to_string(accessedVariableBitwidth) << "] in bitrange access on variable " << accessedVariableIdentifier << "\n";
+            std::cerr << "User defined bitrange end value '" << std::to_string(evaluatedBitrangeEndValue) << "' was not within the valid range [0, " << std::to_string(accessedVariableBitwidth - 1U) << "] in bitrange access on variable " << accessedVariableIdentifier << "\n";
             return std::nullopt;
         }
         return EvaluatedBitrangeAccess({.bitrangeStart = evaluatedBitrangeStartValue, .bitrangeEnd = evaluatedBitrangeEndValue});
@@ -1728,7 +1729,7 @@ namespace syrec {
         assert(userDefinedVariableAccess.var != nullptr);
         const std::string_view& accessedVariableIdentifier = userDefinedVariableAccess.var->name;
         if (userDefinedVariableAccess.indexes.size() != userDefinedVariableAccess.var->dimensions.size()) {
-            std::cerr << "The number of indices (" << std::to_string(userDefinedVariableAccess.indexes.size()) << ") defined in a variable access must match the number of dimensions (" << std::to_string(userDefinedVariableAccess.var->dimensions.size()) << ") of the accessed variable " << accessedVariableIdentifier << "\n";
+            std::cerr << "The number of indices (" << std::to_string(userDefinedVariableAccess.indexes.size()) << ") defined in a variable access must match the number of dimensions (" << std::to_string(userDefinedVariableAccess.var->dimensions.size() - 1U) << ") of the accessed variable " << accessedVariableIdentifier << "\n";
             return std::nullopt;
         }
 
@@ -1743,7 +1744,7 @@ namespace syrec {
             if (const auto& dimensionExprAsNumericExpr = std::dynamic_pointer_cast<NumericExpression>(dimensionExpr); dimensionExprAsNumericExpr != nullptr) {
                 if (const std::optional<unsigned> evaluatedDimensionExpr = dimensionExprAsNumericExpr->value != nullptr ? dimensionExprAsNumericExpr->value->tryEvaluate(loopVariableValueLookup) : std::nullopt; evaluatedDimensionExpr.has_value()) {
                     if (*evaluatedDimensionExpr >= userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) {
-                        std::cerr << "Access on value " << std::to_string(*evaluatedDimensionExpr) << " of dimension " << std::to_string(dimensionIdx) << " was not within the valid range [0, " << std::to_string(userDefinedVariableAccess.var->dimensions.at(dimensionIdx)) << " in access on variable " << accessedVariableIdentifier << "\n";
+                        std::cerr << "Access on value " << std::to_string(*evaluatedDimensionExpr) << " of dimension " << std::to_string(dimensionIdx) << " was not within the valid range [0, " << std::to_string(userDefinedVariableAccess.var->dimensions.at(dimensionIdx) - 1U) << " in access on variable " << accessedVariableIdentifier << "\n";
                         return std::nullopt;
                     }
                     evaluatedDimensionAccess.accessedValuePerDimension[dimensionIdx] = evaluatedDimensionExpr;

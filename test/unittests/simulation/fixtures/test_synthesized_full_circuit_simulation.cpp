@@ -52,13 +52,18 @@ TYPED_TEST_P(BaseSimulationTestFixture, TestOfCircuitNegate8) {
     this->performTestExecutionForCircuitLoadedFromJson(getPathToTestCaseDataJsonFile<TypeParam>(), this->getNameOfCurrentlyExecutedTest());
 }
 
+TYPED_TEST_P(BaseSimulationTestFixture, TestOfCircuitRor32) {
+    this->performTestExecutionForCircuitLoadedFromJson(getPathToTestCaseDataJsonFile<TypeParam>(), this->getNameOfCurrentlyExecutedTest());
+}
+
 REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
                             TestOfCircuitAlu2,
                             TestOfCircuitSwap2,
                             TestOfCircuitSimpleAdd2,
                             TestOfCircuitMultiply2,
                             TestOfCircuitModulo2,
-                            TestOfCircuitNegate8);
+                            TestOfCircuitNegate8,
+                            TestOfCircuitRor32);
 
 using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
 INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );

@@ -207,7 +207,7 @@
     ]
   },
   "TruncationOfIntegerConstantInUnaryExpression": {
-    "inputCircuit": "module main(inout a(2)) wire b(3) for $i = 1 to 3 step 1 do if (b < ~($i + 1)) then ++= a else skip fi (b < ~($i + 1)) rof",
+    "inputCircuit": "module main(inout a(2)) wire b(3) for $i = 1 to 4 step 1 do if (b < ~($i + 1)) then ++= a else skip fi (b < ~($i + 1)) rof",
     "simulationRuns": [
       {
         "in": "00",

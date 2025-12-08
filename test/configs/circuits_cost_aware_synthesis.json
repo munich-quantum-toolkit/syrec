@@ -41,10 +41,10 @@
     "transistor_costs": 3920
   },
   "constExpr_8": {
-    "num_gates": 8,
+    "num_gates": 6,
     "lines": 16,
-    "quantum_costs": 8,
-    "transistor_costs": 64
+    "quantum_costs": 6,
+    "transistor_costs": 48
   },
   "divide_2": {
     "num_gates": 288,
@@ -61,17 +61,17 @@
   },
 
   "for_4": {
-    "num_gates": 112,
-    "lines": 41,
-    "quantum_costs": 208,
-    "transistor_costs": 1088
+    "num_gates": 56,
+    "lines": 33,
+    "quantum_costs": 104,
+    "transistor_costs": 544
   },
 
   "for_32": {
-    "num_gates": 2499,
-    "lines": 642,
-    "quantum_costs": 15427,
-    "transistor_costs": 41864
+    "num_gates": 1875,
+    "lines": 578,
+    "quantum_costs": 11571,
+    "transistor_costs": 31400
   },
 
   "gray_binary_conversion_16": {

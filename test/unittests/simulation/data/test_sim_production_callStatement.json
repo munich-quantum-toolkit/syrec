@@ -1141,7 +1141,7 @@
     ]
   },
   "SynthesisOfForStatementWithStartSmallerThanEndInCalledModule": {
-    "inputCircuit": "module child(inout a(3)) for $i = 1 to (#a - 1) do a.$i ^= a.($i - 1) rof module main(inout a(3)) call child(a)",
+    "inputCircuit": "module child(inout a(3)) for $i = 1 to #a do a.$i ^= a.($i - 1) rof module main(inout a(3)) call child(a)",
     "simulationRuns": [
       {
         "in": "000",
@@ -1178,7 +1178,7 @@
     ]
   },
   "SynthesisOfForStatementWithStartLargerThanEndInCalledModule": {
-    "inputCircuit": "module child(inout a(3)) for $i = (#a - 2) to 0 do a.$i ^= a.($i + 1) rof module main(inout a(3)) call child(a)",
+    "inputCircuit": "module child(inout a(3)) for $i = (#a - 1) to 0 do a.($i - 1) ^= a.$i rof module main(inout a(3)) call child(a)",
     "simulationRuns": [
       {
         "in": "000",
@@ -1215,7 +1215,7 @@
     ]
   },
   "SynthesisOfForStatementWithOnlyUpperBoundOfIterationRangeDefinedInCalledModule": {
-    "inputCircuit": "module child(inout a(3)) for (#a - 1) do a += 1 rof module main(inout a(3)) call child(a)",
+    "inputCircuit": "module child(inout a(3)) for #a do a += 1 rof module main(inout a(3)) call child(a)",
     "simulationRuns": [
       {
         "in": "000",
@@ -1532,7 +1532,7 @@
     ]
   },
   "SynthesisOfRepeatedCallsOfSameModule": {
-    "inputCircuit": "module incrByOne(inout a(3)) wire t(3) ++= t; a += t module main(inout a(3)) for 2 do call incrByOne(a) rof",
+    "inputCircuit": "module incrByOne(inout a(3)) wire t(3) ++= t; a += t module main(inout a(3)) for 3 do call incrByOne(a) rof",
     "simulationRuns": [
       {
         "in": "000",
@@ -1569,7 +1569,7 @@
     ]
   },
   "SynthesisOfNestedModuleCallHierarchy": {
-    "inputCircuit": "module swapBitwise(inout a(2), inout x(2)) for $i = 0 to 1 do a.$i <=> x.$i rof module swapAndIncr(inout x(2), inout b(2)) ++= x; call swapBitwise(x, b); ++= x module main(inout a(2), inout b(2)) call swapAndIncr(a, b)",
+    "inputCircuit": "module swapBitwise(inout a(2), inout x(2)) for $i = 0 to 2 do a.$i <=> x.$i rof module swapAndIncr(inout x(2), inout b(2)) ++= x; call swapBitwise(x, b); ++= x module main(inout a(2), inout b(2)) call swapAndIncr(a, b)",
     "simulationRuns": [
       {
         "in": "0000",

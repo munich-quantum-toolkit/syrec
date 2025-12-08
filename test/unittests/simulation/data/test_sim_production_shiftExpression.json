@@ -69,7 +69,7 @@
     ]
   },
   "LeftShiftWithShiftAmountEqualToLoopVariable": {
-    "inputCircuit": "module main(inout a(2), in b(2)) for $i = 1 to (#a - 1) step 1 do a ^= (b << $i) rof",
+    "inputCircuit": "module main(inout a(2), in b(2)) for $i = 1 to #a step 1 do a ^= (b << $i) rof",
     "simulationRuns": [
       {
         "in": "0000",
@@ -658,7 +658,7 @@
     ]
   },
   "LeftShiftWithShiftedExpressionEqualToConstantExpression": {
-    "inputCircuit": "module main(inout a(3)) for $i = 3 to #a step 1 do a ^= (($i - 2) << 2) rof",
+    "inputCircuit": "module main(inout a(3)) for $i = 3 to (#a + 1) step 1 do a ^= (($i - 2) << 2) rof",
     "simulationRuns": [
       {
         "in": "000",
@@ -1040,7 +1040,7 @@
     ]
   },
   "RightShiftWithShiftAmountEqualToLoopVariable": {
-    "inputCircuit": "module main(inout a(2), in b(2)) for $i = 1 to (#a - 1) step 1 do a ^= (b >> $i) rof",
+    "inputCircuit": "module main(inout a(2), in b(2)) for $i = 1 to #a step 1 do a ^= (b >> $i) rof",
     "simulationRuns": [
       {
         "in": "0000",
@@ -1629,7 +1629,7 @@
     ]
   },
   "RightShiftWithShiftedExpressionEqualToConstantExpression": {
-    "inputCircuit": "module main(inout a(3)) for $i = 5 to (#a + 2) step 1 do a ^= (($i + 2) >> 2) rof",
+    "inputCircuit": "module main(inout a(3)) for $i = 5 to (#a + 3) step 1 do a ^= (($i + 2) >> 2) rof",
     "simulationRuns": [
       {
         "in": "000",
