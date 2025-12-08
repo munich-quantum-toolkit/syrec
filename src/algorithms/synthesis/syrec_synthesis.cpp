@@ -31,6 +31,7 @@
 #include <cassert>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <ios>
 #include <iostream>
@@ -699,7 +700,10 @@ namespace syrec {
                 }
             }
         } else {
-            for (auto i = static_cast<int>(from); std::cmp_greater(i, to); i -= static_cast<int>(step)) {
+            const auto fromSigned = static_cast<std::int64_t>(from);
+            const auto toSigned   = static_cast<std::int64_t>(to);
+            const auto stepSigned = static_cast<std::int64_t>(step);
+            for (auto i = fromSigned; i > toSigned; i -= stepSigned) {
                 // adjust loop variable if necessary
 
                 if (!loopVariable.empty()) {
