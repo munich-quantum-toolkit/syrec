@@ -9,7 +9,11 @@
 from __future__ import annotations
 
 import re
+import sys
+
+# from contextlib import redirect_stderr
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -273,6 +277,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
     build_failed: Callable[[str], None] | None = None
     before_build: Callable[[], None] | None = None
     parser_failed: Callable[[str], None] | None = None
+    synthesis_failed: Callable[[str], None] | None = None
 
     cost_aware_synthesis = 0
     line_aware_synthesis = 0
@@ -406,14 +411,31 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         self.annotatable_quantum_computation = syrec.annotatable_quantum_computation(
             self.configurable_parser_and_synthesis_options.generate_quantum_operation_annotations
         )
-        if self.cost_aware_synthesis:
-            syrec.cost_aware_synthesis(
-                self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options
-            )
-        else:
-            syrec.line_aware_synthesis(
-                self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options
-            )
+
+        was_synthesis_successful: bool = False
+        # Since we are redirecting the C++ std::cerr outputstream to the current python sys.stderr when calling the synthesis functions a prior redirection of the sys.stderr stream to a StringIO object is needed to read the contents of the sys.stderr stream.
+        py_stderr_backup = sys.stderr
+        sys.stderr = StringIO()
+
+        aggregate_synthesis_error: str = ""
+        try:
+            if self.cost_aware_synthesis:
+                was_synthesis_successful = syrec.cost_aware_synthesis(
+                    self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options
+                )
+            else:
+                was_synthesis_successful = syrec.line_aware_synthesis(
+                    self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options
+                )
+        finally:
+            aggregate_synthesis_error = sys.stderr.getvalue()
+            sys.stderr = py_stderr_backup  # Restore the python sys.stderr to its original value
+
+        if not was_synthesis_successful:
+            self.annotatable_quantum_computation = None
+            if self.synthesis_failed is not None:
+                self.synthesis_failed(aggregate_synthesis_error)
+            return
 
         self.sim_action.setDisabled(False)
         self.stat_action.setDisabled(False)
@@ -1285,6 +1307,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         self.editor.build_successful = self.update_circuit_view_and_qubit_information
         self.editor.parser_failed = self.logWidget.addMessage
         self.editor.build_failed = self.filter_and_record_parser_errors
+        self.editor.synthesis_failed = self.filter_and_record_synthesis_errors
 
     def handle_qubit_label_click_of_circuit_view(self, stringified_circuit_view_qubit_label: str) -> None:
         destringified_circuit_view_qubit_label = CircuitViewQubitLabel.load_from_string(
@@ -1311,6 +1334,11 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
                 self.logWidget.addMessage(m.group(0))
         else:
             self.logWidget.addMessage("No matching lines found in error message")
+
+    def filter_and_record_synthesis_errors(self, aggregate_error_string: str) -> None:
+        for synthesis_error in aggregate_error_string.split(sep="\n"):
+            if synthesis_error:
+                self.logWidget.addMessage(f"-- line ? col ?: {synthesis_error}")
 
     def update_circuit_view_and_qubit_information(
         self, annotatable_quantum_computation: syrec.annotatable_quantum_computation

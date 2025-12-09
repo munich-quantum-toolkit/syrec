@@ -25,6 +25,7 @@
 #include <memory>
 #include <optional>
 #include <pybind11/cast.h>
+#include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h> // NOLINT(misc-include-cleaner)
@@ -109,7 +110,8 @@ PYBIND11_MODULE(MQT_SYREC_MODULE_NAME, m, py::mod_gil_not_used()) { // NOLINT(mi
             .def("read", &Program::read, "filename"_a, "configurable_options"_a = ConfigurableOptions(), "Read and process a SyReC program from a file.")
             .def("read_from_string", &Program::readFromString, "stringifiedProgram"_a, "configurable_options"_a = ConfigurableOptions(), "Process an already stringified SyReC program.");
 
-    m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "configurable_options"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = nullptr, "Cost-aware synthesis of the SyReC program.");
-    m.def("line_aware_synthesis", &LineAwareSynthesis::synthesize, "annotated_quantum_computation"_a, "program"_a, "configurable_options"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = nullptr, "Line-aware synthesis of the SyReC program.");
+    // Due to the cost and line aware synthesizers reporting found synthesis errors on the std::cerr output stream an explicit redirection to the python sys.stderr output stream is required. However, this should only be a temporary solution and the synthesizer should either use a return value or output parameter to return the found synthesis errors similarly to how the SyReC parser is doing it.
+    m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, py::call_guard<py::scoped_estream_redirect>(), "annotated_quantum_computation"_a, "program"_a, "configurable_options"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = nullptr, "Cost-aware synthesis of the SyReC program.");
+    m.def("line_aware_synthesis", &LineAwareSynthesis::synthesize, py::call_guard<py::scoped_estream_redirect>(), "annotated_quantum_computation"_a, "program"_a, "configurable_options"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = nullptr, "Line-aware synthesis of the SyReC program.");
     m.def("simple_simulation", &simpleSimulation, "output"_a, "quantum_computation"_a, "input"_a, "optional_recorded_statistics"_a = nullptr, "Simulation of a synthesized SyReC program");
 }
