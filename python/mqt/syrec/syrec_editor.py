@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import re
 import sys
-
-# from contextlib import redirect_stderr
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
