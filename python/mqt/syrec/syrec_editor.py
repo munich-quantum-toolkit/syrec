@@ -20,6 +20,9 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+# We are using a relative import here: https://stackoverflow.com/questions/43728431/relative-imports-modulenotfounderror-no-module-named-x
+from .quantum_circuit_simulation_dialog import QuantumCircuitSimulationDialog
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -1348,6 +1351,13 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
     ) -> None:
         self.viewer.load(annotatable_quantum_computation)
         self.qubits_information_lookup.set_lookup_information(annotatable_quantum_computation)
+
+        # TODO: Check other calls of dialog.exec(), see: https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QDialog.html#PySide6.QtWidgets.QDialog.exec
+        dialog = QuantumCircuitSimulationDialog(annotatable_quantum_computation, parent=self)
+        dialog.modal = True
+        dialog.setWindowTitle("Update configurable options")
+        # dialog.show()
+        dialog.exec()
 
     def clear_error_log_and_circuit_view(self) -> None:
         self.logWidget.clear()
