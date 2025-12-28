@@ -17,6 +17,15 @@ def does_qubit_label_start_with_internal_qubit_label_prefix(qubit_label: str) ->
     return qubit_label.startswith("__q")
 
 
+def stringify_some_qubits_of_n_bit_values_container(
+    n_bit_values_container: syrec.n_bit_values_container, first_qubit: int, n_qubits: int
+) -> str:
+    if first_qubit >= n_bit_values_container.size() or first_qubit + n_qubits >= n_bit_values_container.size():
+        return ""
+
+    return "".join(["1" if n_bit_values_container.test(i) else "0" for i in range(first_qubit, first_qubit + n_qubits)])
+
+
 class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignore[misc]
     input_state_qubit_value_checkbox_clicked = QtCore.pyqtSignal(
         int, bool, arguments=["relative_qubit_idx", "new_qubit_value"], name="inputStateQubitValueCheckboxClicked"
@@ -42,14 +51,16 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
         # TODO: Update input/output state value when qubit value is changed
         # TODO: How to render n-dimensional variables
 
-        self.input_state_qubit_checkbox_name_format = "q_{relative_qubit_idx:d}_in_checkB"
-        self.output_state_qubit_checkbox_name_format = "q_{relative_qubit_idx:d}_out_checkB"
+        self.qubit_label_name_format = "q_{qubit:d}_lbl"
+        self.input_state_qubit_checkbox_name_format = "q_{qubit:d}_in_checkB"
+        self.output_state_qubit_checkbox_name_format = "q_{qubit:d}_out_checkB"
         self.stringified_qubit_value_format = "(Value: {stringified_qubit_value:s})"
-        self.qreg_qubit_values_groupbox_format = "qreg_{qreg_name}_qubit_values_groupbox"
-        self.qreg_label_name_format = "qreg_{qreg_name}_label"
-        self.qreg_input_state_input_field_name_format = "qreg_{qreg_name}_inputState"
-        self.qreg_output_state_input_field_name_format = "qreg_{qreg_name}_outputState"
-        self.qreg_qubit_values_toggle_button_name_format = "qreg_{qreg_name}_qubit_values_toggle"
+        self.qreg_qubit_values_groupbox_format = "qreg_{qreg_name:s}_qubit_values_groupbox"
+        self.qreg_label_name_format = "qreg_{qreg_name:s}_lbl"
+        self.qreg_input_state_input_field_name_format = "qreg_{qreg_name:s}_inputState"
+        self.qreg_output_state_input_field_name_format = "qreg_{qreg_name:s}_outputState"
+        self.qreg_qubit_values_toggle_button_name_format = "qreg_{qreg_name:s}_qubit_values_toggle"
+        self.qreg_qubit_search_input_field_name_format = "qreg_{qreg_name:s}_qubit_search_input"
 
         main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(main_layout)
@@ -63,8 +74,8 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
         self.output_state: syrec.n_bit_values_container | None = optional_initial_output_state
 
         # TODO: Add validators
-        self.quantum_register_controls_grid_layout = QtWidgets.QGridLayout()
-        self.simulation_run_wrapper_box.setLayout(self.quantum_register_controls_grid_layout)
+        quantum_register_controls_grid_layout = QtWidgets.QGridLayout()
+        self.simulation_run_wrapper_box.setLayout(quantum_register_controls_grid_layout)
 
         quantum_register_search_controls_layout = QtWidgets.QHBoxLayout()
         quantum_register_search_label = QtWidgets.QLabel("Quantum register:")
@@ -81,22 +92,27 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
         quantum_register_search_controls_layout.addWidget(quantum_register_search_label)
         quantum_register_search_controls_layout.addWidget(self.quantum_register_search_input_field)
         quantum_register_search_controls_layout.addWidget(self.quantum_register_search_trigger_button)
-        self.quantum_register_controls_grid_layout.addLayout(
+        quantum_register_controls_grid_layout.addLayout(
             quantum_register_search_controls_layout, 0, 0, alignment=QtCore.Qt.AlignmentFlag.AlignCenter
         )
 
         simulation_run_delete_button = QtWidgets.QPushButton("Delete simulation run")
-        self.quantum_register_controls_grid_layout.addWidget(simulation_run_delete_button, 0, 5)
+        quantum_register_controls_grid_layout.addWidget(simulation_run_delete_button, 0, 5)
 
         # Grid position component order is row followed by column
         input_column_label = QtWidgets.QLabel("Input")
         output_column_label = QtWidgets.QLabel("Output")
 
-        self.quantum_register_controls_grid_layout.addWidget(
+        quantum_register_controls_grid_layout.addWidget(
             input_column_label, 1, 1, alignment=QtCore.Qt.AlignmentFlag.AlignCenter
         )
-        self.quantum_register_controls_grid_layout.addWidget(
+        quantum_register_controls_grid_layout.addWidget(
             output_column_label, 1, 2, alignment=QtCore.Qt.AlignmentFlag.AlignCenter
+        )
+
+        n_bit_values_container_contents_validator_regular_expr = QtCore.QRegularExpression(R"^(\b)?$")
+        n_bit_values_container_contents_validator = QtGui.QRegularExpressionValidator(
+            n_bit_values_container_contents_validator_regular_expr, self
         )
 
         quantum_register_controls_grid_row: int = 2
@@ -118,18 +134,31 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
             input_state_edit_field = QtWidgets.QLineEdit(
                 objectName=self.qreg_input_state_input_field_name_format.format(qreg_name=qreg.name)
             )
-            input_state_edit_field.setText(str(initial_input_state))
-            input_state_edit_field.setReadOnly(not self.are_qubits_values_readonly)
+            input_state_edit_field.setText(
+                stringify_some_qubits_of_n_bit_values_container(
+                    initial_input_state, first_qubit_of_qreg, n_qubits_of_qreg
+                )
+            )
+            input_state_edit_field.setReadOnly(self.are_qubits_values_readonly)
+            input_state_edit_field.setValidator(n_bit_values_container_contents_validator)
+            input_state_edit_field.setMaxLength(n_qubits_of_qreg)
 
             output_state_edit_field = QtWidgets.QLineEdit(
                 objectName=self.qreg_output_state_input_field_name_format.format(qreg_name=qreg.name)
             )
             if optional_initial_output_state is not None:
-                output_state_edit_field.setText(str(optional_initial_output_state))
-                input_state_edit_field.setReadOnly(not self.are_qubits_values_readonly)
+                output_state_edit_field.setText(
+                    stringify_some_qubits_of_n_bit_values_container(
+                        optional_initial_output_state, first_qubit_of_qreg, n_qubits_of_qreg
+                    )
+                )
+                output_state_edit_field.setReadOnly(self.are_qubits_values_readonly)
             else:
                 output_state_edit_field.setEnabled(False)
                 output_state_edit_field.setPlaceholderText("-")
+
+            output_state_edit_field.setValidator(n_bit_values_container_contents_validator)
+            output_state_edit_field.setMaxLength(n_qubits_of_qreg)
 
             edit_qubit_values_toggle_button = QtWidgets.QPushButton(
                 "Edit qubit values",
@@ -142,28 +171,28 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
                 )
             )
 
-            self.quantum_register_controls_grid_layout.addWidget(
+            quantum_register_controls_grid_layout.addWidget(
                 quantum_register_label,
                 quantum_register_controls_grid_row,
                 0,
                 alignment=QtCore.Qt.AlignmentFlag.AlignLeft,
             )
-            self.quantum_register_controls_grid_layout.addWidget(
+            quantum_register_controls_grid_layout.addWidget(
                 input_state_edit_field,
                 quantum_register_controls_grid_row,
                 1,
-                alignment=QtCore.Qt.AlignmentFlag.AlignRight,
+                alignment=QtCore.Qt.AlignmentFlag.AlignCenter,
             )
-            self.quantum_register_controls_grid_layout.addWidget(
+            quantum_register_controls_grid_layout.addWidget(
                 output_state_edit_field,
                 quantum_register_controls_grid_row,
                 2,
-                alignment=QtCore.Qt.AlignmentFlag.AlignRight,
+                alignment=QtCore.Qt.AlignmentFlag.AlignCenter,
             )
-            self.quantum_register_controls_grid_layout.addWidget(
+            quantum_register_controls_grid_layout.addWidget(
                 edit_qubit_values_toggle_button, quantum_register_controls_grid_row, 3
             )
-            n_cols_in_quantum_register_controls_grid_layout: int = 4
+            n_cols_in_quantum_register_controls_grid_layout: int = 3
 
             # TODO: Scroll area
             input_output_qubits_value_controls_groupbox = QtWidgets.QGroupBox(
@@ -172,44 +201,70 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
             input_output_qubits_value_controls_groupbox_layout = QtWidgets.QGridLayout()
             input_output_qubits_value_controls_groupbox.setLayout(input_output_qubits_value_controls_groupbox_layout)
 
+            qubit_search_layout = QtWidgets.QHBoxLayout()
+
+            qubit_search_label = QtWidgets.QLabel("Qubit")
+            qubit_search_layout.addWidget(qubit_search_label)
+
+            qubit_search_input_field = QtWidgets.QLineEdit(
+                objectName=self.qreg_qubit_search_input_field_name_format.format(qreg_name=qreg.name)
+            )
+            qubit_search_input_field.setPlaceholderText("<QUBIT_LABEL>")
+            qubit_search_layout.addWidget(qubit_search_input_field)
+
+            qubit_search_trigger_button = QtWidgets.QPushButton("Search")
+            qubit_search_trigger_button.clicked.connect(
+                lambda _, associated_qreg_name=qreg.name: self.handle_qubit_search_trigger_button_click(
+                    associated_qreg_name
+                )
+            )
+            qubit_search_layout.addWidget(qubit_search_trigger_button)
+
+            input_output_qubits_value_controls_groupbox_layout.addLayout(
+                qubit_search_layout, 0, 0, 1, 1, QtCore.Qt.AlignmentFlag.AlignCenter
+            )
+
             for qubit in range(first_qubit_of_qreg, first_qubit_of_qreg + n_qubits_of_qreg):
-                relative_qubit_idx_in_qreg: int = qubit - first_qubit_of_qreg
+                one_based_relative_qubit_idx_in_qreg: int = (qubit - first_qubit_of_qreg) + 1
                 fetched_internal_qubit_label: str | None = annotatable_quantum_computation.get_qubit_label(
                     qubit, syrec.qubit_label_type.internal
                 )
                 qubit_label = QtWidgets.QLabel(
                     "Qubit: " + fetched_internal_qubit_label
                     if fetched_internal_qubit_label is not None
-                    else "<UNKNOWN>"
+                    else "<UNKNOWN>",
+                    objectName=self.qubit_label_name_format.format(qubit=qubit),
                 )
-                input_output_qubits_value_controls_groupbox_layout.addWidget(qubit_label, relative_qubit_idx_in_qreg, 0)
+                input_output_qubits_value_controls_groupbox_layout.addWidget(
+                    qubit_label, one_based_relative_qubit_idx_in_qreg, 0
+                )
 
                 input_state_qubit_value_checkbox = QtWidgets.QCheckBox(
-                    objectName=self.input_state_qubit_checkbox_name_format.format(
-                        relative_qubit_idx=relative_qubit_idx_in_qreg
-                    )
+                    objectName=self.input_state_qubit_checkbox_name_format.format(qubit=qubit)
                 )
                 input_state_qubit_value_checkbox.setText(
                     self.stringified_qubit_value_format.format(
                         stringified_qubit_value=self.stringify_qubit_value(self.input_state.test(qubit))
                     )
                 )
-                input_state_qubit_value_checkbox.stateChanged.connect(
-                    lambda relative_qubit_idx=relative_qubit_idx_in_qreg: self.handle_input_state_qubit_value_checkbox_state_change(
-                        relative_qubit_idx, self.state_changed == QtCore.Qt.CheckState.Checked
+                input_state_qubit_value_checkbox.checkStateChanged.connect(
+                    lambda state,
+                    associated_qreg_name=qreg.name,
+                    relative_qubit_index_in_quantum_register=one_based_relative_qubit_idx_in_qreg: self.handle_input_state_qubit_value_checkbox_state_change(
+                        associated_qreg_name,
+                        relative_qubit_index_in_quantum_register,
+                        state == QtCore.Qt.CheckState.Checked,
                     )
                 )
                 input_output_qubits_value_controls_groupbox_layout.addWidget(
                     input_state_qubit_value_checkbox,
-                    relative_qubit_idx_in_qreg,
+                    one_based_relative_qubit_idx_in_qreg,
                     1,
-                    alignment=QtCore.Qt.AlignmentFlag.AlignRight,
+                    alignment=QtCore.Qt.AlignmentFlag.AlignCenter,
                 )
 
                 output_state_qubit_value_checkbox = QtWidgets.QCheckBox(
-                    objectName=self.output_state_qubit_checkbox_name_format.format(
-                        relative_qubit_idx=relative_qubit_idx_in_qreg
-                    )
+                    objectName=self.output_state_qubit_checkbox_name_format.format(qubit=qubit)
                 )
                 output_state_qubit_value_checkbox.setText(
                     self.stringified_qubit_value_format.format(
@@ -218,22 +273,30 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
                         )
                     )
                 )
-                output_state_qubit_value_checkbox.stateChanged.connect(
-                    lambda relative_qubit_idx=relative_qubit_idx_in_qreg: self.handle_output_state_qubit_value_checkbox_state_change(
-                        relative_qubit_idx, self.state_changed == QtCore.Qt.CheckState.Checked
+                output_state_qubit_value_checkbox.checkStateChanged.connect(
+                    lambda state,
+                    associated_qreg_name=qreg.name,
+                    relative_qubit_index_in_quantum_register=one_based_relative_qubit_idx_in_qreg: self.handle_output_state_qubit_value_checkbox_state_change(
+                        associated_qreg_name,
+                        relative_qubit_index_in_quantum_register,
+                        state == QtCore.Qt.CheckState.Checked,
                     )
                 )
                 output_state_qubit_value_checkbox.setEnabled(False)
                 input_output_qubits_value_controls_groupbox_layout.addWidget(
                     output_state_qubit_value_checkbox,
-                    relative_qubit_idx_in_qreg,
+                    one_based_relative_qubit_idx_in_qreg,
                     2,
-                    alignment=QtCore.Qt.AlignmentFlag.AlignRight,
+                    alignment=QtCore.Qt.AlignmentFlag.AlignCenter,
                 )
+
+            input_output_qubits_value_controls_groupbox_layout.setColumnStretch(0, 0)
+            input_output_qubits_value_controls_groupbox_layout.setColumnStretch(1, 1)
+            input_output_qubits_value_controls_groupbox_layout.setColumnStretch(2, 1)
 
             quantum_register_controls_grid_row += 1
             input_output_qubits_value_controls_groupbox.setVisible(False)
-            self.quantum_register_controls_grid_layout.addWidget(
+            quantum_register_controls_grid_layout.addWidget(
                 input_output_qubits_value_controls_groupbox,
                 quantum_register_controls_grid_row,
                 0,
@@ -245,14 +308,17 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
             quantum_register_controls_grid_spacer_widget = QtWidgets.QSpacerItem(
                 2, 2, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum
             )
-            self.quantum_register_controls_grid_layout.addItem(
+            quantum_register_controls_grid_layout.addItem(
                 quantum_register_controls_grid_spacer_widget, quantum_register_controls_grid_row, 4
             )
             quantum_register_controls_grid_row += 1
 
-        self.quantum_register_controls_grid_layout.setColumnStretch(0, 0)
-        self.quantum_register_controls_grid_layout.setColumnStretch(1, 0)
-        self.quantum_register_controls_grid_layout.setColumnStretch(2, 0)
+        quantum_register_controls_grid_layout.setColumnStretch(0, 0)
+        quantum_register_controls_grid_layout.setColumnStretch(1, 1)
+        quantum_register_controls_grid_layout.setColumnStretch(2, 1)
+        quantum_register_controls_grid_layout.setColumnStretch(3, 0)
+        quantum_register_controls_grid_layout.setColumnStretch(4, 2)
+        quantum_register_controls_grid_layout.setColumnStretch(5, 0)
 
         simulation_run_scroll_area = QtWidgets.QScrollArea()
         simulation_run_scroll_area.setWidget(self.simulation_run_wrapper_box)
@@ -301,36 +367,62 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
 
     # TODO: Update n_bit_values_container and parent textfield
     def handle_input_state_qubit_value_checkbox_state_change(
-        self, relative_qubit_index_in_n_bit_values_container: int, qubit_value: bool
+        self, associated_qreg_name: str, relative_qubit_index_in_quantum_register: int, qubit_value: bool
     ) -> None:
-        associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = self.qubit_values_grid_layout.findChild(
+        associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = self.simulation_run_wrapper_box.findChild(
             QtWidgets.QCheckBox,
             self.input_state_qubit_checkbox_name_format.format(
-                relative_qubit_idx=relative_qubit_index_in_n_bit_values_container
+                relative_qubit_idx=relative_qubit_index_in_quantum_register
             ),
         )
-        if associated_qubit_value_checkbox is None:
+
+        qreg_input_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
+            QtWidgets.QLineEdit, self.qreg_input_state_input_field_name_format.format(qreg_name=associated_qreg_name)
+        )
+
+        if associated_qubit_value_checkbox is None or qreg_input_state_input_field is None:
+            # TODO: This should not happen
             return
 
         associated_qubit_value_checkbox.setText(
             self.stringified_qubit_value_format.format(stringified_qubit_value=self.stringify_qubit_value(qubit_value))
+        )
+
+        curr_stringified_input_state: str = qreg_input_state_input_field.text()
+        qreg_input_state_input_field.setText(
+            curr_stringified_input_state[:relative_qubit_index_in_quantum_register]
+            + ("1" if associated_qubit_value_checkbox.checkState() == QtCore.Qt.CheckState.Checked else "0")
+            + curr_stringified_input_state[relative_qubit_index_in_quantum_register + 1 :]
         )
 
     # TODO: Update n_bit_values_container and parent textfield
     def handle_output_state_qubit_value_checkbox_state_change(
-        self, relative_qubit_index_in_n_bit_values_container: int, qubit_value: bool
+        self, associated_qreg_name: str, relative_qubit_index_in_quantum_register: int, qubit_value: bool
     ) -> None:
-        associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = self.qubit_values_grid_layout.findChild(
+        associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = self.simulation_run_wrapper_box.findChild(
             QtWidgets.QCheckBox,
             self.output_state_qubit_checkbox_name_format.format(
-                relative_qubit_idx=relative_qubit_index_in_n_bit_values_container
+                relative_qubit_idx=relative_qubit_index_in_quantum_register
             ),
         )
-        if associated_qubit_value_checkbox is None:
+
+        qreg_output_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
+            QtWidgets.QLineEdit, self.qreg_output_state_input_field_name_format.format(qreg_name=associated_qreg_name)
+        )
+
+        if associated_qubit_value_checkbox is None or qreg_output_state_input_field is None:
+            # TODO: This should not happen
             return
 
         associated_qubit_value_checkbox.setText(
             self.stringified_qubit_value_format.format(stringified_qubit_value=self.stringify_qubit_value(qubit_value))
+        )
+
+        curr_stringified_output_state: str = qreg_output_state_input_field.text()
+        qreg_output_state_input_field.setText(
+            curr_stringified_output_state[:relative_qubit_index_in_quantum_register]
+            + ("1" if associated_qubit_value_checkbox.checkState() == QtCore.Qt.CheckState.Checked else "0")
+            + curr_stringified_output_state[relative_qubit_index_in_quantum_register + 1 :]
         )
 
     @staticmethod
@@ -339,7 +431,60 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
             return "UNKNOWN"
         return "HIGH" if qubit_value else "LOW"
 
+    def handle_qubit_search_trigger_button_click(self, associated_quantum_register_name: str) -> None:
+        for qreg in self.annotatable_quantum_computation.qregs.values():
+            if (
+                qreg.size == 0
+                or does_qubit_label_start_with_internal_qubit_label_prefix(
+                    self.annotatable_quantum_computation.get_qubit_label(qreg.start, syrec.qubit_label_type.internal)
+                )
+                or qreg.name != associated_quantum_register_name
+            ):
+                continue
+
+            qreg_qubits_groupbox: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
+                QtWidgets.QGroupBox,
+                self.qreg_qubit_values_groupbox_format.format(qreg_name=associated_quantum_register_name),
+            )
+            if qreg_qubits_groupbox is None:
+                # TODO: This should not happen
+                continue
+
+            qubit_search_input_field: QtWidgets.QtWidget | None = qreg_qubits_groupbox.findChild(
+                QtWidgets.QLineEdit,
+                self.qreg_qubit_search_input_field_name_format.format(qreg_name=associated_quantum_register_name),
+            )
+            if qubit_search_input_field is None:
+                # TODO: This should not happen
+                continue
+
+            for qubit in range(qreg.start, qreg.start + qreg.size):
+                qubit_value_label: QtWidgets.QtWidget | None = qreg_qubits_groupbox.findChild(
+                    QtWidgets.QLabel, self.qubit_label_name_format.format(qubit=qubit)
+                )
+                input_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
+                    QtWidgets.QCheckBox, self.input_state_qubit_checkbox_name_format.format(qubit=qubit)
+                )
+                output_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
+                    QtWidgets.QCheckBox, self.output_state_qubit_checkbox_name_format.format(qubit=qubit)
+                )
+                if (
+                    qubit_value_label is None
+                    or input_state_qubit_checkbox is None
+                    or output_state_qubit_checkbox is None
+                ):
+                    # TODO: This should not happen
+                    continue
+
+                does_qubit_label_match_search_text: bool = self.annotatable_quantum_computation.get_qubit_label(
+                    qubit, syrec.qubit_label_type.internal
+                ).startswith(qubit_search_input_field.text())
+                qubit_value_label.setVisible(does_qubit_label_match_search_text)
+                input_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
+                output_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
+
     def handle_qreg_qubit_values_edit_toggle_button_click(self, associated_qreg_name: str) -> None:
+        is_qubit_values_edit_enabled_for_any_qreg: bool = False
         for qreg in self.annotatable_quantum_computation.qregs.values():
             if qreg.size == 0 or does_qubit_label_start_with_internal_qubit_label_prefix(
                 self.annotatable_quantum_computation.get_qubit_label(qreg.start, syrec.qubit_label_type.internal)
@@ -370,19 +515,19 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
                 continue
 
             if qreg.name == associated_qreg_name and not qubit_values_groupbox.isVisible():
+                is_qubit_values_edit_enabled_for_any_qreg = True
                 qubit_values_groupbox.setVisible(True)
                 qubit_values_toggle_button.setText("Toggle qubit values edit")
                 qreg_input_state_input_field.setEnabled(False)
                 qreg_output_state_input_field.setEnabled(False)
-                self.quantum_register_search_input_field.setEnabled(False)
-                self.quantum_register_search_trigger_button.setEnabled(False)
             else:
                 qubit_values_groupbox.setVisible(False)
                 qubit_values_toggle_button.setText("Edit qubit values")
                 qreg_input_state_input_field.setEnabled(True)
-                qreg_output_state_input_field.setEnabled(not qreg_output_state_input_field.text().empty())
-                self.quantum_register_search_input_field.setEnabled(True)
-                self.quantum_register_search_trigger_button.setEnabled(True)
+                qreg_output_state_input_field.setEnabled(qreg_output_state_input_field.text() != "")  # noqa: PLC1901
+
+        self.quantum_register_search_input_field.setEnabled(not is_qubit_values_edit_enabled_for_any_qreg)
+        self.quantum_register_search_trigger_button.setEnabled(not is_qubit_values_edit_enabled_for_any_qreg)
 
     def handle_edit_qubit_values_toggle_button_click(self) -> None:
         if self.edit_of_qubit_values_enabled:
