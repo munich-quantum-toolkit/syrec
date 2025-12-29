@@ -8,9 +8,40 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
+
+
+@dataclass
+class InputOutputStateMapping:
+    input_state: syrec.n_bit_values_container
+    output_state: syrec.n_bit_values_container | None
+
+    def initialize_output_state_as_copy_of_input_state(self) -> bool:
+        if self.output_state is not None:
+            return False
+
+        self.output_state = syrec.n_bit_values_container(self.input_state.size())
+        for i in range(self.output_state.size()):
+            self.output_state.set(self.input_state.test(i))
+        return True
+
+    def update_input_state_qubit_value(self, qubit: int, qubit_value: bool) -> bool:
+        if qubit < 0 or qubit >= self.input_state.size():
+            return False
+
+        self.input_state.set(qubit, qubit_value)
+        return True
+
+    def update_output_state_qubit_value(self, qubit: int, qubit_value: bool) -> bool:
+        if self.output_state is None or qubit < 0 or qubit >= self.output_state.size():
+            return False
+
+        self.output_state.set(qubit, qubit_value)
+        return True
 
 
 def does_qubit_label_start_with_internal_qubit_label_prefix(qubit_label: str) -> bool:
@@ -27,24 +58,39 @@ def stringify_some_qubits_of_n_bit_values_container(
 
 
 class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignore[misc]
-    input_state_qubit_value_checkbox_clicked = QtCore.pyqtSignal(
-        int, bool, arguments=["relative_qubit_idx", "new_qubit_value"], name="inputStateQubitValueCheckboxClicked"
+    input_state_qubit_value_change = QtCore.pyqtSignal(
+        int,
+        int,
+        bool,
+        arguments=["simulation_run_number", "qubit", "new_qubit_value"],
+        name="inputStateQubitValueChanged",
     )
-    output_state_qubit_value_checkbox_clicked = QtCore.pyqtSignal(
-        int, bool, arguments=["relative_qubit_idx", "new_qubit_value"], name="outputStateQubitValueCheckboxClicked"
+    output_state_qubit_value_change = QtCore.pyqtSignal(
+        int,
+        int,
+        bool,
+        arguments=["simulation_run_number", "qubit", "new_qubit_value"],
+        name="outputStateQubitValueChanged",
     )
+    requested_simulation_run_deletion = QtCore.pyqtSignal(
+        int, arguments=["simulation_run_number"], name="simulationRunDeleted"
+    )
+    request_output_state_initialization = QtCore.pyqtSignal(name="requestedOutputStateInitialization")
+    request_output_state_reset = QtCore.pyqtSignal(name="requestedOutputStateReset")
 
     def __init__(
         self,
         simulation_run_number: int,
         annotatable_quantum_computation: syrec.annotatable_quantum_computation,
-        initial_input_state: syrec.n_bit_values_container,
-        optional_initial_output_state: syrec.n_bit_values_container | None,
+        input_output_state_mapping: InputOutputStateMapping,
+        is_input_state_readonly: bool = False,
     ) -> None:
         # parent: QtWidgets.QWidget) -> None:
         super().__init__()
 
+        self.simulation_run_number = simulation_run_number
         self.annotatable_quantum_computation = annotatable_quantum_computation
+        self.is_input_state_readonly = is_input_state_readonly
 
         # TODO: Validation that input and output state have same size (validate all input parameters)
         # TODO: Define validator for input and output state inputs
@@ -64,14 +110,11 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
 
         main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(main_layout)
-        self.simulation_run_wrapper_box = QtWidgets.QGroupBox("Simulation run #" + str(simulation_run_number))
+        self.simulation_run_wrapper_box = QtWidgets.QGroupBox("Simulation run #" + str(self.simulation_run_number))
 
         # TODO: How can we determine whether qubits are readonly
-        self.are_qubits_values_readonly: bool = initial_input_state.size() == 0
+        self.are_qubits_values_readonly: bool = input_output_state_mapping.input_state.size() == 0
         self.edit_of_qubit_values_enabled: bool = False
-
-        self.input_state: syrec.n_bit_values_container = initial_input_state
-        self.output_state: syrec.n_bit_values_container | None = optional_initial_output_state
 
         # TODO: Add validators
         quantum_register_controls_grid_layout = QtWidgets.QGridLayout()
@@ -96,8 +139,10 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
             quantum_register_search_controls_layout, 0, 0, alignment=QtCore.Qt.AlignmentFlag.AlignCenter
         )
 
-        simulation_run_delete_button = QtWidgets.QPushButton("Delete simulation run")
-        quantum_register_controls_grid_layout.addWidget(simulation_run_delete_button, 0, 5)
+        if not self.is_input_state_readonly:
+            simulation_run_delete_button = QtWidgets.QPushButton("Delete simulation run")
+            simulation_run_delete_button.clicked.connect(self.handle_simulation_run_deletion_button_click)
+            quantum_register_controls_grid_layout.addWidget(simulation_run_delete_button, 0, 5)
 
         # Grid position component order is row followed by column
         input_column_label = QtWidgets.QLabel("Input")
@@ -136,23 +181,23 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
             )
             input_state_edit_field.setText(
                 stringify_some_qubits_of_n_bit_values_container(
-                    initial_input_state, first_qubit_of_qreg, n_qubits_of_qreg
+                    input_output_state_mapping.input_state, first_qubit_of_qreg, n_qubits_of_qreg
                 )
             )
-            input_state_edit_field.setReadOnly(self.are_qubits_values_readonly)
+            input_state_edit_field.setEnabled(not self.are_qubits_values_readonly and not self.is_input_state_readonly)
             input_state_edit_field.setValidator(n_bit_values_container_contents_validator)
             input_state_edit_field.setMaxLength(n_qubits_of_qreg)
 
             output_state_edit_field = QtWidgets.QLineEdit(
                 objectName=self.qreg_output_state_input_field_name_format.format(qreg_name=qreg.name)
             )
-            if optional_initial_output_state is not None:
+            if input_output_state_mapping.output_state is not None:
                 output_state_edit_field.setText(
                     stringify_some_qubits_of_n_bit_values_container(
-                        optional_initial_output_state, first_qubit_of_qreg, n_qubits_of_qreg
+                        input_output_state_mapping.output_state, first_qubit_of_qreg, n_qubits_of_qreg
                     )
                 )
-                output_state_edit_field.setReadOnly(self.are_qubits_values_readonly)
+                output_state_edit_field.setEnabled(not self.are_qubits_values_readonly)
             else:
                 output_state_edit_field.setEnabled(False)
                 output_state_edit_field.setPlaceholderText("-")
@@ -244,18 +289,28 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
                 )
                 input_state_qubit_value_checkbox.setText(
                     self.stringified_qubit_value_format.format(
-                        stringified_qubit_value=self.stringify_qubit_value(self.input_state.test(qubit))
+                        stringified_qubit_value=self.stringify_qubit_value(
+                            input_output_state_mapping.input_state.test(qubit)
+                        )
                     )
                 )
-                input_state_qubit_value_checkbox.checkStateChanged.connect(
-                    lambda state,
-                    associated_qreg_name=qreg.name,
-                    relative_qubit_index_in_quantum_register=one_based_relative_qubit_idx_in_qreg: self.handle_input_state_qubit_value_checkbox_state_change(
-                        associated_qreg_name,
-                        relative_qubit_index_in_quantum_register,
-                        state == QtCore.Qt.CheckState.Checked,
+
+                if not self.is_input_state_readonly:
+                    input_state_qubit_value_checkbox.checkStateChanged.connect(
+                        lambda state,
+                        associated_qreg_name=qreg.name,
+                        associated_qubit=qubit,
+                        relative_qubit_index_in_quantum_register=one_based_relative_qubit_idx_in_qreg
+                        - 1: self.handle_input_state_qubit_value_checkbox_state_change(
+                            associated_qreg_name,
+                            associated_qubit,
+                            relative_qubit_index_in_quantum_register,
+                            state == QtCore.Qt.CheckState.Checked,
+                        )
                     )
-                )
+                else:
+                    input_state_qubit_value_checkbox.setEnabled(False)
+
                 input_output_qubits_value_controls_groupbox_layout.addWidget(
                     input_state_qubit_value_checkbox,
                     one_based_relative_qubit_idx_in_qreg,
@@ -269,20 +324,25 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
                 output_state_qubit_value_checkbox.setText(
                     self.stringified_qubit_value_format.format(
                         stringified_qubit_value=self.stringify_qubit_value(
-                            None if self.output_state is None else self.output_state.test(qubit)
+                            None
+                            if input_output_state_mapping.output_state is None
+                            else input_output_state_mapping.output_state.test(qubit)
                         )
                     )
                 )
                 output_state_qubit_value_checkbox.checkStateChanged.connect(
                     lambda state,
                     associated_qreg_name=qreg.name,
-                    relative_qubit_index_in_quantum_register=one_based_relative_qubit_idx_in_qreg: self.handle_output_state_qubit_value_checkbox_state_change(
+                    associated_qubit=qubit,
+                    relative_qubit_index_in_quantum_register=one_based_relative_qubit_idx_in_qreg
+                    - 1: self.handle_output_state_qubit_value_checkbox_state_change(
                         associated_qreg_name,
+                        associated_qubit,
                         relative_qubit_index_in_quantum_register,
                         state == QtCore.Qt.CheckState.Checked,
                     )
                 )
-                output_state_qubit_value_checkbox.setEnabled(False)
+                output_state_qubit_value_checkbox.setEnabled(input_output_state_mapping.output_state is not None)
                 input_output_qubits_value_controls_groupbox_layout.addWidget(
                     output_state_qubit_value_checkbox,
                     one_based_relative_qubit_idx_in_qreg,
@@ -320,10 +380,11 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
         quantum_register_controls_grid_layout.setColumnStretch(4, 2)
         quantum_register_controls_grid_layout.setColumnStretch(5, 0)
 
-        simulation_run_scroll_area = QtWidgets.QScrollArea()
-        simulation_run_scroll_area.setWidget(self.simulation_run_wrapper_box)
-        simulation_run_scroll_area.setWidgetResizable(True)
-        main_layout.addWidget(simulation_run_scroll_area)
+        # simulation_run_scroll_area = QtWidgets.QScrollArea()
+        # simulation_run_scroll_area.setWidget(self.simulation_run_wrapper_box)
+        # simulation_run_scroll_area.setWidgetResizable(True)
+        # main_layout.addWidget(simulation_run_scroll_area)
+        main_layout.addWidget(self.simulation_run_wrapper_box)
 
     def handle_quantum_register_name_search(self) -> None:
         for qreg in self.annotatable_quantum_computation.qregs.values():
@@ -367,13 +428,15 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
 
     # TODO: Update n_bit_values_container and parent textfield
     def handle_input_state_qubit_value_checkbox_state_change(
-        self, associated_qreg_name: str, relative_qubit_index_in_quantum_register: int, qubit_value: bool
+        self,
+        associated_qreg_name: str,
+        associated_qubit: int,
+        relative_qubit_index_in_quantum_register: int,
+        qubit_value: bool,
     ) -> None:
         associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = self.simulation_run_wrapper_box.findChild(
             QtWidgets.QCheckBox,
-            self.input_state_qubit_checkbox_name_format.format(
-                relative_qubit_idx=relative_qubit_index_in_quantum_register
-            ),
+            self.input_state_qubit_checkbox_name_format.format(qubit=associated_qubit),
         )
 
         qreg_input_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
@@ -397,13 +460,15 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
 
     # TODO: Update n_bit_values_container and parent textfield
     def handle_output_state_qubit_value_checkbox_state_change(
-        self, associated_qreg_name: str, relative_qubit_index_in_quantum_register: int, qubit_value: bool
+        self,
+        associated_qreg_name: str,
+        associated_qubit: int,
+        relative_qubit_index_in_quantum_register: int,
+        qubit_value: bool,
     ) -> None:
         associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = self.simulation_run_wrapper_box.findChild(
             QtWidgets.QCheckBox,
-            self.output_state_qubit_checkbox_name_format.format(
-                relative_qubit_idx=relative_qubit_index_in_quantum_register
-            ),
+            self.output_state_qubit_checkbox_name_format.format(qubit=associated_qubit),
         )
 
         qreg_output_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
@@ -523,21 +588,18 @@ class InputOutputStateMappingDefinitionWidget(QtWidgets.QWidget):  # type: ignor
             else:
                 qubit_values_groupbox.setVisible(False)
                 qubit_values_toggle_button.setText("Edit qubit values")
-                qreg_input_state_input_field.setEnabled(True)
+                qreg_input_state_input_field.setEnabled(not self.is_input_state_readonly)
                 qreg_output_state_input_field.setEnabled(qreg_output_state_input_field.text() != "")  # noqa: PLC1901
 
         self.quantum_register_search_input_field.setEnabled(not is_qubit_values_edit_enabled_for_any_qreg)
         self.quantum_register_search_trigger_button.setEnabled(not is_qubit_values_edit_enabled_for_any_qreg)
 
-    def handle_edit_qubit_values_toggle_button_click(self) -> None:
-        if self.edit_of_qubit_values_enabled:
-            return
+    def handle_simulation_run_deletion_button_click(self) -> None:
+        self.requested_simulation_run_deletion.emit(self.simulation_run_number)
 
-        if self.output_state is None:
-            self.output_state = syrec.n_bit_values_container(self.input_state.size())
-            for qubit in range(self.output_state.size()):
-                if self.input_state.test(qubit):
-                    self.output_state.set(qubit)
+    def handle_simulation_run_number_update(self, new_simulation_run_number: int) -> None:
+        self.simulation_run_number = new_simulation_run_number
+        self.simulation_run_wrapper_box.setText("Simulation run #" + str(self.simulation_run_number))
 
 
 class SimulationRunDefinitionWidget(QtWidgets.QWidget):  # type: ignore[misc]
@@ -571,6 +633,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.height = 800
         self.setGeometry(self.left, self.top, self.width, self.height)
 
+        self.defined_simulation_runs: list[InputOutputStateMapping] = []
         self.simulation_runs_tab_widget = QtWidgets.QTabWidget(self)
         self.simulation_runs_tab_widget.addTab(
             self.initialize_some_simulation_runs_tab(), "Check some input-output mapping combinations"
@@ -584,31 +647,62 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_runs_tab_widget.tabBarClicked.connect(self.handle_simulation_runs_tab_widget_tab_bar_clicked)
 
         self.layout = QtWidgets.QVBoxLayout()
-        self.layout.addStretch()
         self.layout.addWidget(self.simulation_runs_tab_widget)
+        # self.layout.addStretch()
         self.setLayout(self.layout)
 
-    def initialize_some_simulation_runs_tab(self) -> QtWidgets.QTabWidget:
+    def initialize_some_simulation_runs_tab(self) -> QtWidgets.QWidget:
+        wrapper_widget = QtWidgets.QFrame(self)
         simulation_runs_list_layout = QtWidgets.QVBoxLayout()
+        wrapper_widget.setLayout(simulation_runs_list_layout)
 
-        in_state = syrec.n_bit_values_container(self.annotatable_quantum_computation.num_qubits)
-        out_state = syrec.n_bit_values_container(self.annotatable_quantum_computation.num_qubits)
-        simulation_run_one = InputOutputStateMappingDefinitionWidget(
-            0, self.annotatable_quantum_computation, in_state, None
-        )
-        simulation_run_two = InputOutputStateMappingDefinitionWidget(
-            1, self.annotatable_quantum_computation, in_state, None
-        )
-        simulation_run_three = InputOutputStateMappingDefinitionWidget(
-            2, self.annotatable_quantum_computation, in_state, out_state
-        )
-        simulation_runs_list_layout.addWidget(simulation_run_one)
-        simulation_runs_list_layout.addWidget(simulation_run_two)
-        simulation_runs_list_layout.addWidget(simulation_run_three)
+        for i in range(3):
+            in_state = syrec.n_bit_values_container(self.annotatable_quantum_computation.num_qubits)
+            out_state = syrec.n_bit_values_container(self.annotatable_quantum_computation.num_qubits)
 
-        tab_widget = QtWidgets.QTabWidget()
-        tab_widget.setLayout(simulation_runs_list_layout)
-        return tab_widget
+            in_out_state_mapping: InputOutputStateMapping | None = None
+            if i < 2:
+                in_out_state_mapping = InputOutputStateMapping(in_state, None)
+            else:
+                in_out_state_mapping = InputOutputStateMapping(in_state, out_state)
+
+            simulation_run_widget = InputOutputStateMappingDefinitionWidget(
+                i, self.annotatable_quantum_computation, in_out_state_mapping, is_input_state_readonly=(i == 1)
+            )
+            # input_state_qubit_value_change = QtCore.pyqtSignal(int, bool, arguments=["qubit", "new_qubit_value"], name="inputStateQubitValueChanged")
+            # output_state_qubit_value_change = QtCore.pyqtSignal(int, bool, arguments=["qubit", "new_qubit_value"], name="outputStateQubitValueChanged")
+            # simulation_run_deletion = QtCore.pyqtSignal(int, arguments=["simulation_run_number"], name="simulationRunDeleted")
+            # request_output_state_initialization = QtCore.pyqtSignal(name="requestedOutputStateInitialization")
+            # request_output_state_reset = QtCore.pyqtSignal(name="requestedOutputStateReset")
+
+            simulation_run_widget.inputStateQubitValueChanged.connect(
+                self.handle_simulation_run_input_state_qubit_value_change
+            )
+            simulation_run_widget.outputStateQubitValueChanged.connect(
+                self.handle_simulation_run_output_state_qubit_value_change
+            )
+            simulation_run_widget.requested_simulation_run_deletion.connect(self.handle_simulation_run_deletion_request)
+            simulation_runs_list_layout.addWidget(simulation_run_widget)
+
+            self.defined_simulation_runs.append(in_out_state_mapping)
+
+        # simulation_run_one = InputOutputStateMappingDefinitionWidget(
+        #     0, self.annotatable_quantum_computation, InputOutputStateMapping(in_state, None)
+        # )
+        # simulation_run_two = InputOutputStateMappingDefinitionWidget(
+        #     1, self.annotatable_quantum_computation, InputOutputStateMapping(in_state, None), is_input_state_readonly=True
+        # )
+        # simulation_run_three = InputOutputStateMappingDefinitionWidget(
+        #     2, self.annotatable_quantum_computation, InputOutputStateMapping(in_state, out_state)
+        # )
+        # simulation_runs_list_layout.addWidget(simulation_run_one)
+        # simulation_runs_list_layout.addWidget(simulation_run_two)
+        # simulation_runs_list_layout.addWidget(simulation_run_three)
+
+        simulation_runs_list_scrollarea = QtWidgets.QScrollArea()
+        simulation_runs_list_scrollarea.setWidget(wrapper_widget)
+        simulation_runs_list_scrollarea.setWidgetResizable(True)
+        return simulation_runs_list_scrollarea
 
     @staticmethod
     def initialize_all_simulation_runs_tab() -> QtWidgets.QTabWidget:
@@ -620,3 +714,24 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     def handle_simulation_runs_tab_widget_tab_bar_clicked(self, clicked_on_tab_index: int) -> None:
         self.simulation_runs_tab_widget.setCurrentIndex(clicked_on_tab_index)
+
+    def handle_simulation_run_input_state_qubit_value_change(
+        self, simulation_run_number: int, qubit: int, new_qubit_value: bool
+    ) -> None:
+        pass
+
+    def handle_simulation_run_output_state_qubit_value_change(
+        self, simulation_run_number: int, qubit: int, new_qubit_value: bool
+    ) -> None:
+        pass
+
+    def handle_simulation_run_deletion_request(self, simulation_run_number: int) -> None:
+        if simulation_run_number < 0 or simulation_run_number >= len(self.defined_simulation_runs):
+            # TODO: Log error?
+            return
+
+        current_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
+        if current_tab_widget is None:
+            # TODO: This should not happen
+            return
+        # self.defined_simulation_runs.pop(simulation_run_number)
