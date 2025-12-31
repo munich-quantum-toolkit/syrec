@@ -704,6 +704,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_runs_list_scrollarea.setWidgetResizable(True)
         return simulation_runs_list_scrollarea
 
+    # Since this function will render many items one should use a QListView with a custom styled delegate to improve rendering performance
+    # (see: https://forum.qt.io/topic/98733/how-can-i-make-my-listview-that-uses-custom-widgets-more-efficient)
+    # How would one then edit the simulation run that is not rendered as a widget?
+    # (regarding performance issues when rendering a lot of items in a list, tree or table view: https://forum.qt.io/topic/159449/qtreeview-with-lots-of-items-is-really-slow-can-it-be-optimised-or-is-something-buggy/31)
     @staticmethod
     def initialize_all_simulation_runs_tab() -> QtWidgets.QTabWidget:
         return QtWidgets.QTabWidget()
