@@ -8,40 +8,45 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+# from dataclasses import dataclass
+# from .qt_simulation_run_model import InputOutputStateMapping, QSimulationRunModel
+from .simulation_view.qt_simulation_run_model import (
+    InputOutputStateMapping,
+    QtSimulationRunModel,
+    SimulationRunModelStyledItemDelegate,
+)
 
-@dataclass
-class InputOutputStateMapping:
-    input_state: syrec.n_bit_values_container
-    output_state: syrec.n_bit_values_container | None
+# @dataclass
+# class InputOutputStateMapping:
+#     input_state: syrec.n_bit_values_container
+#     output_state: syrec.n_bit_values_container | None
 
-    def initialize_output_state_as_copy_of_input_state(self) -> bool:
-        if self.output_state is not None:
-            return False
+#     def initialize_output_state_as_copy_of_input_state(self) -> bool:
+#         if self.output_state is not None:
+#             return False
 
-        self.output_state = syrec.n_bit_values_container(self.input_state.size())
-        for i in range(self.output_state.size()):
-            self.output_state.set(self.input_state.test(i))
-        return True
+#         self.output_state = syrec.n_bit_values_container(self.input_state.size())
+#         for i in range(self.output_state.size()):
+#             self.output_state.set(self.input_state.test(i))
+#         return True
 
-    def update_input_state_qubit_value(self, qubit: int, qubit_value: bool) -> bool:
-        if qubit < 0 or qubit >= self.input_state.size():
-            return False
+#     def update_input_state_qubit_value(self, qubit: int, qubit_value: bool) -> bool:
+#         if qubit < 0 or qubit >= self.input_state.size():
+#             return False
 
-        self.input_state.set(qubit, qubit_value)
-        return True
+#         self.input_state.set(qubit, qubit_value)
+#         return True
 
-    def update_output_state_qubit_value(self, qubit: int, qubit_value: bool) -> bool:
-        if self.output_state is None or qubit < 0 or qubit >= self.output_state.size():
-            return False
+#     def update_output_state_qubit_value(self, qubit: int, qubit_value: bool) -> bool:
+#         if self.output_state is None or qubit < 0 or qubit >= self.output_state.size():
+#             return False
 
-        self.output_state.set(qubit, qubit_value)
-        return True
+#         self.output_state.set(qubit, qubit_value)
+#         return True
 
 
 def does_qubit_label_start_with_internal_qubit_label_prefix(qubit_label: str) -> bool:
@@ -633,7 +638,14 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.height = 800
         self.setGeometry(self.left, self.top, self.width, self.height)
 
-        self.defined_simulation_runs: list[InputOutputStateMapping] = []
+        self.simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(self)  # type: ignore[no-untyped-call]
+        self.simulation_runs_list_view: QtWidgets.QListView = QtWidgets.QListView()
+        self.simulation_runs_list_view.setModel(self.simulation_runs_model)
+        self.simulation_runs_list_view.setItemDelegate(SimulationRunModelStyledItemDelegate())  # type: ignore[no-untyped-call]
+
+        self.simulation_runs_list_view.setUniformItemSizes(True)
+        self.simulation_runs_list_view.setFlow(QtWidgets.QListView.Flow.TopToBottom)
+
         self.simulation_runs_tab_widget = QtWidgets.QTabWidget(self)
         self.simulation_runs_tab_widget.addTab(
             self.initialize_some_simulation_runs_tab(), "Check some input-output mapping combinations"
@@ -652,11 +664,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.setLayout(self.layout)
 
     def initialize_some_simulation_runs_tab(self) -> QtWidgets.QWidget:
-        wrapper_widget = QtWidgets.QFrame(self)
-        simulation_runs_list_layout = QtWidgets.QVBoxLayout()
-        wrapper_widget.setLayout(simulation_runs_list_layout)
-
-        for i in range(3):
+        for i in range(2):
             in_state = syrec.n_bit_values_container(self.annotatable_quantum_computation.num_qubits)
             out_state = syrec.n_bit_values_container(self.annotatable_quantum_computation.num_qubits)
 
@@ -666,41 +674,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             else:
                 in_out_state_mapping = InputOutputStateMapping(in_state, out_state)
 
-            simulation_run_widget = InputOutputStateMappingDefinitionWidget(
-                i, self.annotatable_quantum_computation, in_out_state_mapping, is_input_state_readonly=(i == 1)
-            )
-            # input_state_qubit_value_change = QtCore.pyqtSignal(int, bool, arguments=["qubit", "new_qubit_value"], name="inputStateQubitValueChanged")
-            # output_state_qubit_value_change = QtCore.pyqtSignal(int, bool, arguments=["qubit", "new_qubit_value"], name="outputStateQubitValueChanged")
-            # simulation_run_deletion = QtCore.pyqtSignal(int, arguments=["simulation_run_number"], name="simulationRunDeleted")
-            # request_output_state_initialization = QtCore.pyqtSignal(name="requestedOutputStateInitialization")
-            # request_output_state_reset = QtCore.pyqtSignal(name="requestedOutputStateReset")
-
-            simulation_run_widget.inputStateQubitValueChanged.connect(
-                self.handle_simulation_run_input_state_qubit_value_change
-            )
-            simulation_run_widget.outputStateQubitValueChanged.connect(
-                self.handle_simulation_run_output_state_qubit_value_change
-            )
-            simulation_run_widget.requested_simulation_run_deletion.connect(self.handle_simulation_run_deletion_request)
-            simulation_runs_list_layout.addWidget(simulation_run_widget)
-
-            self.defined_simulation_runs.append(in_out_state_mapping)
-
-        # simulation_run_one = InputOutputStateMappingDefinitionWidget(
-        #     0, self.annotatable_quantum_computation, InputOutputStateMapping(in_state, None)
-        # )
-        # simulation_run_two = InputOutputStateMappingDefinitionWidget(
-        #     1, self.annotatable_quantum_computation, InputOutputStateMapping(in_state, None), is_input_state_readonly=True
-        # )
-        # simulation_run_three = InputOutputStateMappingDefinitionWidget(
-        #     2, self.annotatable_quantum_computation, InputOutputStateMapping(in_state, out_state)
-        # )
-        # simulation_runs_list_layout.addWidget(simulation_run_one)
-        # simulation_runs_list_layout.addWidget(simulation_run_two)
-        # simulation_runs_list_layout.addWidget(simulation_run_three)
+            self.simulation_runs_model.add_simulation_run(in_out_state_mapping)
 
         simulation_runs_list_scrollarea = QtWidgets.QScrollArea()
-        simulation_runs_list_scrollarea.setWidget(wrapper_widget)
+        simulation_runs_list_scrollarea.setWidget(self.simulation_runs_list_view)
         simulation_runs_list_scrollarea.setWidgetResizable(True)
         return simulation_runs_list_scrollarea
 
