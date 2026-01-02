@@ -638,14 +638,16 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.height = 800
         self.setGeometry(self.left, self.top, self.width, self.height)
 
-        self.simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(self)  # type: ignore[no-untyped-call]
+        self.simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
         self.simulation_runs_list_view: QtWidgets.QListView = QtWidgets.QListView()
         self.simulation_runs_list_view.setModel(self.simulation_runs_model)
         self.simulation_runs_list_view.setItemDelegate(SimulationRunModelStyledItemDelegate())  # type: ignore[no-untyped-call]
-
         self.simulation_runs_list_view.setUniformItemSizes(True)
         self.simulation_runs_list_view.setFlow(QtWidgets.QListView.Flow.TopToBottom)
+        self.simulation_runs_list_view.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
+        # self.simulation_runs_list_view.setSpacing(10)
 
+        # TODO: Default background of tabwidget is white on windows (https://forum.qt.io/topic/82262/default-background-color-of-qtabwidget-and-qwidget-qgroupbox/4)
         self.simulation_runs_tab_widget = QtWidgets.QTabWidget(self)
         self.simulation_runs_tab_widget.addTab(
             self.initialize_some_simulation_runs_tab(), "Check some input-output mapping combinations"
@@ -664,7 +666,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.setLayout(self.layout)
 
     def initialize_some_simulation_runs_tab(self) -> QtWidgets.QWidget:
-        for i in range(2):
+        for i in range(10):
             in_state = syrec.n_bit_values_container(self.annotatable_quantum_computation.num_qubits)
             out_state = syrec.n_bit_values_container(self.annotatable_quantum_computation.num_qubits)
 
