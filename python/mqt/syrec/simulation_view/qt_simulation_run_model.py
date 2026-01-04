@@ -152,13 +152,16 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         return True
 
     def delete_simulation_run(self, index: QtCore.QModelIndex) -> bool:
-        # self.beginRemoveRows()
+        self.beginRemoveRows(QtCore.QModelIndex(), index.row(), index.row())
+
         if self.is_model_index_valid(index):
-            self.input_output_state_mappings.remove(index.row())
-            self.layoutChanged.emit()
+            self.input_output_state_mappings.pop(index.row())
+            self.endRemoveRows()
+            # self.layoutChanged.emit()
             return True
+
+        self.endRemoveRows()
         return False
-        # self.endRemoveRows()
 
     # TODO: Check for duplicates?
     def update_input_state_qubit_value(self, index: QtCore.QModelIndex, qubit: int, qubit_value: bool) -> bool:
