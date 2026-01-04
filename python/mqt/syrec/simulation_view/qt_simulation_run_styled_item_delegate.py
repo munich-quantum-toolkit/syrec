@@ -86,15 +86,19 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         )
 
     def _get_estimated_quantum_register_contents_column_width(
-        self, option: QtWidgets.QStyleOptionViewItem, font_size: int, with_leading_whitespace: bool
+        self,
+        option: QtWidgets.QStyleOptionViewItem,
+        largest_quantum_register_size_in_qubits: int,
+        font_size: int,
+        with_leading_whitespace: bool,
     ) -> int:
         return (
             2 * self.stringified_quantum_register_x_spacing if with_leading_whitespace else 0
         ) + SimulationRunModelStyledItemDelegate._get_horizontal_text_width(
-            "".join(["0" for i in range(32)]), option, font_size
+            "".join(["0" for i in range(largest_quantum_register_size_in_qubits)]), option, font_size
         )
 
-    # TODO: Group box header?
+    # TODO: Long quantum registers that cause the total width to be larger than the containing bounding rect should be truncated (i.e. with a text ellipsis) with total estimated content width truncated to max. width of containing bounding rectangle?
     def _get_estimated_bounding_rect(
         self, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex
     ) -> QtCore.QSize:
@@ -128,7 +132,10 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         )
 
         quantum_register_content_width: int = self._get_estimated_quantum_register_contents_column_width(
-            option, self.simulation_run_group_box_content_font_size, True
+            option,
+            index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE),
+            self.simulation_run_group_box_content_font_size,
+            True,
         )
         simulation_run_content_width = (
             self.simulation_run_contents_padding_size
@@ -260,7 +267,10 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
 
         quantum_register_content_width_without_padding: int = (
             self._get_estimated_quantum_register_contents_column_width(
-                option, self.simulation_run_group_box_content_font_size, False
+                option,
+                index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE),
+                self.simulation_run_group_box_content_font_size,
+                False,
             )
         )
         quantum_register_input_values_start_x: int = (

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Final
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
@@ -63,8 +63,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self.simulation_runs_tab_widget.tabBarClicked.connect(self.handle_simulation_runs_tab_widget_tab_bar_clicked)
 
+        n_simulation_runs_to_add: Final[int] = 5
         QuantumCircuitSimulationDialog.generate_some_simulation_runs(
-            20, self.annotatable_quantum_computation, self.simulation_runs_model
+            n_simulation_runs_to_add, self.annotatable_quantum_computation, self.simulation_runs_model
         )
 
         self.layout = QtWidgets.QVBoxLayout()
@@ -107,18 +108,27 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # BEGIN: Create simulation runs list modification Qt elements
         simulation_runs_list_modification_buttons_layout = QtWidgets.QHBoxLayout()
         simulation_runs_list_modification_buttons_layout.addStretch()
-        add_simulation_run_button = QtWidgets.QPushButton("Add simulation run", objectName=ADD_SIM_RUN_BTN_NAME)
+
+        add_simulation_run_button = QtWidgets.QPushButton(
+            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd), "Add simulation run", objectName=ADD_SIM_RUN_BTN_NAME
+        )
         add_simulation_run_button.setEnabled(True)
         add_simulation_run_button.clicked.connect(self.handle_simulation_run_add_btn_click)
         simulation_runs_list_modification_buttons_layout.addWidget(add_simulation_run_button)
 
-        edit_simulation_run_button = QtWidgets.QPushButton("Edit simulation run", objectName=EDIT_SIM_RUN_BTN_NAME)
+        edit_simulation_run_button = QtWidgets.QPushButton(
+            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentProperties),
+            "Edit simulation run",
+            objectName=EDIT_SIM_RUN_BTN_NAME,
+        )
         edit_simulation_run_button.setEnabled(False)
         edit_simulation_run_button.clicked.connect(QuantumCircuitSimulationDialog.handle_simulation_run_edit_btn_click)
         simulation_runs_list_modification_buttons_layout.addWidget(edit_simulation_run_button)
 
         delete_simulation_run_button = QtWidgets.QPushButton(
-            "Delete simulation run", objectName=DELETE_SIM_RUN_BTN_NAME
+            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditDelete),
+            "Delete simulation run",
+            objectName=DELETE_SIM_RUN_BTN_NAME,
         )
         delete_simulation_run_button.setEnabled(False)
         delete_simulation_run_button.clicked.connect(self.handle_simulation_run_delete_btn_click)
@@ -133,17 +143,25 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_runs_execution_buttons_layout.addStretch()
 
         save_simulation_runs_to_file_button = QtWidgets.QPushButton(
-            "Save simulation runs to file", objectName=SAVE_SIM_RUNS_TO_FILE_BTN_NAME
+            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave),
+            "Save simulation runs to file",
+            objectName=SAVE_SIM_RUNS_TO_FILE_BTN_NAME,
         )
         save_simulation_runs_to_file_button.setEnabled(False)
         simulation_runs_execution_buttons_layout.addWidget(save_simulation_runs_to_file_button)
 
-        run_simulation_runs_button = QtWidgets.QPushButton("Run simulation runs", objectName=RUN_SIM_RUNS_BTN_NAME)
+        run_simulation_runs_button = QtWidgets.QPushButton(
+            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.MediaPlaybackStart),
+            "Run simulation runs",
+            objectName=RUN_SIM_RUNS_BTN_NAME,
+        )
         run_simulation_runs_button.setEnabled(False)
         simulation_runs_execution_buttons_layout.addWidget(run_simulation_runs_button)
 
         run_simulation_runs_stop_at_first_failure_button = QtWidgets.QPushButton(
-            "Run simulation runs (stop at first failure)", objectName=RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME
+            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.MediaPlaybackStart),
+            "Run simulation runs (stop at first failure)",
+            objectName=RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME,
         )
         run_simulation_runs_stop_at_first_failure_button.setEnabled(False)
         simulation_runs_execution_buttons_layout.addWidget(run_simulation_runs_stop_at_first_failure_button)
@@ -243,7 +261,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         open_file_dialog_button = QtWidgets.QPushButton("Select file...")
         controls_layout.addWidget(open_file_dialog_button)
 
-        trigger_load_from_file_button = QtWidgets.QPushButton("Load from file")
+        trigger_load_from_file_button = QtWidgets.QPushButton(
+            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentOpen), "Load from file"
+        )
         controls_layout.addWidget(trigger_load_from_file_button)
 
         controls_layout.addStretch()
