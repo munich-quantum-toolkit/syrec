@@ -14,7 +14,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
-from .simulation_view.qt_simulation_run_model import InputOutputStateMapping, QtSimulationRunModel
+from .simulation_view.qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
 from .simulation_view.qt_simulation_run_styled_item_delegate import SimulationRunModelStyledItemDelegate
 
 LOADED_FROM_FILE_INPUT_FIELD_NAME: Final[str] = "load_from_file_input_field"
@@ -205,9 +205,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         delete_simulation_run_btn.setEnabled(is_list_item_selected)
 
     def handle_simulation_run_add_btn_click(self) -> None:
-        if not self.simulation_runs_model.add_simulation_run(
-            InputOutputStateMapping(
-                input_state=syrec.n_bit_values_container(self.expected_input_output_state_size), output_state=None
+        if not self.simulation_runs_model.add_simulation_run_model(
+            SimulationRunModel(
+                input_state=syrec.n_bit_values_container(self.expected_input_output_state_size),
+                expected_output_state=None,
             )
         ):
             return
@@ -241,7 +242,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         if simulation_runs_list_view is None:
             return
 
-        if not self.simulation_runs_model.delete_simulation_run(simulation_runs_list_view.currentIndex()):
+        if not self.simulation_runs_model.delete_simulation_run_model(simulation_runs_list_view.currentIndex()):
             return
 
         self.set_enabled_state_of_simulation_runs_execution_controls(
@@ -278,15 +279,15 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     ) -> None:
         for i in range(self):
             in_state = syrec.n_bit_values_container(annotatable_quantum_computation.num_data_qubits)
-            out_state = syrec.n_bit_values_container(annotatable_quantum_computation.num_data_qubits)
+            expected_out_state = syrec.n_bit_values_container(annotatable_quantum_computation.num_data_qubits)
 
-            in_out_state_mapping: InputOutputStateMapping | None = None
+            sim_run_model: SimulationRunModel | None = None
             if i < 2:
-                in_out_state_mapping = InputOutputStateMapping(in_state, None)
+                sim_run_model = SimulationRunModel(in_state, None)
             else:
-                in_out_state_mapping = InputOutputStateMapping(in_state, out_state)
+                sim_run_model = SimulationRunModel(in_state, expected_out_state)
 
-            shared_simulation_runs_model.add_simulation_run(in_out_state_mapping)
+            shared_simulation_runs_model.add_simulation_run_model(sim_run_model)
 
     def handle_simulation_runs_tab_widget_tab_bar_clicked(self, clicked_on_tab_index: int) -> None:
         self.simulation_runs_tab_widget.setCurrentIndex(clicked_on_tab_index)

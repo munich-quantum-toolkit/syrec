@@ -43,32 +43,82 @@ class QuantumRegisterLayout:
     quantum_register_size: int
 
 
-@dataclass
-class InputOutputStateMapping:
+class SimulationRunModel:
     input_state: syrec.n_bit_values_container
-    output_state: syrec.n_bit_values_container | None
+    expected_output_state: syrec.n_bit_values_container | None = None
+    actual_output_state: syrec.n_bit_values_container | None = None
+    do_expected_and_actual_outputs_match: bool | None = None
+    execution_runtime_in_ms: float | None = None
 
-    def initialize_output_state_as_copy_of_input_state(self) -> bool:
-        if self.output_state is not None:
+    def __init__(
+        self,
+        input_state: syrec.n_bit_values_container,
+        expected_output_state: syrec.n_bit_values_container | None = None,
+    ):
+        if expected_output_state is not None and input_state.size() != expected_output_state.size():
+            msg = f"Expected output state size (n_qubits = {expected_output_state.size()}) did not match input state size (n_qubits = {input_state.size()})"
+            raise ValueError(msg)
+
+        self.input_state = input_state
+        self.expected_output_state = expected_output_state
+
+    def initialize_expected_output_state_as_copy_of_input_state(self) -> None:
+        if self.expected_output_state is not None:
+            return
+
+        self.expected_output_state = syrec.n_bit_values_container(self.input_state.size())
+        for i in range(self.expected_output_state.size()):
+            self.expected_output_state.set(self.input_state.test(i))
+
+    def reset_result_of_execution(self) -> None:
+        self.actual_output_state = None
+        self.do_expected_and_actual_outputs_match = None
+        self.execution_runtime_in_ms = None
+
+    def set_result_of_simulation_execution(
+        self, actual_output_state: syrec.n_bit_values_container, execution_runtime_in_ms: float
+    ) -> None:
+        if actual_output_state.size() != self.input_state.size():
+            msg = f"Actual output state size (n_qubits = {actual_output_state.size()}) did not match input state size (n_qubits = {self.input_state.size()})"
+            raise ValueError(msg)
+        if self.expected_output_state is None:
+            msg = "Tried to set actual output state when expected output state was not set!"
+            raise ValueError(msg)
+        if self.expected_output_state.size() != actual_output_state.size():
+            msg = f"Actual output state size (n_qubits = {actual_output_state.size()}) did not match expected output state size (n_qubits = {self.expected_output_state.size()})"
+            raise ValueError(msg)
+        if execution_runtime_in_ms < 0:
+            msg = f"Invalid execution runtime value {execution_runtime_in_ms}"
+            raise ValueError(msg)
+
+        if self.actual_output_state is None:
+            self.actual_output_state = actual_output_state
+        else:
+            self.actual_output_state = syrec.n_bit_values_container(self.input_state.size())
+            for i in range(self.expected_output_state.size()):
+                self.actual_output_state.set(actual_output_state.test(i))
+
+        self.execution_runtime_in_ms = execution_runtime_in_ms
+
+    def update_input_state_qubit_value(self, qubit: int, new_qubit_value: bool) -> bool:
+        return SimulationRunModel._update_n_bit_values_container_qubit_value(self.input_state, qubit, new_qubit_value)
+
+    def update_expected_output_state_qubit_value(self, qubit: int, new_qubit_value: bool) -> bool:
+        if self.expected_output_state is None:
             return False
 
-        self.output_state = syrec.n_bit_values_container(self.input_state.size())
-        for i in range(self.output_state.size()):
-            self.output_state.set(self.input_state.test(i))
-        return True
+        return SimulationRunModel._update_n_bit_values_container_qubit_value(
+            self.expected_output_state, qubit, new_qubit_value
+        )
 
-    def update_input_state_qubit_value(self, qubit: int, qubit_value: bool) -> bool:
-        if qubit < 0 or qubit >= self.input_state.size():
+    @staticmethod
+    def _update_n_bit_values_container_qubit_value(
+        n_bit_values_container: syrec.n_bit_values_container, qubit: int, new_qubit_value: bool
+    ) -> bool:
+        if qubit < 0 or qubit >= n_bit_values_container.size():
             return False
 
-        self.input_state.set(qubit, qubit_value)
-        return True
-
-    def update_output_state_qubit_value(self, qubit: int, qubit_value: bool) -> bool:
-        if self.output_state is None or qubit < 0 or qubit >= self.output_state.size():
-            return False
-
-        self.output_state.set(qubit, qubit_value)
+        n_bit_values_container.set(qubit, new_qubit_value)
         return True
 
 
@@ -78,7 +128,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self, annotatable_quantum_computation: syrec.annotatable_quantum_computation, parent: QtCore.QObject = None
     ):
         super().__init__(parent)
-        self.input_output_state_mappings: list[InputOutputStateMapping] = []
+        self.simulation_run_models: list[SimulationRunModel] = []
         self.quantum_register_layouts: list[QuantumRegisterLayout] = (
             QtSimulationRunModel.__record_quantum_register_layouts(annotatable_quantum_computation)
         )
@@ -120,14 +170,14 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         return quantum_register_layouts
 
     def rowCount(self, parent: QtCore.QModelIndex) -> int:  # noqa: N802
-        return 0 if parent.isValid() else len(self.input_output_state_mappings)
+        return 0 if parent.isValid() else len(self.simulation_run_models)
 
     def data(self, index: QtCore.QModelIndex, role: int) -> object:
         if not index.isValid():
             return None
 
         if role == SIMULATION_RUN_IO_STATE_QT_ROLE:
-            return self.input_output_state_mappings[index.row()]
+            return self.simulation_run_models[index.row()]
 
         if role == QUANTUM_REGISTER_LAYOUT_QT_ROLE:
             return self.quantum_register_layouts
@@ -144,18 +194,18 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         return None
 
     # TODO: Check for duplicates?
-    def add_simulation_run(self, input_output_state_mapping: InputOutputStateMapping) -> bool:
-        n_simulation_runs: int = len(self.input_output_state_mappings)
+    def add_simulation_run_model(self, simulation_run_model: SimulationRunModel) -> bool:
+        n_simulation_runs: int = len(self.simulation_run_models)
         self.beginInsertRows(QtCore.QModelIndex(), n_simulation_runs, n_simulation_runs)
-        self.input_output_state_mappings.append(input_output_state_mapping)
+        self.simulation_run_models.append(simulation_run_model)
         self.endInsertRows()
         return True
 
-    def delete_simulation_run(self, index: QtCore.QModelIndex) -> bool:
+    def delete_simulation_run_model(self, index: QtCore.QModelIndex) -> bool:
         self.beginRemoveRows(QtCore.QModelIndex(), index.row(), index.row())
 
         if self.is_model_index_valid(index):
-            self.input_output_state_mappings.pop(index.row())
+            self.simulation_run_models.pop(index.row())
             self.endRemoveRows()
             # self.layoutChanged.emit()
             return True
@@ -165,21 +215,21 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
 
     # TODO: Check for duplicates?
     def update_input_state_qubit_value(self, index: QtCore.QModelIndex, qubit: int, qubit_value: bool) -> bool:
-        if self.is_model_index_valid(index) and self.input_output_state_mappings[
-            index.row()
-        ].update_input_state_qubit_value(qubit, qubit_value):
+        if self.is_model_index_valid(index) and self.simulation_run_models[index.row()].update_input_state_qubit_value(
+            qubit, qubit_value
+        ):
             self.dataChanged.emit(index, index)
             return True
         return False
 
     # TODO: Check for duplicates?
     def update_output_state_qubit_value(self, index: QtCore.QModelIndex, qubit: int, qubit_value: bool) -> bool:
-        if self.is_model_index_valid(index) and self.input_output_state_mappings[
-            index.row()
-        ].update_output_state_qubit_value(qubit, qubit_value):
+        if self.is_model_index_valid(index) and self.simulation_run_models[index.row()].update_output_state_qubit_value(
+            qubit, qubit_value
+        ):
             self.dataChanged.emit(index, index)
             return True
         return False
 
     def is_model_index_valid(self, index: QtCore.QModelIndex) -> bool:
-        return index.isValid() and index.row() >= 0 and index.row() < len(self.input_output_state_mappings)  # type: ignore[no-any-return]
+        return index.isValid() and index.row() >= 0 and index.row() < len(self.simulation_run_models)  # type: ignore[no-any-return]

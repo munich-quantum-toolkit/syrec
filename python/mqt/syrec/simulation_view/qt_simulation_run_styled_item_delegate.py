@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from mqt import syrec
 
     from .qt_simulation_run_model import (
-        InputOutputStateMapping,
+        SimulationRunModel,
     )
 
 
@@ -37,6 +37,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         self.simulation_run_group_box_title_font_size: Final[int] = 14
         self.simulation_run_group_box_content_font_size: Final[int] = 10
         self.quantum_register_layout_info_text_font_size: Final[int] = 8
+        self.simulation_run_title_bottom_margin_y: Final[int] = 8
         self.stringified_quantum_register_y_spacing: Final[int] = 4
         self.stringified_quantum_register_x_spacing: Final[int] = 6
         self.simulation_run_contents_padding_size: Final[int] = 20
@@ -46,6 +47,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         self.quantum_register_name_column_header = "Quantum register"
         self.input_state_value_column_header = "INPUT"
         self.output_state_value_column_header = "OUTPUT"
+        self.unknown_output_state_value_placeholder = "<UNKNOWN>"
 
     @staticmethod
     def _get_text_width_for_font_size(text: str, options: QtWidgets.QStyleOptionViewItem, font_size: int) -> int:
@@ -109,11 +111,8 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         # Quantum register contents are displayed as two rows containing the following information:
         # R0: <QREG_NAME> <STRINGIFIED_INPUT_QUBIT_VALUES>  <STRINGIFIED_OUTPUT_QUBIT_VALUES>
         # R1: <QREG_LAYOUT_INFO>
-        group_box_title_height: int = (
-            self.stringified_quantum_register_y_spacing
-            + SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
-                option, self.simulation_run_group_box_title_font_size
-            )
+        group_box_title_height: int = SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
+            option, self.simulation_run_group_box_title_font_size
         )
 
         qreg_contents_text_height: int = (
@@ -130,7 +129,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         total_simulation_run_group_box_height = (
             self.simulation_run_contents_padding_size
             + group_box_title_height
-            + self.stringified_quantum_register_y_spacing
+            + self.simulation_run_title_bottom_margin_y
             + total_qreg_contents_text_height
             + self.simulation_run_contents_padding_size
         )
@@ -139,12 +138,19 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
             option, index, self.simulation_run_group_box_title_font_size
         )
 
-        max_qreg_content_column_width: int = self._get_estimated_quantum_register_contents_column_width(
+        qreg_content_header_width: int = self._get_text_width_for_font_size(
+            self.input_state_value_column_header, option, self.simulation_run_group_box_content_font_size
+        )
+
+        max_qreg_qubits_column_width: int = self._get_estimated_quantum_register_contents_column_width(
             option,
             index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE),
             self.simulation_run_group_box_content_font_size,
             True,
         )
+
+        max_qreg_content_column_width: int = max(qreg_content_header_width, max_qreg_qubits_column_width)
+
         max_per_qreg_content_column_width_with_spacing: int = (
             self.stringified_quantum_register_x_spacing
             + max_qreg_content_column_width
@@ -197,11 +203,18 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
             "1" if n_bit_values_container.test(i) else "0" for i in range(first_qubit, first_qubit + n_qubits)
         ])
 
+    # TODO:
+    # @staticmethod
+    # def _get_elided_text_for_pixel_width(
+    #     text: str, text_font: QtGui.QFontMetrics, available_pixel_width_for_text: int
+    # ) -> str:
+    #     return text_font.elidedText(text, QtCore.Qt.TextElideMode.Qt.ElideRight, available_pixel_width_for_text)
+
     def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
         if not index.isValid():
             return
 
-        associated_input_output_mapping: InputOutputStateMapping = index.data(SIMULATION_RUN_IO_STATE_QT_ROLE)
+        associated_input_output_mapping: SimulationRunModel = index.data(SIMULATION_RUN_IO_STATE_QT_ROLE)
 
         painter.save()
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
@@ -239,8 +252,10 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         header_text_rect = QtCore.QRect(
             simulation_run_contents_rect.topLeft().x(),
             simulation_run_contents_rect.topLeft().y(),
-            0,
-            header_title_height + self.stringified_quantum_register_y_spacing,
+            SimulationRunModelStyledItemDelegate._get_text_width_for_font_size(
+                header_title, option, self.simulation_run_group_box_title_font_size
+            ),
+            header_title_height,
         )
 
         qreg_name_column_width: int = self._get_estimated_quantum_register_name_column_width(
@@ -248,8 +263,8 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         )
 
         header_row_column_one_rect = QtCore.QRect(
-            header_text_rect.bottomLeft().x(),
-            header_text_rect.bottomLeft().y(),
+            header_text_rect.topLeft().x(),
+            header_text_rect.topLeft().y() + 2 * self.simulation_run_title_bottom_margin_y,
             qreg_name_column_width,
             SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
                 option, self.simulation_run_group_box_content_font_size
@@ -262,7 +277,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         painter.drawText(
             header_row_column_one_text_rect,
             QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
-            "Quantum register",
+            self.quantum_register_name_column_header,
         )
 
         max_qreg_content_width: int = self._get_estimated_quantum_register_contents_column_width(
@@ -286,7 +301,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         painter.drawText(
             header_row_column_two_text_rect,
             QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
-            "INPUT",
+            self.input_state_value_column_header,
         )
 
         header_row_column_three_rect = QtCore.QRect(
@@ -304,7 +319,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         painter.drawText(
             header_row_column_three_text_rect,
             QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
-            "OUTPUT",
+            self.output_state_value_column_header,
         )
 
         SimulationRunModelStyledItemDelegate._paint_rect_edge_points(
@@ -350,12 +365,12 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
                 row_i_column_three,
                 QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
                 SimulationRunModelStyledItemDelegate._stringify_some_qubits_of_n_bit_values_container(
-                    associated_input_output_mapping.output_state,
+                    associated_input_output_mapping.expected_output_state,
                     qreg_layout.first_qubit_of_quantum_register,
                     qreg_layout.quantum_register_size,
                 )
-                if associated_input_output_mapping.output_state is not None
-                else "<UNKNOWN>",
+                if associated_input_output_mapping.expected_output_state is not None
+                else self.unknown_output_state_value_placeholder,
             )
 
             painter.save()
@@ -377,4 +392,3 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
 
             row_idx += 2
         painter.restore()
-        return
