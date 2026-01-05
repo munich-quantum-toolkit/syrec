@@ -63,7 +63,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self.simulation_runs_tab_widget.tabBarClicked.connect(self.handle_simulation_runs_tab_widget_tab_bar_clicked)
 
-        n_simulation_runs_to_add: Final[int] = 5
+        n_simulation_runs_to_add: Final[int] = 10
         QuantumCircuitSimulationDialog.generate_some_simulation_runs(
             n_simulation_runs_to_add, self.annotatable_quantum_computation, self.simulation_runs_model
         )
@@ -93,13 +93,15 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_runs_list_view.setModel(shared_simulation_runs_model)
         simulation_runs_list_view.setItemDelegate(SimulationRunModelStyledItemDelegate())  # type: ignore[no-untyped-call]
         simulation_runs_list_view.setUniformItemSizes(True)
+        simulation_runs_list_view.setAutoFillBackground(False)
+        simulation_runs_list_view.setSpacing(5)
         simulation_runs_list_view.setFlow(QtWidgets.QListView.Flow.TopToBottom)
         # Select with click on item, unselect with Ctrl+Click on already selected item (see https://doc.qt.io/qt-6/qabstractitemview.html#SelectionMode-enum)
         simulation_runs_list_view.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
         simulation_runs_list_view.selectionModel().selectionChanged.connect(self.handle_simulation_run_selection_change)
 
         simulation_runs_list_scrollarea = QtWidgets.QScrollArea()
-        simulation_runs_list_scrollarea.setAutoFillBackground(True)
+        simulation_runs_list_scrollarea.setAutoFillBackground(False)
         simulation_runs_list_scrollarea.setWidget(simulation_runs_list_view)
         simulation_runs_list_scrollarea.setWidgetResizable(True)
         tab_wrapper_widget_layout.addWidget(simulation_runs_list_scrollarea)

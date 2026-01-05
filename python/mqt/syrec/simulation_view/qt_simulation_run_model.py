@@ -36,7 +36,7 @@ LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE: Final[int] = LONGEST_QUANTUM_REGISTER_NAM
 LARGEST_FIRST_QUBIT_OF_QUANTUM_REGISTER_QT_ROLE: Final[int] = LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE + 1
 
 
-@dataclass
+@dataclass(frozen=True)
 class QuantumRegisterLayout:
     quantum_register_name: str
     first_qubit_of_quantum_register: int

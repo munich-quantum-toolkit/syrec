@@ -48,7 +48,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         self.output_state_value_column_header = "OUTPUT"
 
     @staticmethod
-    def _get_horizontal_text_width(text: str, options: QtWidgets.QStyleOptionViewItem, font_size: int) -> int:
+    def _get_text_width_for_font_size(text: str, options: QtWidgets.QStyleOptionViewItem, font_size: int) -> int:
         return int(
             QtGui.QFontMetrics(QtGui.QFont(options.font.family(), font_size, options.font.weight())).horizontalAdvance(
                 text
@@ -56,7 +56,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         )
 
     @staticmethod
-    def _get_vertical_text_width(options: QtWidgets.QStyleOptionViewItem, font_size: int) -> int:
+    def _get_text_height_for_font_size(options: QtWidgets.QStyleOptionViewItem, font_size: int) -> int:
         return int(QtGui.QFontMetrics(QtGui.QFont(options.font.family(), font_size, options.font.weight())).height())
 
     def _get_estimated_quantum_register_name_column_width(
@@ -70,13 +70,13 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         largest_first_qubit_of_quantum_registers: int = index.data(LARGEST_FIRST_QUBIT_OF_QUANTUM_REGISTER_QT_ROLE)
 
         return (2 * self.stringified_quantum_register_x_spacing) + max(
-            SimulationRunModelStyledItemDelegate._get_horizontal_text_width(
+            SimulationRunModelStyledItemDelegate._get_text_width_for_font_size(
                 self.quantum_register_name_column_header, option, font_size
             ),
-            SimulationRunModelStyledItemDelegate._get_horizontal_text_width(
+            SimulationRunModelStyledItemDelegate._get_text_width_for_font_size(
                 index.data(LONGEST_QUANTUM_REGISTER_NAME_QT_ROLE), option, font_size
             ),
-            SimulationRunModelStyledItemDelegate._get_horizontal_text_width(
+            SimulationRunModelStyledItemDelegate._get_text_width_for_font_size(
                 self.quantum_register_layout_text_format.format(
                     first_qubit=largest_first_qubit_of_quantum_registers, n_qubits=largest_quantum_register_size
                 ),
@@ -94,7 +94,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
     ) -> int:
         return (
             2 * self.stringified_quantum_register_x_spacing if with_leading_whitespace else 0
-        ) + SimulationRunModelStyledItemDelegate._get_horizontal_text_width(
+        ) + SimulationRunModelStyledItemDelegate._get_text_width_for_font_size(
             "".join(["0" for i in range(largest_quantum_register_size_in_qubits)]), option, font_size
         )
 
@@ -106,48 +106,62 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
             return QtCore.QSize(0, 0)
 
         n_qregs: int = len(index.data(QUANTUM_REGISTER_LAYOUT_QT_ROLE))
-        simulation_run_content_height: int = (
-            self.simulation_run_group_box_y_spacing
-            + self.simulation_run_contents_padding_size
-            + SimulationRunModelStyledItemDelegate._get_vertical_text_width(
+        # Quantum register contents are displayed as two rows containing the following information:
+        # R0: <QREG_NAME> <STRINGIFIED_INPUT_QUBIT_VALUES>  <STRINGIFIED_OUTPUT_QUBIT_VALUES>
+        # R1: <QREG_LAYOUT_INFO>
+        group_box_title_height: int = (
+            self.stringified_quantum_register_y_spacing
+            + SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
                 option, self.simulation_run_group_box_title_font_size
             )
-            + self.stringified_quantum_register_y_spacing
-            + n_qregs
-            * (
-                SimulationRunModelStyledItemDelegate._get_vertical_text_width(
-                    option, self.quantum_register_layout_info_text_font_size
-                )
-                + SimulationRunModelStyledItemDelegate._get_vertical_text_width(
-                    option, self.simulation_run_group_box_content_font_size
-                )
-            )
-            + (
-                (2 * (n_qregs - 1) * self.stringified_quantum_register_y_spacing)
-                if n_qregs > 1
-                else self.stringified_quantum_register_y_spacing
-            )
-            + self.simulation_run_contents_padding_size
-            + self.simulation_run_group_box_y_spacing
         )
 
-        quantum_register_content_width: int = self._get_estimated_quantum_register_contents_column_width(
+        qreg_contents_text_height: int = (
+            self.stringified_quantum_register_y_spacing
+            + SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
+                option, self.simulation_run_group_box_content_font_size
+            )
+            + self.stringified_quantum_register_y_spacing
+            + SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
+                option, self.quantum_register_layout_info_text_font_size
+            )
+        )
+        total_qreg_contents_text_height: int = n_qregs * qreg_contents_text_height
+        total_simulation_run_group_box_height = (
+            self.simulation_run_contents_padding_size
+            + group_box_title_height
+            + self.stringified_quantum_register_y_spacing
+            + total_qreg_contents_text_height
+            + self.simulation_run_contents_padding_size
+        )
+
+        qreg_name_and_layout_info_column_width: int = self._get_estimated_quantum_register_name_column_width(
+            option, index, self.simulation_run_group_box_title_font_size
+        )
+
+        max_qreg_content_column_width: int = self._get_estimated_quantum_register_contents_column_width(
             option,
             index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE),
             self.simulation_run_group_box_content_font_size,
             True,
         )
-        simulation_run_content_width = (
+        max_per_qreg_content_column_width_with_spacing: int = (
+            self.stringified_quantum_register_x_spacing
+            + max_qreg_content_column_width
+            + self.stringified_quantum_register_x_spacing
+            + max_qreg_content_column_width
+        )
+
+        total_simulation_run_group_box_width = (
             self.simulation_run_contents_padding_size
-            + self._get_estimated_quantum_register_name_column_width(
-                option, index, self.simulation_run_group_box_content_font_size
-            )
-            + (2 * quantum_register_content_width)
+            + qreg_name_and_layout_info_column_width
+            + max_per_qreg_content_column_width_with_spacing
+            + max_per_qreg_content_column_width_with_spacing
             + self.simulation_run_contents_padding_size
         )
         return QtCore.QSize(
-            min(simulation_run_content_width, option.rect.bottomRight().x()),
-            max(simulation_run_content_height, option.rect.topRight().y()),
+            min(total_simulation_run_group_box_width, option.rect.bottomRight().x()),
+            max(total_simulation_run_group_box_height, option.rect.topRight().y()),
         )
 
     def sizeHint(self, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:  # noqa: N802
@@ -190,144 +204,137 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
         associated_input_output_mapping: InputOutputStateMapping = index.data(SIMULATION_RUN_IO_STATE_QT_ROLE)
 
         painter.save()
-        estimated_simulation_run_container_size: QtCore.QSize = self._get_estimated_bounding_rect(option, index)
-        # simulation_run_container_rect = QtCore.QRect(option.rect.topLeft().x(), (index.row() * estimated_simulation_run_container_size.height()) + option.rect.topLeft().y(), estimated_simulation_run_container_size.width(), estimated_simulation_run_container_size.height())
-        simulation_run_container_rect = QtCore.QRect(
-            option.rect.topLeft().x(),
-            option.rect.topLeft().y() + self.simulation_run_group_box_y_spacing,
-            estimated_simulation_run_container_size.width(),
-            estimated_simulation_run_container_size.height() - 2 * self.simulation_run_group_box_y_spacing,
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        SimulationRunModelStyledItemDelegate._paint_rect_edge_points(
+            painter, option.rect, 5, QtCore.Qt.GlobalColor.cyan, index
+        )
+        painter.drawRoundedRect(option.rect, 3, 3)
+
+        simulation_run_contents_rect = option.rect.adjusted(
+            self.simulation_run_contents_padding_size,
+            self.simulation_run_contents_padding_size,
+            -self.simulation_run_contents_padding_size,
+            -self.simulation_run_contents_padding_size,
+        )
+        SimulationRunModelStyledItemDelegate._paint_rect_edge_points(
+            painter, simulation_run_contents_rect, 5, QtCore.Qt.GlobalColor.red, index
         )
 
         if QtWidgets.QStyle.StateFlag.State_Selected in option.state:
-            # print(str(index.row()) + " selected!")
-            painter.fillRect(simulation_run_container_rect, option.palette.highlight())
+            painter.fillRect(option.rect, option.palette.highlight())
             painter.setBrush(option.palette.highlightedText())
 
-        group_box_opt = QtWidgets.QStyleOptionGroupBox()
-        group_box_opt.rect = simulation_run_container_rect
-        group_box_opt.text = "Simulation run #" + str(index.row())
-        group_box_opt.color = QtCore.Qt.GlobalColor.black
-        group_box_opt.textAlignment = QtCore.Qt.AlignmentFlag.AlignLeft
-        group_box_opt.subControls = (
-            QtWidgets.QStyle.SubControl.SC_GroupBoxFrame | QtWidgets.QStyle.SubControl.SC_GroupBoxLabel
+        painter.save()
+        header_font = QtGui.QFont(painter.font().family(), self.simulation_run_group_box_title_font_size)
+        header_font.setBold(True)
+        painter.setFont(header_font)
+
+        header_title = "Simulation run #" + str(index.row() + 1)
+        header_title_height: int = SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
+            option, self.simulation_run_group_box_title_font_size
         )
-        group_box_opt.state = QtWidgets.QStyle.StateFlag.State_Raised
-        group_box_opt.features = QtWidgets.QStyleOptionFrame.FrameFeature.Rounded
+        painter.drawText(simulation_run_contents_rect.x(), simulation_run_contents_rect.y(), header_title)
+        painter.restore()
 
-        # 2. Draw the control using the current application style
-        # Using the widget's style ensures it respects OS themes
-
-        # 3. Draw the GroupBox
-        app_style = QtWidgets.QApplication.style()
-        app_style.drawComplexControl(QtWidgets.QStyle.ComplexControl.CC_GroupBox, group_box_opt, painter)
-
-        SimulationRunModelStyledItemDelegate._paint_rect_edge_points(
-            painter, simulation_run_container_rect, 5, QtCore.Qt.GlobalColor.darkMagenta, index
+        header_text_rect = QtCore.QRect(
+            simulation_run_contents_rect.topLeft().x(),
+            simulation_run_contents_rect.topLeft().y(),
+            0,
+            header_title_height + self.stringified_quantum_register_y_spacing,
         )
 
-        # 3. Calculate where the content inside the box should go
-        # We use subControlRect to find where the frame actually is
-        # 4. Calculate Content Area
-        # This returns a rect relative to the group_box_opt.rect
-        relative_group_box_content_rect = app_style.subControlRect(
-            QtWidgets.QStyle.ComplexControl.CC_GroupBox,
-            group_box_opt,
-            QtWidgets.QStyle.SubControl.SC_GroupBoxContents,
-            None,
-        )
-        # The calculation for the position of the contents of the group box does not seems to set the y-coordinate correctly while the x coordinate, width and height are correctly set? Return value of function call might be relative to parent?
-        relative_group_box_content_rect.setTop(
-            simulation_run_container_rect.top() + relative_group_box_content_rect.top()
-        )
-        SimulationRunModelStyledItemDelegate._paint_rect_edge_points(
-            painter, relative_group_box_content_rect, 5, QtCore.Qt.GlobalColor.magenta, index
-        )
-
-        quantum_register_name_column_width: int = self._get_estimated_quantum_register_name_column_width(
+        qreg_name_column_width: int = self._get_estimated_quantum_register_name_column_width(
             option, index, self.simulation_run_group_box_content_font_size
         )
-        quantum_register_name_column_start_x: int = (
-            relative_group_box_content_rect.topLeft().x() + self.simulation_run_contents_padding_size
-        )
 
-        initial_column_one_rect = QtCore.QRect(
-            quantum_register_name_column_start_x + self.simulation_run_contents_padding_size,
-            relative_group_box_content_rect.topLeft().y() + self.stringified_quantum_register_y_spacing,
-            quantum_register_name_column_width,
-            SimulationRunModelStyledItemDelegate._get_vertical_text_width(
+        header_row_column_one_rect = QtCore.QRect(
+            header_text_rect.bottomLeft().x(),
+            header_text_rect.bottomLeft().y(),
+            qreg_name_column_width,
+            SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
                 option, self.simulation_run_group_box_content_font_size
             ),
         )
+        header_row_column_one_text_rect = header_row_column_one_rect.adjusted(
+            self.stringified_quantum_register_x_spacing, 0, -self.stringified_quantum_register_x_spacing, 0
+        )
+        # TODO: What if header text is larger than contents?
         painter.drawText(
-            initial_column_one_rect,
+            header_row_column_one_text_rect,
             QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
             "Quantum register",
         )
 
-        quantum_register_content_width_without_padding: int = (
-            self._get_estimated_quantum_register_contents_column_width(
-                option,
-                index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE),
-                self.simulation_run_group_box_content_font_size,
-                False,
-            )
+        max_qreg_content_width: int = self._get_estimated_quantum_register_contents_column_width(
+            option,
+            index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE),
+            self.simulation_run_group_box_content_font_size,
+            False,
         )
-        quantum_register_input_values_start_x: int = (
-            initial_column_one_rect.topRight().x() + self.stringified_quantum_register_x_spacing
+        header_row_column_two_rect = QtCore.QRect(
+            header_row_column_one_rect.topRight().x(),
+            header_row_column_one_rect.topRight().y(),
+            max_qreg_content_width,
+            SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
+                option, self.simulation_run_group_box_content_font_size
+            ),
         )
-
-        initial_column_two_rect = QtCore.QRect(
-            quantum_register_input_values_start_x,
-            initial_column_one_rect.topLeft().y(),
-            quantum_register_content_width_without_padding,
-            initial_column_one_rect.height(),
+        header_row_column_two_text_rect = header_row_column_two_rect.adjusted(
+            self.stringified_quantum_register_x_spacing, 0, -self.stringified_quantum_register_x_spacing, 0
         )
+        # TODO: What if header text is larger than contents?
         painter.drawText(
-            initial_column_two_rect, QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter, "INPUT"
+            header_row_column_two_text_rect,
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
+            "INPUT",
         )
 
-        quantum_register_output_values_start_x: int = (
-            initial_column_two_rect.topRight().x() + self.stringified_quantum_register_x_spacing
+        header_row_column_three_rect = QtCore.QRect(
+            header_row_column_two_rect.topRight().x(),
+            header_row_column_two_rect.topRight().y(),
+            max_qreg_content_width,
+            SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
+                option, self.simulation_run_group_box_content_font_size
+            ),
         )
-        initial_column_three_rect = QtCore.QRect(
-            quantum_register_output_values_start_x,
-            initial_column_one_rect.topLeft().y(),
-            quantum_register_content_width_without_padding,
-            initial_column_two_rect.height(),
+        header_row_column_three_text_rect = header_row_column_three_rect.adjusted(
+            self.stringified_quantum_register_x_spacing, 0, -self.stringified_quantum_register_x_spacing, 0
         )
+        # TODO: What if header text is larger than contents?
         painter.drawText(
-            initial_column_three_rect, QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter, "OUTPUT"
+            header_row_column_three_text_rect,
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
+            "OUTPUT",
         )
 
         SimulationRunModelStyledItemDelegate._paint_rect_edge_points(
-            painter, initial_column_one_rect, 5, QtCore.Qt.GlobalColor.red, index
+            painter, header_row_column_one_rect, 5, QtCore.Qt.GlobalColor.red, index
         )
         SimulationRunModelStyledItemDelegate._paint_rect_edge_points(
-            painter, initial_column_two_rect, 5, QtCore.Qt.GlobalColor.blue, index
+            painter, header_row_column_two_rect, 5, QtCore.Qt.GlobalColor.blue, index
         )
         SimulationRunModelStyledItemDelegate._paint_rect_edge_points(
-            painter, initial_column_three_rect, 5, QtCore.Qt.GlobalColor.green, index
+            painter, header_row_column_three_rect, 5, QtCore.Qt.GlobalColor.green, index
         )
 
         row_idx: int = 1
-        row_i_y_offset: int = (
+        per_row_y_offset: int = (
             self.stringified_quantum_register_y_spacing
-            + SimulationRunModelStyledItemDelegate._get_vertical_text_width(
+            + SimulationRunModelStyledItemDelegate._get_text_height_for_font_size(
                 option, self.simulation_run_group_box_content_font_size
             )
         )
         for qreg_layout in index.data(QUANTUM_REGISTER_LAYOUT_QT_ROLE):
-            curr_row_y_offset: int = row_idx * row_i_y_offset
+            curr_row_y_offset: int = row_idx * per_row_y_offset
 
-            row_i_column_one = initial_column_one_rect.adjusted(0, curr_row_y_offset, 0, curr_row_y_offset)
+            row_i_column_one = header_row_column_one_text_rect.adjusted(0, curr_row_y_offset, 0, curr_row_y_offset)
             painter.drawText(
                 row_i_column_one,
                 QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
                 qreg_layout.quantum_register_name,
             )
 
-            row_i_column_two = initial_column_two_rect.adjusted(0, curr_row_y_offset, 0, curr_row_y_offset)
+            row_i_column_two = header_row_column_two_text_rect.adjusted(0, curr_row_y_offset, 0, curr_row_y_offset)
             painter.drawText(
                 row_i_column_two,
                 QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
@@ -338,7 +345,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
                 ),
             )
 
-            row_i_column_three = initial_column_three_rect.adjusted(0, curr_row_y_offset, 0, curr_row_y_offset)
+            row_i_column_three = header_row_column_three_text_rect.adjusted(0, curr_row_y_offset, 0, curr_row_y_offset)
             painter.drawText(
                 row_i_column_three,
                 QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
@@ -358,7 +365,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
             painter.setPen(QtCore.Qt.GlobalColor.gray)
             painter.setFont(quantum_layout_info_text_font)
 
-            row_i_plus_column_one = row_i_column_one.adjusted(0, row_i_y_offset, 0, row_i_y_offset)
+            row_i_plus_column_one = row_i_column_one.adjusted(0, per_row_y_offset, 0, per_row_y_offset)
             painter.drawText(
                 row_i_plus_column_one,
                 QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
