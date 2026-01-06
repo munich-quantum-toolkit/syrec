@@ -346,7 +346,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
             painter.drawText(
                 row_i_column_one,
                 QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
-                qreg_layout.quantum_register_name,
+                qreg_layout.qreg_name,
             )
 
             row_i_column_two = header_row_column_two_text_rect.adjusted(0, curr_row_y_offset, 0, curr_row_y_offset)
@@ -355,8 +355,8 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
                 QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
                 SimulationRunModelStyledItemDelegate._stringify_some_qubits_of_n_bit_values_container(
                     associated_input_output_mapping.input_state,
-                    qreg_layout.first_qubit_of_quantum_register,
-                    qreg_layout.quantum_register_size,
+                    qreg_layout.first_qubit_of_qreg,
+                    qreg_layout.qreg_size,
                 ),
             )
 
@@ -366,8 +366,8 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
                 QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
                 SimulationRunModelStyledItemDelegate._stringify_some_qubits_of_n_bit_values_container(
                     associated_input_output_mapping.expected_output_state,
-                    qreg_layout.first_qubit_of_quantum_register,
-                    qreg_layout.quantum_register_size,
+                    qreg_layout.first_qubit_of_qreg,
+                    qreg_layout.qreg_size,
                 )
                 if associated_input_output_mapping.expected_output_state is not None
                 else self.unknown_output_state_value_placeholder,
@@ -385,7 +385,7 @@ class SimulationRunModelStyledItemDelegate(QtWidgets.QStyledItemDelegate):  # ty
                 row_i_plus_column_one,
                 QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignCenter,
                 self.quantum_register_layout_text_format.format(
-                    first_qubit=qreg_layout.first_qubit_of_quantum_register, n_qubits=qreg_layout.quantum_register_size
+                    first_qubit=qreg_layout.first_qubit_of_qreg, n_qubits=qreg_layout.qreg_size
                 ),
             )
             painter.restore()

@@ -14,6 +14,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+from .simulation_view.qt_simulation_run_editor_dialog import SimulationRunEditorDialog
 from .simulation_view.qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
 from .simulation_view.qt_simulation_run_styled_item_delegate import SimulationRunModelStyledItemDelegate
 
@@ -44,6 +45,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.height = 800
         self.setGeometry(self.left, self.top, self.width, self.height)
 
+        self.simulation_run_editor_dialog: SimulationRunEditorDialog | None = None
         self.expected_input_output_state_size: Final[int] = annotatable_quantum_computation.num_data_qubits
         self.simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
 
@@ -80,6 +82,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         tab_wrapper_widget = QtWidgets.QFrame()
         tab_wrapper_widget_layout = QtWidgets.QVBoxLayout()
         tab_wrapper_widget.setLayout(tab_wrapper_widget_layout)
+        tab_wrapper_widget.setAutoFillBackground(True)
 
         manual_y_space_size: Final[int] = 35
         if create_load_from_file_controls:
@@ -124,7 +127,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             objectName=EDIT_SIM_RUN_BTN_NAME,
         )
         edit_simulation_run_button.setEnabled(False)
-        edit_simulation_run_button.clicked.connect(QuantumCircuitSimulationDialog.handle_simulation_run_edit_btn_click)
+        edit_simulation_run_button.clicked.connect(self.handle_simulation_run_edit_btn_click)
         simulation_runs_list_modification_buttons_layout.addWidget(edit_simulation_run_button)
 
         delete_simulation_run_button = QtWidgets.QPushButton(
@@ -227,9 +230,43 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         simulation_runs_list_view.scrollToBottom()
 
-    @staticmethod
-    def handle_simulation_run_edit_btn_click() -> None:
-        return
+    def handle_simulation_run_edit_btn_click(self) -> None:
+        curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
+        if curr_active_tab_widget is None:
+            return
+
+        simulation_runs_list_view: QtWidgets.QListView | None = curr_active_tab_widget.findChild(
+            QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME
+        )
+        if simulation_runs_list_view is None:
+            return
+
+        self.simulation_run_editor_dialog = SimulationRunEditorDialog(simulation_runs_list_view.currentIndex(), self)
+        self.simulation_run_editor_dialog.finished.connect(self.handle_simulation_run_editor_dialog_close)
+        self.simulation_run_editor_dialog.show()
+
+    def handle_simulation_run_editor_dialog_close(self, result: int) -> None:
+        # This should not happen but is checked nevertheless
+        if self.simulation_run_editor_dialog is None or result == QtWidgets.QDialog.DialogCode.Rejected:
+            return
+
+        try:
+            self.simulation_runs_model.update_simulation_run_model(
+                self.simulation_run_editor_dialog.simulation_run_model_index,
+                self.simulation_run_editor_dialog.edited_simulation_run_model,
+            )
+        except ValueError as err:
+            pressed_message_box_button: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.critical(
+                self,
+                "Simulation run model update error!",
+                f"Update of simulation run model {self.simulation_run_editor_dialog.simulation_run_model_index.row()} failed due to an error!\nReason: {err}",
+                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+            )
+
+            if pressed_message_box_button == QtWidgets.QMessageBox.StandardButton:
+                pass
+        finally:
+            self.simulation_run_editor_dialog = None
 
     def handle_simulation_run_delete_btn_click(self) -> None:
         curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()

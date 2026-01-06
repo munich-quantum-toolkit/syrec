@@ -34,13 +34,14 @@ QUANTUM_REGISTER_LAYOUT_QT_ROLE: Final[int] = SIMULATION_RUN_IO_STATE_QT_ROLE + 
 LONGEST_QUANTUM_REGISTER_NAME_QT_ROLE: Final[int] = QUANTUM_REGISTER_LAYOUT_QT_ROLE + 1
 LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE: Final[int] = LONGEST_QUANTUM_REGISTER_NAME_QT_ROLE + 1
 LARGEST_FIRST_QUBIT_OF_QUANTUM_REGISTER_QT_ROLE: Final[int] = LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE + 1
+ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE: Final[int] = LARGEST_FIRST_QUBIT_OF_QUANTUM_REGISTER_QT_ROLE + 1
 
 
 @dataclass(frozen=True)
 class QuantumRegisterLayout:
-    quantum_register_name: str
-    first_qubit_of_quantum_register: int
-    quantum_register_size: int
+    qreg_name: str
+    first_qubit_of_qreg: int
+    qreg_size: int
 
 
 class SimulationRunModel:
@@ -135,21 +136,20 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self.longest_quantum_register_name: str = ""
         self.largest_quantum_register_size: int = 0
         self.largest_first_qubit_of_quantum_registers: int = 0
+        self.annotatable_quantum_computation = annotatable_quantum_computation
 
         for qreg_layout in self.quantum_register_layouts:
             self.longest_quantum_register_name = (
-                qreg_layout.quantum_register_name
-                if len(qreg_layout.quantum_register_name) > len(self.longest_quantum_register_name)
+                qreg_layout.qreg_name
+                if len(qreg_layout.qreg_name) > len(self.longest_quantum_register_name)
                 else self.longest_quantum_register_name
             )
-            self.largest_quantum_register_size = max(
-                qreg_layout.quantum_register_size, self.largest_quantum_register_size
-            )
+            self.largest_quantum_register_size = max(qreg_layout.qreg_size, self.largest_quantum_register_size)
 
         if len(self.quantum_register_layouts) > 0:
             self.largest_first_qubit_of_quantum_registers = self.quantum_register_layouts[
                 len(self.quantum_register_layouts) - 1
-            ].first_qubit_of_quantum_register
+            ].first_qubit_of_qreg
 
     @staticmethod
     def _does_qubit_label_start_with_internal_qubit_label_prefix(qubit_label: str) -> bool:
@@ -191,6 +191,9 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         if role == LARGEST_FIRST_QUBIT_OF_QUANTUM_REGISTER_QT_ROLE:
             return self.largest_first_qubit_of_quantum_registers
 
+        if role == ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE:
+            return self.annotatable_quantum_computation
+
         return None
 
     # TODO: Check for duplicates?
@@ -213,23 +216,49 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self.endRemoveRows()
         return False
 
-    # TODO: Check for duplicates?
-    def update_input_state_qubit_value(self, index: QtCore.QModelIndex, qubit: int, qubit_value: bool) -> bool:
-        if self.is_model_index_valid(index) and self.simulation_run_models[index.row()].update_input_state_qubit_value(
-            qubit, qubit_value
-        ):
-            self.dataChanged.emit(index, index)
-            return True
-        return False
+    # TODO: Check that no duplicate input or expected output_state is added
+    # TODO: Add custom error messages if validation fails
+    def update_simulation_run_model(
+        self, index: QtCore.QModelIndex, updated_simulation_run_model: SimulationRunModel
+    ) -> None:
+        if not self.is_model_index_valid(index):
+            msg = "Invalid model index!"
+            raise ValueError(msg)
 
-    # TODO: Check for duplicates?
-    def update_output_state_qubit_value(self, index: QtCore.QModelIndex, qubit: int, qubit_value: bool) -> bool:
-        if self.is_model_index_valid(index) and self.simulation_run_models[index.row()].update_output_state_qubit_value(
-            qubit, qubit_value
+        to_be_updated_simulation_run_model: SimulationRunModel = self.simulation_run_models[index.row()]
+        if updated_simulation_run_model.input_state.size() != to_be_updated_simulation_run_model.input_state.size():
+            msg = "Input state sizes did not match"
+            raise ValueError(msg)
+
+        if (
+            updated_simulation_run_model.expected_output_state is not None
+            and updated_simulation_run_model.actual_output_state is not None
+            and updated_simulation_run_model.expected_output_state.size()
+            != updated_simulation_run_model.actual_output_state.size()
         ):
-            self.dataChanged.emit(index, index)
-            return True
-        return False
+            msg = "Actual and expected output state sizes did not match in updated model"
+            raise ValueError(msg)
+
+        if (
+            updated_simulation_run_model.expected_output_state is not None
+            and to_be_updated_simulation_run_model.expected_output_state is not None
+            and updated_simulation_run_model.expected_output_state.size()
+            != to_be_updated_simulation_run_model.expected_output_state.size()
+        ):
+            msg = "Expected output state sizes did not match between currently stored model and updated model"
+            raise ValueError(msg)
+
+        if (
+            updated_simulation_run_model.actual_output_state is not None
+            and to_be_updated_simulation_run_model.actual_output_state is not None
+            and updated_simulation_run_model.actual_output_state.size()
+            != to_be_updated_simulation_run_model.actual_output_state.size()
+        ):
+            msg = "Actual output state sizes did not match between currently stored model and updated model"
+            raise ValueError(msg)
+
+        self.simulation_run_models[index.row()] = updated_simulation_run_model
+        self.dataChanged.emit(index, index)
 
     def is_model_index_valid(self, index: QtCore.QModelIndex) -> bool:
         return index.isValid() and index.row() >= 0 and index.row() < len(self.simulation_run_models)  # type: ignore[no-any-return]
