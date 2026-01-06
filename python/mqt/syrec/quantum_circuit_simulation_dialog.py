@@ -73,6 +73,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.layout = QtWidgets.QVBoxLayout()
         self.layout.addWidget(self.simulation_runs_tab_widget)
         self.setLayout(self.layout)
+        self.setSizeGripEnabled(True)
 
     # TODO: Load from file controls
 

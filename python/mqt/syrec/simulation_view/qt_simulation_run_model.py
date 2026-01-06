@@ -167,6 +167,8 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
                 continue
 
             quantum_register_layouts.append(QuantumRegisterLayout(qreg.name, qreg.start, qreg.size))
+
+        quantum_register_layouts.sort(key=lambda qreg_layout: qreg_layout.first_qubit_of_qreg)
         return quantum_register_layouts
 
     def rowCount(self, parent: QtCore.QModelIndex) -> int:  # noqa: N802

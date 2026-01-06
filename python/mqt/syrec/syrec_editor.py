@@ -1353,6 +1353,8 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         self.qubits_information_lookup.set_lookup_information(annotatable_quantum_computation)
 
         # TODO: Check other calls of dialog.exec(), see: https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QDialog.html#PySide6.QtWidgets.QDialog.exec
+        # TODO: Store internal dialog instance as dialog: T | None and use show() instead of exec() call since the latter start a separate event loop that might not be supported by all platforms
+        # TODO: Move setting modal declaration to QuantumCircuitSimulationDialog
         dialog = QuantumCircuitSimulationDialog(annotatable_quantum_computation, parent=self)
         dialog.modal = True
         dialog.setWindowTitle("Update configurable options")
