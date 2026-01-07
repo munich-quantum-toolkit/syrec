@@ -69,7 +69,7 @@ class SimulationRunModel:
 
         self.expected_output_state = syrec.n_bit_values_container(self.input_state.size())
         for i in range(self.expected_output_state.size()):
-            self.expected_output_state.set(self.input_state.test(i))
+            self.expected_output_state.set(i, self.input_state.test(i))
 
     def reset_result_of_execution(self) -> None:
         self.actual_output_state = None
