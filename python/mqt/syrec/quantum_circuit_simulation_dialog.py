@@ -35,6 +35,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         super().__init__()
         self.parent = parent
         self.annotatable_quantum_computation = annotatable_quantum_computation
+        self.some_sim_runs_tab_widget_name = "some_sim_runs_tab"
+        self.all_sim_runs_tab_widget_name = "all_sim_runs_tab"
+        self.load_sim_runs_from_file_tab_widget_name = "load_sim_runs_from_file_tab"
 
         self.title = "Define simulation runs for quantum computation"
         self.setWindowTitle(self.title)
@@ -52,15 +55,19 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # TODO: Default background of tabwidget is white on windows (https://forum.qt.io/topic/82262/default-background-color-of-qtabwidget-and-qwidget-qgroupbox/4)
         self.simulation_runs_tab_widget = QtWidgets.QTabWidget(self)
         self.simulation_runs_tab_widget.addTab(
-            self.initialize_simulation_runs_tab_widget(self.simulation_runs_model),
+            self.initialize_simulation_runs_tab_widget(self.simulation_runs_model, self.some_sim_runs_tab_widget_name),
             "Check some input-output mapping combinations",
         )
         self.simulation_runs_tab_widget.addTab(
-            self.initialize_simulation_runs_tab_widget(self.simulation_runs_model),
+            self.initialize_simulation_runs_tab_widget(self.simulation_runs_model, self.all_sim_runs_tab_widget_name),
             "Check all input-output mapping combinations",
         )
         self.simulation_runs_tab_widget.addTab(
-            self.initialize_simulation_runs_tab_widget(self.simulation_runs_model, create_load_from_file_controls=True),
+            self.initialize_simulation_runs_tab_widget(
+                self.simulation_runs_model,
+                self.load_sim_runs_from_file_tab_widget_name,
+                create_load_from_file_controls=True,
+            ),
             "Check input-output mapping combinations from file",
         )
         self.simulation_runs_tab_widget.tabBarClicked.connect(self.handle_simulation_runs_tab_widget_tab_bar_clicked)
@@ -78,9 +85,12 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     # TODO: Load from file controls
 
     def initialize_simulation_runs_tab_widget(
-        self, shared_simulation_runs_model: QtSimulationRunModel, create_load_from_file_controls: bool = False
+        self,
+        shared_simulation_runs_model: QtSimulationRunModel,
+        tab_widget_object_name: str,
+        create_load_from_file_controls: bool = False,
     ) -> QtWidgets.QWidget:
-        tab_wrapper_widget = QtWidgets.QFrame()
+        tab_wrapper_widget = QtWidgets.QFrame(objectName=tab_widget_object_name)
         tab_wrapper_widget_layout = QtWidgets.QVBoxLayout()
         tab_wrapper_widget.setLayout(tab_wrapper_widget_layout)
         tab_wrapper_widget.setAutoFillBackground(True)
@@ -328,6 +338,53 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             shared_simulation_runs_model.add_simulation_run_model(sim_run_model)
 
     def handle_simulation_runs_tab_widget_tab_bar_clicked(self, clicked_on_tab_index: int) -> None:
+        if self.simulation_runs_tab_widget.currentIndex() == clicked_on_tab_index:
+            self.simulation_runs_tab_widget.setCurrentIndex(self.simulation_runs_tab_widget.currentIndex())
+            return
+
+        if self.simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0:
+            pressed_message_box_button_in_tab_switch_warning: QtWidgets.QMessageBox.StandardButton = (
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    "Existing simulation runs detected!",
+                    "Switching tabs will delete all existing simulation runs. Do you want to continue?",
+                    buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
+                    defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+                )
+            )
+
+            if pressed_message_box_button_in_tab_switch_warning == QtWidgets.QMessageBox.StandardButton.Cancel:
+                self.simulation_runs_tab_widget.currentIndex(self.simulation_runs_tab_widget.currentIndex())
+                return
+            self.simulation_runs_model.delete_all_simulation_run_models()
+
+        to_be_switched_to_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            clicked_on_tab_index
+        )
+        if to_be_switched_to_tab_widget is None:
+            self.simulation_runs_tab_widget.setCurrentIndex(self.simulation_runs_tab_widget.currentIndex())
+            return
+
+        if to_be_switched_to_tab_widget.objectName() == self.all_sim_runs_tab_widget_name:
+            n_input_combinations: int = 2**self.annotatable_quantum_computation.num_data_qubits
+            pressed_message_box_button_in_all_sim_run_generation_warning: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
+                self,
+                "Generating all possible input state combinations!",
+                f"Are you sure that you want to generate {n_input_combinations} simulation runs, one for each input state combination?",
+                buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
+                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+            )
+
+            if (
+                pressed_message_box_button_in_all_sim_run_generation_warning
+                == QtWidgets.QMessageBox.StandardButton.Cancel
+            ):
+                self.simulation_runs_tab_widget.setCurrentIndex(self.simulation_runs_tab_widget.currentIndex())
+                return
+
+            # TODO: Can we ignore return value?
+            self.simulation_runs_model.add_all_possible_simulation_run_models()
+
         self.simulation_runs_tab_widget.setCurrentIndex(clicked_on_tab_index)
         self.set_enabled_state_of_simulation_runs_execution_controls(False)
 

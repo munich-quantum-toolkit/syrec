@@ -129,6 +129,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self, annotatable_quantum_computation: syrec.annotatable_quantum_computation, parent: QtCore.QObject = None
     ):
         super().__init__(parent)
+        self.n_data_qubits: int = annotatable_quantum_computation.num_data_qubits
         self.simulation_run_models: list[SimulationRunModel] = []
         self.quantum_register_layouts: list[QuantumRegisterLayout] = (
             QtSimulationRunModel.__record_quantum_register_layouts(annotatable_quantum_computation)
@@ -217,6 +218,32 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
 
         self.endRemoveRows()
         return False
+
+    def delete_all_simulation_run_models(self) -> None:
+        self.beginResetModel()
+        self.simulation_run_models.clear()
+        self.endResetModel()
+
+    def add_all_possible_simulation_run_models(self) -> bool:
+        if self.rowCount(QtCore.QModelIndex()) > 0:
+            return False
+
+        self.beginInsertRows(QtCore.QModelIndex(), 0, 0)
+        for i in range(2**self.n_data_qubits):
+            binary_string_of_i = format(i, "b")
+            input_state = syrec.n_bit_values_container(self.n_data_qubits)
+
+            n_qubits_to_process_in_binary_string: int = min(self.n_data_qubits, len(binary_string_of_i))
+            qubit_idx_in_binary_string: int = n_qubits_to_process_in_binary_string - 1
+            for qubit in range(n_qubits_to_process_in_binary_string):
+                qubit_value: bool = binary_string_of_i[qubit_idx_in_binary_string] == "1"
+                input_state.set(qubit, qubit_value)
+                qubit_idx_in_binary_string -= 1
+
+            output_state: syrec.n_bit_values_container | None = None
+            self.simulation_run_models.append(SimulationRunModel(input_state, output_state))
+        self.endInsertRows()
+        return True
 
     # TODO: Check that no duplicate input or expected output_state is added
     # TODO: Add custom error messages if validation fails
