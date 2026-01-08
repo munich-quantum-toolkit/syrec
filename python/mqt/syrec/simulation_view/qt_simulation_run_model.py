@@ -199,6 +199,11 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
 
         return None
 
+    def get_simulation_run_model(self, index: int) -> SimulationRunModel | None:
+        if index >= 0 and index < len(self.simulation_run_models):
+            return self.simulation_run_models[index]
+        return None
+
     # TODO: Check for duplicates?
     def add_simulation_run_model(self, simulation_run_model: SimulationRunModel) -> bool:
         n_simulation_runs: int = len(self.simulation_run_models)

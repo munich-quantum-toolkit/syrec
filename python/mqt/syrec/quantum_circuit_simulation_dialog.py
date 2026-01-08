@@ -14,6 +14,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+from .simulation_view.qt_simulation_run_dialog import SimulationRunDialog
 from .simulation_view.qt_simulation_run_editor_dialog import SimulationRunEditorDialog
 from .simulation_view.qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
 from .simulation_view.qt_simulation_run_styled_item_delegate import SimulationRunModelStyledItemDelegate
@@ -51,6 +52,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_run_editor_dialog: SimulationRunEditorDialog | None = None
         self.expected_input_output_state_size: Final[int] = annotatable_quantum_computation.num_data_qubits
         self.simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
+        self.simulation_run_dialog: SimulationRunDialog | None = None
 
         # TODO: Default background of tabwidget is white on windows (https://forum.qt.io/topic/82262/default-background-color-of-qtabwidget-and-qwidget-qgroupbox/4)
         self.simulation_runs_tab_widget = QtWidgets.QTabWidget(self)
@@ -172,6 +174,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             objectName=RUN_SIM_RUNS_BTN_NAME,
         )
         run_simulation_runs_button.setEnabled(False)
+        run_simulation_runs_button.clicked.connect(self.handle_run_all_simulation_runs_button_click)
         simulation_runs_execution_buttons_layout.addWidget(run_simulation_runs_button)
 
         run_simulation_runs_stop_at_first_failure_button = QtWidgets.QPushButton(
@@ -180,6 +183,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             objectName=RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME,
         )
         run_simulation_runs_stop_at_first_failure_button.setEnabled(False)
+        run_simulation_runs_stop_at_first_failure_button.clicked.connect(
+            self.handle_run_all_simulation_runs_stop_at_first_failure_button_click
+        )
         simulation_runs_execution_buttons_layout.addWidget(run_simulation_runs_stop_at_first_failure_button)
 
         simulation_runs_execution_buttons_layout.addStretch()
@@ -217,6 +223,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         add_simulation_run_btn.setEnabled(not is_list_item_selected)
         edit_simulation_run_btn.setEnabled(is_list_item_selected)
         delete_simulation_run_btn.setEnabled(is_list_item_selected)
+        self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+            curr_active_tab_widget, not is_list_item_selected
+        )
 
     def handle_simulation_run_add_btn_click(self) -> None:
         if not self.simulation_runs_model.add_simulation_run_model(
@@ -227,11 +236,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        self.set_enabled_state_of_simulation_runs_execution_controls(True)
-
         curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
         if curr_active_tab_widget is None:
             return
+
+        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+            curr_active_tab_widget, True
+        )
 
         simulation_runs_list_view: QtWidgets.QListView | None = curr_active_tab_widget.findChild(
             QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME
@@ -293,8 +304,12 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         if not self.simulation_runs_model.delete_simulation_run_model(simulation_runs_list_view.currentIndex()):
             return
 
-        self.set_enabled_state_of_simulation_runs_execution_controls(
-            self.simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0
+        # Deletion of an element should only be enabled when an item in the QListView is selected. After the deletion
+        # and the subsequent update of the backing model of the QListView selection will switch to the element the index
+        # of the previously selected element thus the simulation run execution controls should not be enabled after an element
+        # is deleted
+        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+            curr_active_tab_widget, False
         )
 
     @staticmethod
@@ -342,6 +357,12 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             self.simulation_runs_tab_widget.setCurrentIndex(self.simulation_runs_tab_widget.currentIndex())
             return
 
+        curr_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            self.simulation_runs_tab_widget.currentIndex()
+        )
+        if curr_tab_widget is None:
+            return
+
         if self.simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0:
             pressed_message_box_button_in_tab_switch_warning: QtWidgets.QMessageBox.StandardButton = (
                 QtWidgets.QMessageBox.warning(
@@ -365,6 +386,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             self.simulation_runs_tab_widget.setCurrentIndex(self.simulation_runs_tab_widget.currentIndex())
             return
 
+        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+            curr_tab_widget, False
+        )
+
         if to_be_switched_to_tab_widget.objectName() == self.all_sim_runs_tab_widget_name:
             n_input_combinations: int = 2**self.annotatable_quantum_computation.num_data_qubits
             pressed_message_box_button_in_all_sim_run_generation_warning: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
@@ -381,25 +406,56 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             ):
                 self.simulation_runs_tab_widget.setCurrentIndex(self.simulation_runs_tab_widget.currentIndex())
                 return
-
+            QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+                to_be_switched_to_tab_widget, True
+            )
             # TODO: Can we ignore return value?
             self.simulation_runs_model.add_all_possible_simulation_run_models()
 
-        self.simulation_runs_tab_widget.setCurrentIndex(clicked_on_tab_index)
-        self.set_enabled_state_of_simulation_runs_execution_controls(False)
+        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+            curr_tab_widget, False
+        )
 
-    def set_enabled_state_of_simulation_runs_execution_controls(self, should_controls_be_enabled: bool) -> None:
-        curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
-        if curr_active_tab_widget is None:
+        self.simulation_runs_tab_widget.setCurrentIndex(clicked_on_tab_index)
+
+    def handle_run_all_simulation_runs_button_click(self) -> None:
+        if self.simulation_run_dialog is not None:
+            # TODO: Error logging?
             return
 
-        run_simulation_runs_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
+        self.simulation_run_dialog = SimulationRunDialog(self.simulation_runs_model, self)
+        self.simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
+        self.simulation_run_dialog.start_simulations(
+            self.annotatable_quantum_computation, stop_at_first_output_state_mismatch=False
+        )
+        self.simulation_run_dialog.show()
+
+    def handle_run_all_simulation_runs_stop_at_first_failure_button_click(self) -> None:
+        if self.simulation_run_dialog is not None:
+            # TODO: Error logging?
+            return
+
+        self.simulation_run_dialog = SimulationRunDialog(self.simulation_runs_model, self)
+        self.simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
+        self.simulation_run_dialog.start_simulations(
+            self.annotatable_quantum_computation, stop_at_first_output_state_mismatch=True
+        )
+        self.simulation_run_dialog.show()
+
+    def handle_simulation_runs_dialog_close(self) -> None:
+        self.simulation_run_dialog = None
+
+    @staticmethod
+    def set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+        tab_widget: QtWidgets.QWidget, should_controls_be_enabled: bool
+    ) -> None:
+        run_simulation_runs_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
             QtWidgets.QPushButton, RUN_SIM_RUNS_BTN_NAME
         )
-        run_simulation_runs_stop_at_first_failure_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
+        run_simulation_runs_stop_at_first_failure_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
             QtWidgets.QPushButton, RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME
         )
-        save_simulation_runs_to_file_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
+        save_simulation_runs_to_file_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
             QtWidgets.QPushButton, SAVE_SIM_RUNS_TO_FILE_BTN_NAME
         )
 
@@ -412,25 +468,5 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         run_simulation_runs_btn.setEnabled(should_controls_be_enabled)
         run_simulation_runs_stop_at_first_failure_btn.setEnabled(should_controls_be_enabled)
+        # TODO: Button should only be enabled if all simulation runs have their expected output state set?
         save_simulation_runs_to_file_btn.setEnabled(should_controls_be_enabled)
-
-    def handle_simulation_run_input_state_qubit_value_change(
-        self, simulation_run_number: int, qubit: int, new_qubit_value: bool
-    ) -> None:
-        pass
-
-    def handle_simulation_run_output_state_qubit_value_change(
-        self, simulation_run_number: int, qubit: int, new_qubit_value: bool
-    ) -> None:
-        pass
-
-    def handle_simulation_run_deletion_request(self, simulation_run_number: int) -> None:
-        if simulation_run_number < 0 or simulation_run_number >= len(self.defined_simulation_runs):
-            # TODO: Log error?
-            return
-
-        current_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
-        if current_tab_widget is None:
-            # TODO: This should not happen
-            return
-        # self.defined_simulation_runs.pop(simulation_run_number)
