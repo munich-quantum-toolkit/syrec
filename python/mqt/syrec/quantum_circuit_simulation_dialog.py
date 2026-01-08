@@ -419,26 +419,21 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_runs_tab_widget.setCurrentIndex(clicked_on_tab_index)
 
     def handle_run_all_simulation_runs_button_click(self) -> None:
-        if self.simulation_run_dialog is not None:
-            # TODO: Error logging?
-            return
-
-        self.simulation_run_dialog = SimulationRunDialog(self.simulation_runs_model, self)
-        self.simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
-        self.simulation_run_dialog.start_simulations(
-            self.annotatable_quantum_computation, stop_at_first_output_state_mismatch=False
-        )
-        self.simulation_run_dialog.show()
+        self.open_simulation_runs_execution_dialog(stop_at_first_output_state_mismatch=False)
 
     def handle_run_all_simulation_runs_stop_at_first_failure_button_click(self) -> None:
+        self.open_simulation_runs_execution_dialog(stop_at_first_output_state_mismatch=True)
+
+    def open_simulation_runs_execution_dialog(self, stop_at_first_output_state_mismatch: bool) -> None:
         if self.simulation_run_dialog is not None:
             # TODO: Error logging?
             return
 
+        total_num_simulation_runs: Final[int] = 2**self.annotatable_quantum_computation.num_data_qubits
         self.simulation_run_dialog = SimulationRunDialog(self.simulation_runs_model, self)
         self.simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
         self.simulation_run_dialog.start_simulations(
-            self.annotatable_quantum_computation, stop_at_first_output_state_mismatch=True
+            self.annotatable_quantum_computation, total_num_simulation_runs, stop_at_first_output_state_mismatch
         )
         self.simulation_run_dialog.show()
 

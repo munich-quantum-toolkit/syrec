@@ -27,7 +27,7 @@ from .qt_simulation_run_model import (
 def stringify_some_qubits_of_n_bit_values_container(
     n_bit_values_container: syrec.n_bit_values_container, first_qubit: int, n_qubits: int
 ) -> str:
-    if first_qubit >= n_bit_values_container.size() or first_qubit + n_qubits >= n_bit_values_container.size():
+    if first_qubit >= n_bit_values_container.size() or first_qubit + (n_qubits - 1) >= n_bit_values_container.size():
         return ""
 
     return "".join(["1" if n_bit_values_container.test(i) else "0" for i in range(first_qubit, first_qubit + n_qubits)])

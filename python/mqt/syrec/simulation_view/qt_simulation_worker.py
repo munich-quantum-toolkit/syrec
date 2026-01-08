@@ -41,6 +41,7 @@ class SimulationWorker(QtCore.QObject):  # type: ignore[misc]
         SimulationRunResult, name="simulationRunMismatchBetweenOutputStates"
     )
     all_simulations_done = QtCore.pyqtSignal(name="allSimulationsDone")
+    simulation_run_failed = QtCore.pyqtSignal(ToBeExecutedSimulationRun, name="simulationRunFailed")
 
     def __init__(
         self,
@@ -54,7 +55,6 @@ class SimulationWorker(QtCore.QObject):  # type: ignore[misc]
         self.simulation_run_queue: queue.SimpleQueue[ToBeExecutedSimulationRun | None] = queue.SimpleQueue()
         self.should_stop_at_first_output_state_mismatch: bool = stop_at_first_output_state_mismatch
 
-    # TODO: Error handling
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_simulations(self) -> None:
         while not self.cancellation_requested:
@@ -62,28 +62,50 @@ class SimulationWorker(QtCore.QObject):  # type: ignore[misc]
             if dequeued_element is None:
                 break
 
-            actual_output_state = syrec.n_bit_values_container(dequeued_element.input_state.size())
-            simulation_execution_start_time_in_seconds: float = time.time()
-            # TODO: Do something
-            simulation_execution_end_time_in_seconds: float = time.time()
+            try:
+                simulation_execution_start_time_in_seconds: float = time.time()
+                actual_output_state = syrec.n_bit_values_container(dequeued_element.input_state.size())
+                # simulation_run_execution_statistics = syrec.statistics()
 
-            do_expected_and_actual_input_states_match: bool | None = False
-            simulation_execution_runtime_in_ms: float = (
-                simulation_execution_end_time_in_seconds - simulation_execution_start_time_in_seconds
-            ) / 1000
+                actual_output_state = syrec.n_bit_values_container(dequeued_element.input_state.size())
+                # syrec.simple_simulation(actual_output_state, self.annotatable_quantum_computation, dequeued_element.input_state, simulation_run_execution_statistics)
+                syrec.simple_simulation(
+                    actual_output_state, self.annotatable_quantum_computation, dequeued_element.input_state
+                )
 
-            simulation_run_result = SimulationRunResult(
-                dequeued_element.simulation_run_number,
-                dequeued_element.expected_output_state,
-                actual_output_state,
-                do_expected_and_actual_input_states_match,
-                simulation_execution_runtime_in_ms,
-            )
-            if self.should_stop_at_first_output_state_mismatch and not do_expected_and_actual_input_states_match:
-                self.simulation_run_mismatch_between_output_states.emit(simulation_run_result)
-            else:
-                self.simulation_run_completed.emit(simulation_run_result)
-            # time.sleep(1)
+                do_expected_and_actual_input_states_match: bool | None = None
+                if dequeued_element.expected_output_state is not None:
+                    for qubit in range(actual_output_state.size()):
+                        do_expected_and_actual_input_states_match |= actual_output_state.test(
+                            qubit
+                        ) == dequeued_element.expected_output_state.test(qubit)
+                        if not do_expected_and_actual_input_states_match:
+                            break
+
+                simulation_execution_end_time_in_seconds: float = time.time()
+                simulation_execution_runtime_in_ms: float = (
+                    simulation_execution_end_time_in_seconds - simulation_execution_start_time_in_seconds
+                ) / 1000
+
+                simulation_run_result = SimulationRunResult(
+                    dequeued_element.simulation_run_number,
+                    dequeued_element.expected_output_state,
+                    actual_output_state,
+                    do_expected_and_actual_input_states_match,
+                    simulation_execution_runtime_in_ms,
+                )
+                if (
+                    self.should_stop_at_first_output_state_mismatch
+                    and do_expected_and_actual_input_states_match is not None
+                    and not do_expected_and_actual_input_states_match
+                ):
+                    self.simulation_run_mismatch_between_output_states.emit(simulation_run_result)
+                else:
+                    self.simulation_run_completed.emit(simulation_run_result)
+                # time.sleep(1)
+            except Exception:
+                self.simulation_run_failed.emit(dequeued_element)
+                break
 
         self.all_simulations_done.emit()
 
