@@ -687,8 +687,8 @@ class CodeEditor(QtWidgets.QPlainTextEdit):  # type: ignore[misc]
 
     def load(self, filename: str) -> None:
         if len(filename) > 0:
-            with Path(filename).open(encoding="utf-8") as f:
-                self.setPlainText(f.read())
+            text = Path(filename).read_text(encoding="utf-8")
+            self.setPlainText(text)
 
     def lineNumberAreaPaintEvent(self, event: QtGui.QPaintEvent) -> None:  # noqa: N802
         painter = QtGui.QPainter(self.lineNumberArea)
