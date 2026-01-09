@@ -17,7 +17,9 @@ from mqt import syrec
 from .simulation_view.qt_simulation_run_dialog import SimulationRunDialog
 from .simulation_view.qt_simulation_run_editor_dialog import SimulationRunEditorDialog
 from .simulation_view.qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
-from .simulation_view.qt_simulation_run_styled_item_delegate import SimulationRunModelStyledItemDelegate
+from .simulation_view.styled_item_delegates.qt_simulation_run_overview_styled_item_delegate import (
+    SimulationRunOverviewStyledItemDelegate,
+)
 
 LOADED_FROM_FILE_INPUT_FIELD_NAME: Final[str] = "load_from_file_input_field"
 ADD_SIM_RUN_BTN_NAME: Final[str] = "add_sim_run_btn"
@@ -107,7 +109,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # BEGIN: Create simulation runs list view Qt elements
         simulation_runs_list_view: QtWidgets.QListView = QtWidgets.QListView(objectName=SIMULATION_RUNS_LIST_VIEW_NAME)
         simulation_runs_list_view.setModel(shared_simulation_runs_model)
-        simulation_runs_list_view.setItemDelegate(SimulationRunModelStyledItemDelegate())  # type: ignore[no-untyped-call]
+        simulation_runs_list_view.setItemDelegate(SimulationRunOverviewStyledItemDelegate())  # type: ignore[no-untyped-call]
         simulation_runs_list_view.setUniformItemSizes(True)
         simulation_runs_list_view.setAutoFillBackground(False)
         simulation_runs_list_view.setSpacing(5)
