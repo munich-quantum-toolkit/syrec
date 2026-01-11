@@ -35,6 +35,7 @@ LONGEST_QUANTUM_REGISTER_NAME_QT_ROLE: Final[int] = QUANTUM_REGISTER_LAYOUT_QT_R
 LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE: Final[int] = LONGEST_QUANTUM_REGISTER_NAME_QT_ROLE + 1
 LARGEST_FIRST_QUBIT_OF_QUANTUM_REGISTER_QT_ROLE: Final[int] = LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE + 1
 ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE: Final[int] = LARGEST_FIRST_QUBIT_OF_QUANTUM_REGISTER_QT_ROLE + 1
+LARGEST_SIM_RUN_NUMBER_QT_ROLE: Final[int] = ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE + 1
 
 
 @dataclass(frozen=True)
@@ -113,6 +114,26 @@ class SimulationRunModel:
         )
 
     @staticmethod
+    def do_output_states_match(
+        expected_output_state: syrec.n_bit_values_container | None, actual_output_state: syrec.n_bit_values_container
+    ) -> bool | None:
+        if expected_output_state is None:
+            return None
+
+        if expected_output_state.size() != actual_output_state.size():
+            msg = f"Expected output state to have {expected_output_state.size()} qubits but actual output state contained {actual_output_state.size()} qubits!"
+            raise ValueError(msg)
+
+        do_expected_and_actual_input_states_match = True
+        for qubit in range(actual_output_state.size()):
+            do_expected_and_actual_input_states_match &= actual_output_state.test(qubit) == expected_output_state.test(
+                qubit
+            )
+            if not do_expected_and_actual_input_states_match:
+                break
+        return do_expected_and_actual_input_states_match
+
+    @staticmethod
     def _update_n_bit_values_container_qubit_value(
         n_bit_values_container: syrec.n_bit_values_container, qubit: int, new_qubit_value: bool
     ) -> bool:
@@ -132,7 +153,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self.n_data_qubits: int = annotatable_quantum_computation.num_data_qubits
         self.simulation_run_models: list[SimulationRunModel] = []
         self.quantum_register_layouts: list[QuantumRegisterLayout] = (
-            QtSimulationRunModel.__record_quantum_register_layouts(annotatable_quantum_computation)
+            QtSimulationRunModel._record_quantum_register_layouts(annotatable_quantum_computation)
         )
         self.longest_quantum_register_name: str = ""
         self.largest_quantum_register_size: int = 0
@@ -157,7 +178,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         return qubit_label.startswith("__q")
 
     @staticmethod
-    def __record_quantum_register_layouts(
+    def _record_quantum_register_layouts(
         annotatable_quantum_computation: syrec.annotatable_quantum_computation,
     ) -> list[QuantumRegisterLayout]:
         quantum_register_layouts: list[QuantumRegisterLayout] = []
@@ -196,6 +217,9 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
 
         if role == ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE:
             return self.annotatable_quantum_computation
+
+        if role == LARGEST_SIM_RUN_NUMBER_QT_ROLE:
+            return self.rowCount(QtCore.QModelIndex())
 
         return None
 
@@ -250,48 +274,49 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self.endInsertRows()
         return True
 
+    def update_edited_simulation_run_model(
+        self, index: QtCore.QModelIndex, updated_simulation_run_data: SimulationRunModel
+    ) -> None:
+        if not self.is_model_index_valid(index):
+            msg = "Invalid model index!"
+            raise ValueError(msg)
+
+        # TODO: Further validation
+
+        self.simulation_run_models[index.row()] = updated_simulation_run_data
+        self.dataChanged.emit(index, index)
+
     # TODO: Check that no duplicate input or expected output_state is added
     # TODO: Add custom error messages if validation fails
-    def update_simulation_run_model(
-        self, index: QtCore.QModelIndex, updated_simulation_run_model: SimulationRunModel
+    def update_model_using_simulation_run_result(
+        self,
+        index: QtCore.QModelIndex,
+        actual_output_state: syrec.n_bit_values_container,
+        do_expected_and_actual_outputs_match: bool | None,
+        execution_runtime_in_ms: float,
     ) -> None:
         if not self.is_model_index_valid(index):
             msg = "Invalid model index!"
             raise ValueError(msg)
 
         to_be_updated_simulation_run_model: SimulationRunModel = self.simulation_run_models[index.row()]
-        if updated_simulation_run_model.input_state.size() != to_be_updated_simulation_run_model.input_state.size():
+        # TODO: Should we validate that the current expected output state is equal to the input state
+        # if updated_simulation_run_model.expected_output_state is not None and updated_simulation_run_model.expected_output_state.size() != to_be_updated_simulation_run_model.input_state.size():
+        #     msg = "Input state sizes did not match"
+        #     raise ValueError(msg)
+
+        if (
+            actual_output_state is not None
+            and actual_output_state.size() != to_be_updated_simulation_run_model.input_state.size()
+        ):
             msg = "Input state sizes did not match"
             raise ValueError(msg)
 
-        if (
-            updated_simulation_run_model.expected_output_state is not None
-            and updated_simulation_run_model.actual_output_state is not None
-            and updated_simulation_run_model.expected_output_state.size()
-            != updated_simulation_run_model.actual_output_state.size()
-        ):
-            msg = "Actual and expected output state sizes did not match in updated model"
-            raise ValueError(msg)
-
-        if (
-            updated_simulation_run_model.expected_output_state is not None
-            and to_be_updated_simulation_run_model.expected_output_state is not None
-            and updated_simulation_run_model.expected_output_state.size()
-            != to_be_updated_simulation_run_model.expected_output_state.size()
-        ):
-            msg = "Expected output state sizes did not match between currently stored model and updated model"
-            raise ValueError(msg)
-
-        if (
-            updated_simulation_run_model.actual_output_state is not None
-            and to_be_updated_simulation_run_model.actual_output_state is not None
-            and updated_simulation_run_model.actual_output_state.size()
-            != to_be_updated_simulation_run_model.actual_output_state.size()
-        ):
-            msg = "Actual output state sizes did not match between currently stored model and updated model"
-            raise ValueError(msg)
-
-        self.simulation_run_models[index.row()] = updated_simulation_run_model
+        self.simulation_run_models[index.row()].actual_output_state = actual_output_state
+        self.simulation_run_models[
+            index.row()
+        ].do_expected_and_actual_outputs_match = do_expected_and_actual_outputs_match
+        self.simulation_run_models[index.row()].execution_runtime_in_ms = execution_runtime_in_ms
         self.dataChanged.emit(index, index)
 
     def is_model_index_valid(self, index: QtCore.QModelIndex) -> bool:

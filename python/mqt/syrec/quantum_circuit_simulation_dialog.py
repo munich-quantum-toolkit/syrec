@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import sys
 from typing import Final
 
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -57,7 +58,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_run_dialog: SimulationRunDialog | None = None
 
         # TODO: Default background of tabwidget is white on windows (https://forum.qt.io/topic/82262/default-background-color-of-qtabwidget-and-qwidget-qgroupbox/4)
+        self.prev_active_simulation_runs_tab_idx: int = 0
         self.simulation_runs_tab_widget = QtWidgets.QTabWidget(self)
+        self.simulation_runs_tab_widget.currentChanged.connect(self.handle_simulation_runs_tab_widget_tab_changed)
         self.simulation_runs_tab_widget.addTab(
             self.initialize_simulation_runs_tab_widget(self.simulation_runs_model, self.some_sim_runs_tab_widget_name),
             "Check some input-output mapping combinations",
@@ -74,7 +77,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             ),
             "Check input-output mapping combinations from file",
         )
-        self.simulation_runs_tab_widget.tabBarClicked.connect(self.handle_simulation_runs_tab_widget_tab_bar_clicked)
 
         n_simulation_runs_to_add: Final[int] = 10
         QuantumCircuitSimulationDialog.generate_some_simulation_runs(
@@ -197,6 +199,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # END: Create simulation runs execution Qt elements
         return tab_wrapper_widget
 
+    # TODO: After edit of simulation run is finished via click on save button will cause the run simulations buttons to only be executed after selecting/deselecting the element
     def handle_simulation_run_selection_change(
         self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection
     ) -> None:
@@ -226,7 +229,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         edit_simulation_run_btn.setEnabled(is_list_item_selected)
         delete_simulation_run_btn.setEnabled(is_list_item_selected)
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            curr_active_tab_widget, not is_list_item_selected
+            curr_active_tab_widget,
+            not is_list_item_selected and (self.simulation_runs_model.rowCount(QtCore.QModelIndex()) < sys.maxsize),
         )
 
     def handle_simulation_run_add_btn_click(self) -> None:
@@ -275,7 +279,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             return
 
         try:
-            self.simulation_runs_model.update_simulation_run_model(
+            self.simulation_runs_model.update_edited_simulation_run_model(
                 self.simulation_run_editor_dialog.simulation_run_model_index,
                 self.simulation_run_editor_dialog.edited_simulation_run_model,
             )
@@ -354,15 +358,25 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
             shared_simulation_runs_model.add_simulation_run_model(sim_run_model)
 
-    def handle_simulation_runs_tab_widget_tab_bar_clicked(self, clicked_on_tab_index: int) -> None:
-        if self.simulation_runs_tab_widget.currentIndex() == clicked_on_tab_index:
-            self.simulation_runs_tab_widget.setCurrentIndex(self.simulation_runs_tab_widget.currentIndex())
+    # TODO: Check that number of generate simulation runs does not exceed sys.maxsize
+    def handle_simulation_runs_tab_widget_tab_changed(self, switched_to_tab_index: int) -> None:
+        if switched_to_tab_index == -1:
             return
 
-        curr_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
-            self.simulation_runs_tab_widget.currentIndex()
+        if switched_to_tab_index == self.prev_active_simulation_runs_tab_idx:
+            return
+
+        prev_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            self.prev_active_simulation_runs_tab_idx
         )
-        if curr_tab_widget is None:
+        if prev_active_tab_widget is None:
+            return
+
+        to_be_switched_to_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            switched_to_tab_index
+        )
+        if to_be_switched_to_tab_widget is None:
+            self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
             return
 
         if self.simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0:
@@ -377,23 +391,17 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
 
             if pressed_message_box_button_in_tab_switch_warning == QtWidgets.QMessageBox.StandardButton.Cancel:
-                self.simulation_runs_tab_widget.currentIndex(self.simulation_runs_tab_widget.currentIndex())
+                self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
                 return
             self.simulation_runs_model.delete_all_simulation_run_models()
 
-        to_be_switched_to_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
-            clicked_on_tab_index
-        )
-        if to_be_switched_to_tab_widget is None:
-            self.simulation_runs_tab_widget.setCurrentIndex(self.simulation_runs_tab_widget.currentIndex())
-            return
-
         QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            curr_tab_widget, False
+            to_be_switched_to_tab_widget, False
         )
 
         if to_be_switched_to_tab_widget.objectName() == self.all_sim_runs_tab_widget_name:
             n_input_combinations: int = 2**self.annotatable_quantum_computation.num_data_qubits
+            # TODO: A large number of state combinations will lag the UI thread since the generation runs on the UI thread
             pressed_message_box_button_in_all_sim_run_generation_warning: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
                 self,
                 "Generating all possible input state combinations!",
@@ -406,7 +414,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 pressed_message_box_button_in_all_sim_run_generation_warning
                 == QtWidgets.QMessageBox.StandardButton.Cancel
             ):
-                self.simulation_runs_tab_widget.setCurrentIndex(self.simulation_runs_tab_widget.currentIndex())
+                self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
                 return
             QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
                 to_be_switched_to_tab_widget, True
@@ -415,10 +423,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             self.simulation_runs_model.add_all_possible_simulation_run_models()
 
         QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            curr_tab_widget, False
+            prev_active_tab_widget, False
         )
-
-        self.simulation_runs_tab_widget.setCurrentIndex(clicked_on_tab_index)
+        self.prev_active_simulation_runs_tab_idx = switched_to_tab_index
 
     def handle_run_all_simulation_runs_button_click(self) -> None:
         self.open_simulation_runs_execution_dialog(stop_at_first_output_state_mismatch=False)
@@ -431,14 +438,32 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             # TODO: Error logging?
             return
 
-        total_num_simulation_runs: Final[int] = 2**self.annotatable_quantum_computation.num_data_qubits
+        num_simulation_runs: Final[int] = self.simulation_runs_model.rowCount(QtCore.QModelIndex())
+        if num_simulation_runs >= sys.maxsize:
+            QtWidgets.QMessageBox.critical(
+                self,
+                "Number of simulation runs not supported!",
+                f"The maximum number of simulation runs is limited to {sys.maxsize} while you tried to execute {num_simulation_runs}!",
+                buttons=QtWidgets.QMessageBox.StandardButton.Ok,
+                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+            )
+
+            curr_tab_widget: QtWidgets.QWidget = self.simulation_runs_tab_widget.widget(
+                self.simulation_runs_tab_widget.currentIndex()
+            )
+            QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+                curr_tab_widget, False
+            )
+            return
+
         self.simulation_run_dialog = SimulationRunDialog(self.simulation_runs_model, self)
         self.simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
         self.simulation_run_dialog.start_simulations(
-            self.annotatable_quantum_computation, total_num_simulation_runs, stop_at_first_output_state_mismatch
+            self.annotatable_quantum_computation, num_simulation_runs, stop_at_first_output_state_mismatch
         )
         self.simulation_run_dialog.show()
 
+    # TODO: Toggle state after edits in simulation runs were performed?
     def handle_simulation_runs_dialog_close(self) -> None:
         self.simulation_run_dialog = None
 

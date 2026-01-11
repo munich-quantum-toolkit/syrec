@@ -21,11 +21,31 @@ DEFAULT_QREG_NAME_COLUMN_HEADER: Final[str] = "Quantum register"
 DEFAULT_QREG_LAYOUT_TEXT_FORMAT: Final[str] = "(First qubit: {first_qubit:d} - Num. qubits: {n_qubits:d})"
 DEFAULT_SIMULATION_RUN_CARD_HEADER_FORMAT: Final[str] = "Simulation run #{simulation_run_number:d}"
 DEFAULT_INPUT_STATE_QREG_CONTENT_HEADER: Final[str] = "INPUT"
-DEFAULT_OUTPUT_STATE_QREG_CONTENT_HEADER: Final[str] = "OUTPUT"
+DEFAULT_OUTPUT_STATE_QREG_CONTENT_HEADER: Final[str] = "EXPECTED OUTPUT"
 DEFAULT_UNKNOWN_QREG_CONTENT_PLACEHOLDER_TEXT: Final[str] = "<UNKNOWN>"
+
+CARD_TITLE_FONT_SIZE: Final[int] = 14
+CARD_CONTENT_FONT_SIZE: Final[int] = 10
+QREG_LAYOUT_INFO_FONT_SIZE: Final[int] = 8
+CARD_TITLE_BOTTOM_Y_MARGIN: Final[int] = 8
+QREG_CONTENT_Y_SPACING: Final[int] = 4
+QREG_CONTENT_X_SPACING: Final[int] = 6
+CARD_CONTENT_PADDING: Final[int] = 20
 
 
 class BaseSimulationRunStyledItemDelegate:
+    @staticmethod
+    def _get_pixel_width_for_longest_sim_run_header(
+        largest_sim_run_number: int, font_used_to_draw_text: QtGui.QFont, expected_font_size: int
+    ) -> int:
+        return int(
+            QtGui.QFontMetrics(
+                QtGui.QFont(font_used_to_draw_text.family(), expected_font_size, font_used_to_draw_text.weight())
+            ).horizontalAdvance(
+                DEFAULT_SIMULATION_RUN_CARD_HEADER_FORMAT.format(simulation_run_number=largest_sim_run_number)
+            )
+        )
+
     @staticmethod
     def _get_pixel_width_of_text(text: str, font_used_to_draw_text: QtGui.QFont, expected_font_size: int) -> int:
         return int(

@@ -16,6 +16,8 @@ from PyQt6 import QtCore
 
 from mqt import syrec
 
+from .qt_simulation_run_model import SimulationRunModel
+
 # One could simplify the signal and slot declarations by defining the import: from PyQt6.QtCore import pyqtSignal as Signal, pyqtSlot as Slot
 
 
@@ -41,7 +43,7 @@ class SimulationWorker(QtCore.QObject):  # type: ignore[misc]
         SimulationRunResult, name="simulationRunMismatchBetweenOutputStates"
     )
     all_simulations_done = QtCore.pyqtSignal(name="allSimulationsDone")
-    simulation_run_failed = QtCore.pyqtSignal(ToBeExecutedSimulationRun, name="simulationRunFailed")
+    err_during_simulation_run = QtCore.pyqtSignal(int, Exception, name="errDuringSimulationRun")
 
     def __init__(
         self,
@@ -64,7 +66,6 @@ class SimulationWorker(QtCore.QObject):  # type: ignore[misc]
 
             try:
                 simulation_execution_start_time_in_seconds: float = time.time()
-                actual_output_state = syrec.n_bit_values_container(dequeued_element.input_state.size())
                 # simulation_run_execution_statistics = syrec.statistics()
 
                 actual_output_state = syrec.n_bit_values_container(dequeued_element.input_state.size())
@@ -72,16 +73,9 @@ class SimulationWorker(QtCore.QObject):  # type: ignore[misc]
                 syrec.simple_simulation(
                     actual_output_state, self.annotatable_quantum_computation, dequeued_element.input_state
                 )
-
-                do_expected_and_actual_input_states_match: bool | None = None
-                if dequeued_element.expected_output_state is not None:
-                    for qubit in range(actual_output_state.size()):
-                        do_expected_and_actual_input_states_match |= actual_output_state.test(
-                            qubit
-                        ) == dequeued_element.expected_output_state.test(qubit)
-                        if not do_expected_and_actual_input_states_match:
-                            break
-
+                do_expected_and_actual_input_states_match: bool | None = SimulationRunModel.do_output_states_match(
+                    dequeued_element.expected_output_state, actual_output_state
+                )
                 simulation_execution_end_time_in_seconds: float = time.time()
                 simulation_execution_runtime_in_ms: float = (
                     simulation_execution_end_time_in_seconds - simulation_execution_start_time_in_seconds
@@ -94,6 +88,7 @@ class SimulationWorker(QtCore.QObject):  # type: ignore[misc]
                     do_expected_and_actual_input_states_match,
                     simulation_execution_runtime_in_ms,
                 )
+
                 if (
                     self.should_stop_at_first_output_state_mismatch
                     and do_expected_and_actual_input_states_match is not None
@@ -103,10 +98,9 @@ class SimulationWorker(QtCore.QObject):  # type: ignore[misc]
                 else:
                     self.simulation_run_completed.emit(simulation_run_result)
                 # time.sleep(1)
-            except Exception:
-                self.simulation_run_failed.emit(dequeued_element)
+            except Exception as err:
+                self.err_during_simulation_run.emit(dequeued_element.simulation_run_number, err)
                 break
-
         self.all_simulations_done.emit()
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
