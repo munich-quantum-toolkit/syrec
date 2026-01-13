@@ -15,6 +15,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+from .simulation_view.qt_all_input_states_generator_dialog import AllInputStatesGeneratorDialog
 from .simulation_view.qt_simulation_run_dialog import SimulationRunDialog
 from .simulation_view.qt_simulation_run_editor_dialog import SimulationRunEditorDialog
 from .simulation_view.qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
@@ -32,6 +33,7 @@ RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME: Final[str] = "run_sims_stop_first_f
 SIMULATION_RUNS_LIST_VIEW_NAME: Final[str] = "sim_runs_list_view"
 
 
+# TODO: Should a confirmation be requested when the dialog is closed and simulation runs exist?
 class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def __init__(
         self, annotatable_quantum_computation: syrec.annotatable_quantum_computation, parent: QtWidgets.QWidget
@@ -53,6 +55,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         self.simulation_run_editor_dialog: SimulationRunEditorDialog | None = None
+        self.all_input_states_generator_dialog: AllInputStatesGeneratorDialog | None = None
         self.expected_input_output_state_size: Final[int] = annotatable_quantum_computation.num_data_qubits
         self.simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
         self.simulation_run_dialog: SimulationRunDialog | None = None
@@ -296,6 +299,27 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         finally:
             self.simulation_run_editor_dialog = None
 
+    def handle_open_and_start_all_input_states_generator_dialog(self, input_state_size: int) -> None:
+        if self.all_input_states_generator_dialog is not None:
+            # TODO: Error logging?
+            return
+
+        self.all_input_states_generator_dialog = AllInputStatesGeneratorDialog(self.simulation_runs_model, self)
+        self.all_input_states_generator_dialog.finished.connect(self.handle_input_states_generator_dialog_close)
+        self.all_input_states_generator_dialog.show()
+        self.all_input_states_generator_dialog.start_generation(input_state_size)
+
+    def handle_input_states_generator_dialog_close(self, result: int) -> None:
+        self.all_input_states_generator_dialog = None
+
+        curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
+        if curr_active_tab_widget is None:
+            return
+
+        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+            curr_active_tab_widget, result == QtWidgets.QDialog.DialogCode.Accepted
+        )
+
     def handle_simulation_run_delete_btn_click(self) -> None:
         curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
         if curr_active_tab_widget is None:
@@ -400,12 +424,12 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
 
         if to_be_switched_to_tab_widget.objectName() == self.all_sim_runs_tab_widget_name:
-            n_input_combinations: int = 2**self.annotatable_quantum_computation.num_data_qubits
+            n_input_state_combinations: int = 2**self.annotatable_quantum_computation.num_data_qubits
             # TODO: A large number of state combinations will lag the UI thread since the generation runs on the UI thread
             pressed_message_box_button_in_all_sim_run_generation_warning: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
                 self,
                 "Generating all possible input state combinations!",
-                f"Are you sure that you want to generate {n_input_combinations} simulation runs, one for each input state combination?",
+                f"Are you sure that you want to generate {n_input_state_combinations} simulation runs, one for each input state combination?",
                 buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
                 defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
             )
@@ -416,11 +440,15 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             ):
                 self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
                 return
-            QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-                to_be_switched_to_tab_widget, True
+            self.handle_open_and_start_all_input_states_generator_dialog(
+                self.annotatable_quantum_computation.num_data_qubits
             )
-            # TODO: Can we ignore return value?
-            self.simulation_runs_model.add_all_possible_simulation_run_models()
+
+            # QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+            #     to_be_switched_to_tab_widget, True
+            # )
+            # # TODO: Can we ignore return value?
+            # self.simulation_runs_model.add_all_possible_simulation_run_models()
 
         QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
             prev_active_tab_widget, False

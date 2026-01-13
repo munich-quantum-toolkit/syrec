@@ -48,8 +48,6 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # TODO: Mark as const: https://stackoverflow.com/a/57596202
-
     @staticmethod
     def _get_required_qreg_name_and_layout_column_width(
         option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex, font_size: int
@@ -165,7 +163,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         if not index.isValid() or option.rect.width() == 0:
             return
 
-        associated_input_output_mapping: SimulationRunModel = index.data(SIMULATION_RUN_IO_STATE_QT_ROLE)
+        associated_sim_run_model: SimulationRunModel = index.data(SIMULATION_RUN_IO_STATE_QT_ROLE)
         SimulationRunOverviewStyledItemDelegate._get_required_size_for_content(option, index)
         available_rect_for_content: QtCore.QRect = option.rect.adjusted(
             CARD_CONTENT_PADDING,
@@ -216,7 +214,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             SimulationRunOverviewStyledItemDelegate._draw_elided_text(
                 painter,
                 SimulationRunOverviewStyledItemDelegate._stringify_some_qubits_of_n_bit_values_container(
-                    associated_input_output_mapping.input_state,
+                    associated_sim_run_model.input_state,
                     qreg_layout.first_qubit_of_qreg,
                     qreg_layout.qreg_size,
                 ),
@@ -227,11 +225,11 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             SimulationRunOverviewStyledItemDelegate._draw_elided_text(
                 painter,
                 SimulationRunOverviewStyledItemDelegate._stringify_some_qubits_of_n_bit_values_container(
-                    associated_input_output_mapping.expected_output_state,
+                    associated_sim_run_model.expected_output_state,
                     qreg_layout.first_qubit_of_qreg,
                     qreg_layout.qreg_size,
                 )
-                if associated_input_output_mapping.expected_output_state is not None
+                if associated_sim_run_model.expected_output_state is not None
                 else DEFAULT_UNKNOWN_QREG_CONTENT_PLACEHOLDER_TEXT,
                 header_row_column_three_text_rect.adjusted(0, curr_row_y_offset, 0, curr_row_y_offset),
                 CARD_CONTENT_FONT_SIZE,

@@ -16,9 +16,8 @@ if TYPE_CHECKING:
     from mqt import syrec
 
     from .qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
-    from .qt_simulation_worker import SimulationRunResult
 
-from .qt_simulation_worker import SimulationWorker, ToBeExecutedSimulationRun
+from .qt_simulation_worker import SimulationRunResult, SimulationWorker, ToBeExecutedSimulationRun
 from .styled_item_delegates.qt_simulation_run_execution_styled_item_delegate import (
     SimulationRunExecutionStyledItemDelegate,
 )
@@ -162,6 +161,7 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     # TODO: Mark remaining member functions as private via underscore prefix?
     # TODO: Not all simulation runs are executed? (2 out of 10) but no error is printed to the console or shown in the GUI.
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _handle_all_simulation_runs_done(self) -> None:
         # self.simulation_run_total_runtime_timer.stop()
 
@@ -180,12 +180,14 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 f"Finished {self.num_completed_simulation_runs} out of all {self.expected_total_num_simulation_runs} simulation runs!"
             )
 
+    @QtCore.pyqtSlot(int, Exception)  # type: ignore[untyped-decorator]
     def _handle_simulation_runs_stopped_due_to_err(self, simulation_run_num_that_failed: int, err: Exception) -> None:
         self.simulation_run_err_lbl.setText(
             f"Unexpected {err=}, {type(err)=} during execution of simulation run {simulation_run_num_that_failed}"
         )
         self._request_worker_cancellation()
 
+    @QtCore.pyqtSlot(ToBeExecutedSimulationRun)  # type: ignore[untyped-decorator]
     def _handle_simulation_runs_stopped_after_first_failure(
         self, simulation_run_causing_err: ToBeExecutedSimulationRun
     ) -> None:
@@ -211,10 +213,7 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def closeEvent(self, _):  # noqa: N802
         self._request_worker_cancellation()
 
-        # if self.worker_thread is not None:
-        #     self.worker_thread.quit()
-        #     self.worker_thread.wait()
-
+    @QtCore.pyqtSlot(SimulationRunResult)  # type: ignore[untyped-decorator]
     def _handle_simulation_run_done(self, simulation_run_result: SimulationRunResult) -> None:
         self._update_progress_controls(simulation_run_result.simulation_run_number)
         try:
