@@ -20,8 +20,12 @@
 #include "core/syrec/program.hpp"
 #include "ir/QuantumComputation.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <iostream>
+#include <iterator>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/map.h>         // NOLINT(misc-include-cleaner)
@@ -30,6 +34,8 @@
 #include <nanobind/stl/string.h>      // NOLINT(misc-include-cleaner)
 #include <nanobind/stl/string_view.h> // NOLINT(misc-include-cleaner)
 #include <optional>
+#include <streambuf>
+#include <utility>
 
 namespace nb = nanobind;
 using namespace nb::literals;
@@ -37,10 +43,12 @@ using namespace syrec;
 
 namespace {
 
-    using namespace nb;
-
     // nanobind-compatible implementation of scoped_estream_redirect
     // Taken from https://github.com/wjakob/nanobind/discussions/413
+
+    using namespace nb;
+
+    // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, cppcoreguidelines-avoid-const-or-ref-data-members, cppcoreguidelines-pro-bounds-pointer-arithmetic, modernize-avoid-c-arrays, readability-identifier-naming)
 
     // Buffer that writes to Python instead of C++
     class pythonbuf: public std::streambuf {
@@ -63,7 +71,7 @@ namespace {
         // Computes how many bytes at the end of the buffer are part of an
         // incomplete sequence of UTF-8 bytes.
         // Precondition: pbase() < pptr()
-        size_t utf8_remainder() const {
+        [[nodiscard]] size_t utf8_remainder() const {
             const auto rbase         = std::reverse_iterator<char*>(pbase());
             const auto rpptr         = std::reverse_iterator<char*>(pptr());
             auto       is_ascii      = [](char c) { return (static_cast<unsigned char>(c) & 0x80) == 0x00; };
@@ -103,8 +111,8 @@ namespace {
             if (pbase() != pptr()) { // If buffer is not empty
                 //nb::gil_scoped_acquire tmp;
                 // This subtraction cannot be negative, so dropping the sign.
-                auto   size      = static_cast<size_t>(pptr() - pbase());
-                size_t remainder = utf8_remainder();
+                auto         size      = static_cast<size_t>(pptr() - pbase());
+                const size_t remainder = utf8_remainder();
 
                 if (size > remainder) {
                     nb::str line(pbase(), size - remainder);
@@ -163,6 +171,8 @@ namespace {
         explicit scoped_estream_redirect(std::ostream& costream  = std::cerr,
                                          const object& pyostream = module_::import_("sys").attr("stderr")): scoped_ostream_redirect(costream, pyostream) {}
     };
+
+    // NOLINTEND(cppcoreguidelines-avoid-c-arrays, cppcoreguidelines-avoid-const-or-ref-data-members, cppcoreguidelines-pro-bounds-pointer-arithmetic, modernize-avoid-c-arrays, readability-identifier-naming)
 
 } // namespace
 
