@@ -480,6 +480,9 @@ namespace syrec {
          */
         [[nodiscard]] static std::string buildQubitLabelForQubitOfVariableInQuantumRegister(const std::string& quantumRegisterLabel, const std::vector<unsigned>& accessedValuePerDimension, std::size_t relativeQubitIndexInElement);
 
+        AnnotatableQuantumComputation(const AnnotatableQuantumComputation&)            = delete;
+        AnnotatableQuantumComputation& operator=(const AnnotatableQuantumComputation&) = delete;
+
         /**
          * An ordered collection storing the variable layout stored in each quantum register.
          * Said quantum registers are assumed to be sorted according to the index of their first qubit in the quantum computation in ascending order. Additionally, no gaps are allowed to exist between the stored qubits of the quantum registers.
