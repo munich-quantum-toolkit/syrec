@@ -53,7 +53,6 @@ class AllInputStatesGeneratorWorker(QtCore.QObject):  # type: ignore[misc]
             first_integer_encoding_first_state_of_batch: int = 0
             batch_data: list[SimulationRunModel | None] = [None for _ in range(self.batch_size)]
             for _ in range(n_batches):
-                # TODO: Do we need to use locks to read value? Maybe use QReadWriterLock instead?
                 if self._thread_safe_check_whether_cancellation_is_requested():
                     break
 
@@ -85,9 +84,6 @@ class AllInputStatesGeneratorWorker(QtCore.QObject):  # type: ignore[misc]
             if n_elems_in_last_batch != 0 and not self._thread_safe_check_whether_cancellation_is_requested():
                 last_batch_data: list[SimulationRunModel | None] = [None for _ in range(n_elems_in_last_batch)]
                 for i in range(n_elems_in_last_batch):
-                    # TODO: Do we need to use locks to read value? Maybe use QReadWriterLock instead?
-                    # if self.cancellation_requested:
-                    #    break
                     last_batch_data[i] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
                         self.expected_input_state_size, first_integer_encoding_first_state_of_batch + i
                     )
