@@ -84,7 +84,7 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.setLayout(main_layout)
 
     def start_generation(
-        self, shared_simulation_runs_model: QtSimulationRunModel, expected_input_state_size: int, batch_size: int = 500
+        self, shared_simulation_runs_model: QtSimulationRunModel, expected_input_state_size: int, batch_size: int = 1000
     ) -> None:
         self.shared_simulation_runs_model = shared_simulation_runs_model
         self.stop_processing_recv_input_state_batches = False
