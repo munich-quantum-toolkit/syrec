@@ -486,13 +486,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         self.simulation_run_dialog = SimulationRunDialog(self.simulation_runs_model, self)
         self.simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
+        self.simulation_run_dialog.show()
         self.simulation_run_dialog.start_simulations(
             self.annotatable_quantum_computation, num_simulation_runs, stop_at_first_output_state_mismatch
         )
-        self.simulation_run_dialog.show()
 
     # TODO: Toggle state after edits in simulation runs were performed?
-    def handle_simulation_runs_dialog_close(self) -> None:
+    def handle_simulation_runs_dialog_close(self, _: int) -> None:
         self.simulation_run_dialog = None
 
     @staticmethod

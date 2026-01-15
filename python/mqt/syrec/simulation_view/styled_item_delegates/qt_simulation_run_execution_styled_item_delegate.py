@@ -189,7 +189,7 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
         )
         return QtCore.QSize(
             min(option.rect.bottomRight().x(), required_content_size.width()),
-            min(option.rect.bottomRight().y(), required_content_size.height()),
+            max(option.rect.bottomRight().y(), required_content_size.height()),
         )
 
     def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
@@ -208,9 +208,6 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
             -CARD_CONTENT_PADDING,
             -CARD_CONTENT_PADDING,
         )
-        # SimulationRunExecutionStyledItemDelegate._paint_rect_edge_points(
-        #     painter, available_rect_for_content, 5, QtCore.Qt.GlobalColor.green, 0
-        # )
 
         painter.save()
         required_text_width_for_header_for_largest_sim_run_number: Final[int] = min(

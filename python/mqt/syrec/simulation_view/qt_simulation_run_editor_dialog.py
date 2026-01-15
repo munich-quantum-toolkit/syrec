@@ -457,6 +457,8 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self.dialog_button_box.setCenterButtons(True)
         self.dialog_button_box.accepted.connect(self.accept)
+        # TODO: Only update copy of simulation run model to be able to discard changes
+        # TODO: Require confirmation to discard changes
         self.dialog_button_box.rejected.connect(self.reject)
 
         main_layout.addWidget(self.dialog_button_box)

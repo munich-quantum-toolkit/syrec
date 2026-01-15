@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Final
 from PyQt6 import QtCore, QtWidgets
 
 if TYPE_CHECKING:
+    from PyQt6 import QtGui
+
     from mqt import syrec
 
     from .qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
@@ -106,7 +108,7 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # TODO: One could also offer a close button in the dialog (that warns the user when closing the dialog during a simulation run execution)?
         self.dialog_button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Cancel)
         self.dialog_button_box.setCenterButtons(True)
-        self.dialog_button_box.rejected.connect(self._request_worker_cancellation)
+        self.dialog_button_box.rejected.connect(self._handle_simulation_runs_cancel_button_click)
         main_layout.addWidget(self.dialog_button_box)
 
     def start_simulations(
@@ -127,8 +129,9 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         # self.simulation_run_total_runtime_timer.start(TOTAL_RUNTIME_TIMER_TIMEOUT_IN_MS)
 
-        self.worker_thread = QtCore.QThread()
         self.worker = SimulationWorker(annotatable_quantum_computation, stop_at_first_output_state_mismatch)
+        self.worker_thread = QtCore.QThread()
+        self.worker.moveToThread(self.worker_thread)
 
         # TODO: It is recommended in the official documentation to mark slots explicitly via the QtCore.pyqtSlot() decorator:
         # see https://doc.qt.io/qtforpython-6/tutorials/basictutorial/signals_and_slots.html#the-slot-class
@@ -154,8 +157,7 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.finished.connect(self._reset_workers)
 
-        self.worker.moveToThread(self.worker_thread)
-        self.worker_thread.start()
+        self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
         self._enqueue_next_simulation_run(0)
         self._change_dialog_cancellation_button_enable_state(True)
 
@@ -210,8 +212,27 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         dialog_cancel_button.setEnabled(should_button_be_enabled)
 
-    def closeEvent(self, _):  # noqa: N802
-        self._request_worker_cancellation()
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
+        # Ask for confirmation before closing
+        if self.worker is None or self.handle_simulation_runs_cancel_button_click():
+            self.accept()
+        else:
+            event.ignore()
+
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    def _handle_simulation_runs_cancel_button_click(self) -> bool:
+        clicked_button_in_confirmation_dialog: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
+            self,
+            "Cancellation of simulation runs requested!",
+            "Are you sure that you want to stop the execution of the simulation runs?",
+            buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
+            defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+        )
+
+        if clicked_button_in_confirmation_dialog == QtWidgets.QMessageBox.StandardButton.Ok:
+            self._request_worker_cancellation()
+            return True
+        return False
 
     @QtCore.pyqtSlot(SimulationRunResult)  # type: ignore[untyped-decorator]
     def _handle_simulation_run_done(self, simulation_run_result: SimulationRunResult) -> None:

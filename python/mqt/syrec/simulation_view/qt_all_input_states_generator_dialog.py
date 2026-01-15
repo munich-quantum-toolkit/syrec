@@ -137,12 +137,9 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
         # Ask for confirmation before closing
         if self.worker is None or self._handle_input_state_generation_cancel_button_click():
-            event.accept()
+            self.accept()
         else:
             event.ignore()
-
-    def test(self) -> None:
-        pass
 
     @QtCore.pyqtSlot(Exception)  # type: ignore[untyped-decorator]
     def _handle_input_state_generator_failure(self, err: Exception) -> None:
