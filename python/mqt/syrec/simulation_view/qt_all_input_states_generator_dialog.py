@@ -8,31 +8,38 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from PyQt6 import QtCore, QtWidgets
 
 if TYPE_CHECKING:
     from PyQt6 import QtGui
 
-    from mqt import syrec
-
-    from .qt_simulation_run_model import QtSimulationRunModel
+    from .qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
 
 from .all_input_states_generator_worker import AllInputStatesGeneratorWorker
 
+TOTAL_RUNTIME_TEXT_FORMAT: Final[str] = (
+    "Total runtime for input states generation [in seconds]: {total_runtime_in_sec:f}"
+)
+
 
 class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
-    def __init__(self, shared_simulation_runs_model: QtSimulationRunModel, parent: QtWidgets.QWidget):
+    # input_state_batch_ack = QtCore.pyqtSignal(name="inputStateBatchAck")
+    input_state_batch_ack = QtCore.pyqtSignal(name="inputStateBatchAck")
+    request_worker_cancellation = QtCore.pyqtSignal(name="requestWorkerCancellation")
+
+    def __init__(self, parent: QtWidgets.QWidget):
         super().__init__(parent)
 
-        # TODO: Member variable could also be initialized in start_simulations
-        self.shared_simulation_runs_model: QtSimulationRunModel = shared_simulation_runs_model
+        self.shared_simulation_runs_model: QtSimulationRunModel | None = None
         self.worker_thread: QtCore.QThread | None = None
         self.worker: AllInputStatesGeneratorWorker | None = None
 
         self.num_generated_input_states: int = 0
         self.stop_processing_recv_input_state_batches: bool = False
+        self.total_input_state_generation_runtime_in_seconds: float = 0
+
         self.setModal(True)
         self.setSizeGripEnabled(True)
         self.setWindowTitle("Generating simulation runs...")
@@ -68,13 +75,23 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         main_layout.addWidget(self.progress_bar)
         main_layout.addWidget(self.progress_text_lbl)
         main_layout.addWidget(self.err_text_lbl)
+
+        main_layout.addStretch()
+        self.total_runtime_text_lbl = QtWidgets.QLabel("")
+        self.total_runtime_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(self.total_runtime_text_lbl)
         main_layout.addWidget(self.dialog_button_box)
         self.setLayout(main_layout)
 
-    def start_generation(self, expected_input_state_size: int, batch_size: int = 50) -> None:
+    def start_generation(
+        self, shared_simulation_runs_model: QtSimulationRunModel, expected_input_state_size: int, batch_size: int = 500
+    ) -> None:
+        self.shared_simulation_runs_model = shared_simulation_runs_model
         self.stop_processing_recv_input_state_batches = False
         self.num_generated_input_states = 0
+        self.total_input_state_generation_runtime_in_seconds = 0
         self.progress_text_lbl.setText("")
+        self.total_runtime_text_lbl.setText("")
 
         try:
             self.worker = AllInputStatesGeneratorWorker(expected_input_state_size, batch_size)
@@ -87,7 +104,13 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.progress_bar.setMaximum(2**expected_input_state_size)
         self.progress_bar.setValue(0)
 
+        self.inputStateBatchAck.connect(self.worker.ack_batch_processed, QtCore.Qt.ConnectionType.QueuedConnection)
+        self.requestWorkerCancellation.connect(
+            self.worker.request_cancellation, QtCore.Qt.ConnectionType.QueuedConnection
+        )
+
         self.worker_thread = QtCore.QThread()
+        self.worker.moveToThread(self.worker_thread)
         # TODO: It is recommended in the official documentation to mark slots explicitly via the QtCore.pyqtSlot() decorator:
         # see https://doc.qt.io/qtforpython-6/tutorials/basictutorial/signals_and_slots.html#the-slot-class
 
@@ -99,7 +122,6 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.worker.batchGenerated.connect(
             self._handle_generated_input_state_batch, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        # self.worker.generationCancelled.connect(None, QtCore.Qt.ConnectionType.QueuedConnection)
         self.worker.generationFinished.connect(
             self._handle_input_state_generator_finished, QtCore.Qt.ConnectionType.QueuedConnection
         )
@@ -109,9 +131,7 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.finished.connect(self._reset_workers)
-
-        self.worker.moveToThread(self.worker_thread)
-        self.worker_thread.start()
+        self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
         self._change_dialog_cancellation_button_enable_state(True)
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
@@ -121,28 +141,62 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         else:
             event.ignore()
 
+    def test(self) -> None:
+        pass
+
     @QtCore.pyqtSlot(Exception)  # type: ignore[untyped-decorator]
     def _handle_input_state_generator_failure(self, err: Exception) -> None:
         self.progress_text_lbl.setText("")
         self.err_text_lbl.setText(f"Unexpected {err=}, {type(err)=} during generation of input states")
-        self.shared_simulation_runs_model.delete_all_simulation_run_models()
+        if self.shared_simulation_runs_model is not None:
+            self.shared_simulation_runs_model.delete_all_simulation_run_models()
+        else:
+            QtWidgets.QMessageBox.critical(
+                self,
+                "Internal state error!",
+                "Shared simulation runs model was not initialized during handling of input state generator failure!\nThis should not happen.",
+                buttons=QtWidgets.QMessageBox.StandardButton.Ok,
+                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+            )
         self._request_worker_cancellation()
 
-    @QtCore.pyqtSlot(list)  # type: ignore[untyped-decorator]
-    def _handle_generated_input_state_batch(self, batch_data: list[syrec.n_bit_values_container]) -> None:
+    @QtCore.pyqtSlot(tuple)  # type: ignore[untyped-decorator]
+    def _handle_generated_input_state_batch(self, batch_data: tuple[float, list[SimulationRunModel]]) -> None:
         if self.stop_processing_recv_input_state_batches:
             return
 
         self.progress_text_lbl.setText("Generated input state batch!")
-        self.num_generated_input_states += len(batch_data)
+        batch_generation_duration_in_seconds: float = batch_data[0]
+        generated_simulation_run_models: list[SimulationRunModel] = batch_data[1]
+
+        if self.shared_simulation_runs_model is None:
+            QtWidgets.QMessageBox.critical(
+                self,
+                "Internal state error!",
+                "Shared simulation runs model was not initialized during handling of generated input state batch!\nThis should not happen.",
+                buttons=QtWidgets.QMessageBox.StandardButton.Ok,
+                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+            )
+            self._request_worker_cancellation()
+            return
+
+        # TODO: Error handling
+        # TODO: Use delayed processing to reduce "laggy"/almost frozen GUI
+        self.shared_simulation_runs_model.add_simulation_run_models(generated_simulation_run_models)
+        self.inputStateBatchAck.emit()
+
+        self.total_input_state_generation_runtime_in_seconds += batch_generation_duration_in_seconds
+        self.total_runtime_text_lbl.setText(
+            TOTAL_RUNTIME_TEXT_FORMAT.format(total_runtime_in_sec=self.total_input_state_generation_runtime_in_seconds)
+        )
+
+        self.num_generated_input_states += len(generated_simulation_run_models)
         self.progress_bar.setValue(self.num_generated_input_states)
-        for i in range(len(batch_data)):
-            self.shared_simulation_runs_model.add_simulation_run_model(batch_data[i])
         self.progress_text_lbl.setText("")
 
-    @QtCore.pyqtSlot(float)  # type: ignore[untyped-decorator]
-    def _handle_input_state_generator_finished(self, total_generation_runtime: float) -> None:
-        self.progress_text_lbl.setText(f"Input state generator finished! Total runtime: {total_generation_runtime}")
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    def _handle_input_state_generator_finished(self) -> None:
+        self.progress_text_lbl.setText("Input state generator finished!")
         self.progress_bar.setVisible(False)
         self._request_worker_cancellation()
 
@@ -154,12 +208,11 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._change_dialog_ok_button_enable_state(True)
         self._change_dialog_cancellation_button_enable_state(False)
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _request_worker_cancellation(self) -> None:
         self.stop_processing_recv_input_state_batches = True
         self.progress_text_lbl.setText("Requesting cancellation of input state generator!")
         if self.worker is not None:
-            self.worker.request_cancellation()
+            self.requestWorkerCancellation.emit()
             self._change_dialog_cancellation_button_enable_state(False)
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
@@ -174,7 +227,8 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         if clicked_button_in_confirmation_dialog == QtWidgets.QMessageBox.StandardButton.Ok:
             self._request_worker_cancellation()
-            self.shared_simulation_runs_model.delete_all_simulation_run_models()
+            if self.shared_simulation_runs_model is not None:
+                self.shared_simulation_runs_model.delete_all_simulation_run_models()
             return True
         return False
 

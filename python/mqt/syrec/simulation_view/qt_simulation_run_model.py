@@ -236,6 +236,16 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self.endInsertRows()
         return True
 
+    def add_simulation_run_models(self, to_be_added_simulation_run_models: list[SimulationRunModel]) -> None:
+        if len(to_be_added_simulation_run_models) == 0:
+            return
+
+        idx_of_first_new_sim_run_model: int = len(self.simulation_run_models)
+        idx_of_last_new_sim_run_model: int = idx_of_first_new_sim_run_model + len(to_be_added_simulation_run_models) - 1
+        self.beginInsertRows(QtCore.QModelIndex(), idx_of_first_new_sim_run_model, idx_of_last_new_sim_run_model)
+        self.simulation_run_models.extend(to_be_added_simulation_run_models)
+        self.endInsertRows()
+
     def delete_simulation_run_model(self, index: QtCore.QModelIndex) -> bool:
         self.beginRemoveRows(QtCore.QModelIndex(), index.row(), index.row())
 

@@ -304,10 +304,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             # TODO: Error logging?
             return
 
-        self.all_input_states_generator_dialog = AllInputStatesGeneratorDialog(self.simulation_runs_model, self)
+        self.all_input_states_generator_dialog = AllInputStatesGeneratorDialog(self)
         self.all_input_states_generator_dialog.finished.connect(self.handle_input_states_generator_dialog_close)
         self.all_input_states_generator_dialog.show()
-        self.all_input_states_generator_dialog.start_generation(input_state_size)
+        self.all_input_states_generator_dialog.start_generation(self.simulation_runs_model, input_state_size)
 
     def handle_input_states_generator_dialog_close(self, result: int) -> None:
         self.all_input_states_generator_dialog = None

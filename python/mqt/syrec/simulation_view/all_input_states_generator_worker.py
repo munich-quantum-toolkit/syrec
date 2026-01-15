@@ -17,15 +17,12 @@ from mqt import syrec
 
 from .qt_simulation_run_model import SimulationRunModel
 
-# input_state_batch_type = list[syrec.n_bit_values_container]
-# QtCore.qRegisterMetaType(input_state_batch_type, "input_state_batch_type")
-
 
 class AllInputStatesGeneratorWorker(QtCore.QObject):  # type: ignore[misc]
-    batch_generated = QtCore.pyqtSignal(list, name="batchGenerated")
+    batch_generated = QtCore.pyqtSignal(tuple, name="batchGenerated")
     generation_failed = QtCore.pyqtSignal(Exception, name="generationFailed")
     generation_cancelled = QtCore.pyqtSignal(name="generationCancelled")
-    generation_finished = QtCore.pyqtSignal(float, name="generationFinished")
+    generation_finished = QtCore.pyqtSignal(name="generationFinished")
 
     def __init__(self, expected_input_state_size: int, batch_size: int):
         super().__init__()
@@ -41,78 +38,78 @@ class AllInputStatesGeneratorWorker(QtCore.QObject):  # type: ignore[misc]
         self.expected_input_state_size: Final[int] = expected_input_state_size
         self.batch_size: Final[int] = batch_size
         self.cancellation_requested = False
+        self.cancellation_flag_mutex = QtCore.QMutex()
+        self.wait_on_batch_processed_acknowledgement_condition = QtCore.QWaitCondition()
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_generation(self) -> None:
         n_states_to_generate: int = 2**self.expected_input_state_size
         n_batches: int = n_states_to_generate // self.batch_size
 
-        batch_data: list[SimulationRunModel | None] = [None for i in range(self.batch_size)]
-        integer_defining_input_state: int = 0
-
-        generation_start_time: float = time.perf_counter()
-        curr_batch_elem_count: int = 0
-        generated_batches: int = 0
+        batch_generation_start_time: float = time.perf_counter()
+        batch_generation_end_time: float = 0
+        batch_generation_duration_in_seconds: float = 0
         try:
-            for _ in range((n_batches * self.batch_size) + 1):
+            first_integer_encoding_first_state_of_batch: int = 0
+            batch_data: list[SimulationRunModel | None] = [None for _ in range(self.batch_size)]
+            for _ in range(n_batches):
+                # TODO: Do we need to use locks to read value? Maybe use QReadWriterLock instead?
                 if self.cancellation_requested:
                     break
 
-                if curr_batch_elem_count == self.batch_size:
-                    self.batch_generated.emit(batch_data)
-                    generated_batches += 1
-                    if generated_batches == n_batches:
-                        break
-
-                    curr_batch_elem_count = 0
-                    for j in range(self.batch_size):
-                        batch_data[j] = None
-
-                batch_data[curr_batch_elem_count] = (
-                    AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
-                        self.expected_input_state_size, integer_defining_input_state
+                for i in range(self.batch_size):
+                    batch_data[i] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
+                        self.expected_input_state_size, first_integer_encoding_first_state_of_batch + i
                     )
-                )
-                integer_defining_input_state += 1
-                curr_batch_elem_count += 1
+
+                batch_generation_end_time = time.perf_counter()
+                batch_generation_duration_in_seconds = batch_generation_end_time - batch_generation_start_time
+                batch_generation_start_time = batch_generation_end_time
+
+                self.batch_generated.emit((batch_generation_duration_in_seconds, batch_data.copy()))
+                with QtCore.QMutexLocker(self.cancellation_flag_mutex):
+                    self.wait_on_batch_processed_acknowledgement_condition.wait(self.cancellation_flag_mutex)
+
+                first_integer_encoding_first_state_of_batch += self.batch_size
+                for i in range(self.batch_size):
+                    batch_data[i] = None
 
             n_elems_in_last_batch: int = n_states_to_generate % self.batch_size
-            curr_batch_elem_count = 0
-            if n_elems_in_last_batch != 0:
-                # Truncate batch result container to size of last batch
-                del batch_data[n_elems_in_last_batch:]
+            if n_elems_in_last_batch != 0 and not self.cancellation_requested:
+                last_batch_data: list[SimulationRunModel | None] = [None for _ in range(n_elems_in_last_batch)]
                 for i in range(n_elems_in_last_batch):
-                    if self.cancellation_requested:
-                        break
-
-                    batch_data[i] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
-                        self.expected_input_state_size, integer_defining_input_state
+                    # TODO: Do we need to use locks to read value? Maybe use QReadWriterLock instead?
+                    # if self.cancellation_requested:
+                    #    break
+                    last_batch_data[i] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
+                        self.expected_input_state_size, first_integer_encoding_first_state_of_batch + i
                     )
-                    integer_defining_input_state += 1
-                self.batch_generated.emit(batch_data)
+
+                batch_generation_end_time = time.perf_counter()
+                batch_generation_duration_in_seconds = batch_generation_end_time - batch_generation_start_time
+                batch_generation_start_time = batch_generation_end_time
+                self.batch_generated.emit((batch_generation_duration_in_seconds, last_batch_data))
         except Exception as err:
-            # TODO: Slot in dialog is missing positional argument err?
             self.generation_failed.emit(err)
+        self.generation_finished.emit()
 
-        generation_end_time: float = time.perf_counter()
-        total_generation_runtime: float = generation_end_time - generation_start_time
-        self.generation_finished.emit(total_generation_runtime)
-
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    # In the cross thread communication between the main thread (rendering the GUI) and the worker thread we had the issue that if we define the slot function with a QtCore.pyqtSlot() decorator
+    # the main thread will not invoke said slot in the worker thread but we do not know exactly we since other signal->slot connections between the two threads function when being defined with
+    # corresponding decorators. Thus for now we define the slot without a decorator.
     def request_cancellation(self) -> None:
-        self.cancellation_requested = True
+        with QtCore.QMutexLocker(self.cancellation_flag_mutex):
+            self.cancellation_requested = True
+        self.wait_on_batch_processed_acknowledgement_condition.wakeAll()
+
+    # Again we define the slot without the corresponding decorator, for further information we refer to the request_cancellation function.
+    def ack_batch_processed(self) -> None:
+        self.wait_on_batch_processed_acknowledgement_condition.wakeAll()
 
     @staticmethod
     def _generate_sim_run_model_for_input_state(
         expected_input_state_size: int, integer_defining_input_state: int
     ) -> SimulationRunModel:
-        binary_string_of_i = format(integer_defining_input_state, "b")
         input_state = syrec.n_bit_values_container(expected_input_state_size)
-
-        n_qubits_to_process_in_binary_string: int = min(expected_input_state_size, len(binary_string_of_i))
-        qubit_idx_in_binary_string: int = n_qubits_to_process_in_binary_string - 1
-        for qubit in range(n_qubits_to_process_in_binary_string):
-            qubit_value: bool = binary_string_of_i[qubit_idx_in_binary_string] == "1"
-            input_state.set(qubit, qubit_value)
-            qubit_idx_in_binary_string -= 1
+        for qubit in range(expected_input_state_size):
+            input_state.set(qubit, bool((integer_defining_input_state >> qubit) & 1))
         return SimulationRunModel(input_state, expected_output_state=None)
