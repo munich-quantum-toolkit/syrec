@@ -56,13 +56,23 @@ class SimulationRunModel:
         self,
         input_state: syrec.n_bit_values_container,
         expected_output_state: syrec.n_bit_values_container | None = None,
+        create_new_n_bit_values_container_instances: bool = False,
     ):
         if expected_output_state is not None and input_state.size() != expected_output_state.size():
             msg = f"Expected output state size (n_qubits = {expected_output_state.size()}) did not match input state size (n_qubits = {input_state.size()})"
             raise ValueError(msg)
 
-        self.input_state = input_state
-        self.expected_output_state = expected_output_state
+        if not create_new_n_bit_values_container_instances:
+            self.input_state = input_state
+            self.expected_output_state = expected_output_state
+        else:
+            self.input_state = syrec.n_bit_values_container(input_state.size())
+            for qubit in range(input_state.size()):
+                self.input_state.set(qubit, input_state.test(qubit))
+            if expected_output_state is not None:
+                self.expected_output_state = syrec.n_bit_values_container(expected_output_state.size())
+                for qubit in range(expected_output_state.size()):
+                    self.expected_output_state.set(qubit, expected_output_state.test(qubit))
 
     def initialize_expected_output_state_as_copy_of_input_state(self) -> None:
         if self.expected_output_state is not None:

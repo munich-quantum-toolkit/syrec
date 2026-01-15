@@ -14,14 +14,16 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
-if TYPE_CHECKING:
-    from .qt_simulation_run_model import QuantumRegisterLayout, SimulationRunModel
-
 from .qt_simulation_run_model import (
     ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE,
     QUANTUM_REGISTER_LAYOUT_QT_ROLE,
-    SIMULATION_RUN_IO_STATE_QT_ROLE,
 )
+
+if TYPE_CHECKING:
+    from .qt_simulation_run_model import (
+        QuantumRegisterLayout,
+        SimulationRunModel,
+    )
 
 
 def stringify_some_qubits_of_n_bit_values_container(
@@ -59,12 +61,15 @@ class LineEditWithDynamicWidth(QtWidgets.QLineEdit):  # type: ignore[misc]
 
 # TODO: Replace 'simple' returns with QDialog.reject("<ERR_MSG>") to indicate fatal errors and stop editing simulation run but also reject changes made in parent widget that opened dialog
 class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
-    def __init__(self, simulation_run_model_index: QtCore.QModelIndex, parent: QtWidgets.QWidget):
+    def __init__(
+        self,
+        simulation_run_model_index: QtCore.QModelIndex,
+        copy_of_reference_edit_sim_run_model: SimulationRunModel,
+        parent: QtWidgets.QWidget,
+    ):
         super().__init__(parent)
         self.simulation_run_model_index: QtCore.QModelIndex = simulation_run_model_index
-        self.edited_simulation_run_model: SimulationRunModel = simulation_run_model_index.data(
-            SIMULATION_RUN_IO_STATE_QT_ROLE
-        )
+        self.edited_simulation_run_model: SimulationRunModel = copy_of_reference_edit_sim_run_model
 
         self.qreg_layouts: list[QuantumRegisterLayout] = simulation_run_model_index.data(
             QUANTUM_REGISTER_LAYOUT_QT_ROLE
@@ -89,9 +94,6 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         main_layout.addWidget(self.simulation_run_wrapper_box)
 
-        # TODO: Validation that input and output state have same size (validate all input parameters)
-        # TODO: Define validator for input and output state inputs
-        # TODO: Update input/output state value when qubit value is changed
         # TODO: How to render n-dimensional variables
 
         self.qubit_label_name_format = "q_{qubit:d}_lbl"

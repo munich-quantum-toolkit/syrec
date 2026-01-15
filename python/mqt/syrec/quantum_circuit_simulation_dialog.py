@@ -18,7 +18,11 @@ from mqt import syrec
 from .simulation_view.qt_all_input_states_generator_dialog import AllInputStatesGeneratorDialog
 from .simulation_view.qt_simulation_run_dialog import SimulationRunDialog
 from .simulation_view.qt_simulation_run_editor_dialog import SimulationRunEditorDialog
-from .simulation_view.qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
+from .simulation_view.qt_simulation_run_model import (
+    SIMULATION_RUN_IO_STATE_QT_ROLE,
+    QtSimulationRunModel,
+    SimulationRunModel,
+)
 from .simulation_view.styled_item_delegates.qt_simulation_run_overview_styled_item_delegate import (
     SimulationRunOverviewStyledItemDelegate,
 )
@@ -272,7 +276,32 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         if simulation_runs_list_view is None:
             return
 
-        self.simulation_run_editor_dialog = SimulationRunEditorDialog(simulation_runs_list_view.currentIndex(), self)
+        reference_sim_run_model: SimulationRunModel = simulation_runs_list_view.currentIndex().data(
+            SIMULATION_RUN_IO_STATE_QT_ROLE
+        )
+        if (
+            reference_sim_run_model.expected_output_state is not None
+            and reference_sim_run_model.input_state.size() != reference_sim_run_model.expected_output_state.size()
+        ):
+            QtWidgets.QMessageBox.critical(
+                self,
+                "Initial simulation run model validation error",
+                f"Expected reference simulation runs input state size (n={reference_sim_run_model.input_state.size()}) to match expected output states size (n={reference_sim_run_model.expected_output_state.size()})",
+                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+            )
+            return
+
+        # Since we want to be able to discard the changes made in the dialog by either closing the dialog or by pressing the cancel button
+        # a copy of the original simulation run object is needed
+        copy_of_reference_sim_run_model: SimulationRunModel = SimulationRunModel(
+            reference_sim_run_model.input_state,
+            reference_sim_run_model.expected_output_state,
+            create_new_n_bit_values_container_instances=True,
+        )
+
+        self.simulation_run_editor_dialog = SimulationRunEditorDialog(
+            simulation_runs_list_view.currentIndex(), copy_of_reference_sim_run_model, self
+        )
         self.simulation_run_editor_dialog.finished.connect(self.handle_simulation_run_editor_dialog_close)
         self.simulation_run_editor_dialog.show()
 
