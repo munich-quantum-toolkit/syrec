@@ -401,6 +401,47 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         trigger_load_from_file_button.clicked.connect(self.open_import_from_file_dialog)
         trigger_load_from_file_button.setEnabled(False)
+        trigger_load_from_file_button.setToolTip("""
+        <h2>Expected format of .json file</h2>
+        <div>
+        Simulation runs imported from a .json file need to be defined in the following json structure:
+        <code style="display: block; white-space: pre-wrap">
+        {
+            "simulationRuns": [
+                { "in": "1011", "out": "1011" },
+                ...
+                { "in": "1001", "out": "1001" }
+            ]
+        }
+        </code>
+        </div>
+        <div>
+            <b>Further details about the contents of the .json file are listed below:</b>
+            <ul>
+                <li>
+                    The 'simulationRuns' JSON array needs to be defined as a property of the singular top level JSON object,
+                    with every simulation run being defined as a JSON object consisting of an input state qubit values definition
+                    and an optional expected output state definition. All other elements of the top-level object are ignored.
+                </li>
+                <li>
+                    All expected json element keys are case sensitive.
+                </li>
+                <li>
+                    Qubit values must be defined as strings containing '0' or '1' characters with the total number of qubits in a
+                    state definition matching the number of data qubits of the synthesized quantum computation (i.e. equal to the number of non-ancillary qubits).
+                </li>
+                <li>
+                    Any additional objects defined in a simulation run JSON object is skipped.
+                </li>
+                <li>
+                    No error will be reported if the 'simulationRuns' object was not defined in the .json file or contained no entries.
+                </li>
+                <li>
+                    Any error during the parsing of the .json file will cause the deletion of all parsed simulation runs.
+                </li>
+            </ul>
+        </div>
+        """)
         controls_layout.addWidget(trigger_load_from_file_button)
 
         controls_layout.addStretch()
