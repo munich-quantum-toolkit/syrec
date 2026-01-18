@@ -46,13 +46,10 @@ namespace {
     // nanobind-compatible implementation of scoped_estream_redirect
     // Taken from https://github.com/wjakob/nanobind/discussions/413
 
-    using namespace nb;
-
     // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, cppcoreguidelines-avoid-const-or-ref-data-members, cppcoreguidelines-pro-bounds-pointer-arithmetic, modernize-avoid-c-arrays, readability-identifier-naming)
 
     // Buffer that writes to Python instead of C++
     class pythonbuf: public std::streambuf {
-    private:
         using traits_type = std::streambuf::traits_type;
 
         size_t                  buf_size;
@@ -60,7 +57,8 @@ namespace {
         nb::object              pywrite;
         nb::object              pyflush;
 
-        int overflow(int c) override {
+    protected:
+        int overflow(const int c) override {
             if (!traits_type::eq_int_type(c, traits_type::eof())) {
                 *pptr() = traits_type::to_char_type(c);
                 pbump(1);
@@ -72,12 +70,12 @@ namespace {
         // incomplete sequence of UTF-8 bytes.
         // Precondition: pbase() < pptr()
         [[nodiscard]] size_t utf8_remainder() const {
-            const auto rbase         = std::reverse_iterator<char*>(pbase());
-            const auto rpptr         = std::reverse_iterator<char*>(pptr());
-            auto       is_ascii      = [](char c) { return (static_cast<unsigned char>(c) & 0x80) == 0x00; };
-            auto       is_leading    = [](char c) { return (static_cast<unsigned char>(c) & 0xC0) == 0xC0; };
-            auto       is_leading_2b = [](char c) { return static_cast<unsigned char>(c) <= 0xDF; };
-            auto       is_leading_3b = [](char c) { return static_cast<unsigned char>(c) <= 0xEF; };
+            const auto rbase         = std::reverse_iterator(pbase());
+            const auto rpptr         = std::reverse_iterator(pptr());
+            auto       is_ascii      = [](const char c) { return (static_cast<unsigned char>(c) & 0x80) == 0x00; };
+            auto       is_leading    = [](const char c) { return (static_cast<unsigned char>(c) & 0xC0) == 0xC0; };
+            auto       is_leading_2b = [](const char c) { return static_cast<unsigned char>(c) <= 0xDF; };
+            auto       is_leading_3b = [](const char c) { return static_cast<unsigned char>(c) <= 0xEF; };
             // If the last character is ASCII, there are no incomplete code points
             if (is_ascii(*rpptr)) {
                 return 0;
@@ -109,7 +107,7 @@ namespace {
         // This function must be non-virtual to be called in a destructor.
         int _sync() {
             if (pbase() != pptr()) { // If buffer is not empty
-                //nb::gil_scoped_acquire tmp;
+                const nb::gil_scoped_acquire tmp;
                 // This subtraction cannot be negative, so dropping the sign.
                 auto         size      = static_cast<size_t>(pptr() - pbase());
                 const size_t remainder = utf8_remainder();
@@ -117,7 +115,7 @@ namespace {
                 if (size > remainder) {
                     nb::str line(pbase(), size - remainder);
                     pywrite(std::move(line));
-                    pyflush();
+                    std::ignore = pyflush();
                 }
 
                 // Copy the remainder at the end of the buffer to the beginning:
@@ -133,12 +131,12 @@ namespace {
         int sync() override { return _sync(); }
 
     public:
-        explicit pythonbuf(const nb::object& pyostream, size_t buffer_size = 1024): buf_size(buffer_size), d_buffer(new char[buf_size]), pywrite(pyostream.attr("write")),
-                                                                                    pyflush(pyostream.attr("flush")) {
+        explicit pythonbuf(const nb::object& pyostream, const size_t buffer_size = 1024): buf_size(buffer_size), d_buffer(new char[buf_size]), pywrite(pyostream.attr("write")),
+                                                                                          pyflush(pyostream.attr("flush")) {
             setp(d_buffer.get(), d_buffer.get() + buf_size - 1);
         }
 
-        pythonbuf(pythonbuf&&) = default;
+        pythonbuf(pythonbuf&&) = delete;
 
         // Sync before destroy
         ~pythonbuf() override { _sync(); }
@@ -153,23 +151,22 @@ namespace {
     public:
         explicit scoped_ostream_redirect(
                 std::ostream&     costream  = std::cout,
-                const nb::object& pyostream = nb::module_::import_("sys").attr("stdout")) noexcept
-            : costream(costream), buffer(pyostream) {
+                const nb::object& pyostream = nb::module_::import_("sys").attr("stdout")): costream(costream), buffer(pyostream) {
             old = costream.rdbuf(&buffer);
         }
         ~scoped_ostream_redirect() {
             costream.rdbuf(old);
         }
         scoped_ostream_redirect(const scoped_ostream_redirect&)            = delete;
-        scoped_ostream_redirect(scoped_ostream_redirect&& other)           = default;
+        scoped_ostream_redirect(scoped_ostream_redirect&& other)           = delete;
         scoped_ostream_redirect& operator=(const scoped_ostream_redirect&) = delete;
         scoped_ostream_redirect& operator=(scoped_ostream_redirect&&)      = delete;
     };
 
     class scoped_estream_redirect: public scoped_ostream_redirect {
     public:
-        explicit scoped_estream_redirect(std::ostream& costream  = std::cerr,
-                                         const object& pyostream = module_::import_("sys").attr("stderr")): scoped_ostream_redirect(costream, pyostream) {}
+        explicit scoped_estream_redirect(std::ostream&     costream  = std::cerr,
+                                         const nb::object& pyostream = nb::module_::import_("sys").attr("stderr")): scoped_ostream_redirect(costream, pyostream) {}
     };
 
     // NOLINTEND(cppcoreguidelines-avoid-c-arrays, cppcoreguidelines-avoid-const-or-ref-data-members, cppcoreguidelines-pro-bounds-pointer-arithmetic, modernize-avoid-c-arrays, readability-identifier-naming)

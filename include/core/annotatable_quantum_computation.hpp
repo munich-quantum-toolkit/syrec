@@ -108,6 +108,9 @@ namespace syrec {
         explicit AnnotatableQuantumComputation(const bool generateQuantumGateAnnotations):
             generateQuantumOperationAnnotations(generateQuantumGateAnnotations) {}
 
+        AnnotatableQuantumComputation(const AnnotatableQuantumComputation&)            = delete;
+        AnnotatableQuantumComputation& operator=(const AnnotatableQuantumComputation&) = delete;
+
         /**
          * Determine whether the generation of quantum operation annotations is supported by the annotatable quantum computation.
          * @return Whether the generation of quantum operation annotations is supported.
@@ -479,9 +482,6 @@ namespace syrec {
          * @return The build qubit label (e.g. a[0][2].2)
          */
         [[nodiscard]] static std::string buildQubitLabelForQubitOfVariableInQuantumRegister(const std::string& quantumRegisterLabel, const std::vector<unsigned>& accessedValuePerDimension, std::size_t relativeQubitIndexInElement);
-
-        AnnotatableQuantumComputation(const AnnotatableQuantumComputation&)            = delete;
-        AnnotatableQuantumComputation& operator=(const AnnotatableQuantumComputation&) = delete;
 
         /**
          * An ordered collection storing the variable layout stored in each quantum register.
