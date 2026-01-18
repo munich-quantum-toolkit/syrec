@@ -15,9 +15,10 @@ from PyQt6 import QtCore, QtWidgets
 if TYPE_CHECKING:
     from PyQt6 import QtGui
 
-    from .qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
+    from .qt_simulation_run_model import QtSimulationRunModel
 
 from .all_input_states_generator_worker import AllInputStatesGeneratorWorker
+from .qt_simulation_run_model import SimulationRunModel
 
 TOTAL_RUNTIME_TEXT_FORMAT: Final[str] = (
     "Total runtime for input states generation [in seconds]: {total_runtime_in_sec:f}"
@@ -93,6 +94,7 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.progress_text_lbl.setText("")
         self.total_runtime_text_lbl.setText("")
 
+        # TODO: Again try to refactor code such that constructor arguments are pass in start_generation call instead
         try:
             self.worker = AllInputStatesGeneratorWorker(expected_input_state_size, batch_size)
         except ValueError as err:
@@ -110,13 +112,13 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # and the worker operation moved to the latter. We also do not want to block the UI thread by executing the slots of said worker in the UI thread but
         # instead want to simply send the events to the event queue of its thread thus the QueuedConnection between the signal (here the UI thread) and the receiver (worker thread)
         # needs to be defined as a QueuedConnection (QtCore.Qt.ConnectionType.QueuedConnection).
-        self.worker.batchGenerated.connect(
+        self.worker.batchCompleted.connect(
             self._handle_generated_input_state_batch, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        self.worker.generationFinished.connect(
+        self.worker.finished.connect(
             self._handle_input_state_generator_finished, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        self.worker.generationFailed.connect(
+        self.worker.failed.connect(
             self._handle_input_state_generator_failure, QtCore.Qt.ConnectionType.QueuedConnection
         )
 
@@ -150,19 +152,26 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._request_worker_cancellation()
         self._await_worker_thread_completion()
 
-    @QtCore.pyqtSlot(tuple)  # type: ignore[untyped-decorator]
-    def _handle_generated_input_state_batch(self, batch_data: tuple[float, list[SimulationRunModel]]) -> None:
+    @QtCore.pyqtSlot(float, object)  # type: ignore[untyped-decorator]
+    def _handle_generated_input_state_batch(
+        self, batch_generation_duration_in_seconds: float, batch_data: object
+    ) -> None:
         if self.stop_processing_recv_input_state_batches:
             return
 
-        batch_generation_duration_in_seconds: float = batch_data[0]
+        if not AllInputStatesGeneratorWorker.are_list_of_batch_items_of_type(batch_data, SimulationRunModel):
+            # TODO: Error logging?
+            # TODO: Cancel worker?
+            if self.worker is not None:
+                self.worker.ack_batch_processed()
+            return
+
         self.progress_text_lbl.setText(
             GENERATED_INPUT_STATE_BATCH_PROGRESS_INFO_TEXT_FORMAT.format(
                 batch_generation_duration_in_seconds=batch_generation_duration_in_seconds
             )
         )
-        generated_simulation_run_models: list[SimulationRunModel] = batch_data[1]
-
+        generated_simulation_run_models: Final[list[SimulationRunModel]] = batch_data  # type: ignore[assignment]
         if self.shared_simulation_runs_model is None:
             QtWidgets.QMessageBox.critical(
                 self,

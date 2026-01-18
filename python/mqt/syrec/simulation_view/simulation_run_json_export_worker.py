@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 from PyQt6 import QtCore
 
+from .cancellable_base_worker import CancellableBaseWorker
 from .qt_simulation_run_model import SimulationRunModel
 
 if TYPE_CHECKING:
@@ -21,16 +22,9 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-class SimulationRunJsonExportWorker(QtCore.QObject):  # type: ignore[misc]
-    batch_exported = QtCore.pyqtSignal(tuple, name="batchExported")
-    export_failed = QtCore.pyqtSignal(Exception, name="exportFailed")
-    export_finished = QtCore.pyqtSignal(name="exportFinished")
-
+class SimulationRunJsonExportWorker(CancellableBaseWorker):
     def __init__(self):
-        super().__init__()
-
-        self.cancellation_requested = False
-        self.cancellation_flag_mutex = QtCore.QReadWriteLock()
+        super().__init__(do_batches_require_ack=False)
 
     # TODO: Pretty printing
     # TODO: This untyped decorator should not be invocable via a signal?
@@ -54,7 +48,7 @@ class SimulationRunJsonExportWorker(QtCore.QObject):  # type: ignore[misc]
                 batch_export_end_time: float = 0
                 batch_export_duration: float = 0
                 for sim_run in simulation_runs_to_export:
-                    if self._thread_safe_check_whether_cancellation_is_requested():
+                    if self.is_cancellation_requested():
                         break
 
                     # if batch_idx > 0:
@@ -70,35 +64,20 @@ class SimulationRunJsonExportWorker(QtCore.QObject):  # type: ignore[misc]
                         batch_export_end_time = time.perf_counter()
                         batch_export_duration = batch_export_end_time - batch_export_start_time
                         batch_export_start_time = batch_export_end_time
-                        self.batch_exported.emit((batch_export_duration, export_batch_size))
+                        self.batchCompleted.emit(batch_export_duration, export_batch_size)
                         batch_idx = 0
                         n_generated_batches += 1
                 # file.write("\n\t]\n}")
                 file.write("]}")
 
-            if batch_idx > 0 and not self._thread_safe_check_whether_cancellation_is_requested():
+            if batch_idx > 0 and not self.is_cancellation_requested():
                 batch_export_end_time = time.perf_counter()
                 batch_export_duration = batch_export_end_time - batch_export_start_time
-                self.batch_exported.emit((batch_export_duration, batch_idx))
-            self.export_finished.emit()
+                self.batchCompleted.emit(batch_export_duration, batch_idx)
+            self.finished.emit()
         except Exception as err:
-            self.export_failed.emit(err)
+            self.failed.emit(err)
         return
-
-    def request_cancellation(self) -> None:
-        self._thread_safe_set_cancellation_requested_flag(True)
-
-    def _thread_safe_check_whether_cancellation_is_requested(self) -> bool:
-        cancellation_requested: bool = False
-        self.cancellation_flag_mutex.lockForRead()
-        cancellation_requested = self.cancellation_requested
-        self.cancellation_flag_mutex.unlock()
-        return cancellation_requested
-
-    def _thread_safe_set_cancellation_requested_flag(self, flag_value: bool) -> None:
-        self.cancellation_flag_mutex.lockForWrite()
-        self.cancellation_requested = flag_value
-        self.cancellation_flag_mutex.unlock()
 
     @staticmethod
     def serialize_to_json(obj: Any) -> object:

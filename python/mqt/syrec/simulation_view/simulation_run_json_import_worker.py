@@ -20,6 +20,7 @@ from PyQt6 import QtCore
 
 from mqt import syrec
 
+from .cancellable_base_worker import CancellableBaseWorker
 from .qt_simulation_run_model import SimulationRunModel
 
 if TYPE_CHECKING:
@@ -30,23 +31,13 @@ INPUT_STATE_JSON_KEY: Final[str] = "in"
 EXPECTED_OUTPUT_STATE_JSON_KEY: Final[str] = "out"
 
 
-class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
-    batch_imported = QtCore.pyqtSignal(tuple, name="batchImported")
-    import_finished = QtCore.pyqtSignal(name="importFinished")
-    import_cancelled = QtCore.pyqtSignal(name="importCancelled")
-    import_failed = QtCore.pyqtSignal(Exception, name="importFailed")
-
+class SimulationRunJsonImportWorker(CancellableBaseWorker):
     def __init__(self, path_to_json_file: Path, expected_input_state_size: int, batch_size: int):
-        super().__init__()
+        super().__init__(do_batches_require_ack=True)
 
         self.path_to_json_file = path_to_json_file
         self.expected_input_state_size = expected_input_state_size
         self.batch_size = batch_size
-
-        self.cancellation_requested = False
-        self.cancellation_flag_mutex = QtCore.QReadWriteLock()
-        self.ack_mutex = QtCore.QMutex()
-        self.wait_on_batch_processed_acknowledgement_condition = QtCore.QWaitCondition()
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_import(self) -> None:
@@ -55,6 +46,10 @@ class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
 
         try:
             SimulationRunJsonImportWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
+            if self.wait_on_batch_processed_acknowledgement_condition is None:
+                self.failed.emit(ValueError("Internal batch processed acknowledgement condition was not initialized"))
+                return
+
             batch_idx: int = 0
             batch_data: list[SimulationRunModel | None] = [None for _ in range(self.batch_size)]
 
@@ -67,7 +62,7 @@ class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
                 # array then no objects will be parsed.
                 parser = ijson.items(file, prefix=f"{SIMULATION_RUNS_JSON_KEY}.item")
                 for arr_elem in parser:
-                    if self._thread_safe_check_whether_cancellation_is_requested():
+                    if self.is_cancellation_requested():
                         break
 
                     # the ison.items(...) function converts JSON objects to python dictionaries (https://pypi.org/project/ijson/#options). However, we
@@ -85,9 +80,9 @@ class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
                         batch_generation_duration_in_seconds = batch_generation_end_time - batch_generation_start_time
                         batch_generation_start_time = batch_generation_end_time
 
-                        self.batch_imported.emit((batch_generation_duration_in_seconds, batch_data.copy()))
-                        with QtCore.QMutexLocker(self.ack_mutex):
-                            self.wait_on_batch_processed_acknowledgement_condition.wait(self.ack_mutex)
+                        self.batchCompleted.emit(batch_generation_duration_in_seconds, batch_data.copy())
+                        with QtCore.QMutexLocker(self.ack_flag_mutex):
+                            self.wait_on_batch_processed_acknowledgement_condition.wait(self.ack_flag_mutex)
                         # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
                         # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
                         time.sleep(0.1)
@@ -96,35 +91,16 @@ class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
                             batch_data[i] = None
                         batch_idx = 0
 
-                if batch_idx != 0:
+                if batch_idx != 0 and not self.is_cancellation_requested():
                     del batch_data[batch_idx:]
                     batch_generation_end_time = time.perf_counter()
                     batch_generation_duration_in_seconds = batch_generation_end_time - batch_generation_start_time
                     batch_generation_start_time = batch_generation_end_time
-                    self.batch_imported.emit((batch_generation_duration_in_seconds, batch_data))
-            self.import_finished.emit()
+
+                    self.batchCompleted.emit(batch_generation_duration_in_seconds, batch_data)
+            self.finished.emit()
         except Exception as err:
-            self.import_failed.emit(err)
-
-    def request_cancellation(self) -> None:
-        self._thread_safe_set_cancellation_requested_flag(True)
-        self.ack_batch_processed()
-
-    def ack_batch_processed(self) -> None:
-        with QtCore.QMutexLocker(self.ack_mutex):
-            self.wait_on_batch_processed_acknowledgement_condition.wakeOne()
-
-    def _thread_safe_check_whether_cancellation_is_requested(self) -> bool:
-        cancellation_requested: bool = False
-        self.cancellation_flag_mutex.lockForRead()
-        cancellation_requested = self.cancellation_requested
-        self.cancellation_flag_mutex.unlock()
-        return cancellation_requested
-
-    def _thread_safe_set_cancellation_requested_flag(self, flag_value: bool) -> None:
-        self.cancellation_flag_mutex.lockForWrite()
-        self.cancellation_requested = flag_value
-        self.cancellation_flag_mutex.unlock()
+            self.failed.emit(err)
 
     @staticmethod
     def _validate_parameters(expected_input_state_size: int, batch_size: int) -> None:

@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
     from .qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
 
+from .qt_simulation_run_model import SimulationRunModel
 from .simulation_run_json_import_worker import SimulationRunJsonImportWorker
 
 AGGREGATE_IMPORT_DATA_TEXT_FORMAT: Final[str] = (
@@ -104,11 +105,11 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.worker = SimulationRunJsonImportWorker(path_to_json_file, expected_input_state_size, batch_size)
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
-        self.worker.batchImported.connect(
+        self.worker.batchCompleted.connect(
             self._handle_imported_sim_run_batch, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        self.worker.importFinished.connect(self._handle_import_completion, QtCore.Qt.ConnectionType.QueuedConnection)
-        self.worker.importFailed.connect(self._handle_importer_failure, QtCore.Qt.ConnectionType.QueuedConnection)
+        self.worker.finished.connect(self._handle_import_completion, QtCore.Qt.ConnectionType.QueuedConnection)
+        self.worker.failed.connect(self._handle_importer_failure, QtCore.Qt.ConnectionType.QueuedConnection)
 
         self.worker_thread.started.connect(self.worker.start_import, QtCore.Qt.ConnectionType.QueuedConnection)
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
@@ -144,19 +145,24 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._await_worker_thread_completion()
         self._change_dialog_cancellation_button_enable_state(False)
 
-    @QtCore.pyqtSlot(tuple)  # type: ignore[untyped-decorator]
-    def _handle_imported_sim_run_batch(self, batch_data: tuple[float, list[SimulationRunModel]]) -> None:
+    @QtCore.pyqtSlot(float, object)  # type: ignore[untyped-decorator]
+    def _handle_imported_sim_run_batch(self, batch_generation_duration_in_seconds: float, batch_data: object) -> None:
         if self.stop_processing_imported_sim_run_batches:
             return
 
-        batch_generation_duration_in_seconds: float = batch_data[0]
+        if not SimulationRunJsonImportWorker.are_list_of_batch_items_of_type(batch_data, SimulationRunModel):
+            # TODO: Error logging?
+            # TODO: Cancel worker?
+            if self.worker is not None:
+                self.worker.ack_batch_processed()
+            return
+
         self.progress_text_lbl.setText(
             IMPORTED_BATCH_PROGRESS_INFO_TEXT_FORMAT.format(
                 batch_generation_duration_in_seconds=batch_generation_duration_in_seconds
             )
         )
-        generated_simulation_run_models: list[SimulationRunModel] = batch_data[1]
-
+        generated_simulation_run_models: Final[list[SimulationRunModel]] = batch_data  # type: ignore[assignment]
         if self.shared_simulation_runs_model is None:
             QtWidgets.QMessageBox.critical(
                 self,

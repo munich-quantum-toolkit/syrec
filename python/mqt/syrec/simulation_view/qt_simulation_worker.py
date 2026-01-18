@@ -1,5 +1,5 @@
-# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
-# Copyright (c) 2025 Munich Quantum Software Company GmbH
+# Copyright (c) 2023 - 2026 Chair for Design Automation, TUM
+# Copyright (c) 2025 - 2026 Munich Quantum Software Company GmbH
 # All rights reserved.
 #
 # SPDX-License-Identifier: MIT
@@ -37,6 +37,7 @@ class SimulationRunResult:
     execution_runtime_in_ms: float
 
 
+# TODO: Rework to use same cancel functionality and signals as cancellable_base_worker if possible
 class SimulationWorker(QtCore.QObject):  # type: ignore[misc]
     simulation_run_completed = QtCore.pyqtSignal(SimulationRunResult, name="simulationRunCompleted")
     simulation_run_mismatch_between_output_states = QtCore.pyqtSignal(

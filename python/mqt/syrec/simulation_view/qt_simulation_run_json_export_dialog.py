@@ -32,8 +32,6 @@ EXPORTED_BATCH_PROGRESS_INFO_TEXT_FORMAT: Final[str] = (
 
 
 class SimulationRunJsonExportDialog(QtWidgets.QDialog):  # type: ignore[misc]
-    request_worker_cancellation = QtCore.pyqtSignal(name="requestWorkerCancellation")
-
     def __init__(self, parent: QtWidgets.QWidget):
         super().__init__(parent)
 
@@ -103,15 +101,11 @@ class SimulationRunJsonExportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.progress_bar.setMaximum(num_sim_runs_to_export)
 
         self.worker = SimulationRunJsonExportWorker()  # type: ignore[no-untyped-call]
-        self.requestWorkerCancellation.connect(
-            self.worker.request_cancellation, QtCore.Qt.ConnectionType.QueuedConnection
-        )
-
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
-        self.worker.batchExported.connect(self._handle_batch_exported, QtCore.Qt.ConnectionType.QueuedConnection)
-        self.worker.exportFinished.connect(self._handle_export_completion, QtCore.Qt.ConnectionType.QueuedConnection)
-        self.worker.exportFailed.connect(self._handle_export_failure, QtCore.Qt.ConnectionType.QueuedConnection)
+        self.worker.batchCompleted.connect(self._handle_batch_exported, QtCore.Qt.ConnectionType.QueuedConnection)
+        self.worker.finished.connect(self._handle_export_completion, QtCore.Qt.ConnectionType.QueuedConnection)
+        self.worker.failed.connect(self._handle_export_failure, QtCore.Qt.ConnectionType.QueuedConnection)
 
         self.worker_thread.started.connect(
             lambda: self.worker.start_export(export_location, sim_runs_to_export, batch_size),
@@ -142,20 +136,22 @@ class SimulationRunJsonExportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._await_worker_thread_completion()
         self._change_dialog_cancellation_button_enable_state(False)
 
-    @QtCore.pyqtSlot(tuple)  # type: ignore[untyped-decorator]
-    def _handle_batch_exported(self, batch_data: tuple[float, int]) -> None:
-        batch_export_duration_in_seconds: Final[float] = batch_data[0]
+    @QtCore.pyqtSlot(float, object)  # type: ignore[untyped-decorator]
+    def _handle_batch_exported(self, batch_generation_duration_in_seconds: float, batch_data: object) -> None:
+        if not isinstance(batch_data, int):
+            # TODO: Error logging?
+            # TODO: Cancel worker?
+            return
+
         self.progress_text_lbl.setText(
             EXPORTED_BATCH_PROGRESS_INFO_TEXT_FORMAT.format(
-                batch_export_duration_in_seconds=batch_export_duration_in_seconds
+                batch_export_duration_in_seconds=batch_generation_duration_in_seconds
             )
         )
-        num_sim_runs_exported_in_batch: Final[int] = batch_data[1]
-
-        self.num_exported_simulation_runs += num_sim_runs_exported_in_batch
+        self.num_exported_simulation_runs += batch_data
         self.progress_bar.setValue(self.num_exported_simulation_runs)
 
-        self.total_sim_run_export_duration_in_secs += batch_export_duration_in_seconds
+        self.total_sim_run_export_duration_in_secs += batch_generation_duration_in_seconds
         self.progress_text_lbl.setText(
             AGGREGATE_EXPORT_DATA_TEXT_FORMAT.format(
                 num_exported_simulation_runs=self.num_exported_simulation_runs,
