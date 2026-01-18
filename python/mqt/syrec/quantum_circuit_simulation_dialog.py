@@ -19,6 +19,7 @@ from mqt import syrec
 from .simulation_view.qt_all_input_states_generator_dialog import AllInputStatesGeneratorDialog
 from .simulation_view.qt_simulation_run_dialog import SimulationRunDialog
 from .simulation_view.qt_simulation_run_editor_dialog import SimulationRunEditorDialog
+from .simulation_view.qt_simulation_run_json_export_dialog import SimulationRunJsonExportDialog
 from .simulation_view.qt_simulation_run_json_import_dialog import SimulationRunJsonImportDialog
 from .simulation_view.qt_simulation_run_model import (
     SIMULATION_RUN_IO_STATE_QT_ROLE,
@@ -66,6 +67,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_run_editor_dialog: SimulationRunEditorDialog | None = None
         self.all_input_states_generator_dialog: AllInputStatesGeneratorDialog | None = None
         self.simulation_run_import_from_file_dialog: SimulationRunJsonImportDialog | None = None
+        self.simulation_run_export_to_file_dialog: SimulationRunJsonExportDialog | None = None
         self.expected_input_output_state_size: Final[int] = annotatable_quantum_computation.num_data_qubits
         self.simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
         self.simulation_run_dialog: SimulationRunDialog | None = None
@@ -182,6 +184,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             "Save simulation runs to file",
             objectName=SAVE_SIM_RUNS_TO_FILE_BTN_NAME,
         )
+        save_simulation_runs_to_file_button.clicked.connect(self.handle_sim_run_save_to_file_btn_click)
         save_simulation_runs_to_file_button.setEnabled(False)
         simulation_runs_execution_buttons_layout.addWidget(save_simulation_runs_to_file_button)
 
@@ -333,6 +336,32 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 pass
         finally:
             self.simulation_run_editor_dialog = None
+
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    def handle_sim_run_save_to_file_btn_click(self) -> None:
+        if self.simulation_run_export_to_file_dialog is not None:
+            # TODO: Error logging
+            return
+
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Select a file to export simulation runs to", str(Path.home()), "Json files (*.json)"
+        )
+
+        if not filename:
+            return
+
+        self.simulation_run_export_to_file_dialog = SimulationRunJsonExportDialog(self)
+        self.simulation_run_export_to_file_dialog.finished.connect(self.handle_sim_run_export_to_file_dialog_close)
+        self.simulation_run_export_to_file_dialog.start_export(
+            Path(filename),
+            self.simulation_runs_model.get_all_simulation_run_models(),
+            self.simulation_runs_model.rowCount(QtCore.QModelIndex()),
+        )
+        self.simulation_run_export_to_file_dialog.show()
+
+    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    def handle_sim_run_export_to_file_dialog_close(self, _: int) -> None:
+        self.simulation_run_export_to_file_dialog = None
 
     def handle_open_and_start_all_input_states_generator_dialog(self, input_state_size: int) -> None:
         if self.all_input_states_generator_dialog is not None:

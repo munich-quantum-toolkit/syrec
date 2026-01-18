@@ -9,6 +9,8 @@
 from __future__ import annotations
 
 import time
+
+# import pthread
 from typing import TYPE_CHECKING, Any, Final
 
 # TODO: Correctly configure third-party package for mypy
@@ -23,6 +25,7 @@ from .qt_simulation_run_model import SimulationRunModel
 if TYPE_CHECKING:
     from pathlib import Path
 
+SIMULATION_RUNS_JSON_KEY: Final[str] = "simulationRuns"
 INPUT_STATE_JSON_KEY: Final[str] = "in"
 EXPECTED_OUTPUT_STATE_JSON_KEY: Final[str] = "out"
 
@@ -36,19 +39,13 @@ class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
     def __init__(self, path_to_json_file: Path, expected_input_state_size: int, batch_size: int):
         super().__init__()
 
-        if expected_input_state_size < 0:
-            msg = f"Expected input state size must be a positive integer but was actually {expected_input_state_size}!"
-            raise ValueError(msg)
+        self.path_to_json_file = path_to_json_file
+        self.expected_input_state_size = expected_input_state_size
+        self.batch_size = batch_size
 
-        if batch_size < 1:
-            msg = f"Batch size must be larger than 0 but was actually {batch_size}"
-            raise ValueError(msg)
-
-        self.path_to_json_file: Path = path_to_json_file
-        self.expected_input_state_size: Final[int] = expected_input_state_size
-        self.batch_size: Final[int] = batch_size
         self.cancellation_requested = False
         self.cancellation_flag_mutex = QtCore.QReadWriteLock()
+        self.ack_mutex = QtCore.QMutex()
         self.wait_on_batch_processed_acknowledgement_condition = QtCore.QWaitCondition()
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
@@ -56,9 +53,11 @@ class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
         batch_generation_end_time: float = 0
         batch_generation_duration_in_seconds: float = 0
 
-        batch_data: list[SimulationRunModel | None] = [None for _ in range(self.batch_size)]
-        batch_idx: int = 0
         try:
+            SimulationRunJsonImportWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
+            batch_idx: int = 0
+            batch_data: list[SimulationRunModel | None] = [None for _ in range(self.batch_size)]
+
             # Reading bytes instead of strings leads to better parser performance
             with self.path_to_json_file.open("rb") as file:
                 batch_generation_start_time: float = time.perf_counter()
@@ -66,7 +65,7 @@ class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
                 # to be a property of the top level element (i.e. the path to the 'simulationRuns' element is relative to the top level element).
                 # Additionally, with the postfix '.item', only the entries of a JSON array are processed. If the 'simulationRuns' entry value is no
                 # array then no objects will be parsed.
-                parser = ijson.items(file, prefix="simulationRuns.item")
+                parser = ijson.items(file, prefix=f"{SIMULATION_RUNS_JSON_KEY}.item")
                 for arr_elem in parser:
                     if self._thread_safe_check_whether_cancellation_is_requested():
                         break
@@ -86,16 +85,12 @@ class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
                         batch_generation_duration_in_seconds = batch_generation_end_time - batch_generation_start_time
                         batch_generation_start_time = batch_generation_end_time
 
-                        self.batch_imported.emit((batch_generation_duration_in_seconds, batch_data))
-                        try:
-                            self.cancellation_flag_mutex.lockForRead()
-                            # Lock needs to be already held for wait condition to not return immediately
-                            self.wait_on_batch_processed_acknowledgement_condition.wait(self.cancellation_flag_mutex)
-                        finally:
-                            self.cancellation_flag_mutex.unlock()
-                            # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
-                            # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
-                            time.sleep(0.1)
+                        self.batch_imported.emit((batch_generation_duration_in_seconds, batch_data.copy()))
+                        with QtCore.QMutexLocker(self.ack_mutex):
+                            self.wait_on_batch_processed_acknowledgement_condition.wait(self.ack_mutex)
+                        # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
+                        # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
+                        time.sleep(0.1)
 
                         for i in range(self.batch_size):
                             batch_data[i] = None
@@ -111,42 +106,13 @@ class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
         except Exception as err:
             self.import_failed.emit(err)
 
-    # def write_streaming(self, source: Iterable[Any], chunk_size: int = 1_000):
-    #     """
-    #     Write large JSON array without blocking.
-    #     source can be a generator (lazy).
-    #     """
-    #     try:
-    #         total = None
-    #         if hasattr(source, "__len__"):
-    #             total = len(source)
-    #         with self.file_path.open("w", encoding="utf-8") as f:
-    #             f.write("[\n")
-    #             for idx, item in enumerate(source):
-    #                 if self.should_stop():
-    #                     self.finished.emit(False)
-    #                     return
-    #                 if idx:
-    #                     f.write(",\n")
-    #                 json.dump(item, f, ensure_ascii=False)
-    #                 if total:
-    #                     self.progress.emit(int(100 * (idx + 1) / total))
-    #                 else:
-    #                     self.progress.emit(-1)  # indeterminate
-    #             f.write("\n]")
-    #         self.progress.emit(100)
-    #         self.finished.emit(True)
-    #     except Exception as exc:
-    #         self.error.emit(str(exc))
-
-    # Again we define the slot without the corresponding decorator, for further information we refer to the request_cancellation function.
-
     def request_cancellation(self) -> None:
         self._thread_safe_set_cancellation_requested_flag(True)
-        self.wait_on_batch_processed_acknowledgement_condition.wakeAll()
+        self.ack_batch_processed()
 
     def ack_batch_processed(self) -> None:
-        self.wait_on_batch_processed_acknowledgement_condition.wakeAll()
+        with QtCore.QMutexLocker(self.ack_mutex):
+            self.wait_on_batch_processed_acknowledgement_condition.wakeOne()
 
     def _thread_safe_check_whether_cancellation_is_requested(self) -> bool:
         cancellation_requested: bool = False
@@ -159,6 +125,16 @@ class SimulationRunJsonImportWorker(QtCore.QObject):  # type: ignore[misc]
         self.cancellation_flag_mutex.lockForWrite()
         self.cancellation_requested = flag_value
         self.cancellation_flag_mutex.unlock()
+
+    @staticmethod
+    def _validate_parameters(expected_input_state_size: int, batch_size: int) -> None:
+        if expected_input_state_size < 0:
+            msg = f"Expected input state size must be a positive integer but was actually {expected_input_state_size}!"
+            raise ValueError(msg)
+
+        if batch_size < 1:
+            msg = f"Batch size must be larger than 0 but was actually {batch_size}"
+            raise ValueError(msg)
 
     @staticmethod
     def _try_deserialize_simulation_run(

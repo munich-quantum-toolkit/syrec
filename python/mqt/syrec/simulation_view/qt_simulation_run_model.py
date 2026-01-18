@@ -1,5 +1,5 @@
-# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
-# Copyright (c) 2025 Munich Quantum Software Company GmbH
+# Copyright (c) 2023 - 2026 Chair for Design Automation, TUM
+# Copyright (c) 2025 - 2026 Munich Quantum Software Company GmbH
 # All rights reserved.
 #
 # SPDX-License-Identifier: MIT
@@ -9,11 +9,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from PyQt6 import QtCore
 
 from mqt import syrec
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 # TODO: Mark as const: https://stackoverflow.com/a/57596202
 # Some debugging tips: https://www.eso.org/~eltmgr/ECS/documents-latest/CUT/sphinx_doc/latest/docs/500_gui_development.html#gdb
@@ -237,6 +240,9 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         if index >= 0 and index < len(self.simulation_run_models):
             return self.simulation_run_models[index]
         return None
+
+    def get_all_simulation_run_models(self) -> Iterable[SimulationRunModel]:
+        yield from self.simulation_run_models
 
     # TODO: Check for duplicates?
     def add_simulation_run_model(self, simulation_run_model: SimulationRunModel) -> bool:

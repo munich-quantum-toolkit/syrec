@@ -37,6 +37,7 @@ class AllInputStatesGeneratorWorker(QtCore.QObject):  # type: ignore[misc]
         self.expected_input_state_size: Final[int] = expected_input_state_size
         self.batch_size: Final[int] = batch_size
         self.cancellation_requested = False
+        self.ack_flag_mutex = QtCore.QMutex()
         self.cancellation_flag_mutex = QtCore.QReadWriteLock()
         self.wait_on_batch_processed_acknowledgement_condition = QtCore.QWaitCondition()
 
@@ -65,12 +66,8 @@ class AllInputStatesGeneratorWorker(QtCore.QObject):  # type: ignore[misc]
                 batch_generation_start_time = batch_generation_end_time
 
                 self.batch_generated.emit((batch_generation_duration_in_seconds, batch_data.copy()))
-                try:
-                    self.cancellation_flag_mutex.lockForRead()
-                    # Lock needs to be already held for wait condition to not return immediately
-                    self.wait_on_batch_processed_acknowledgement_condition.wait(self.cancellation_flag_mutex)
-                finally:
-                    self.cancellation_flag_mutex.unlock()
+                with QtCore.QMutexLocker(self.ack_flag_mutex):
+                    self.wait_on_batch_processed_acknowledgement_condition.wait(self.ack_flag_mutex)
                 # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
                 # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
                 time.sleep(0.1)
@@ -111,11 +108,12 @@ class AllInputStatesGeneratorWorker(QtCore.QObject):  # type: ignore[misc]
     #    - drop the decorator and rely on the automatic queued connection that PyQt already provides.
     def request_cancellation(self) -> None:
         self._thread_safe_set_cancellation_requested_flag(True)
-        self.wait_on_batch_processed_acknowledgement_condition.wakeAll()
+        self.ack_batch_processed()
 
     # Again we define the slot without the corresponding decorator, for further information we refer to the request_cancellation function.
     def ack_batch_processed(self) -> None:
-        self.wait_on_batch_processed_acknowledgement_condition.wakeAll()
+        with QtCore.QMutexLocker(self.ack_flag_mutex):
+            self.wait_on_batch_processed_acknowledgement_condition.wakeOne()
 
     @staticmethod
     def _generate_sim_run_model_for_input_state(

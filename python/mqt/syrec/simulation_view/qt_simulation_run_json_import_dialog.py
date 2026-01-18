@@ -25,12 +25,12 @@ AGGREGATE_IMPORT_DATA_TEXT_FORMAT: Final[str] = (
     "Imported simulation runs: {num_imported_simulation_runs:d} | Total runtime for simulation run import [in seconds]: {total_runtime_in_sec:f}"
 )
 IMPORT_ORIGIN_INFO_TEXT_FORMAT: Final[str] = "Importing simulation runs from file {path_to_json_file:s}"
+IMPORTED_BATCH_PROGRESS_INFO_TEXT_FORMAT: Final[str] = (
+    "Finished import of simulation runs batch from file (runtime [in sec]: {batch_generation_duration_in_seconds:f}!"
+)
 
 
 class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
-    imported_sim_run_batch_ack = QtCore.pyqtSignal(name="importedSimRunBatchAck")
-    request_worker_cancellation = QtCore.pyqtSignal(name="requestWorkerCancellation")
-
     def __init__(self, parent: QtWidgets.QWidget):
         super().__init__(parent)
 
@@ -96,29 +96,21 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.import_origin_info_lbl.setText(
             IMPORT_ORIGIN_INFO_TEXT_FORMAT.format(path_to_json_file=str(path_to_json_file))
         )
-        try:
-            self.worker = SimulationRunJsonImportWorker(path_to_json_file, expected_input_state_size, batch_size)
-        except ValueError as err:
-            self.err_text_lbl.setText(
-                f"Error {err=}, {type(err)=} during initialization of simulation run json importer!"
-            )
-            return
 
-        self.importedSimRunBatchAck.connect(self.worker.ack_batch_processed, QtCore.Qt.ConnectionType.QueuedConnection)
-        self.requestWorkerCancellation.connect(
-            self.worker.request_cancellation, QtCore.Qt.ConnectionType.QueuedConnection
-        )
-
+        # TODO: Why can we not use a lambda to pass the arguments to the start_import call of the worker instance
+        # instead of passing them as constructor arguments that are otherwise not needed in the instance.
+        # Compare with the SimulationRunJsonExportWorker (that could contain a deadlock) since when we were using a
+        # lambda, the _handle_imported_sim_run_batch was not called.
+        self.worker = SimulationRunJsonImportWorker(path_to_json_file, expected_input_state_size, batch_size)
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
-        self.worker_thread.started.connect(self.worker.start_import, QtCore.Qt.ConnectionType.QueuedConnection)
-
         self.worker.batchImported.connect(
             self._handle_imported_sim_run_batch, QtCore.Qt.ConnectionType.QueuedConnection
         )
         self.worker.importFinished.connect(self._handle_import_completion, QtCore.Qt.ConnectionType.QueuedConnection)
         self.worker.importFailed.connect(self._handle_importer_failure, QtCore.Qt.ConnectionType.QueuedConnection)
 
+        self.worker_thread.started.connect(self.worker.start_import, QtCore.Qt.ConnectionType.QueuedConnection)
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.finished.connect(self._reset_workers)
         self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
@@ -159,7 +151,9 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         batch_generation_duration_in_seconds: float = batch_data[0]
         self.progress_text_lbl.setText(
-            f"Finished generation of simulation runs batch from data of file (runtime [in sec]: {batch_generation_duration_in_seconds}!"
+            IMPORTED_BATCH_PROGRESS_INFO_TEXT_FORMAT.format(
+                batch_generation_duration_in_seconds=batch_generation_duration_in_seconds
+            )
         )
         generated_simulation_run_models: list[SimulationRunModel] = batch_data[1]
 
@@ -178,7 +172,8 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # TODO: Error handling
         # TODO: Use delayed processing to reduce "laggy"/almost frozen GUI
         self.shared_simulation_runs_model.add_simulation_run_models(generated_simulation_run_models)
-        self.imported_sim_run_batch_ack.emit()
+        if self.worker is not None:
+            self.worker.ack_batch_processed()
 
         self.total_simulation_run_import_runtime_in_seconds += batch_generation_duration_in_seconds
         self.num_imported_simulation_runs += len(generated_simulation_run_models)
@@ -200,7 +195,7 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.stop_processing_imported_sim_run_batches = True
         self.progress_text_lbl.setText("Requesting cancellation of simulation run importer!")
         if self.worker is not None:
-            self.requestWorkerCancellation.emit()
+            self.worker.request_cancellation()
 
     def _change_dialog_cancellation_button_enable_state(self, should_button_be_enabled: bool) -> None:
         dialog_cancel_button: QtWidgets.QPushButton | None = self.dialog_button_box.button(

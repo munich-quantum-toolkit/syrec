@@ -22,12 +22,12 @@ from .all_input_states_generator_worker import AllInputStatesGeneratorWorker
 TOTAL_RUNTIME_TEXT_FORMAT: Final[str] = (
     "Total runtime for input states generation [in seconds]: {total_runtime_in_sec:f}"
 )
+GENERATED_INPUT_STATE_BATCH_PROGRESS_INFO_TEXT_FORMAT: Final[str] = (
+    "Generated batch of input states (runtime [in sec]: {batch_generation_duration_in_seconds:f}!"
+)
 
 
 class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
-    input_state_batch_ack = QtCore.pyqtSignal(name="inputStateBatchAck")
-    request_worker_cancellation = QtCore.pyqtSignal(name="requestWorkerCancellation")
-
     def __init__(self, parent: QtWidgets.QWidget):
         super().__init__(parent)
 
@@ -104,21 +104,12 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.progress_bar.setMaximum(2**expected_input_state_size)
         self.progress_bar.setValue(0)
 
-        self.inputStateBatchAck.connect(self.worker.ack_batch_processed, QtCore.Qt.ConnectionType.QueuedConnection)
-        self.requestWorkerCancellation.connect(
-            self.worker.request_cancellation, QtCore.Qt.ConnectionType.QueuedConnection
-        )
-
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
-        # TODO: It is recommended in the official documentation to mark slots explicitly via the QtCore.pyqtSlot() decorator:
-        # see https://doc.qt.io/qtforpython-6/tutorials/basictutorial/signals_and_slots.html#the-slot-class
-
         # Do not block the UI thread by the potentially long running operations of the worker a new thread is started (which also has its own event loop)
         # and the worker operation moved to the latter. We also do not want to block the UI thread by executing the slots of said worker in the UI thread but
         # instead want to simply send the events to the event queue of its thread thus the QueuedConnection between the signal (here the UI thread) and the receiver (worker thread)
         # needs to be defined as a QueuedConnection (QtCore.Qt.ConnectionType.QueuedConnection).
-        self.worker_thread.started.connect(self.worker.start_generation, QtCore.Qt.ConnectionType.QueuedConnection)
         self.worker.batchGenerated.connect(
             self._handle_generated_input_state_batch, QtCore.Qt.ConnectionType.QueuedConnection
         )
@@ -129,6 +120,7 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             self._handle_input_state_generator_failure, QtCore.Qt.ConnectionType.QueuedConnection
         )
 
+        self.worker_thread.started.connect(self.worker.start_generation, QtCore.Qt.ConnectionType.QueuedConnection)
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.finished.connect(self._reset_workers)
         self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
@@ -163,8 +155,12 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         if self.stop_processing_recv_input_state_batches:
             return
 
-        self.progress_text_lbl.setText("Generated input state batch!")
         batch_generation_duration_in_seconds: float = batch_data[0]
+        self.progress_text_lbl.setText(
+            GENERATED_INPUT_STATE_BATCH_PROGRESS_INFO_TEXT_FORMAT.format(
+                batch_generation_duration_in_seconds=batch_generation_duration_in_seconds
+            )
+        )
         generated_simulation_run_models: list[SimulationRunModel] = batch_data[1]
 
         if self.shared_simulation_runs_model is None:
@@ -181,8 +177,8 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # TODO: Error handling
         # TODO: Use delayed processing to reduce "laggy"/almost frozen GUI
         self.shared_simulation_runs_model.add_simulation_run_models(generated_simulation_run_models)
-        self.inputStateBatchAck.emit()
-
+        if self.worker is not None:
+            self.worker.ack_batch_processed()
         self.total_input_state_generation_runtime_in_seconds += batch_generation_duration_in_seconds
         self.total_runtime_text_lbl.setText(
             TOTAL_RUNTIME_TEXT_FORMAT.format(total_runtime_in_sec=self.total_input_state_generation_runtime_in_seconds)
@@ -206,7 +202,7 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.stop_processing_recv_input_state_batches = True
         self.progress_text_lbl.setText("Requesting cancellation of input state generator!")
         if self.worker is not None:
-            self.requestWorkerCancellation.emit()
+            self.worker.request_cancellation()
             self._change_dialog_cancellation_button_enable_state(False)
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
