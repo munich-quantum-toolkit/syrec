@@ -139,7 +139,13 @@ namespace {
         pythonbuf(pythonbuf&&) = delete;
 
         // Sync before destroy
-        ~pythonbuf() override { _sync(); }
+        ~pythonbuf() override {
+            try {
+                _sync();
+            } catch (nb::python_error& e) {
+                e.discard_as_unraisable("in ~pythonbuf");
+            }
+        }
     };
 
     class scoped_ostream_redirect {
