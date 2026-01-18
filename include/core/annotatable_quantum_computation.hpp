@@ -108,6 +108,9 @@ namespace syrec {
         explicit AnnotatableQuantumComputation(const bool generateQuantumGateAnnotations):
             generateQuantumOperationAnnotations(generateQuantumGateAnnotations) {}
 
+        AnnotatableQuantumComputation(const AnnotatableQuantumComputation&)            = delete;
+        AnnotatableQuantumComputation& operator=(const AnnotatableQuantumComputation&) = delete;
+
         /**
          * Determine whether the generation of quantum operation annotations is supported by the annotatable quantum computation.
          * @return Whether the generation of quantum operation annotations is supported.
