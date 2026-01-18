@@ -1,5 +1,5 @@
-# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
-# Copyright (c) 2025 Munich Quantum Software Company GmbH
+# Copyright (c) 2023 - 2026 Chair for Design Automation, TUM
+# Copyright (c) 2025 - 2026 Munich Quantum Software Company GmbH
 # All rights reserved.
 #
 # SPDX-License-Identifier: MIT
@@ -25,7 +25,6 @@ TOTAL_RUNTIME_TEXT_FORMAT: Final[str] = (
 
 
 class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
-    # input_state_batch_ack = QtCore.pyqtSignal(name="inputStateBatchAck")
     input_state_batch_ack = QtCore.pyqtSignal(name="inputStateBatchAck")
     request_worker_cancellation = QtCore.pyqtSignal(name="requestWorkerCancellation")
 
@@ -60,6 +59,7 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.err_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.progress_text_lbl = QtWidgets.QLabel("")
+        self.progress_text_lbl.setStyleSheet("QLabel { color : gray; }")
         self.progress_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.dialog_button_box = QtWidgets.QDialogButtonBox(
@@ -156,6 +156,7 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
             )
         self._request_worker_cancellation()
+        self._await_worker_thread_completion()
 
     @QtCore.pyqtSlot(tuple)  # type: ignore[untyped-decorator]
     def _handle_generated_input_state_batch(self, batch_data: tuple[float, list[SimulationRunModel]]) -> None:
@@ -196,11 +197,7 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.progress_text_lbl.setText("Input state generator finished!")
         self.progress_bar.setVisible(False)
         self._request_worker_cancellation()
-
-        if self.worker_thread is not None:
-            self.worker_thread.quit()
-            self.worker_thread.wait()
-            self.progress_text_lbl.setText("Input state generator thread finished!")
+        self._await_worker_thread_completion()
 
         self._change_dialog_ok_button_enable_state(True)
         self._change_dialog_cancellation_button_enable_state(False)
@@ -228,6 +225,12 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 self.shared_simulation_runs_model.delete_all_simulation_run_models()
             return True
         return False
+
+    def _await_worker_thread_completion(self) -> None:
+        if self.worker_thread is not None:
+            self.worker_thread.quit()
+            self.worker_thread.wait()
+            self.progress_text_lbl.setText("Input state generator thread finished!")
 
     def _change_dialog_cancellation_button_enable_state(self, should_button_be_enabled: bool) -> None:
         dialog_cancel_button: QtWidgets.QPushButton | None = self.dialog_button_box.button(

@@ -1,5 +1,5 @@
-# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
-# Copyright (c) 2025 Munich Quantum Software Company GmbH
+# Copyright (c) 2023 - 2026 Chair for Design Automation, TUM
+# Copyright (c) 2025 - 2026 Munich Quantum Software Company GmbH
 # All rights reserved.
 #
 # SPDX-License-Identifier: MIT
@@ -93,6 +93,8 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_run_progress_bar.setFormat("Executing simulation run %v of %m")
         self.simulation_run_progress_bar.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.simulation_run_progress_lbl = QtWidgets.QLabel("")
+        self.simulation_run_progress_lbl.setStyleSheet("QLabel { color : gray; }")
+
         self.simulation_run_err_lbl = QtWidgets.QLabel("")
         self.simulation_run_err_lbl.setStyleSheet("QLabel { color : red; }")
 
@@ -119,8 +121,6 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
     ) -> None:
         self.num_completed_simulation_runs = 0
         self.expected_total_num_simulation_runs = expected_total_num_simulation_runs
-        self.simulation_run_progress_lbl.setText("")
-        self.simulation_run_progress_lbl.setText("")
 
         self.simulation_run_progress_bar.setMinimum(0)
         self.simulation_run_progress_bar.setMaximum(expected_total_num_simulation_runs - 1)
@@ -165,13 +165,8 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
     # TODO: Not all simulation runs are executed? (2 out of 10) but no error is printed to the console or shown in the GUI.
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _handle_all_simulation_runs_done(self) -> None:
-        # self.simulation_run_total_runtime_timer.stop()
-
-        if self.worker_thread is not None:
-            self.worker_thread.quit()
-            self.worker_thread.wait()
-        self._change_dialog_cancellation_button_enable_state(False)
-        self.simulation_run_progress_bar.setVisible(False)
+        self._request_worker_cancellation()
+        self._await_worker_thread_completion()
 
         if self.num_completed_simulation_runs == self.expected_total_num_simulation_runs:
             self.simulation_run_progress_lbl.setText(
@@ -188,6 +183,7 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
             f"Unexpected {err=}, {type(err)=} during execution of simulation run {simulation_run_num_that_failed}"
         )
         self._request_worker_cancellation()
+        self._await_worker_thread_completion()
 
     @QtCore.pyqtSlot(ToBeExecutedSimulationRun)  # type: ignore[untyped-decorator]
     def _handle_simulation_runs_stopped_after_first_failure(
@@ -195,6 +191,7 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
     ) -> None:
         self._update_progress_controls(simulation_run_causing_err.simulation_run_number)
         self._request_worker_cancellation()
+        self._await_worker_thread_completion()
 
     def _request_worker_cancellation(self) -> None:
         if self.worker is not None:
@@ -267,6 +264,12 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
                     simulation_run_number, next_simulation_run.input_state, next_simulation_run.expected_output_state
                 )
             )
+
+    def _await_worker_thread_completion(self) -> None:
+        if self.worker_thread is not None:
+            self.worker_thread.quit()
+            self.worker_thread.wait()
+            self.simulation_run_progress_lbl.setText("Simulation run thread finished!")
 
     def _reset_workers(self) -> None:
         self.worker_thread = None

@@ -1,5 +1,5 @@
-# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
-# Copyright (c) 2025 Munich Quantum Software Company GmbH
+# Copyright (c) 2023 - 2026 Chair for Design Automation, TUM
+# Copyright (c) 2025 - 2026 Munich Quantum Software Company GmbH
 # All rights reserved.
 #
 # SPDX-License-Identifier: MIT
@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 from typing import Final
 
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -18,6 +19,7 @@ from mqt import syrec
 from .simulation_view.qt_all_input_states_generator_dialog import AllInputStatesGeneratorDialog
 from .simulation_view.qt_simulation_run_dialog import SimulationRunDialog
 from .simulation_view.qt_simulation_run_editor_dialog import SimulationRunEditorDialog
+from .simulation_view.qt_simulation_run_json_import_dialog import SimulationRunJsonImportDialog
 from .simulation_view.qt_simulation_run_model import (
     SIMULATION_RUN_IO_STATE_QT_ROLE,
     QtSimulationRunModel,
@@ -28,6 +30,7 @@ from .simulation_view.styled_item_delegates.qt_simulation_run_overview_styled_it
 )
 
 LOADED_FROM_FILE_INPUT_FIELD_NAME: Final[str] = "load_from_file_input_field"
+IMPORT_FROM_FILE_BUTTON_NAME: Final[str] = "import_from_file_btn"
 ADD_SIM_RUN_BTN_NAME: Final[str] = "add_sim_run_btn"
 EDIT_SIM_RUN_BTN_NAME: Final[str] = "edit_sim_run_btn"
 DELETE_SIM_RUN_BTN_NAME: Final[str] = "delete_sim_run_btn"
@@ -35,6 +38,8 @@ SAVE_SIM_RUNS_TO_FILE_BTN_NAME: Final[str] = "save_sims_to_file_btn"
 RUN_SIM_RUNS_BTN_NAME: Final[str] = "run_sims_btn"
 RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME: Final[str] = "run_sims_stop_first_failure_btn"
 SIMULATION_RUNS_LIST_VIEW_NAME: Final[str] = "sim_runs_list_view"
+
+IMPORT_FROM_FILE_NO_FILE_SELECTED_PLACEHOLDER_TEXT: Final[str] = "<NONE>"
 
 
 # TODO: Should a confirmation be requested when the dialog is closed and simulation runs exist?
@@ -60,6 +65,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         self.simulation_run_editor_dialog: SimulationRunEditorDialog | None = None
         self.all_input_states_generator_dialog: AllInputStatesGeneratorDialog | None = None
+        self.simulation_run_import_from_file_dialog: SimulationRunJsonImportDialog | None = None
         self.expected_input_output_state_size: Final[int] = annotatable_quantum_computation.num_data_qubits
         self.simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
         self.simulation_run_dialog: SimulationRunDialog | None = None
@@ -111,7 +117,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         manual_y_space_size: Final[int] = 35
         if create_load_from_file_controls:
             tab_wrapper_widget_layout.addLayout(
-                QuantumCircuitSimulationDialog.initialize_load_simulation_runs_from_file_controls()
+                QuantumCircuitSimulationDialog.initialize_load_simulation_runs_from_file_controls(self)
             )
             tab_wrapper_widget_layout.addSpacing(manual_y_space_size)
 
@@ -141,7 +147,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         add_simulation_run_button = QtWidgets.QPushButton(
             QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd), "Add simulation run", objectName=ADD_SIM_RUN_BTN_NAME
         )
-        add_simulation_run_button.setEnabled(True)
+        add_simulation_run_button.setEnabled(not create_load_from_file_controls)
         add_simulation_run_button.clicked.connect(self.handle_simulation_run_add_btn_click)
         simulation_runs_list_modification_buttons_layout.addWidget(add_simulation_run_button)
 
@@ -371,24 +377,30 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             curr_active_tab_widget, False
         )
 
-    @staticmethod
-    def initialize_load_simulation_runs_from_file_controls() -> QtWidgets.QLayout:
+    def initialize_load_simulation_runs_from_file_controls(self) -> QtWidgets.QLayout:
         controls_layout = QtWidgets.QHBoxLayout()
         controls_layout.addStretch()
 
         info_label = QtWidgets.QLabel("File to load simulation runs from:")
         controls_layout.addWidget(info_label)
 
-        selected_file_name_input_field = QtWidgets.QLineEdit(objectName=LOADED_FROM_FILE_INPUT_FIELD_NAME)
-        selected_file_name_input_field.setEnabled(False)
-        controls_layout.addWidget(selected_file_name_input_field)
+        selected_file_name_label = QtWidgets.QLabel(
+            IMPORT_FROM_FILE_NO_FILE_SELECTED_PLACEHOLDER_TEXT, objectName=LOADED_FROM_FILE_INPUT_FIELD_NAME
+        )
+        selected_file_name_label.setEnabled(False)
+        controls_layout.addWidget(selected_file_name_label)
 
         open_file_dialog_button = QtWidgets.QPushButton("Select file...")
+        open_file_dialog_button.clicked.connect(self.open_import_file_selector)
         controls_layout.addWidget(open_file_dialog_button)
 
         trigger_load_from_file_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentOpen), "Load from file"
+            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentOpen),
+            "Load from file",
+            objectName=IMPORT_FROM_FILE_BUTTON_NAME,
         )
+        trigger_load_from_file_button.clicked.connect(self.open_import_from_file_dialog)
+        trigger_load_from_file_button.setEnabled(False)
         controls_layout.addWidget(trigger_load_from_file_button)
 
         controls_layout.addStretch()
@@ -523,6 +535,96 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     # TODO: Toggle state after edits in simulation runs were performed?
     def handle_simulation_runs_dialog_close(self, _: int) -> None:
         self.simulation_run_dialog = None
+
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    def open_import_file_selector(self) -> None:
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Select a file to import simulation runs from", str(Path.home()), "Json files (*.json)"
+        )
+
+        active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            self.simulation_runs_tab_widget.currentIndex()
+        )
+        selected_filename_lbl: QtWidgets.QWidget | None = (
+            active_tab_widget.findChild(QtWidgets.QLabel, LOADED_FROM_FILE_INPUT_FIELD_NAME)
+            if active_tab_widget is not None
+            else None
+        )
+        load_from_file_btn: QtWidgets.QWidget | None = (
+            active_tab_widget.findChild(QtWidgets.QPushButton, IMPORT_FROM_FILE_BUTTON_NAME)
+            if active_tab_widget is not None
+            else None
+        )
+        if active_tab_widget is None or selected_filename_lbl is None or load_from_file_btn is None:
+            return
+
+        if not filename:
+            return
+
+        selected_filename_lbl.setText(filename)
+        load_from_file_btn.setEnabled(True)
+
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    def open_import_from_file_dialog(self) -> None:
+        if self.simulation_run_import_from_file_dialog is not None:
+            return
+
+        active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            self.simulation_runs_tab_widget.currentIndex()
+        )
+
+        selected_filename_lbl: QtWidgets.QWidget | None = (
+            active_tab_widget.findChild(QtWidgets.QLabel, LOADED_FROM_FILE_INPUT_FIELD_NAME)
+            if active_tab_widget is not None
+            else None
+        )
+        if active_tab_widget is None or selected_filename_lbl is None:
+            return
+
+        if self.simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0:
+            pressed_btn_in_confirm_dialog: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
+                self,
+                "Existing simulation runs detected",
+                "Importing from a file will delete any existing simulation runs. Do you want to continue?",
+                buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
+                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+            )
+            if pressed_btn_in_confirm_dialog == QtWidgets.QMessageBox.StandardButton.Cancel:
+                return
+            self.simulation_runs_model.delete_all_simulation_run_models()
+
+        self.simulation_run_import_from_file_dialog = SimulationRunJsonImportDialog(self)
+        self.simulation_run_import_from_file_dialog.finished.connect(self.handle_import_from_file_dialog_close)
+        self.simulation_run_import_from_file_dialog.show()
+        self.simulation_run_import_from_file_dialog.start_generation(
+            Path(selected_filename_lbl.text()),
+            self.simulation_runs_model,
+            expected_input_state_size=self.annotatable_quantum_computation.num_data_qubits,
+        )
+
+    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    def handle_import_from_file_dialog_close(self, result: int) -> None:
+        self.simulation_run_import_from_file_dialog = None
+        curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
+        if curr_active_tab_widget is None:
+            # TODO: Error logging
+            return
+
+        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+            curr_active_tab_widget, result == QtWidgets.QDialog.DialogCode.Accepted
+        )
+
+        load_from_file_btn: QtWidgets.QWidget | None = curr_active_tab_widget.findChild(
+            QtWidgets.QPushButton, IMPORT_FROM_FILE_BUTTON_NAME
+        )
+        add_sim_run_btn: QtWidgets.QWidget | None = curr_active_tab_widget.findChild(
+            QtWidgets.QPushButton, ADD_SIM_RUN_BTN_NAME
+        )
+        if load_from_file_btn is None or add_sim_run_btn is None:
+            # TODO: Error logging
+            return
+
+        add_sim_run_btn.setEnabled(result == QtWidgets.QDialog.DialogCode.Accepted)
 
     @staticmethod
     def set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(

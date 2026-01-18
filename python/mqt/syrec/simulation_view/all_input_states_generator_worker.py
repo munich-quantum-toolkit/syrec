@@ -1,5 +1,5 @@
-# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
-# Copyright (c) 2025 Munich Quantum Software Company GmbH
+# Copyright (c) 2023 - 2026 Chair for Design Automation, TUM
+# Copyright (c) 2025 - 2026 Munich Quantum Software Company GmbH
 # All rights reserved.
 #
 # SPDX-License-Identifier: MIT
@@ -21,7 +21,6 @@ from .qt_simulation_run_model import SimulationRunModel
 class AllInputStatesGeneratorWorker(QtCore.QObject):  # type: ignore[misc]
     batch_generated = QtCore.pyqtSignal(tuple, name="batchGenerated")
     generation_failed = QtCore.pyqtSignal(Exception, name="generationFailed")
-    generation_cancelled = QtCore.pyqtSignal(name="generationCancelled")
     generation_finished = QtCore.pyqtSignal(name="generationFinished")
 
     def __init__(self, expected_input_state_size: int, batch_size: int):
