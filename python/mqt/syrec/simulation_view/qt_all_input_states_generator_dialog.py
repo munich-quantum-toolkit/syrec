@@ -88,30 +88,16 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self, shared_simulation_runs_model: QtSimulationRunModel, expected_input_state_size: int, batch_size: int = 1000
     ) -> None:
         self.shared_simulation_runs_model = shared_simulation_runs_model
-        self.stop_processing_recv_input_state_batches = False
-        self.num_generated_input_states = 0
-        self.total_input_state_generation_runtime_in_seconds = 0
-        self.progress_text_lbl.setText("")
-        self.total_runtime_text_lbl.setText("")
-
-        # TODO: Again try to refactor code such that constructor arguments are pass in start_generation call instead
-        try:
-            self.worker = AllInputStatesGeneratorWorker(expected_input_state_size, batch_size)
-        except ValueError as err:
-            self.err_text_lbl.setText(f"Error {err=}, {type(err)=} during initialization of input states generator!")
-            return
 
         # TODO: Validation that maximum value can actually be stored in progress bar maximum (should validation be performed in dialog or by caller?)
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(2**expected_input_state_size)
         self.progress_bar.setValue(0)
 
+        # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
+        self.worker = AllInputStatesGeneratorWorker(expected_input_state_size, batch_size)
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
-        # Do not block the UI thread by the potentially long running operations of the worker a new thread is started (which also has its own event loop)
-        # and the worker operation moved to the latter. We also do not want to block the UI thread by executing the slots of said worker in the UI thread but
-        # instead want to simply send the events to the event queue of its thread thus the QueuedConnection between the signal (here the UI thread) and the receiver (worker thread)
-        # needs to be defined as a QueuedConnection (QtCore.Qt.ConnectionType.QueuedConnection).
         self.worker.batchCompleted.connect(
             self._handle_generated_input_state_batch, QtCore.Qt.ConnectionType.QueuedConnection
         )

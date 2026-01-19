@@ -9,8 +9,7 @@
 from __future__ import annotations
 
 import json
-import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from PyQt6 import QtCore
 
@@ -23,31 +22,30 @@ if TYPE_CHECKING:
 
 
 class SimulationRunJsonExportWorker(CancellableBaseWorker):
-    def __init__(self):
+    def __init__(
+        self, path_to_json_file: Path, simulation_runs_to_export: Iterable[SimulationRunModel], export_batch_size: int
+    ):
         super().__init__(do_batches_require_ack=False)
 
+        self.path_to_json_file: Final[Path] = path_to_json_file
+        self.simulation_runs_to_export: Iterable[SimulationRunModel] = simulation_runs_to_export
+        self.export_batch_size: Final[int] = export_batch_size
+
     # TODO: Pretty printing
-    # TODO: This untyped decorator should not be invocable via a signal?
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
-    def start_export(
-        self,
-        path_to_json_file: Path,
-        simulation_runs_to_export: Iterable[SimulationRunModel],
-        export_batch_size: int,
-    ) -> None:
-        if export_batch_size < 1:
+    def start_export(self) -> None:
+        if self.export_batch_size < 1:
             return
 
         n_generated_batches: int = 0
         try:
             batch_idx: int = 0
-            with path_to_json_file.open("w", encoding="utf-8") as file:
+            with self.path_to_json_file.open("w", encoding="ascii") as file:
                 # file.write("{\n\t\"simulationRuns\": [\n")
                 file.write('{"simulationRuns":[')
-                batch_export_start_time: float = time.perf_counter()
-                batch_export_end_time: float = 0
-                batch_export_duration: float = 0
-                for sim_run in simulation_runs_to_export:
+                batch_start_timestamp: float = SimulationRunJsonExportWorker._get_timestamp()
+                batch_generation_duration: float = 0
+                for sim_run in self.simulation_runs_to_export:
                     if self.is_cancellation_requested():
                         break
 
@@ -60,20 +58,25 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
                     file.write(json.dumps(sim_run, default=SimulationRunJsonExportWorker.serialize_to_json))
 
                     batch_idx += 1
-                    if batch_idx == export_batch_size:
-                        batch_export_end_time = time.perf_counter()
-                        batch_export_duration = batch_export_end_time - batch_export_start_time
-                        batch_export_start_time = batch_export_end_time
-                        self.batchCompleted.emit(batch_export_duration, export_batch_size)
+                    if batch_idx == self.export_batch_size:
+                        batch_generation_duration = (
+                            SimulationRunJsonExportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                                batch_start_timestamp
+                            )
+                        )
+                        self.batchCompleted.emit(batch_generation_duration, self.export_batch_size)
                         batch_idx = 0
                         n_generated_batches += 1
                 # file.write("\n\t]\n}")
                 file.write("]}")
 
             if batch_idx > 0 and not self.is_cancellation_requested():
-                batch_export_end_time = time.perf_counter()
-                batch_export_duration = batch_export_end_time - batch_export_start_time
-                self.batchCompleted.emit(batch_export_duration, batch_idx)
+                batch_generation_duration = (
+                    SimulationRunJsonExportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                        batch_start_timestamp
+                    )
+                )
+                self.batchCompleted.emit(batch_generation_duration, batch_idx)
             self.finished.emit()
         except Exception as err:
             self.failed.emit(err)

@@ -22,27 +22,19 @@ from .qt_simulation_run_model import SimulationRunModel
 class AllInputStatesGeneratorWorker(CancellableBaseWorker):
     def __init__(self, expected_input_state_size: int, batch_size: int):
         super().__init__(do_batches_require_ack=True)
-
-        if expected_input_state_size < 0:
-            msg = f"Expected input state size must be a positive integer but was actually {expected_input_state_size}!"
-            raise ValueError(msg)
-
-        if batch_size < 1:
-            msg = f"Batch size must be larger than 0 but was actually {batch_size}"
-            raise ValueError(msg)
-
         self.expected_input_state_size: Final[int] = expected_input_state_size
         self.batch_size: Final[int] = batch_size
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_generation(self) -> None:
-        n_states_to_generate: int = 2**self.expected_input_state_size
-        n_batches: int = n_states_to_generate // self.batch_size
 
-        batch_generation_start_time: float = time.perf_counter()
-        batch_generation_end_time: float = 0
-        batch_generation_duration_in_seconds: float = 0
         try:
+            AllInputStatesGeneratorWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
+            n_states_to_generate: int = 2**self.expected_input_state_size
+            n_batches: int = n_states_to_generate // self.batch_size
+
+            batch_start_timestamp: float = AllInputStatesGeneratorWorker._get_timestamp()
+            batch_generation_duration: float = 0
             if self.wait_on_batch_processed_acknowledgement_condition is None:
                 self.failed.emit(ValueError("Internal batch processed acknowledgement condition was not initialized"))
                 return
@@ -57,14 +49,14 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
                     batch_data[i] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
                         self.expected_input_state_size, first_integer_encoding_first_state_of_batch + i
                     )
-
-                batch_generation_end_time = time.perf_counter()
-                batch_generation_duration_in_seconds = batch_generation_end_time - batch_generation_start_time
-                batch_generation_start_time = batch_generation_end_time
-
-                self.batchCompleted.emit(batch_generation_duration_in_seconds, batch_data.copy())
-                with QtCore.QMutexLocker(self.ack_flag_mutex):
-                    self.wait_on_batch_processed_acknowledgement_condition.wait(self.ack_flag_mutex)
+                batch_generation_duration = (
+                    AllInputStatesGeneratorWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                        batch_start_timestamp
+                    )
+                )
+                self.batchCompleted.emit(batch_generation_duration, batch_data.copy())
+                with QtCore.QMutexLocker(self.batch_ack_mutex):
+                    self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
                 # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
                 # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
                 time.sleep(0.1)
@@ -80,14 +72,25 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
                     last_batch_data[i] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
                         self.expected_input_state_size, first_integer_encoding_first_state_of_batch + i
                     )
-
-                batch_generation_end_time = time.perf_counter()
-                batch_generation_duration_in_seconds = batch_generation_end_time - batch_generation_start_time
-                batch_generation_start_time = batch_generation_end_time
-                self.batchCompleted.emit(batch_generation_duration_in_seconds, last_batch_data)
+                batch_generation_duration = (
+                    AllInputStatesGeneratorWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                        batch_start_timestamp
+                    )
+                )
+                self.batchCompleted.emit(batch_generation_duration, last_batch_data)
         except Exception as err:
             self.failed.emit(err)
         self.finished.emit()
+
+    @staticmethod
+    def _validate_parameters(expected_input_state_size: int, batch_size: int) -> None:
+        if expected_input_state_size < 0:
+            msg = f"Expected input state size must be a positive integer but was actually {expected_input_state_size}!"
+            raise ValueError(msg)
+
+        if batch_size < 1:
+            msg = f"Batch size must be larger than 0 but was actually {batch_size}"
+            raise ValueError(msg)
 
     @staticmethod
     def _generate_sim_run_model_for_input_state(

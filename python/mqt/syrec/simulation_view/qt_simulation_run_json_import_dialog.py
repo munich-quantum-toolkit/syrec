@@ -98,22 +98,46 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
             IMPORT_ORIGIN_INFO_TEXT_FORMAT.format(path_to_json_file=str(path_to_json_file))
         )
 
-        # TODO: Why can we not use a lambda to pass the arguments to the start_import call of the worker instance
-        # instead of passing them as constructor arguments that are otherwise not needed in the instance.
-        # Compare with the SimulationRunJsonExportWorker (that could contain a deadlock) since when we were using a
-        # lambda, the _handle_imported_sim_run_batch was not called.
+        # Some helpful links are the official QThread documentation but some helpful explanaitions were also found in:
+        # - https://www.haccks.com/posts/how-to-use-qthread-correctly-p1/
+        # We are creating a worker object that will perform a long running operation in the future with the worker
+        # instance being a member of the dialog class/object. Since the worker will define slots for the cancellation of
+        # the long running operation that it executes but also emits signals, said worker needs to be implemented as a QObject that will run its own event loop
+        # instead of subclassing QThread which executes its slots in the thread in which the QThread was created and might not execute its own event loop.
         self.worker = SimulationRunJsonImportWorker(path_to_json_file, expected_input_state_size, batch_size)
+        # Create a new QThread that manages one system thread WITHOUT BEING AN ACTUAL THREAD (see: https://doc.qt.io/qtforpython-6/PySide6/QtCore/QThread.html#detailed-description)
         self.worker_thread = QtCore.QThread()
+        # We are now modifying the thread affinity (https://doc.qt.io/qt-6/qobject.html#thread-affinity) of the worker object to the worker thread.
+        # This will control in which thread the received events of the worker are processed. The worker instance is still available in the dialog
+        # so the latter can still access member variables, etc. of the former.
         self.worker.moveToThread(self.worker_thread)
+        # If the worker has completed a batch in its long running operation then it will emit a corresponding signal that should be processed by the dialog instance.
+        # Since we have changed the thread affinity of the worker, the worker signal -> dialog slot connection needs to be marked as a queued connection so that the
+        # signal of the worker will enqueue an entry into the event queue of the dialog and then continue its long running operation in the worker thread. Since the
+        # worker and main thread do not share the same event queue, the slot called in the dialog is then executed in the main thread.
+        #
+        # At runtime Qt could decide at runtime whether a direct or queued connection is required based on the thread affinity between the connected signal and slot but
+        # we try to mark this behaviour explicitly by defining the signal-slot connection as a queued connection.
         self.worker.batchCompleted.connect(
             self._handle_imported_sim_run_batch, QtCore.Qt.ConnectionType.QueuedConnection
         )
+        # The worker thread executing the long running worker operation will still continue running after the 'finished' signal of the worker was received thus
+        # we need to manually handle the correct cancellation of the worker thread
         self.worker.finished.connect(self._handle_import_completion, QtCore.Qt.ConnectionType.QueuedConnection)
+        # Assuming that we are correctly catching all errors of the long running worker operation in the function execution said operation (executed in the worker thread)
+        # the worker will emit a signal containing the caught error with the worker thread still running thus again we need to manually handle its cancellation
         self.worker.failed.connect(self._handle_importer_failure, QtCore.Qt.ConnectionType.QueuedConnection)
 
+        # We initially tried to move the constructor parameters of the SimulationRunJsonImportWorker to the function executing the long running operation by using a lambda
+        # that will trigger the latter but since python lambdas seemingly do not have thread affinity (https://stackoverflow.com/a/28626472) the lambda is executed in the main
+        # thread and thus the long running operation would be executed in the main thread blocking the GUI and potentially causing thread starvation if generated batches need to
+        # be acknowledged.
         self.worker_thread.started.connect(self.worker.start_import, QtCore.Qt.ConnectionType.QueuedConnection)
+        # Since we are manually triggering the worker thread shutdown, after the worker thread has finished the associated QThread should be deleted
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
+        # Additionally we 'clean' up the worker and worker thread instances (by setting them to None) after the worker thread has finished
         self.worker_thread.finished.connect(self._reset_workers)
+        # Only this call will actually start a new thread
         self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
         self._change_dialog_cancellation_button_enable_state(True)
 

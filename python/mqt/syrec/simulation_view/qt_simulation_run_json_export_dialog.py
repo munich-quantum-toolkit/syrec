@@ -100,7 +100,8 @@ class SimulationRunJsonExportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self.progress_bar.setMaximum(num_sim_runs_to_export)
 
-        self.worker = SimulationRunJsonExportWorker()  # type: ignore[no-untyped-call]
+        # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
+        self.worker = SimulationRunJsonExportWorker(export_location, sim_runs_to_export, batch_size)
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
         self.worker.batchCompleted.connect(self._handle_batch_exported, QtCore.Qt.ConnectionType.QueuedConnection)
@@ -108,7 +109,7 @@ class SimulationRunJsonExportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.worker.failed.connect(self._handle_export_failure, QtCore.Qt.ConnectionType.QueuedConnection)
 
         self.worker_thread.started.connect(
-            lambda: self.worker.start_export(export_location, sim_runs_to_export, batch_size),
+            self.worker.start_export,
             QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)

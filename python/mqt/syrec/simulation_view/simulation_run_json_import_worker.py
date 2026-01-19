@@ -9,8 +9,6 @@
 from __future__ import annotations
 
 import time
-
-# import pthread
 from typing import TYPE_CHECKING, Any, Final
 
 # TODO: Correctly configure third-party package for mypy
@@ -41,9 +39,6 @@ class SimulationRunJsonImportWorker(CancellableBaseWorker):
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_import(self) -> None:
-        batch_generation_end_time: float = 0
-        batch_generation_duration_in_seconds: float = 0
-
         try:
             SimulationRunJsonImportWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
             if self.wait_on_batch_processed_acknowledgement_condition is None:
@@ -55,7 +50,8 @@ class SimulationRunJsonImportWorker(CancellableBaseWorker):
 
             # Reading bytes instead of strings leads to better parser performance
             with self.path_to_json_file.open("rb") as file:
-                batch_generation_start_time: float = time.perf_counter()
+                batch_start_timestamp: float = SimulationRunJsonImportWorker._get_timestamp()
+                batch_generation_duration: float = 0
                 # The json parser starts at the first element matching the prefix which in our case starts at an element with key 'simulationRuns' that is expected
                 # to be a property of the top level element (i.e. the path to the 'simulationRuns' element is relative to the top level element).
                 # Additionally, with the postfix '.item', only the entries of a JSON array are processed. If the 'simulationRuns' entry value is no
@@ -76,13 +72,14 @@ class SimulationRunJsonImportWorker(CancellableBaseWorker):
                     )
                     batch_idx += 1
                     if batch_idx == self.batch_size:
-                        batch_generation_end_time = time.perf_counter()
-                        batch_generation_duration_in_seconds = batch_generation_end_time - batch_generation_start_time
-                        batch_generation_start_time = batch_generation_end_time
-
-                        self.batchCompleted.emit(batch_generation_duration_in_seconds, batch_data.copy())
-                        with QtCore.QMutexLocker(self.ack_flag_mutex):
-                            self.wait_on_batch_processed_acknowledgement_condition.wait(self.ack_flag_mutex)
+                        batch_generation_duration = (
+                            SimulationRunJsonImportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                                batch_start_timestamp
+                            )
+                        )
+                        self.batchCompleted.emit(batch_generation_duration, batch_data.copy())
+                        with QtCore.QMutexLocker(self.batch_ack_mutex):
+                            self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
                         # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
                         # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
                         time.sleep(0.1)
@@ -93,11 +90,12 @@ class SimulationRunJsonImportWorker(CancellableBaseWorker):
 
                 if batch_idx != 0 and not self.is_cancellation_requested():
                     del batch_data[batch_idx:]
-                    batch_generation_end_time = time.perf_counter()
-                    batch_generation_duration_in_seconds = batch_generation_end_time - batch_generation_start_time
-                    batch_generation_start_time = batch_generation_end_time
-
-                    self.batchCompleted.emit(batch_generation_duration_in_seconds, batch_data)
+                    batch_generation_duration = (
+                        SimulationRunJsonImportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                            batch_start_timestamp
+                        )
+                    )
+                    self.batchCompleted.emit(batch_generation_duration, batch_data)
             self.finished.emit()
         except Exception as err:
             self.failed.emit(err)

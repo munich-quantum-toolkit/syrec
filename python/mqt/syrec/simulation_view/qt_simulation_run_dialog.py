@@ -128,18 +128,10 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_run_progress_bar.setVisible(True)
 
         # self.simulation_run_total_runtime_timer.start(TOTAL_RUNTIME_TIMER_TIMEOUT_IN_MS)
-
+        # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
         self.worker = SimulationWorker(annotatable_quantum_computation, stop_at_first_output_state_mismatch)
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
-
-        # TODO: It is recommended in the official documentation to mark slots explicitly via the QtCore.pyqtSlot() decorator:
-        # see https://doc.qt.io/qtforpython-6/tutorials/basictutorial/signals_and_slots.html#the-slot-class
-
-        # Do not block the UI thread by the potentially long running operations of the worker a new thread is started (which also has its own event loop)
-        # and the worker operation moved to the latter. We also do not want to block the UI thread by executing the slots of said worker in the UI thread but
-        # instead want to simply send the events to the event queue of its thread thus the QueuedConnection between the signal (here the UI thread) and the receiver (worker thread)
-        # needs to be defined as a QueuedConnection (QtCore.Qt.ConnectionType.QueuedConnection).
         self.worker_thread.started.connect(self.worker.start_simulations, QtCore.Qt.ConnectionType.QueuedConnection)
         self.worker.allSimulationsDone.connect(
             self._handle_all_simulation_runs_done, QtCore.Qt.ConnectionType.QueuedConnection
