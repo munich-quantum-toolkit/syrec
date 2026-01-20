@@ -10,89 +10,53 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Final
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore
 
 if TYPE_CHECKING:
-    from PyQt6 import QtGui
+    from PyQt6 import QtGui, QtWidgets
 
     from .qt_simulation_run_model import QtSimulationRunModel
 
+from ..logger_utils import log_error_to_console, log_info_to_console
+from ..message_box_utils import MessageBoxType, show_optionally_cancellable_notification
 from .all_input_states_generator_worker import AllInputStatesGeneratorWorker
+from .dialogs.base_progress_dialog import BaseProgressDialog
 from .qt_simulation_run_model import SimulationRunModel
 
-TOTAL_RUNTIME_TEXT_FORMAT: Final[str] = (
-    "Total runtime for input states generation [in seconds]: {total_runtime_in_sec:f}"
-)
-GENERATED_INPUT_STATE_BATCH_PROGRESS_INFO_TEXT_FORMAT: Final[str] = (
-    "Generated batch of input states (runtime [in sec]: {batch_generation_duration_in_seconds:f}!"
-)
 
-
-class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
+class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWorker]):
     def __init__(self, parent: QtWidgets.QWidget):
-        super().__init__(parent)
-
-        self.shared_simulation_runs_model: QtSimulationRunModel | None = None
-        self.worker_thread: QtCore.QThread | None = None
-        self.worker: AllInputStatesGeneratorWorker | None = None
-
-        self.num_generated_input_states: int = 0
-        self.stop_processing_recv_input_state_batches: bool = False
-        self.total_input_state_generation_runtime_in_seconds: float = 0
-
-        self.setModal(True)
-        self.setSizeGripEnabled(True)
-        self.setWindowTitle("Generating simulation runs...")
-        left = 0
-        top = 0
-        width = 400
-        height = 200
-        self.setGeometry(left, top, width, height)
-
-        main_layout = QtWidgets.QVBoxLayout()
-        self.progress_bar = QtWidgets.QProgressBar()
-        # For placeholder values see: https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QProgressBar.html#PySide6.QtWidgets.QProgressBar.format
-        self.progress_bar.setFormat("Generated %v out of %m input states")
-        self.progress_bar.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-
-        self.err_text_lbl = QtWidgets.QLabel("")
-        self.err_text_lbl.setStyleSheet("QLabel { color : red; }")
-        self.err_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-
-        self.progress_text_lbl = QtWidgets.QLabel("")
-        self.progress_text_lbl.setStyleSheet("QLabel { color : gray; }")
-        self.progress_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-
-        self.dialog_button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+        super().__init__(
+            parent,
+            dialog_title="Generating simulation runs...",
+            dialog_size=(400, 200),
+            optional_progress_bar_text_format="Generated %v out of %m input states",
         )
-        self.dialog_button_box.setCenterButtons(True)
-        self.dialog_button_box.rejected.connect(self._handle_input_state_generation_cancel_button_click)
+        self.shared_simulation_runs_model: QtSimulationRunModel | None = None
+        self.num_generated_input_states: int = 0
+
         self.dialog_button_box.accepted.connect(self.accept)
-
-        self._change_dialog_ok_button_enable_state(False)
-        self._change_dialog_cancellation_button_enable_state(False)
-
-        main_layout.addWidget(self.progress_bar)
-        main_layout.addWidget(self.progress_text_lbl)
-        main_layout.addWidget(self.err_text_lbl)
-
-        main_layout.addStretch()
-        self.total_runtime_text_lbl = QtWidgets.QLabel("")
-        self.total_runtime_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        main_layout.addWidget(self.total_runtime_text_lbl)
-        main_layout.addWidget(self.dialog_button_box)
-        self.setLayout(main_layout)
+        self.dialog_button_box.rejected.connect(self._handle_input_state_generation_cancel_button_click)
 
     def start_generation(
         self, shared_simulation_runs_model: QtSimulationRunModel, expected_input_state_size: int, batch_size: int = 1000
     ) -> None:
         self.shared_simulation_runs_model = shared_simulation_runs_model
 
+        self.title_lbl.setText(f"Generating simulation runs with batch size {batch_size}!")
         # TODO: Validation that maximum value can actually be stored in progress bar maximum (should validation be performed in dialog or by caller?)
-        self.progress_bar.setMinimum(0)
-        self.progress_bar.setMaximum(2**expected_input_state_size)
-        self.progress_bar.setValue(0)
+        if self.progress_bar is not None:
+            self.progress_bar.setMinimum(0)
+            self.progress_bar.setMaximum(2**expected_input_state_size)
+            self.progress_bar.setValue(0)
+        else:
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Required widget not found",
+                message_box_content="Input states generator was initialized without a progress bar! This should not happen.",
+                is_cancellable=False,
+            )
 
         # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
         self.worker = AllInputStatesGeneratorWorker(expected_input_state_size, batch_size)
@@ -112,137 +76,128 @@ class AllInputStatesGeneratorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.finished.connect(self._reset_workers)
         self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
-        self._change_dialog_cancellation_button_enable_state(True)
+        self._change_dialog_cancel_button_enable_state(True)
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
         # Ask for confirmation before closing
-        if self.worker is None or self._handle_input_state_generation_cancel_button_click():
+        if self._handle_input_state_generation_cancel_button_click():
             self.accept()
         else:
             event.ignore()
 
     @QtCore.pyqtSlot(Exception)  # type: ignore[untyped-decorator]
     def _handle_input_state_generator_failure(self, err: Exception) -> None:
-        self.progress_text_lbl.setText("")
-        self.err_text_lbl.setText(f"Unexpected {err=}, {type(err)=} during generation of input states")
-        if self.shared_simulation_runs_model is not None:
-            self.shared_simulation_runs_model.delete_all_simulation_run_models()
-        else:
-            QtWidgets.QMessageBox.critical(
-                self,
-                "Internal state error!",
-                "Shared simulation runs model was not initialized during handling of input state generator failure!\nThis should not happen.",
-                buttons=QtWidgets.QMessageBox.StandardButton.Ok,
-                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-            )
-        self._request_worker_cancellation()
-        self._await_worker_thread_completion()
+        self._handle_non_recoverable_error(err)
 
     @QtCore.pyqtSlot(float, object)  # type: ignore[untyped-decorator]
     def _handle_generated_input_state_batch(
         self, batch_generation_duration_in_seconds: float, batch_data: object
     ) -> None:
-        if self.stop_processing_recv_input_state_batches:
+        if self.stop_processing_recv_batches:
             return
 
         if not AllInputStatesGeneratorWorker.are_list_of_batch_items_of_type(batch_data, SimulationRunModel):
-            # TODO: Error logging?
-            # TODO: Cancel worker?
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.INFO,
+                message_box_parent=self,
+                message_box_title="Cannot handle batch data",
+                message_box_content=f"Expected batch data to be a list of SimulationRunModels but was actually {type(batch_data)}. Skipping batch!",
+                is_cancellable=False,
+            )
             if self.worker is not None:
                 self.worker.ack_batch_processed()
             return
 
-        self.progress_text_lbl.setText(
-            GENERATED_INPUT_STATE_BATCH_PROGRESS_INFO_TEXT_FORMAT.format(
-                batch_generation_duration_in_seconds=batch_generation_duration_in_seconds
-            )
-        )
         generated_simulation_run_models: Final[list[SimulationRunModel]] = batch_data  # type: ignore[assignment]
+        self._update_progress_text_with_batch_info(
+            len(generated_simulation_run_models), batch_generation_duration_in_seconds
+        )
+
         if self.shared_simulation_runs_model is None:
-            QtWidgets.QMessageBox.critical(
-                self,
-                "Internal state error!",
-                "Shared simulation runs model was not initialized during handling of generated input state batch!\nThis should not happen.",
-                buttons=QtWidgets.QMessageBox.StandardButton.Ok,
-                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-            )
-            self._request_worker_cancellation()
+            log_error_to_console("Shared simulation runs model was not initialized during handling of batch!")
+            self._handle_non_recoverable_error(None)
             return
 
-        # TODO: Error handling
-        # TODO: Use delayed processing to reduce "laggy"/almost frozen GUI
-        self.shared_simulation_runs_model.add_simulation_run_models(generated_simulation_run_models)
+        try:
+            self.shared_simulation_runs_model.add_simulation_run_models(generated_simulation_run_models)
+        except Exception as sim_run_model_err:
+            self._handle_non_recoverable_error(sim_run_model_err)
+            return
+
         if self.worker is not None:
             self.worker.ack_batch_processed()
-        self.total_input_state_generation_runtime_in_seconds += batch_generation_duration_in_seconds
-        self.total_runtime_text_lbl.setText(
-            TOTAL_RUNTIME_TEXT_FORMAT.format(total_runtime_in_sec=self.total_input_state_generation_runtime_in_seconds)
-        )
 
+        self._accumulate_and_update_total_runtime(batch_generation_duration_in_seconds)
         self.num_generated_input_states += len(generated_simulation_run_models)
-        self.progress_bar.setValue(self.num_generated_input_states)
-        self.progress_text_lbl.setText("")
+        if self.progress_bar is not None:
+            self.progress_bar.setValue(self.num_generated_input_states)
+        self.progress_info_text_lbl.setText("")
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
-    def _handle_input_state_generator_finished(self) -> None:
-        self.progress_text_lbl.setText("Input state generator finished!")
-        self.progress_bar.setVisible(False)
-        self._request_worker_cancellation()
-        self._await_worker_thread_completion()
+    @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
+    def _handle_input_state_generator_finished(self, was_cancellation_requested: bool) -> None:
+        self.progress_info_text_lbl.setText("Input state generator finished!")
+        if self.progress_bar is not None:
+            self.progress_bar.setVisible(False)
 
-        self._change_dialog_ok_button_enable_state(True)
-        self._change_dialog_cancellation_button_enable_state(False)
+        if not was_cancellation_requested:
+            if self.worker is not None:
+                self._request_worker_cancellation()
+            if self.worker_thread is not None:
+                self._shutdown_worker_thread_and_await_completion()
 
-    def _request_worker_cancellation(self) -> None:
-        self.stop_processing_recv_input_state_batches = True
-        self.progress_text_lbl.setText("Requesting cancellation of input state generator!")
-        if self.worker is not None:
-            self.worker.request_cancellation()
-            self._change_dialog_cancellation_button_enable_state(False)
+        self._change_dialog_ok_button_enable_state(should_button_be_enabled=True)
+        self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _handle_input_state_generation_cancel_button_click(self) -> bool:
-        clicked_button_in_confirmation_dialog: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
-            self,
-            "Cancellation of generation of input states requested!",
-            "Are you sure that you want to stop the generation of the input states? This will cause the deletion of all already generated input states.",
-            buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
-            defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-        )
+        if self.worker is None:
+            return True
 
-        if clicked_button_in_confirmation_dialog == QtWidgets.QMessageBox.StandardButton.Ok:
-            self._request_worker_cancellation()
-            if self.shared_simulation_runs_model is not None:
-                self.shared_simulation_runs_model.delete_all_simulation_run_models()
+        if show_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.QUESTION,
+            message_box_parent=self,
+            message_box_title="Cancellation of generation of input states requested!",
+            message_box_content="Are you sure that you want to stop the generation of the input states? This will cause the deletion of all already generated input states.",
+            is_cancellable=True,
+            log_contents=False,
+        ):
+            log_info_to_console(
+                "Cancellation of input state generation requested!",
+                num_additionally_skipped_stack_frames_starting_from_caller_function=0,
+            )
+            self._handle_non_recoverable_error(None)
             return True
         return False
 
-    def _await_worker_thread_completion(self) -> None:
+    def _handle_non_recoverable_error(self, err: Exception | None) -> None:
+        self.progress_info_text_lbl.setText("")
+        if err is not None:
+            # We want to log the source of the error as close as possible to the origin of the actual error thus we need to skip a few stack frames
+            # to determine the "source" stack frame. The skip stack frames would be (read from left to right with the leftmost stackframe being at the
+            # lowest level in the stacktrace): logger (std) -> logger_utils (custom) -> update_displayed_error_text (custom) -> the current function.
+            self._update_displayed_error_text(err, num_additionally_skipped_stack_frames_starting_from_this_function=2)
+
+        if self.shared_simulation_runs_model is not None:
+            try:
+                self.shared_simulation_runs_model.delete_all_simulation_run_models()
+            except Exception:
+                show_optionally_cancellable_notification(
+                    message_box_type=MessageBoxType.ERROR,
+                    message_box_parent=self,
+                    message_box_title="Internal error!",
+                    message_box_content="Failed to delete all simulation run models during handling of non-recoverable error!\nThis should not happen, cancelling long running operation!",
+                    is_cancellable=False,
+                )
+        else:
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Internal state error!",
+                message_box_content="Shared simulation runs model was not initialized during handling of non-recoverable error!\nThis should not happen, cancelling long running operation!",
+                is_cancellable=False,
+            )
+
+        if self.worker is not None:
+            self._request_worker_cancellation()
         if self.worker_thread is not None:
-            self.worker_thread.quit()
-            self.worker_thread.wait()
-            self.progress_text_lbl.setText("Input state generator thread finished!")
-
-    def _change_dialog_cancellation_button_enable_state(self, should_button_be_enabled: bool) -> None:
-        dialog_cancel_button: QtWidgets.QPushButton | None = self.dialog_button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        )
-
-        if dialog_cancel_button is None:
-            return
-
-        dialog_cancel_button.setEnabled(should_button_be_enabled)
-
-    def _change_dialog_ok_button_enable_state(self, should_button_be_enabled: bool) -> None:
-        dialog_ok_button: QtWidgets.QPushButton | None = self.dialog_button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
-        )
-
-        if dialog_ok_button is None:
-            return
-
-        dialog_ok_button.setEnabled(should_button_be_enabled)
-
-    def _reset_workers(self) -> None:
-        self.worker_thread = None
-        self.worker = None
+            self._shutdown_worker_thread_and_await_completion()

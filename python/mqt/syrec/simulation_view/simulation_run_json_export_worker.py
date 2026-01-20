@@ -77,10 +77,9 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
                     )
                 )
                 self.batchCompleted.emit(batch_generation_duration, batch_idx)
-            self.finished.emit()
+            self.finished.emit(self.cancellation_requested)
         except Exception as err:
             self.failed.emit(err)
-        return
 
     @staticmethod
     def serialize_to_json(obj: Any) -> object:

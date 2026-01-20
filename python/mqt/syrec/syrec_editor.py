@@ -20,6 +20,8 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+from .logger_utils import configure_default_console_logger
+
 # We are using a relative import here: https://stackoverflow.com/questions/43728431/relative-imports-modulenotfounderror-no-module-named-x
 from .quantum_circuit_simulation_dialog import QuantumCircuitSimulationDialog
 
@@ -1380,6 +1382,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
 
 
 def main() -> int:
+    configure_default_console_logger()
     a = QtWidgets.QApplication([])
 
     w = MainWindow()

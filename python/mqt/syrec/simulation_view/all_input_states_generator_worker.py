@@ -15,6 +15,7 @@ from PyQt6 import QtCore
 
 from mqt import syrec
 
+from ..logger_utils import log_error_to_console
 from .cancellable_base_worker import CancellableBaseWorker
 from .qt_simulation_run_model import SimulationRunModel
 
@@ -27,7 +28,6 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_generation(self) -> None:
-
         try:
             AllInputStatesGeneratorWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
             n_states_to_generate: int = 2**self.expected_input_state_size
@@ -56,11 +56,12 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
                 )
                 self.batchCompleted.emit(batch_generation_duration, batch_data.copy())
                 with QtCore.QMutexLocker(self.batch_ack_mutex):
-                    self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
+                    if not self.is_cancellation_requested():
+                        self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
+
                 # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
                 # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
                 time.sleep(0.1)
-
                 first_integer_encoding_first_state_of_batch += self.batch_size
                 for i in range(self.batch_size):
                     batch_data[i] = None
@@ -78,9 +79,11 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
                     )
                 )
                 self.batchCompleted.emit(batch_generation_duration, last_batch_data)
-        except Exception as err:
-            self.failed.emit(err)
-        self.finished.emit()
+            self.finished.emit(self.cancellation_requested)
+        except Exception as error:
+            error_msg: Final[str] = f"Error in all input states generator worker! Reason: {type(error)=}, {error=}"
+            log_error_to_console(error_msg, num_additionally_skipped_stack_frames_starting_from_caller_function=0)
+            self.failed.emit(error)
 
     @staticmethod
     def _validate_parameters(expected_input_state_size: int, batch_size: int) -> None:

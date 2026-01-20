@@ -18,7 +18,16 @@ T = TypeVar("T")
 
 class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
     batch_completed = QtCore.pyqtSignal(float, object, name="batchCompleted")
-    finished = QtCore.pyqtSignal(name="finished")
+    # While the cancellation operation is assumed to request the cancellation of the internal worker
+    # as well as the worker_thread, due to the Qt event loop the QThread.finished signal is received
+    # after the finished signal of the worker, i.e. the order of events in case of a cancellation or error will be:
+    # [Optionally error thrown in worker] -> Cancellation requested -> Finished -> QThread.finished
+    #
+    # This could lead to the worker attempting to perform a double shutdown of the worker/worker_thread,
+    # assuming that the cancel/error handler will request the worker shutdown, when the finished slot of the worker
+    # perform the shutdown of the worker. Thus we introduce an additional flag in  the finished signal to perform a
+    # conditional shutdown of the worker in the slot that is connected to the finished signal.
+    finished = QtCore.pyqtSignal(bool, name="finished")
     failed = QtCore.pyqtSignal(Exception, name="failed")
 
     def __init__(self, do_batches_require_ack: bool):
@@ -32,13 +41,21 @@ class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
         )
 
     def request_cancellation(self) -> None:
-        self.set_cancellation_requested_flag(True)
-        self.ack_batch_processed()
+        # Since the wait of the QWaitCondition can only be 'cancelled' by either a wakeX call or by providing a timeout value with the
+        # latter probably leading to a while-loop construct repeatedly performing temporary waits (until the timer elapses), the programmer
+        # needs to make sure that the cancellation operation will both set the cancellation flag as well as waking the QWaitCondition in a single
+        # operation (i.e. while locking the batch_ack_mutex)
+        if self.batch_ack_mutex is not None and self.wait_on_batch_processed_acknowledgement_condition:
+            with QtCore.QMutexLocker(self.batch_ack_mutex):
+                self.set_cancellation_requested_flag(True)
+                self.wait_on_batch_processed_acknowledgement_condition.wakeAll()
+        else:
+            self.set_cancellation_requested_flag(True)
 
     def ack_batch_processed(self) -> None:
         if self.batch_ack_mutex is not None and self.wait_on_batch_processed_acknowledgement_condition is not None:
             with QtCore.QMutexLocker(self.batch_ack_mutex):
-                self.wait_on_batch_processed_acknowledgement_condition.wakeOne()
+                self.wait_on_batch_processed_acknowledgement_condition.wakeAll()
 
     def is_cancellation_requested(self) -> bool:
         cancellation_requested: bool = False
@@ -62,6 +79,7 @@ class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
     def _get_timestamp() -> float:
         return time.perf_counter()
 
+    # TODO: Is this correct
     @staticmethod
     def _calc_batch_duration_and_return_end_timestamp_in_seconds(batch_start_timestamp: float) -> float:
         batch_end_timestamp: Final[float] = CancellableBaseWorker._get_timestamp()

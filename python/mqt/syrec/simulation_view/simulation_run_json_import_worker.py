@@ -96,7 +96,7 @@ class SimulationRunJsonImportWorker(CancellableBaseWorker):
                         )
                     )
                     self.batchCompleted.emit(batch_generation_duration, batch_data)
-            self.finished.emit()
+            self.finished.emit(self.cancellation_requested)
         except Exception as err:
             self.failed.emit(err)
 

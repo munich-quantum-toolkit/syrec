@@ -160,12 +160,14 @@ class SimulationRunJsonExportDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
         )
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
-    def _handle_export_completion(self) -> None:
+    @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
+    def _handle_export_completion(self, was_cancellation_requested: bool) -> None:
         self.progress_bar.setVisible(False)
 
-        self._request_worker_cancellation()
-        self._await_worker_thread_completion()
+        if not was_cancellation_requested:
+            self._request_worker_cancellation()
+            self._await_worker_thread_completion()
+
         self._change_dialog_cancellation_button_enable_state(False)
         self._change_dialog_ok_button_enable_state(True)
 

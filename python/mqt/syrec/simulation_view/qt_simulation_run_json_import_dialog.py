@@ -214,10 +214,12 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
         )
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
-    def _handle_import_completion(self) -> None:
-        self._request_worker_cancellation()
-        self._await_worker_thread_completion()
+    @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
+    def _handle_import_completion(self, was_cancellation_requested: bool) -> None:
+        if not was_cancellation_requested:
+            self._request_worker_cancellation()
+            self._await_worker_thread_completion()
+
         self._change_dialog_cancellation_button_enable_state(False)
         self._change_dialog_ok_button_enable_state(True)
 
