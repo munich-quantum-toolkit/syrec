@@ -82,7 +82,7 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
             self.finished.emit(self.cancellation_requested)
         except Exception as error:
             error_msg: Final[str] = f"Error in all input states generator worker! Reason: {type(error)=}, {error=}"
-            log_error_to_console(error_msg, num_additionally_skipped_stack_frames_starting_from_caller_function=0)
+            log_error_to_console(error_msg)
             self.failed.emit(error)
 
     @staticmethod

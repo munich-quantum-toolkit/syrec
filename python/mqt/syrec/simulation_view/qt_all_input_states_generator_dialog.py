@@ -136,6 +136,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
     @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
     def _handle_input_state_generator_finished(self, was_cancellation_requested: bool) -> None:
         self.progress_info_text_lbl.setText("Input state generator finished!")
+        log_info_to_console("Input state generator finished!")
         if self.progress_bar is not None:
             self.progress_bar.setVisible(False)
 
@@ -161,10 +162,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
             is_cancellable=True,
             log_contents=False,
         ):
-            log_info_to_console(
-                "Cancellation of input state generation requested!",
-                num_additionally_skipped_stack_frames_starting_from_caller_function=0,
-            )
+            log_info_to_console("Cancellation of input state generation requested!")
             self._handle_non_recoverable_error(None)
             return True
         return False

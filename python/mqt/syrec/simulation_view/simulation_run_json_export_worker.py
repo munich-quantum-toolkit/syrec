@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from PyQt6 import QtCore
 
+from ..logger_utils import log_error_to_console
 from .cancellable_base_worker import CancellableBaseWorker
 from .qt_simulation_run_model import SimulationRunModel
 
@@ -68,6 +69,9 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
                         batch_idx = 0
                         n_generated_batches += 1
                 # file.write("\n\t]\n}")
+                # An error during during the serialization of the simulation runs to their .json representation will cause the content of the
+                # exported to .json file to be invalid .json due to the simulation runs JSON array as well as the top level JSON object missing
+                # their closing symbol.
                 file.write("]}")
 
             if batch_idx > 0 and not self.is_cancellation_requested():
@@ -78,8 +82,12 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
                 )
                 self.batchCompleted.emit(batch_generation_duration, batch_idx)
             self.finished.emit(self.cancellation_requested)
-        except Exception as err:
-            self.failed.emit(err)
+        except Exception as error:
+            error_msg: Final[str] = (
+                f"Error in simulaton run export worker (exported .json file could be incomplete)! Reason: {type(error)=}, {error=}"
+            )
+            log_error_to_console(error_msg)
+            self.failed.emit(error)
 
     @staticmethod
     def serialize_to_json(obj: Any) -> object:
