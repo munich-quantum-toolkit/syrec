@@ -19,72 +19,48 @@ if TYPE_CHECKING:
 
     from .qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
 
+from ..logger_utils import log_error_to_console, log_info_to_console
+from ..message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from .dialogs.base_progress_dialog import BaseProgressDialog
 from .qt_simulation_run_model import SimulationRunModel
 from .simulation_run_json_import_worker import SimulationRunJsonImportWorker
 
-AGGREGATE_IMPORT_DATA_TEXT_FORMAT: Final[str] = (
-    "Imported simulation runs: {num_imported_simulation_runs:d} | Total runtime for simulation run import [in seconds]: {total_runtime_in_sec:f}"
-)
-IMPORT_ORIGIN_INFO_TEXT_FORMAT: Final[str] = "Importing simulation runs from file {path_to_json_file:s}"
-IMPORTED_BATCH_PROGRESS_INFO_TEXT_FORMAT: Final[str] = (
-    "Finished import of simulation runs batch from file (runtime [in sec]: {batch_generation_duration_in_seconds:f}!"
-)
 
-
-class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
+class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWorker]):
     def __init__(self, parent: QtWidgets.QWidget):
-        super().__init__(parent)
-
-        self.shared_simulation_runs_model: QtSimulationRunModel | None = None
-        self.worker_thread: QtCore.QThread | None = None
-        self.worker: SimulationRunJsonImportWorker | None = None
-
+        super().__init__(
+            parent,
+            dialog_title="Importing simulation runs...",
+            dialog_size=(400, 200),
+            optional_progress_bar_text_format=None,
+            create_default_layout=False,
+        )
         self.num_imported_simulation_runs: int = 0
-        self.stop_processing_imported_sim_run_batches: bool = False
-        self.total_simulation_run_import_runtime_in_seconds: float = 0
+        self.shared_simulation_runs_model: QtSimulationRunModel | None = None
 
-        self.setModal(True)
-        self.setSizeGripEnabled(True)
-        self.setWindowTitle("Importing simulation runs...")
-        left = 0
-        top = 0
-        width = 400
-        height = 200
-        self.setGeometry(left, top, width, height)
+        self.dialog_button_box.accepted.connect(self.accept)
+        self.dialog_button_box.rejected.connect(self._handle_import_from_file_cancel_button_click)
 
-        main_layout = QtWidgets.QVBoxLayout()
         self.import_origin_info_lbl = QtWidgets.QLabel("")
         self.import_origin_info_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self.progress_text_lbl = QtWidgets.QLabel("")
-        self.progress_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.progress_text_lbl.setStyleSheet("QLabel { color : gray; }")
+        self.num_imported_simulation_runs_info_lbl = QtWidgets.QLabel("")
+        self.num_imported_simulation_runs_info_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self.err_text_lbl = QtWidgets.QLabel("")
-        self.err_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.err_text_lbl.setStyleSheet("QLabel { color : red; }")
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.title_lbl)
+        layout.addWidget(self.import_origin_info_lbl)
+        layout.addWidget(self.progress_info_text_lbl)
+        layout.addWidget(self.error_text_lbl)
+        layout.addStretch()
 
-        main_layout.addWidget(self.import_origin_info_lbl)
-        main_layout.addWidget(self.progress_text_lbl)
-        main_layout.addWidget(self.err_text_lbl)
-        main_layout.addStretch()
+        aggregate_stats_controls_layout = QtWidgets.QHBoxLayout()
+        aggregate_stats_controls_layout.addWidget(self.num_imported_simulation_runs_info_lbl)
+        aggregate_stats_controls_layout.addWidget(self.total_runtime_info_text_lbl)
+        layout.addLayout(aggregate_stats_controls_layout)
 
-        self.total_runtime_text_lbl = QtWidgets.QLabel("")
-        self.total_runtime_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        main_layout.addWidget(self.total_runtime_text_lbl)
-
-        self.dialog_button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        )
-        self.dialog_button_box.setCenterButtons(True)
-        self.dialog_button_box.rejected.connect(self._handle_import_from_file_cancel_button_click)
-        self.dialog_button_box.accepted.connect(self.accept)
-
-        self._change_dialog_ok_button_enable_state(False)
-        self._change_dialog_cancellation_button_enable_state(False)
-
-        main_layout.addWidget(self.dialog_button_box)
-        self.setLayout(main_layout)
+        layout.addWidget(self.dialog_button_box)
+        self.setLayout(layout)
 
     def start_generation(
         self,
@@ -94,9 +70,8 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         batch_size: int = 1000,
     ) -> None:
         self.shared_simulation_runs_model = shared_simulation_runs_model
-        self.import_origin_info_lbl.setText(
-            IMPORT_ORIGIN_INFO_TEXT_FORMAT.format(path_to_json_file=str(path_to_json_file))
-        )
+        self.title_lbl.setText(f"Importing simulation runs from .json file with batch size {batch_size}!")
+        self.import_origin_info_lbl.setText(f"Import source: {path_to_json_file!s}")
 
         # Some helpful links are the official QThread documentation but some helpful explanaitions were also found in:
         # - https://www.haccks.com/posts/how-to-use-qthread-correctly-p1/
@@ -139,12 +114,12 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.worker_thread.finished.connect(self._reset_workers)
         # Only this call will actually start a new thread
         self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
-        self._change_dialog_cancellation_button_enable_state(True)
+        self._change_dialog_cancel_button_enable_state(True)
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
         # Ask for confirmation before closing
-        if self.worker is None or self._handle_import_from_file_cancel_button_click():
-            if not self.err_text_lbl.text():
+        if self._handle_import_from_file_cancel_button_click():
+            if not self.error_text_lbl.text():
                 self.accept()
             else:
                 self.reject()
@@ -153,125 +128,106 @@ class SimulationRunJsonImportDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     @QtCore.pyqtSlot(Exception)  # type: ignore[untyped-decorator]
     def _handle_importer_failure(self, err: Exception) -> None:
-        self.progress_text_lbl.setText("")
-        self.err_text_lbl.setText(f"Unexpected {err=}, {type(err)=} during import of simulation runs")
-        if self.shared_simulation_runs_model is not None:
-            self.shared_simulation_runs_model.delete_all_simulation_run_models()
-        else:
-            QtWidgets.QMessageBox.critical(
-                self,
-                "Internal state error!",
-                "Shared simulation runs model was not initialized during handling of importer failure!\nThis should not happen.",
-                buttons=QtWidgets.QMessageBox.StandardButton.Ok,
-                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-            )
-        self._request_worker_cancellation()
-        self._await_worker_thread_completion()
-        self._change_dialog_cancellation_button_enable_state(False)
+        self._handle_non_recoverable_error(err)
 
     @QtCore.pyqtSlot(float, object)  # type: ignore[untyped-decorator]
     def _handle_imported_sim_run_batch(self, batch_generation_duration_in_seconds: float, batch_data: object) -> None:
-        if self.stop_processing_imported_sim_run_batches:
+        if self.stop_processing_recv_batches:
             return
 
         if not SimulationRunJsonImportWorker.are_list_of_batch_items_of_type(batch_data, SimulationRunModel):
-            # TODO: Error logging?
-            # TODO: Cancel worker?
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.INFO,
+                message_box_parent=self,
+                message_box_title="Cannot handle batch data",
+                message_box_content=f"Expected batch data to be a list of SimulationRunModels but was actually {type(batch_data)}. Skipping batch!",
+                is_cancellable=False,
+            )
             if self.worker is not None:
                 self.worker.ack_batch_processed()
             return
 
-        self.progress_text_lbl.setText(
-            IMPORTED_BATCH_PROGRESS_INFO_TEXT_FORMAT.format(
-                batch_generation_duration_in_seconds=batch_generation_duration_in_seconds
-            )
-        )
         generated_simulation_run_models: Final[list[SimulationRunModel]] = batch_data  # type: ignore[assignment]
+        self._update_progress_text_with_batch_info(
+            len(generated_simulation_run_models), batch_generation_duration_in_seconds
+        )
+
         if self.shared_simulation_runs_model is None:
-            QtWidgets.QMessageBox.critical(
-                self,
-                "Internal state error!",
-                "Shared simulation runs model was not initialized during handling of generated input state batch!\nThis should not happen.",
-                buttons=QtWidgets.QMessageBox.StandardButton.Ok,
-                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-            )
-            self._request_worker_cancellation()
-            self._await_worker_thread_completion()
+            log_error_to_console("Shared simulation runs model was not initialized during handling of batch!")
+            self._handle_non_recoverable_error(None)
             return
 
-        # TODO: Error handling
-        # TODO: Use delayed processing to reduce "laggy"/almost frozen GUI
-        self.shared_simulation_runs_model.add_simulation_run_models(generated_simulation_run_models)
+        try:
+            self.shared_simulation_runs_model.add_simulation_run_models(generated_simulation_run_models)
+        except Exception as sim_run_model_err:
+            self._handle_non_recoverable_error(sim_run_model_err)
+            return
+
         if self.worker is not None:
             self.worker.ack_batch_processed()
 
-        self.total_simulation_run_import_runtime_in_seconds += batch_generation_duration_in_seconds
+        self._accumulate_and_update_total_runtime(batch_generation_duration_in_seconds)
         self.num_imported_simulation_runs += len(generated_simulation_run_models)
-        self.total_runtime_text_lbl.setText(
-            AGGREGATE_IMPORT_DATA_TEXT_FORMAT.format(
-                num_imported_simulation_runs=self.num_imported_simulation_runs,
-                total_runtime_in_sec=self.total_simulation_run_import_runtime_in_seconds,
-            )
+        self.num_imported_simulation_runs_info_lbl.setText(
+            f"Num. imported simulation runs: {self.num_imported_simulation_runs}"
         )
 
     @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
     def _handle_import_completion(self, was_cancellation_requested: bool) -> None:
+        self.progress_info_text_lbl.setText("Simulation run import finished!")
+        log_info_to_console("Simulation run export finished!")
+
         if not was_cancellation_requested:
             self._request_worker_cancellation()
-            self._await_worker_thread_completion()
+            self._shutdown_worker_thread_and_await_completion()
 
-        self._change_dialog_cancellation_button_enable_state(False)
+        self._change_dialog_cancel_button_enable_state(False)
         self._change_dialog_ok_button_enable_state(True)
-
-    def _request_worker_cancellation(self) -> None:
-        self.stop_processing_imported_sim_run_batches = True
-        self.progress_text_lbl.setText("Requesting cancellation of simulation run importer!")
-        if self.worker is not None:
-            self.worker.request_cancellation()
-
-    def _change_dialog_cancellation_button_enable_state(self, should_button_be_enabled: bool) -> None:
-        dialog_cancel_button: QtWidgets.QPushButton | None = self.dialog_button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        )
-
-        if dialog_cancel_button is None:
-            return
-
-        dialog_cancel_button.setEnabled(should_button_be_enabled)
-
-    def _change_dialog_ok_button_enable_state(self, should_button_be_enabled: bool) -> None:
-        dialog_ok_button: QtWidgets.QPushButton | None = self.dialog_button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
-        )
-
-        if dialog_ok_button is None:
-            return
-
-        dialog_ok_button.setEnabled(should_button_be_enabled)
-
-    def _reset_workers(self) -> None:
-        self.worker_thread = None
-        self.worker = None
-
-    def _await_worker_thread_completion(self) -> None:
-        if self.worker_thread is not None:
-            self.worker_thread.quit()
-            self.worker_thread.wait()
-            self.progress_text_lbl.setText("Simulation run importer thread finished!")
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _handle_import_from_file_cancel_button_click(self) -> bool:
-        clicked_button_in_confirmation_dialog: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
-            self,
-            "Cancellation of import from json file!",
-            "Are you sure that you want to stop the import of simulation runs from the file? This will cause the deletion of all already generated simulation runs.",
-            buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
-            defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-        )
+        if self.worker is None:
+            return True
 
-        if clicked_button_in_confirmation_dialog == QtWidgets.QMessageBox.StandardButton.Ok:
-            self._request_worker_cancellation()
-            if self.shared_simulation_runs_model is not None:
-                self.shared_simulation_runs_model.delete_all_simulation_run_models()
+        if show_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.QUESTION,
+            message_box_parent=self,
+            message_box_title="Cancellation of import from json file!",
+            message_box_content="Are you sure that you want to stop the import of simulation runs from the file? This will cause the deletion of all already generated simulation runs.",
+            is_cancellable=True,
+            log_contents=False,
+        ):
+            log_info_to_console("Cancellation of simulation run export requested!")
+            self._handle_non_recoverable_error(None)
             return True
         return False
+
+    def _handle_non_recoverable_error(self, err: Exception | None) -> None:
+        self.progress_info_text_lbl.setText("")
+        if err is not None:
+            self._update_displayed_error_text(err, num_additionally_skipped_stack_frames_starting_from_this_function=2)
+
+        if self.shared_simulation_runs_model is not None:
+            try:
+                self.shared_simulation_runs_model.delete_all_simulation_run_models()
+            except Exception:
+                show_optionally_cancellable_notification(
+                    message_box_type=MessageBoxType.ERROR,
+                    message_box_parent=self,
+                    message_box_title="Internal error!",
+                    message_box_content="Failed to delete all simulation run models during handling of non-recoverable error!\nThis should not happen, cancelling long running operation!",
+                    is_cancellable=False,
+                )
+        else:
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Internal state error!",
+                message_box_content="Shared simulation runs model was not initialized during handling of non-recoverable error!\nThis should not happen, cancelling long running operation!",
+                is_cancellable=False,
+            )
+
+        if self.worker is not None:
+            self._request_worker_cancellation()
+        if self.worker_thread is not None:
+            self._shutdown_worker_thread_and_await_completion()

@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 import time
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from PyQt6 import QtCore
 
@@ -18,6 +18,9 @@ from mqt import syrec
 from ..logger_utils import log_error_to_console
 from .cancellable_base_worker import CancellableBaseWorker
 from .qt_simulation_run_model import SimulationRunModel
+
+if TYPE_CHECKING:
+    from .cancellable_base_worker import BatchTimestamps
 
 
 class AllInputStatesGeneratorWorker(CancellableBaseWorker):
@@ -32,11 +35,14 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
             AllInputStatesGeneratorWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
             n_states_to_generate: int = 2**self.expected_input_state_size
             n_batches: int = n_states_to_generate // self.batch_size
-
             batch_start_timestamp: float = AllInputStatesGeneratorWorker._get_timestamp()
-            batch_generation_duration: float = 0
+            batch_timestamps: BatchTimestamps | None = None
+            self_raised_error_msg: str | None = None
+
             if self.wait_on_batch_processed_acknowledgement_condition is None:
-                self.failed.emit(ValueError("Internal batch processed acknowledgement condition was not initialized"))
+                self_raised_error_msg = "Internal batch processed acknowledgement condition was not initialized"
+                log_error_to_console(self_raised_error_msg)
+                self.failed.emit(ValueError(self_raised_error_msg))
                 return
 
             first_integer_encoding_first_state_of_batch: int = 0
@@ -49,12 +55,13 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
                     batch_data[i] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
                         self.expected_input_state_size, first_integer_encoding_first_state_of_batch + i
                     )
-                batch_generation_duration = (
+                batch_timestamps = (
                     AllInputStatesGeneratorWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
                         batch_start_timestamp
                     )
                 )
-                self.batchCompleted.emit(batch_generation_duration, batch_data.copy())
+                batch_start_timestamp = batch_timestamps.end
+                self.batchCompleted.emit(batch_timestamps.duration, batch_data.copy())
                 with QtCore.QMutexLocker(self.batch_ack_mutex):
                     if not self.is_cancellation_requested():
                         self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
@@ -73,16 +80,16 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
                     last_batch_data[i] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
                         self.expected_input_state_size, first_integer_encoding_first_state_of_batch + i
                     )
-                batch_generation_duration = (
+                batch_timestamps = (
                     AllInputStatesGeneratorWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
                         batch_start_timestamp
                     )
                 )
-                self.batchCompleted.emit(batch_generation_duration, last_batch_data)
+                self.batchCompleted.emit(batch_timestamps.duration, last_batch_data)
             self.finished.emit(self.cancellation_requested)
         except Exception as error:
-            error_msg: Final[str] = f"Error in all input states generator worker! Reason: {type(error)=}, {error=}"
-            log_error_to_console(error_msg)
+            self_raised_error_msg = f"Error in all input states generator worker! Reason: {type(error)=}, {error=}"
+            log_error_to_console(self_raised_error_msg)
             self.failed.emit(error)
 
     @staticmethod

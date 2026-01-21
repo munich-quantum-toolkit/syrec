@@ -18,11 +18,14 @@ from PyQt6 import QtCore
 
 from mqt import syrec
 
+from ..logger_utils import log_error_to_console, log_info_to_console
 from .cancellable_base_worker import CancellableBaseWorker
 from .qt_simulation_run_model import SimulationRunModel
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from .cancellable_base_worker import BatchTimestamps
 
 SIMULATION_RUNS_JSON_KEY: Final[str] = "simulationRuns"
 INPUT_STATE_JSON_KEY: Final[str] = "in"
@@ -41,8 +44,12 @@ class SimulationRunJsonImportWorker(CancellableBaseWorker):
     def start_import(self) -> None:
         try:
             SimulationRunJsonImportWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
+            self_raised_error_msg: str | None = ""
+
             if self.wait_on_batch_processed_acknowledgement_condition is None:
-                self.failed.emit(ValueError("Internal batch processed acknowledgement condition was not initialized"))
+                self_raised_error_msg = "Internal batch processed acknowledgement condition was not initialized"
+                log_error_to_console(self_raised_error_msg)
+                self.failed.emit(ValueError(self_raised_error_msg))
                 return
 
             batch_idx: int = 0
@@ -51,7 +58,7 @@ class SimulationRunJsonImportWorker(CancellableBaseWorker):
             # Reading bytes instead of strings leads to better parser performance
             with self.path_to_json_file.open("rb") as file:
                 batch_start_timestamp: float = SimulationRunJsonImportWorker._get_timestamp()
-                batch_generation_duration: float = 0
+                batch_timestamps: BatchTimestamps | None = None
                 # The json parser starts at the first element matching the prefix which in our case starts at an element with key 'simulationRuns' that is expected
                 # to be a property of the top level element (i.e. the path to the 'simulationRuns' element is relative to the top level element).
                 # Additionally, with the postfix '.item', only the entries of a JSON array are processed. If the 'simulationRuns' entry value is no
@@ -65,40 +72,50 @@ class SimulationRunJsonImportWorker(CancellableBaseWorker):
                     # need to discard any other type of JSON elements (integers, strings, array, etc.) by checking whether we are actually processing a
                     # python dictionary.
                     if not isinstance(arr_elem, dict):
+                        log_info_to_console(
+                            f"Expected parsed simulation run JSON array element to be returned as python dictionary from third-party library but its python type was {type(arr_elem)}"
+                        )
                         continue
 
                     batch_data[batch_idx] = SimulationRunJsonImportWorker._try_deserialize_simulation_run(
                         self.expected_input_state_size, arr_elem
                     )
                     batch_idx += 1
-                    if batch_idx == self.batch_size:
-                        batch_generation_duration = (
-                            SimulationRunJsonImportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
-                                batch_start_timestamp
-                            )
-                        )
-                        self.batchCompleted.emit(batch_generation_duration, batch_data.copy())
-                        with QtCore.QMutexLocker(self.batch_ack_mutex):
-                            self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
-                        # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
-                        # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
-                        time.sleep(0.1)
+                    if batch_idx < self.batch_size:
+                        continue
 
-                        for i in range(self.batch_size):
-                            batch_data[i] = None
-                        batch_idx = 0
-
-                if batch_idx != 0 and not self.is_cancellation_requested():
-                    del batch_data[batch_idx:]
-                    batch_generation_duration = (
+                    batch_timestamps = (
                         SimulationRunJsonImportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
                             batch_start_timestamp
                         )
                     )
-                    self.batchCompleted.emit(batch_generation_duration, batch_data)
+                    batch_start_timestamp = batch_timestamps.end
+                    self.batchCompleted.emit(batch_timestamps.duration, batch_data.copy())
+
+                    with QtCore.QMutexLocker(self.batch_ack_mutex):
+                        if not self.is_cancellation_requested():
+                            self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
+                    # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
+                    # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
+                    time.sleep(0.1)
+
+                    for i in range(self.batch_size):
+                        batch_data[i] = None
+                    batch_idx = 0
+
+                if batch_idx != 0 and not self.is_cancellation_requested():
+                    del batch_data[batch_idx:]
+                    batch_timestamps = (
+                        SimulationRunJsonImportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                            batch_start_timestamp
+                        )
+                    )
+                    self.batchCompleted.emit(batch_timestamps.duration, batch_data.copy())
             self.finished.emit(self.cancellation_requested)
-        except Exception as err:
-            self.failed.emit(err)
+        except Exception as error:
+            self_raised_error_msg = f"Error in simulaton run import worker! Reason: {type(error)=}, {error=}"
+            log_error_to_console(self_raised_error_msg)
+            self.failed.emit(error)
 
     @staticmethod
     def _validate_parameters(expected_input_state_size: int, batch_size: int) -> None:

@@ -9,11 +9,19 @@
 from __future__ import annotations
 
 import time
+from dataclasses import dataclass
 from typing import Any, Final, TypeVar
 
 from PyQt6 import QtCore
 
 T = TypeVar("T")
+
+
+@dataclass(frozen=True)
+class BatchTimestamps:
+    start: float
+    end: float
+    duration: float
 
 
 class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
@@ -79,10 +87,8 @@ class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
     def _get_timestamp() -> float:
         return time.perf_counter()
 
-    # TODO: Is this correct
     @staticmethod
-    def _calc_batch_duration_and_return_end_timestamp_in_seconds(batch_start_timestamp: float) -> float:
+    def _calc_batch_duration_and_return_end_timestamp_in_seconds(batch_start_timestamp: float) -> BatchTimestamps:
         batch_end_timestamp: Final[float] = CancellableBaseWorker._get_timestamp()
         batch_duration = batch_end_timestamp - batch_start_timestamp
-        batch_start_timestamp = batch_end_timestamp
-        return batch_duration
+        return BatchTimestamps(batch_start_timestamp, batch_end_timestamp, batch_duration)

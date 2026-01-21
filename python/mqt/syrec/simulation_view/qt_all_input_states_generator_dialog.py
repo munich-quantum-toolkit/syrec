@@ -81,7 +81,10 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
         # Ask for confirmation before closing
         if self._handle_input_state_generation_cancel_button_click():
-            self.accept()
+            if not self.error_text_lbl.text():
+                self.accept()
+            else:
+                self.reject()
         else:
             event.ignore()
 

@@ -21,6 +21,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
 
+    from .cancellable_base_worker import BatchTimestamps
+
 
 class SimulationRunJsonExportWorker(CancellableBaseWorker):
     def __init__(
@@ -45,7 +47,7 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
                 # file.write("{\n\t\"simulationRuns\": [\n")
                 file.write('{"simulationRuns":[')
                 batch_start_timestamp: float = SimulationRunJsonExportWorker._get_timestamp()
-                batch_generation_duration: float = 0
+                batch_timestamps: BatchTimestamps | None = None
                 for sim_run in self.simulation_runs_to_export:
                     if self.is_cancellation_requested():
                         break
@@ -60,12 +62,13 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
 
                     batch_idx += 1
                     if batch_idx == self.export_batch_size:
-                        batch_generation_duration = (
+                        batch_timestamps = (
                             SimulationRunJsonExportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
                                 batch_start_timestamp
                             )
                         )
-                        self.batchCompleted.emit(batch_generation_duration, self.export_batch_size)
+                        batch_start_timestamp = batch_timestamps.end
+                        self.batchCompleted.emit(batch_timestamps.duration, self.export_batch_size)
                         batch_idx = 0
                         n_generated_batches += 1
                 # file.write("\n\t]\n}")
@@ -75,12 +78,12 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
                 file.write("]}")
 
             if batch_idx > 0 and not self.is_cancellation_requested():
-                batch_generation_duration = (
+                batch_timestamps = (
                     SimulationRunJsonExportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
                         batch_start_timestamp
                     )
                 )
-                self.batchCompleted.emit(batch_generation_duration, batch_idx)
+                self.batchCompleted.emit(batch_timestamps.duration, batch_idx)
             self.finished.emit(self.cancellation_requested)
         except Exception as error:
             error_msg: Final[str] = (
