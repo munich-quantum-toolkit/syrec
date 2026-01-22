@@ -33,59 +33,52 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
     def start_generation(self) -> None:
         try:
             AllInputStatesGeneratorWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
-            n_states_to_generate: int = 2**self.expected_input_state_size
-            n_batches: int = n_states_to_generate // self.batch_size
-            batch_start_timestamp: float = AllInputStatesGeneratorWorker._get_timestamp()
-            batch_timestamps: BatchTimestamps | None = None
             self_raised_error_msg: str | None = None
-
             if self.wait_on_batch_processed_acknowledgement_condition is None:
                 self_raised_error_msg = "Internal batch processed acknowledgement condition was not initialized"
                 log_error_to_console(self_raised_error_msg)
                 self.failed.emit(ValueError(self_raised_error_msg))
                 return
 
-            first_integer_encoding_first_state_of_batch: int = 0
-            batch_data: list[SimulationRunModel | None] = [None for _ in range(self.batch_size)]
-            for _ in range(n_batches):
-                if self.is_cancellation_requested():
-                    break
+            integer_encoding_input_state: int = 0
+            n_states_to_generate: Final[int] = 2**self.expected_input_state_size
 
-                for i in range(self.batch_size):
-                    batch_data[i] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
-                        self.expected_input_state_size, first_integer_encoding_first_state_of_batch + i
+            batch_data: list[SimulationRunModel | None] = [None for _ in range(self.batch_size)]
+            batch_start_timestamp: float = 0
+            batch_timestamps: BatchTimestamps | None = None
+
+            batch_idx: int = 0
+            while not self.is_cancellation_requested() and integer_encoding_input_state < n_states_to_generate:
+                batch_start_timestamp = AllInputStatesGeneratorWorker._get_timestamp()
+                for _ in range(self.batch_size):
+                    if self.is_cancellation_requested() or integer_encoding_input_state == n_states_to_generate:
+                        break
+
+                    batch_data[batch_idx] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
+                        self.expected_input_state_size, integer_encoding_input_state
                     )
+                    integer_encoding_input_state += 1
+                    batch_idx += 1
+
+                if batch_idx > 0 and batch_idx != self.batch_size:
+                    del batch_data[batch_idx:]
+
                 batch_timestamps = (
                     AllInputStatesGeneratorWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
                         batch_start_timestamp
                     )
                 )
-                batch_start_timestamp = batch_timestamps.end
                 self.batchCompleted.emit(batch_timestamps.duration, batch_data.copy())
                 with QtCore.QMutexLocker(self.batch_ack_mutex):
                     if not self.is_cancellation_requested():
                         self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
-
                 # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
                 # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
                 time.sleep(0.1)
-                first_integer_encoding_first_state_of_batch += self.batch_size
-                for i in range(self.batch_size):
-                    batch_data[i] = None
 
-            n_elems_in_last_batch: int = n_states_to_generate % self.batch_size
-            if n_elems_in_last_batch != 0 and not self.is_cancellation_requested():
-                last_batch_data: list[SimulationRunModel | None] = [None for _ in range(n_elems_in_last_batch)]
-                for i in range(n_elems_in_last_batch):
-                    last_batch_data[i] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
-                        self.expected_input_state_size, first_integer_encoding_first_state_of_batch + i
-                    )
-                batch_timestamps = (
-                    AllInputStatesGeneratorWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
-                        batch_start_timestamp
-                    )
-                )
-                self.batchCompleted.emit(batch_timestamps.duration, last_batch_data)
+                for i in range(len(batch_data)):
+                    batch_data[i] = None
+                batch_idx = 0
             self.finished.emit(self.cancellation_requested)
         except Exception as error:
             self_raised_error_msg = f"Error in all input states generator worker! Reason: {type(error)=}, {error=}"
