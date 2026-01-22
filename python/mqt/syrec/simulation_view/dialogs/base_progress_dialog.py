@@ -18,7 +18,9 @@ from ..cancellable_base_worker import CancellableBaseWorker
 
 T = TypeVar("T", bound=CancellableBaseWorker)
 
-DEFAULT_TOTAL_RUNTIME_INFO_TEXT_FORMAT: Final[str] = "Total runtime [in seconds]: {total_runtime_in_seconds:f}"
+DEFAULT_TOTAL_RUNTIME_INFO_TEXT_FORMAT: Final[str] = (
+    "Total runtime [in seconds] (excluding model updates, internal waits): {total_runtime_in_seconds:f}"
+)
 DEFAULT_BATCH_RUNTIME_INFO_TEXT_FORMAT: Final[str] = (
     "Batch of {n_batch_elements:d} completed! Runtime [in seconds]: {batch_duration_in_seconds:f}"
 )
@@ -81,7 +83,6 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
         self.dialog_button_box.setCenterButtons(True)
         self._change_dialog_ok_button_enable_state(False)
         self._change_dialog_cancel_button_enable_state(False)
-        # TODO: Currently the user is responsible for hooking up the signals of the dialog_button_box
 
         if create_default_layout:
             layout.addWidget(self.title_lbl)

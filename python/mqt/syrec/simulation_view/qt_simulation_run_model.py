@@ -137,14 +137,9 @@ class SimulationRunModel:
             msg = f"Expected output state to have {expected_output_state.size()} qubits but actual output state contained {actual_output_state.size()} qubits!"
             raise ValueError(msg)
 
-        do_expected_and_actual_input_states_match = True
-        for qubit in range(actual_output_state.size()):
-            do_expected_and_actual_input_states_match &= actual_output_state.test(qubit) == expected_output_state.test(
-                qubit
-            )
-            if not do_expected_and_actual_input_states_match:
-                break
-        return do_expected_and_actual_input_states_match
+        return all(
+            actual_output_state.test(i) == expected_output_state.test(i) for i in range(actual_output_state.size())
+        )
 
     @staticmethod
     def _update_n_bit_values_container_qubit_value(

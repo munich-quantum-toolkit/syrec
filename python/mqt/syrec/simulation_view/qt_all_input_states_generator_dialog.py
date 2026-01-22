@@ -42,7 +42,6 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         self, shared_simulation_runs_model: QtSimulationRunModel, expected_input_state_size: int, batch_size: int = 1000
     ) -> None:
         self.shared_simulation_runs_model = shared_simulation_runs_model
-
         self.title_lbl.setText(f"Generating simulation runs with batch size {batch_size}!")
         # TODO: Validation that maximum value can actually be stored in progress bar maximum (should validation be performed in dialog or by caller?)
         if self.progress_bar is not None:

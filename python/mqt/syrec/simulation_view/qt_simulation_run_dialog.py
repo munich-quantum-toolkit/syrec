@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, cast
 
 from PyQt6 import QtCore, QtWidgets
 
@@ -17,57 +17,53 @@ if TYPE_CHECKING:
 
     from mqt import syrec
 
-    from .qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
+    from .qt_simulation_run_model import QtSimulationRunModel
 
-from .qt_simulation_worker import SimulationRunResult, SimulationWorker, ToBeExecutedSimulationRun
+from ..logger_utils import log_error_to_console, log_info_to_console
+from ..message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from .dialogs.base_progress_dialog import BaseProgressDialog
+from .qt_simulation_run_worker import SimulationRunResult, SimulationRunWorker
 from .styled_item_delegates.qt_simulation_run_execution_styled_item_delegate import (
     SimulationRunExecutionStyledItemDelegate,
 )
 
-TOTAL_RUNTIME_TIMER_TIMEOUT_IN_MS: Final[int] = 1000
-TOTAL_RUNTIME_TEXT_FORMAT: Final[str] = "Total runtime [in seconds]: {total_runtime_in_seconds:f}"
 
+class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
+    def __init__(self, parent: QtWidgets.QWidget):
+        super().__init__(
+            parent,
+            dialog_title="Executing simulation runs...",
+            dialog_size=(400, 200),
+            optional_progress_bar_text_format="Executed simulation run %v of %m",
+            create_default_layout=False,
+        )
+        self.annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
+        self.shared_simulation_runs_model: QtSimulationRunModel | None = None
+        self.stop_at_first_output_state_mismatch: bool = False
+        self.num_executed_simulation_runs: int = 0
 
-class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
-    def __init__(self, shared_simulation_run_model: QtSimulationRunModel, parent: QtWidgets.QWidget):
-        super().__init__(parent)
+        self.dialog_button_box.accepted.connect(self.accept)
+        self.dialog_button_box.rejected.connect(self._handle_simulation_runs_cancel_button_click)
 
-        # TODO: Member variable could also be initialized in start_simulations
-        self.simulation_runs_model = shared_simulation_run_model
-        self.worker_thread: QtCore.QThread | None = None
-        self.worker: SimulationWorker | None = None
-
-        self.num_completed_simulation_runs: int = 0
-        self.expected_total_num_simulation_runs: int = 0
-        self.did_simulation_run_fail_due_to_failure: bool = False
-
-        self.setModal(True)
-        self.setSizeGripEnabled(True)
-        self.setWindowTitle("Executing simulation runs")
-        left = 0
-        top = 0
-        width = 400
-        height = 400
-        self.setGeometry(left, top, width, height)
-
-        main_layout = QtWidgets.QVBoxLayout()
-        self.setLayout(main_layout)
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.title_lbl)
+        layout.addWidget(self.progress_info_text_lbl)
+        layout.addWidget(self.error_text_lbl)
 
         simulation_runs_list_layout = QtWidgets.QHBoxLayout()
-        simulation_runs_list_view: QtWidgets.QListView = QtWidgets.QListView()
-        simulation_runs_list_view.setModel(self.simulation_runs_model)
-        simulation_runs_list_view.setItemDelegate(SimulationRunExecutionStyledItemDelegate())  # type: ignore[no-untyped-call]
-        simulation_runs_list_view.setUniformItemSizes(True)
-        simulation_runs_list_view.setAutoFillBackground(False)
-        simulation_runs_list_view.setSpacing(5)
-        simulation_runs_list_view.setFlow(QtWidgets.QListView.Flow.TopToBottom)
+        self.simulation_runs_list_view: QtWidgets.QListView = QtWidgets.QListView()
+        self.simulation_runs_list_view.setItemDelegate(SimulationRunExecutionStyledItemDelegate())  # type: ignore[no-untyped-call]
+        self.simulation_runs_list_view.setUniformItemSizes(True)
+        self.simulation_runs_list_view.setAutoFillBackground(False)
+        self.simulation_runs_list_view.setSpacing(5)
+        self.simulation_runs_list_view.setFlow(QtWidgets.QListView.Flow.TopToBottom)
         # Select with click on item, unselect with Ctrl+Click on already selected item (see https://doc.qt.io/qt-6/qabstractitemview.html#SelectionMode-enum)
-        simulation_runs_list_view.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        # simulation_runs_list_view.selectionModel().selectionChanged.connect(self.handle_simulation_run_selection_change)
+        self.simulation_runs_list_view.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
+        # self.simulation_runs_list_view.selectionModel().selectionChanged.connect(self.handle_simulation_run_selection_change)
 
         simulation_runs_list_scrollarea = QtWidgets.QScrollArea()
         simulation_runs_list_scrollarea.setAutoFillBackground(False)
-        simulation_runs_list_scrollarea.setWidget(simulation_runs_list_view)
+        simulation_runs_list_scrollarea.setWidget(self.simulation_runs_list_view)
         simulation_runs_list_scrollarea.setWidgetResizable(True)
 
         simulation_runs_list_layout.addItem(
@@ -81,193 +77,193 @@ class SimulationRunDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 2, 2, QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
             )
         )
-        main_layout.addLayout(simulation_runs_list_layout)
-
-        simulation_progress_controls_layout = QtWidgets.QVBoxLayout()
-        simulation_success_progress_layout = QtWidgets.QHBoxLayout()
-        # self.simulation_run_total_runtime_timer = QtWidgets.QTimer(self)
-        # self.simulation_run_total_runtime_timer.timeout.connect(self.)
-        # self.simulation_run_total_runtime_info_label = QtWidgets.QLabel(TOTAL_RUNTIME_TEXT_FORMAT.format(total_runtime_in_seconds=0))
-        self.simulation_run_progress_bar = QtWidgets.QProgressBar()
-        # For placeholder values see: https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QProgressBar.html#PySide6.QtWidgets.QProgressBar.format
-        self.simulation_run_progress_bar.setFormat("Executing simulation run %v of %m")
-        self.simulation_run_progress_bar.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.simulation_run_progress_lbl = QtWidgets.QLabel("")
-        self.simulation_run_progress_lbl.setStyleSheet("QLabel { color : gray; }")
-
-        self.simulation_run_err_lbl = QtWidgets.QLabel("")
-        self.simulation_run_err_lbl.setStyleSheet("QLabel { color : red; }")
-
-        # simulation_progress_layout.addWidget(self.simulation_run_total_runtime_info_label)
-        simulation_success_progress_layout.addWidget(self.simulation_run_progress_bar)
-        simulation_success_progress_layout.addWidget(self.simulation_run_progress_lbl)
-        simulation_progress_controls_layout.addLayout(simulation_success_progress_layout)
-        simulation_progress_controls_layout.addWidget(self.simulation_run_err_lbl)
-
-        # simulation_progress_layout.addStretch()
-        main_layout.addLayout(simulation_progress_controls_layout)
-
-        # TODO: One could also offer a close button in the dialog (that warns the user when closing the dialog during a simulation run execution)?
-        self.dialog_button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Cancel)
-        self.dialog_button_box.setCenterButtons(True)
-        self.dialog_button_box.rejected.connect(self._handle_simulation_runs_cancel_button_click)
-        main_layout.addWidget(self.dialog_button_box)
+        layout.addLayout(simulation_runs_list_layout)
+        layout.addWidget(self.progress_bar)
+        layout.addWidget(self.total_runtime_info_text_lbl)
+        # layout.addStretch()
+        layout.addWidget(self.dialog_button_box)
+        self.setLayout(layout)
 
     def start_simulations(
         self,
         annotatable_quantum_computation: syrec.annotatable_quantum_computation,
-        expected_total_num_simulation_runs: int,
+        shared_simulation_run_model: QtSimulationRunModel,
         stop_at_first_output_state_mismatch: bool,
+        batch_size: int = 100,
     ) -> None:
-        self.num_completed_simulation_runs = 0
-        self.expected_total_num_simulation_runs = expected_total_num_simulation_runs
+        self.annotatable_quantum_computation = annotatable_quantum_computation
+        self.shared_simulation_runs_model = shared_simulation_run_model
+        self.simulation_runs_list_view.setModel(self.shared_simulation_runs_model)
+        self.stop_at_first_output_state_mismatch = stop_at_first_output_state_mismatch
+        log_info_to_console(
+            f"Starting execution of simulation runs, stopping after first output mismatch flag is set to {self.stop_at_first_output_state_mismatch}"
+        )
 
-        self.simulation_run_progress_bar.setMinimum(0)
-        self.simulation_run_progress_bar.setMaximum(expected_total_num_simulation_runs - 1)
-        self.simulation_run_progress_bar.setValue(0)
-        self.simulation_run_progress_bar.setVisible(True)
+        expected_input_state_size: Final[int] = self.annotatable_quantum_computation.num_data_qubits
+        if batch_size <= 0 or expected_input_state_size <= 0:
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Invalid input parameters detected",
+                message_box_content=f"Expected batch size (value={batch_size}) as well as the expected input state size (value={expected_input_state_size}) to be positive integers!",
+                is_cancellable=False,
+            )
+            self.reject()
+            return
 
-        # self.simulation_run_total_runtime_timer.start(TOTAL_RUNTIME_TIMER_TIMEOUT_IN_MS)
+        expected_total_num_simulation_runs: Final[int] = shared_simulation_run_model.rowCount(QtCore.QModelIndex())
+        self.title_lbl.setText(
+            f"Executing {expected_total_num_simulation_runs} simulation runs with batch size {batch_size}!"
+        )
+        if self.progress_bar is not None:
+            self.progress_bar.setMinimum(0)
+            self.progress_bar.setMaximum(expected_total_num_simulation_runs)
+            self.progress_bar.setValue(0)
+        else:
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Required widget not found",
+                message_box_content="Simulation run dialog was initialized without a progress bar! This should not happen.",
+                is_cancellable=False,
+            )
+
         # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
-        self.worker = SimulationWorker(annotatable_quantum_computation, stop_at_first_output_state_mismatch)
+        self.worker = SimulationRunWorker(
+            self.annotatable_quantum_computation,
+            self.shared_simulation_runs_model,
+            expected_input_state_size,
+            batch_size,
+            self.stop_at_first_output_state_mismatch,
+        )
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
         self.worker_thread.started.connect(self.worker.start_simulations, QtCore.Qt.ConnectionType.QueuedConnection)
-        self.worker.allSimulationsDone.connect(
-            self._handle_all_simulation_runs_done, QtCore.Qt.ConnectionType.QueuedConnection
+        self.worker.finished.connect(
+            self._handle_all_simulation_run_executions_done, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        self.worker.simulationRunCompleted.connect(
-            self._handle_simulation_run_done, QtCore.Qt.ConnectionType.QueuedConnection
+        self.worker.batchCompleted.connect(
+            self._handle_simulation_run_execution_batch_done, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        self.worker.simulationRunMismatchBetweenOutputStates.connect(
-            self._handle_simulation_runs_stopped_after_first_failure, QtCore.Qt.ConnectionType.QueuedConnection
-        )
-        self.worker.errDuringSimulationRun.connect(
-            self._handle_simulation_runs_stopped_due_to_err, QtCore.Qt.ConnectionType.QueuedConnection
-        )
+        self.worker.failed.connect(self._handle_simulation_runs_failure, QtCore.Qt.ConnectionType.QueuedConnection)
 
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.finished.connect(self._reset_workers)
 
         self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
-        self._enqueue_next_simulation_run(0)
-        self._change_dialog_cancellation_button_enable_state(True)
-
-    # TODO: Mark remaining member functions as private via underscore prefix?
-    # TODO: Not all simulation runs are executed? (2 out of 10) but no error is printed to the console or shown in the GUI.
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
-    def _handle_all_simulation_runs_done(self) -> None:
-        self._request_worker_cancellation()
-        self._await_worker_thread_completion()
-
-        if self.num_completed_simulation_runs == self.expected_total_num_simulation_runs:
-            self.simulation_run_progress_lbl.setText(
-                f"Finished all {self.expected_total_num_simulation_runs} simulation runs!"
-            )
-        else:
-            self.simulation_run_progress_lbl.setText(
-                f"Finished {self.num_completed_simulation_runs} out of all {self.expected_total_num_simulation_runs} simulation runs!"
-            )
-
-    @QtCore.pyqtSlot(int, Exception)  # type: ignore[untyped-decorator]
-    def _handle_simulation_runs_stopped_due_to_err(self, simulation_run_num_that_failed: int, err: Exception) -> None:
-        self.simulation_run_err_lbl.setText(
-            f"Unexpected {err=}, {type(err)=} during execution of simulation run {simulation_run_num_that_failed}"
-        )
-        self._request_worker_cancellation()
-        self._await_worker_thread_completion()
-
-    @QtCore.pyqtSlot(ToBeExecutedSimulationRun)  # type: ignore[untyped-decorator]
-    def _handle_simulation_runs_stopped_after_first_failure(
-        self, simulation_run_causing_err: ToBeExecutedSimulationRun
-    ) -> None:
-        self._update_progress_controls(simulation_run_causing_err.simulation_run_number)
-        self._request_worker_cancellation()
-        self._await_worker_thread_completion()
-
-    def _request_worker_cancellation(self) -> None:
-        if self.worker is not None:
-            self.worker.request_cancellation()
-            self._change_dialog_cancellation_button_enable_state(False)
-            self.simulation_run_progress_bar.setVisible(False)
-
-    def _change_dialog_cancellation_button_enable_state(self, should_button_be_enabled: bool) -> None:
-        dialog_cancel_button: QtWidgets.QPushButton | None = self.dialog_button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        )
-
-        if dialog_cancel_button is None:
-            return
-
-        dialog_cancel_button.setEnabled(should_button_be_enabled)
+        self._change_dialog_cancel_button_enable_state(True)
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
         # Ask for confirmation before closing
-        if self.worker is None or self.handle_simulation_runs_cancel_button_click():
-            self.accept()
+        if self._handle_simulation_runs_cancel_button_click():
+            if not self.error_text_lbl.text():
+                self.accept()
+            else:
+                self.reject()
         else:
             event.ignore()
 
+    @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
+    def _handle_all_simulation_run_executions_done(self, was_cancellation_requested: bool) -> None:
+        self.progress_info_text_lbl.setText("Simulation run execution finished!")
+        log_info_to_console("Simulation run execution finished!")
+
+        if self.progress_bar is not None:
+            self.progress_bar.setVisible(False)
+
+        if not was_cancellation_requested:
+            if self.worker is not None:
+                self._request_worker_cancellation()
+            if self.worker_thread is not None:
+                self._shutdown_worker_thread_and_await_completion()
+
+        self._change_dialog_ok_button_enable_state(should_button_be_enabled=True)
+        self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
+
+    @QtCore.pyqtSlot(Exception)  # type: ignore[untyped-decorator]
+    def _handle_simulation_runs_failure(self, err: Exception) -> None:
+        self._handle_non_recoverable_error(err)
+
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _handle_simulation_runs_cancel_button_click(self) -> bool:
-        clicked_button_in_confirmation_dialog: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
-            self,
-            "Cancellation of simulation runs requested!",
-            "Are you sure that you want to stop the execution of the simulation runs?",
-            buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
-            defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-        )
+        if self.worker is None:
+            return True
 
-        if clicked_button_in_confirmation_dialog == QtWidgets.QMessageBox.StandardButton.Ok:
-            self._request_worker_cancellation()
+        if show_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.QUESTION,
+            message_box_parent=self,
+            message_box_title="Cancellation of simulation runs requested!",
+            message_box_content="Are you sure that you want to stop the execution of the simulation runs?",
+            is_cancellable=True,
+            log_contents=False,
+        ):
+            log_info_to_console("Cancellation of simulation run execution requested!")
+            self._handle_non_recoverable_error(None)
             return True
         return False
 
-    @QtCore.pyqtSlot(SimulationRunResult)  # type: ignore[untyped-decorator]
-    def _handle_simulation_run_done(self, simulation_run_result: SimulationRunResult) -> None:
-        self._update_progress_controls(simulation_run_result.simulation_run_number)
-        try:
-            self.simulation_runs_model.update_model_using_simulation_run_result(
-                self.simulation_runs_model.index(simulation_run_result.simulation_run_number),
-                simulation_run_result.actual_output_state,
-                simulation_run_result.do_expected_and_actual_outputs_match,
-                simulation_run_result.execution_runtime_in_ms,
-            )
-        except ValueError as err:
-            self.simulation_run_err_lbl.setText(
-                f"Unexpected {err=}, {type(err)=} during update of simulation run model after successful execution of simulation run {simulation_run_result.simulation_run_number}"
-            )
-            self._request_worker_cancellation()
-        else:
-            self._enqueue_next_simulation_run(simulation_run_result.simulation_run_number + 1)
-
-    def _enqueue_next_simulation_run(self, simulation_run_number: int) -> None:
-        next_simulation_run: SimulationRunModel | None = self.simulation_runs_model.get_simulation_run_model(
-            simulation_run_number
-        )
-
-        if self.worker is None:
+    @QtCore.pyqtSlot(float, object)  # type: ignore[untyped-decorator]
+    def _handle_simulation_run_execution_batch_done(
+        self, simulation_run_execution_duration_in_seconds: float, batch_data: object
+    ) -> None:
+        if self.stop_processing_recv_batches:
             return
-        if next_simulation_run is None:
-            self._request_worker_cancellation()
-        else:
-            self.worker.queue_new_simulation_run(
-                ToBeExecutedSimulationRun(
-                    simulation_run_number, next_simulation_run.input_state, next_simulation_run.expected_output_state
-                )
+
+        if not SimulationRunWorker.are_list_of_batch_items_of_type(batch_data, SimulationRunResult):
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.INFO,
+                message_box_parent=self,
+                message_box_title="Cannot handle batch data",
+                message_box_content=f"Expected batch data to be a list of SimulationRunResults but was actually {type(batch_data)}. Skipping batch!",
+                is_cancellable=False,
             )
+            if self.worker is not None:
+                self.worker.ack_batch_processed()
+            return
 
-    def _await_worker_thread_completion(self) -> None:
+        casted_batch_data: Final[list[SimulationRunResult]] = cast("list[SimulationRunResult]", batch_data)
+        generated_batch_size: Final[int] = len(casted_batch_data)
+        if self.shared_simulation_runs_model is None:
+            log_error_to_console("Shared simulation runs model was not initialized during handling of batch!")
+            self._handle_non_recoverable_error(None)
+            return
+
+        to_be_updated_simulation_run_number: int = 0
+        try:
+            for i in range(generated_batch_size):
+                to_be_updated_simulation_run_number = casted_batch_data[i].simulation_run_number
+                self.shared_simulation_runs_model.update_model_using_simulation_run_result(
+                    self.shared_simulation_runs_model.index(to_be_updated_simulation_run_number),
+                    casted_batch_data[i].actual_output_state,
+                    casted_batch_data[i].do_expected_and_actual_outputs_match,
+                    simulation_run_execution_duration_in_seconds / 1000
+                    if simulation_run_execution_duration_in_seconds > 0
+                    else 0,
+                )
+        except Exception as err:
+            self._handle_non_recoverable_error(
+                f"Error during update of shared simulation run model with data from simulation run execution result of simulation run #{to_be_updated_simulation_run_number}, reason: {SimulationRunDialog._stringify_error(err)}"
+            )
+            return
+
+        if self.worker is not None:
+            self.worker.ack_batch_processed()
+
+        self._update_progress_text_with_batch_info(generated_batch_size, simulation_run_execution_duration_in_seconds)
+        self._accumulate_and_update_total_runtime(simulation_run_execution_duration_in_seconds)
+        self.num_executed_simulation_runs += generated_batch_size
+        if self.progress_bar is not None:
+            self.progress_bar.setValue(self.num_executed_simulation_runs)
+
+    def _handle_non_recoverable_error(self, err: Exception | str | None) -> None:
+        self.progress_info_text_lbl.setText("")
+        if self.progress_bar is not None:
+            self.progress_bar.setVisible(False)
+
+        if err is not None:
+            self._update_displayed_error_text(err, num_additionally_skipped_stack_frames_starting_from_this_function=2)
+
+        if self.worker is not None:
+            self._request_worker_cancellation()
         if self.worker_thread is not None:
-            self.worker_thread.quit()
-            self.worker_thread.wait()
-            self.simulation_run_progress_lbl.setText("Simulation run thread finished!")
-
-    def _reset_workers(self) -> None:
-        self.worker_thread = None
-        self.worker = None
-
-    def _update_progress_controls(self, completed_simulation_run: int) -> None:
-        self.simulation_run_progress_lbl.setText(f"Completed simulation run {completed_simulation_run}")
-        self.simulation_run_progress_bar.setValue(self.num_completed_simulation_runs)
-        self.num_completed_simulation_runs += 1
+            self._shutdown_worker_thread_and_await_completion()

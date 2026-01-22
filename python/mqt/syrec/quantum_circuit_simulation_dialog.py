@@ -577,6 +577,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             # TODO: Error logging?
             return
 
+        # TODO: Should this validation be performed in the dialog itself? Can this condition even be met?
         num_simulation_runs: Final[int] = self.simulation_runs_model.rowCount(QtCore.QModelIndex())
         if num_simulation_runs >= sys.maxsize:
             QtWidgets.QMessageBox.critical(
@@ -595,11 +596,11 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
             return
 
-        self.simulation_run_dialog = SimulationRunDialog(self.simulation_runs_model, self)
+        self.simulation_run_dialog = SimulationRunDialog(self)
         self.simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
         self.simulation_run_dialog.show()
         self.simulation_run_dialog.start_simulations(
-            self.annotatable_quantum_computation, num_simulation_runs, stop_at_first_output_state_mismatch
+            self.annotatable_quantum_computation, self.simulation_runs_model, stop_at_first_output_state_mismatch
         )
 
     # TODO: Toggle state after edits in simulation runs were performed?
