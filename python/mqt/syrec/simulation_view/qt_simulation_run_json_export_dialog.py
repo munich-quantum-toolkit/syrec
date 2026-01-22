@@ -110,6 +110,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
     @QtCore.pyqtSlot(float, object)  # type: ignore[untyped-decorator]
     def _handle_batch_exported(self, batch_generation_duration_in_seconds: float, batch_data: object) -> None:
         if not isinstance(batch_data, int):
+            # TODO: Better logging of mismatched type/s in list
             show_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.INFO,
                 message_box_parent=self,
