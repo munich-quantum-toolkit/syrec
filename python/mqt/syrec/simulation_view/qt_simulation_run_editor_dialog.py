@@ -14,6 +14,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+from .dialogs.base_progress_dialog import BaseProgressDialog
 from .qt_simulation_run_model import (
     ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE,
     QUANTUM_REGISTER_LAYOUT_QT_ROLE,
@@ -99,12 +100,21 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.setModal(True)
         self.setSizeGripEnabled(True)
         self.setWindowTitle("Edit qubit values of quantum registers for simulation run")
+
+        dialog_size: Final[QtCore.QSize] = BaseProgressDialog.get_default_big_dialog_size()
+        center_dialog_pos_for_size: Final[QtCore.QPoint] = BaseProgressDialog.get_center_screen_position_for_size(
+            dialog_size
+        )
+        self.setGeometry(
+            center_dialog_pos_for_size.x(), center_dialog_pos_for_size.y(), dialog_size.width(), dialog_size.height()
+        )
+
         main_layout = QtWidgets.QVBoxLayout()
 
         self.simulation_run_wrapper_box = QtWidgets.QGroupBox(
             "Simulation run #" + str(simulation_run_model_index.row())
         )
-        main_layout.addWidget(self.simulation_run_wrapper_box)
+        # main_layout.addWidget(self.simulation_run_wrapper_box)
 
         # TODO: How to render n-dimensional variables
         # TODO: How can we determine whether qubits are readonly
@@ -238,6 +248,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_run_scroll_area = QtWidgets.QScrollArea()
         simulation_run_scroll_area.setWidget(self.simulation_run_wrapper_box)
         simulation_run_scroll_area.setWidgetResizable(True)
+        simulation_run_scroll_area.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         main_layout.addWidget(simulation_run_scroll_area)
 
         qreg_values_validation_error_label = QtWidgets.QLabel(objectName=QREG_VALUES_VALIDATION_ERROR_LABEL_NAME)
@@ -250,10 +261,8 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self.dialog_button_box.setCenterButtons(True)
         self.dialog_button_box.accepted.connect(self.accept)
-        # TODO: Only update copy of simulation run model to be able to discard changes
         # TODO: Require confirmation to discard changes
         self.dialog_button_box.rejected.connect(self.reject)
-
         main_layout.addWidget(self.dialog_button_box)
         self.setLayout(main_layout)
 

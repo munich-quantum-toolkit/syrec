@@ -29,7 +29,6 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         super().__init__(
             parent,
             dialog_title="Generating simulation runs...",
-            dialog_size=(400, 200),
             optional_progress_bar_text_format="Generated %v out of %m input states",
         )
         self.shared_simulation_runs_model: QtSimulationRunModel | None = None

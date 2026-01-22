@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Final, Generic, TypeVar
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from ...logger_utils import log_error_to_console, log_info_to_console
 from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
@@ -25,15 +25,19 @@ DEFAULT_BATCH_RUNTIME_INFO_TEXT_FORMAT: Final[str] = (
     "Batch of {n_batch_elements:d} completed! Runtime [in seconds]: {batch_duration_in_seconds:f}"
 )
 
+SMALL_DIALOG_WIDTH: Final[int] = 600
+SMALL_DIALOG_HEIGHT: Final[int] = 300
+
 
 class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
     def __init__(
         self,
         parent: QtWidgets.QWidget,
         dialog_title: str,
-        dialog_size: tuple[int, int] = (600, 600),
         optional_progress_bar_text_format: str | None = None,
         create_default_layout: bool = True,
+        user_provided_dialog_size: QtCore.QSize | None = None,
+        center_dialog: bool = True,
     ):
         super().__init__(parent)
 
@@ -46,11 +50,21 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
         self.setSizeGripEnabled(True)
         self.setWindowTitle(dialog_title)
 
-        dialog_x_pos: Final[int] = 0
-        dialog_y_pos: Final[int] = 0
-        dialog_width: Final[int] = dialog_size[0]
-        dialog_height: Final[int] = dialog_size[1]
-        self.setGeometry(dialog_x_pos, dialog_y_pos, dialog_width, dialog_height)
+        dialog_x_pos: int = 0
+        dialog_y_pos: int = 0
+
+        to_be_used_dialog_size: Final[QtCore.QSize] = (
+            QtCore.QSize(SMALL_DIALOG_WIDTH, SMALL_DIALOG_HEIGHT)
+            if user_provided_dialog_size is None
+            else user_provided_dialog_size
+        )
+        if center_dialog:
+            dialog_pos: Final[QtCore.QPoint] = BaseProgressDialog.get_center_screen_position_for_size(
+                to_be_used_dialog_size
+            )
+            dialog_x_pos = dialog_pos.x()
+            dialog_y_pos = dialog_pos.y()
+        self.setGeometry(dialog_x_pos, dialog_y_pos, to_be_used_dialog_size.width(), to_be_used_dialog_size.height())
 
         layout = QtWidgets.QVBoxLayout()
         self.title_lbl = QtWidgets.QLabel()
@@ -93,6 +107,20 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
             layout.addWidget(self.total_runtime_info_text_lbl)
             layout.addWidget(self.dialog_button_box)
             self.setLayout(layout)
+
+    @staticmethod
+    def get_default_big_dialog_size() -> QtCore.Size:
+        return QtCore.QSize(
+            int(QtGui.QGuiApplication.primaryScreen().availableSize().width() / 1.5),
+            int(QtGui.QGuiApplication.primaryScreen().availableSize().height() / 1.5),
+        )
+
+    @staticmethod
+    def get_center_screen_position_for_size(dialog_size: QtCore.Size) -> QtCore.QPoint:
+        return QtCore.QPoint(
+            (QtGui.QGuiApplication.primaryScreen().availableSize().width() // 2) - (dialog_size.width() // 2),
+            (QtGui.QGuiApplication.primaryScreen().availableSize().height() // 2) - (dialog_size.height() // 2),
+        )
 
     def _update_progress_text_with_batch_info(self, n_batch_elements: int, batch_duration_in_seconds: float) -> None:
         self.progress_info_text_lbl.setText(

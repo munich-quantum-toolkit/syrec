@@ -31,7 +31,6 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         super().__init__(
             parent,
             dialog_title="Importing simulation runs...",
-            dialog_size=(400, 200),
             optional_progress_bar_text_format=None,
             create_default_layout=False,
         )

@@ -31,7 +31,6 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         super().__init__(
             parent,
             dialog_title="Exporting simulation runs...",
-            dialog_size=(400, 200),
             optional_progress_bar_text_format="Exported simulation run %v of %m",
             create_default_layout=False,
         )

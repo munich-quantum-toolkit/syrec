@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Final, cast
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 if TYPE_CHECKING:
     from PyQt6 import QtGui
@@ -33,9 +33,9 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         super().__init__(
             parent,
             dialog_title="Executing simulation runs...",
-            dialog_size=(400, 200),
             optional_progress_bar_text_format="Executed simulation run %v of %m",
             create_default_layout=False,
+            user_provided_dialog_size=SimulationRunDialog.get_default_big_dialog_size(),
         )
         self.annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
         self.shared_simulation_runs_model: QtSimulationRunModel | None = None

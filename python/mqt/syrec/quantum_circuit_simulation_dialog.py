@@ -16,6 +16,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+from .simulation_view.dialogs.base_progress_dialog import BaseProgressDialog
 from .simulation_view.qt_all_input_states_generator_dialog import AllInputStatesGeneratorDialog
 from .simulation_view.qt_simulation_run_dialog import SimulationRunDialog
 from .simulation_view.qt_simulation_run_editor_dialog import SimulationRunEditorDialog
@@ -58,11 +59,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.title = "Define simulation runs for quantum computation"
         self.setWindowTitle(self.title)
 
-        self.left = 0
-        self.top = 0
-        self.width = 1200
-        self.height = 800
-        self.setGeometry(self.left, self.top, self.width, self.height)
+        dialog_size: Final[QtCore.QSize] = BaseProgressDialog.get_default_big_dialog_size()
+        center_dialog_pos_for_size: Final[QtCore.QPoint] = BaseProgressDialog.get_center_screen_position_for_size(
+            dialog_size
+        )
+        self.setGeometry(
+            center_dialog_pos_for_size.x(), center_dialog_pos_for_size.y(), dialog_size.width(), dialog_size.height()
+        )
 
         self.simulation_run_editor_dialog: SimulationRunEditorDialog | None = None
         self.all_input_states_generator_dialog: AllInputStatesGeneratorDialog | None = None
