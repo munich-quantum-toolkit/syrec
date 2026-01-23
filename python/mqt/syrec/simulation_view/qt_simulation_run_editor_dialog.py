@@ -8,12 +8,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, cast
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+from ..logger_utils import log_error_to_console
+from ..message_box_utils import MessageBoxType, show_optionally_cancellable_notification
 from .dialogs.base_progress_dialog import BaseProgressDialog
 from .qt_simulation_run_model import (
     ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE,
@@ -21,6 +23,8 @@ from .qt_simulation_run_model import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from .qt_simulation_run_model import (
         QuantumRegisterLayout,
         SimulationRunModel,
@@ -73,7 +77,6 @@ QREG_VALUES_VALIDATION_ERROR_FORMAT: Final[str] = (
 )
 
 
-# TODO: Replace 'simple' returns with QDialog.reject("<ERR_MSG>") to indicate fatal errors and stop editing simulation run but also reject changes made in parent widget that opened dialog
 class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def __init__(
         self,
@@ -82,6 +85,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         parent: QtWidgets.QWidget,
     ):
         super().__init__(parent)
+        self.failed_due_to_internal_error: bool = False
         self.simulation_run_model_index: QtCore.QModelIndex = simulation_run_model_index
         self.edited_simulation_run_model: SimulationRunModel = copy_of_reference_edit_sim_run_model
 
@@ -114,18 +118,15 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_run_wrapper_box = QtWidgets.QGroupBox(
             "Simulation run #" + str(simulation_run_model_index.row())
         )
-        # main_layout.addWidget(self.simulation_run_wrapper_box)
 
         # TODO: How to render n-dimensional variables
-        # TODO: How can we determine whether qubits are readonly
         self.are_qubits_values_readonly: bool = initial_input_state.size() == 0
         self.edit_of_qubit_values_enabled: bool = False
 
-        # TODO: Add validators
         quantum_register_controls_grid_layout = QtWidgets.QGridLayout()
         self.simulation_run_wrapper_box.setLayout(quantum_register_controls_grid_layout)
         quantum_register_controls_grid_layout.addLayout(
-            self.create_qreg_search_controls(), 0, 0, alignment=QtCore.Qt.AlignmentFlag.AlignCenter
+            self._create_qreg_search_controls(), 0, 0, alignment=QtCore.Qt.AlignmentFlag.AlignCenter
         )
 
         init_expected_output_state_button = QtWidgets.QPushButton(
@@ -134,7 +135,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             else "Clear output state",
             objectName=QREG_EXPECTED_OUTPUT_STATE_VALUE_INIT_TOGGLE_NAME,
         )
-        init_expected_output_state_button.clicked.connect(self.handle_init_expected_output_state_button_click)
+        init_expected_output_state_button.clicked.connect(self._handle_init_expected_output_state_button_click)
 
         output_state_value_toggle_controls_layout = QtWidgets.QHBoxLayout()
         output_state_value_toggle_controls_layout.addWidget(QtWidgets.QLabel("Modify output state value:"))
@@ -171,7 +172,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 alignment=QtCore.Qt.AlignmentFlag.AlignLeft,
             )
 
-            input_state_edit_field = self.create_in_or_out_state_edit_field(
+            input_state_edit_field = self._create_in_or_out_state_edit_field(
                 qreg_layout, optional_qreg_qubit_values=initial_input_state, is_created_for_input_state=True
             )
             quantum_register_controls_grid_layout.addWidget(
@@ -181,7 +182,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 alignment=QtCore.Qt.AlignmentFlag.AlignCenter,
             )
 
-            output_state_edit_field = self.create_in_or_out_state_edit_field(
+            output_state_edit_field = self._create_in_or_out_state_edit_field(
                 qreg_layout, optional_qreg_qubit_values=initial_expected_output_state, is_created_for_input_state=False
             )
             quantum_register_controls_grid_layout.addWidget(
@@ -197,7 +198,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             quantum_register_controls_grid_layout.addWidget(edit_qubit_values_toggle_button, qreg_controls_grid_row, 3)
             # We need to ignore the checked parameter that is passed to the clicked slot of the QPushButton
             edit_qubit_values_toggle_button.clicked.connect(
-                lambda _, associated_qreg_name=qreg_name: self.handle_qreg_qubit_values_edit_toggle_button_click(
+                lambda _, associated_qreg_name=qreg_name: self._handle_qreg_qubit_values_edit_toggle_button_click(
                     associated_qreg_name
                 )
             )
@@ -215,7 +216,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             n_cols_in_quantum_register_controls_grid_layout: int = 3
             qreg_controls_grid_row += 1
             quantum_register_controls_grid_layout.addWidget(
-                self.create_qubit_controls_groupbox(qreg_layout, initial_input_state, initial_expected_output_state),
+                self._create_qubit_controls_groupbox(qreg_layout, initial_input_state, initial_expected_output_state),
                 qreg_controls_grid_row,
                 0,
                 1,
@@ -261,45 +262,89 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self.dialog_button_box.setCenterButtons(True)
         self.dialog_button_box.accepted.connect(self.accept)
-        # TODO: Require confirmation to discard changes
         self.dialog_button_box.rejected.connect(self.reject)
         main_layout.addWidget(self.dialog_button_box)
         self.setLayout(main_layout)
 
-    def handle_quantum_register_name_search(self) -> None:
+    def reject(self) -> None:
+        # Ask for confirmation before closing dialog
+        if self.failed_due_to_internal_error or show_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.QUESTION,
+            message_box_parent=self,
+            message_box_title="Confirm close",
+            message_box_content="Are you sure you want stop editing the simulation run, all unsaved changes will be lost?",
+            is_cancellable=True,
+            log_contents=False,
+        ):
+            super().reject()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
+        if self.failed_due_to_internal_error:
+            self.reject()
+            return
+
+        # Ask for confirmation before closing dialog
+        if show_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.QUESTION,
+            message_box_parent=self,
+            message_box_title="Confirm close",
+            message_box_content="Are you sure you want stop editing the simulation run, all unsaved changes will be lost?",
+            is_cancellable=True,
+            log_contents=False,
+        ):
+            self.accept()
+        else:
+            event.ignore()
+
+    def _handle_quantum_register_name_search(self) -> None:
         for qreg_layout in self.qreg_layouts:
             qreg_name: str = qreg_layout.qreg_name
-            qreg_name_search_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QLineEdit, QREG_SEARCH_INPUT_FIELD_NAME
+            optional_qreg_name_search_input_field: QtWidgets.QLineEdit | None = (
+                self.simulation_run_wrapper_box.findChild(QtWidgets.QLineEdit, QREG_SEARCH_INPUT_FIELD_NAME)
             )
-            qreg_name_label: QtWidgets.QLabel | None = self.simulation_run_wrapper_box.findChild(
+            optional_qreg_name_label: QtWidgets.QLabel | None = self.simulation_run_wrapper_box.findChild(
                 QtWidgets.QLabel, QREG_LABEL_NAME_FORMAT.format(qreg_name=qreg_name)
             )
-            qreg_layout_info_label: QtWidgets.QLabel | None = self.simulation_run_wrapper_box.findChild(
+            optional_qreg_layout_info_label: QtWidgets.QLabel | None = self.simulation_run_wrapper_box.findChild(
                 QtWidgets.QLabel, QREG_LAYOUT_INFO_NAME_FORMAT.format(qreg_name=qreg_name)
             )
-            qreg_input_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QLineEdit, QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+            optional_qreg_input_state_input_field: QtWidgets.QLineEdit | None = (
+                self.simulation_run_wrapper_box.findChild(
+                    QtWidgets.QLineEdit, QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+                )
             )
-            qreg_output_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+            optional_qreg_output_state_input_field: QtWidgets.QLineEdit | None = (
+                self.simulation_run_wrapper_box.findChild(
+                    QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+                )
             )
-            qreg_edit_qubit_values_toggle_button: QtWidgets.QPushButton | None = (
+            optional_qreg_edit_qubit_values_toggle_button: QtWidgets.QPushButton | None = (
                 self.simulation_run_wrapper_box.findChild(
                     QtWidgets.QPushButton, QREG_QUBIT_VALUES_TOGGLE_BUTTON_NAME_FORMAT.format(qreg_name=qreg_name)
                 )
             )
 
-            if (
-                qreg_name_search_input_field is None
-                or qreg_name_label is None
-                or qreg_layout_info_label is None
-                or qreg_input_state_input_field is None
-                or qreg_output_state_input_field is None
-                or qreg_edit_qubit_values_toggle_button is None
+            if not self._assert_all_required_widgets_found_or_close_dialog(
+                [
+                    optional_qreg_name_search_input_field,
+                    optional_qreg_name_label,
+                    optional_qreg_layout_info_label,
+                    optional_qreg_input_state_input_field,
+                    optional_qreg_output_state_input_field,
+                    optional_qreg_edit_qubit_values_toggle_button,
+                ],
+                f"Failed to locate all required Qt widgets required for quantum register '{qreg_name}' during quantum register search",
             ):
-                # TODO: This should not happen
-                continue
+                return
+
+            qreg_name_search_input_field = cast("QtWidgets.QLineEdit", optional_qreg_name_search_input_field)
+            qreg_name_label = cast("QtWidgets.QLabel", optional_qreg_name_label)
+            qreg_layout_info_label = cast("QtWidgets.QLabel", optional_qreg_layout_info_label)
+            qreg_input_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_input_state_input_field)
+            qreg_output_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_output_state_input_field)
+            qreg_edit_qubit_values_toggle_button = cast(
+                "QtWidgets.QPushButton", optional_qreg_edit_qubit_values_toggle_button
+            )
 
             should_control_be_visible: bool = qreg_name_search_input_field.text() is None or qreg_name.startswith(
                 qreg_name_search_input_field.text()
@@ -310,35 +355,44 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             qreg_output_state_input_field.setVisible(should_control_be_visible)
             qreg_edit_qubit_values_toggle_button.setVisible(should_control_be_visible)
 
-    def handle_input_state_qubit_value_checkbox_state_change(
+    def _handle_input_state_qubit_value_checkbox_state_change(
         self, associated_qreg_name: str, associated_qubit: int, relative_qubit_index_in_quantum_register: int
     ) -> None:
-        associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = self.simulation_run_wrapper_box.findChild(
-            QtWidgets.QCheckBox,
-            INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=associated_qubit),
+        optional_associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = (
+            self.simulation_run_wrapper_box.findChild(
+                QtWidgets.QCheckBox,
+                INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=associated_qubit),
+            )
         )
 
-        qreg_input_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
+        optional_qreg_input_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
             QtWidgets.QLineEdit, QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_qreg_name)
         )
 
-        if associated_qubit_value_checkbox is None or qreg_input_state_input_field is None:
-            self.show_error_msg_dialog(
-                title="Failed to updated qubit value",
-                error_msg=f"Failed to locate all required Qt widgets required to update value of qubit {relative_qubit_index_in_quantum_register} of quantum register {associated_qreg_name} in input state!",
-            )
+        if not self._assert_all_required_widgets_found_or_close_dialog(
+            [optional_associated_qubit_value_checkbox, optional_qreg_input_state_input_field],
+            f"Failed to locate all required Qt widgets required to update value of qubit {relative_qubit_index_in_quantum_register} of quantum register '{associated_qreg_name}' in input state!",
+        ):
             return
 
+        associated_qubit_value_checkbox = cast("QtWidgets.QCheckBox", optional_associated_qubit_value_checkbox)
+        qreg_input_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_input_state_input_field)
+
         updated_qubit_value: bool = associated_qubit_value_checkbox.checkState() == QtCore.Qt.CheckState.Checked
-        stringified_updated_qubit_value: str = SimulationRunEditorDialog.stringify_qubit_value(
+        stringified_updated_qubit_value: str = SimulationRunEditorDialog._stringify_qubit_value(
             updated_qubit_value, return_as_high_low_state=True
         )
 
         if not self.edited_simulation_run_model.update_input_state_qubit_value(associated_qubit, updated_qubit_value):
-            self.show_error_msg_dialog(
-                title="Failed to updated qubit value",
-                error_msg=f"Failed to update value of qubit {relative_qubit_index_in_quantum_register} of quantum register {associated_qreg_name} in input state to new value{stringified_updated_qubit_value}!",
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Failed to updated qubit value",
+                message_box_content=f"Failed to update value of qubit {relative_qubit_index_in_quantum_register} of quantum register {associated_qreg_name} in input state to new value{stringified_updated_qubit_value}!",
+                is_cancellable=False,
+                log_contents=True,
             )
+            self.reject()
             return
 
         associated_qubit_value_checkbox.setText(
@@ -348,36 +402,40 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         curr_stringified_input_state: str = qreg_input_state_input_field.text()
         qreg_input_state_input_field.setText(
             curr_stringified_input_state[:relative_qubit_index_in_quantum_register]
-            + SimulationRunEditorDialog.stringify_qubit_value(updated_qubit_value, return_as_high_low_state=False)
+            + SimulationRunEditorDialog._stringify_qubit_value(updated_qubit_value, return_as_high_low_state=False)
             + curr_stringified_input_state[relative_qubit_index_in_quantum_register + 1 :]
         )
 
-    def handle_output_state_qubit_value_checkbox_state_change(
+    def _handle_output_state_qubit_value_checkbox_state_change(
         self, associated_qreg_name: str, associated_qubit: int, relative_qubit_index_in_quantum_register: int
     ) -> None:
-        associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = self.simulation_run_wrapper_box.findChild(
-            QtWidgets.QCheckBox,
-            OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=associated_qubit),
+        optional_associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = (
+            self.simulation_run_wrapper_box.findChild(
+                QtWidgets.QCheckBox,
+                OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=associated_qubit),
+            )
         )
 
-        qreg_output_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
+        optional_qreg_output_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
             QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_qreg_name)
         )
 
-        if associated_qubit_value_checkbox is None or qreg_output_state_input_field is None:
-            self.show_error_msg_dialog(
-                title="Failed to updated qubit value",
-                error_msg=f"Failed to locate all required Qt widgets required to update value of qubit {relative_qubit_index_in_quantum_register} of quantum register '{associated_qreg_name}' in output state!",
-            )
+        if not self._assert_all_required_widgets_found_or_close_dialog(
+            [optional_associated_qubit_value_checkbox, optional_qreg_output_state_input_field],
+            f"Failed to locate all required Qt widgets required to update value of qubit {relative_qubit_index_in_quantum_register} of quantum register '{associated_qreg_name}' in output state!",
+        ):
             return
 
+        associated_qubit_value_checkbox = cast("QtWidgets.QCheckBox", optional_associated_qubit_value_checkbox)
+        qreg_output_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_output_state_input_field)
+
         updated_qubit_value: bool = associated_qubit_value_checkbox.checkState() == QtCore.Qt.CheckState.Checked
-        stringified_updated_qubit_value: str = SimulationRunEditorDialog.stringify_qubit_value(
+        stringified_updated_qubit_value: str = SimulationRunEditorDialog._stringify_qubit_value(
             updated_qubit_value, return_as_high_low_state=True
         )
 
         if self.edited_simulation_run_model.expected_output_state is None:
-            stringified_updated_qubit_value = SimulationRunEditorDialog.stringify_qubit_value(
+            stringified_updated_qubit_value = SimulationRunEditorDialog._stringify_qubit_value(
                 None, return_as_high_low_state=True
             )
             associated_qubit_value_checkbox.setText(
@@ -388,10 +446,15 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         if not self.edited_simulation_run_model.update_expected_output_state_qubit_value(
             associated_qubit, updated_qubit_value
         ):
-            self.show_error_msg_dialog(
-                title="Failed to updated qubit value",
-                error_msg=f"Failed to update value of qubit {relative_qubit_index_in_quantum_register} of quantum register '{associated_qreg_name}' in output state to new value{stringified_updated_qubit_value}!",
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Failed to updated qubit value",
+                message_box_content=f"Failed to update value of qubit {relative_qubit_index_in_quantum_register} of quantum register '{associated_qreg_name}' in output state to new value{stringified_updated_qubit_value}!",
+                is_cancellable=False,
+                log_contents=True,
             )
+            self.reject()
             return
 
         associated_qubit_value_checkbox.setText(
@@ -400,14 +463,11 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         curr_stringified_output_state: str = qreg_output_state_input_field.text()
         qreg_output_state_input_field.setText(
             curr_stringified_output_state[:relative_qubit_index_in_quantum_register]
-            + SimulationRunEditorDialog.stringify_qubit_value(updated_qubit_value, return_as_high_low_state=False)
+            + SimulationRunEditorDialog._stringify_qubit_value(updated_qubit_value, return_as_high_low_state=False)
             + curr_stringified_output_state[relative_qubit_index_in_quantum_register + 1 :]
         )
 
-    def show_error_msg_dialog(self, title: str, error_msg: str) -> None:
-        QtWidgets.QMessageBox.critical(self, title, error_msg, defaultButton=QtWidgets.QMessageBox.StandardButton.Ok)
-
-    def create_qreg_search_controls(self) -> QtWidgets.QLayout:
+    def _create_qreg_search_controls(self) -> QtWidgets.QLayout:
         qreg_search_controls_layout = QtWidgets.QHBoxLayout()
         qreg_search_label = QtWidgets.QLabel("Quantum register:")
         qreg_search_input_field = QtWidgets.QLineEdit(objectName=QREG_SEARCH_INPUT_FIELD_NAME)
@@ -422,14 +482,14 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         qreg_search_input_field.setCompleter(qreg_name_search_completer)
 
         qreg_search_trigger_button = QtWidgets.QPushButton("Search")
-        qreg_search_trigger_button.clicked.connect(self.handle_quantum_register_name_search)
+        qreg_search_trigger_button.clicked.connect(self._handle_quantum_register_name_search)
 
         qreg_search_controls_layout.addWidget(qreg_search_label)
         qreg_search_controls_layout.addWidget(qreg_search_input_field)
         qreg_search_controls_layout.addWidget(qreg_search_trigger_button)
         return qreg_search_controls_layout
 
-    def create_in_or_out_state_edit_field(
+    def _create_in_or_out_state_edit_field(
         self,
         qreg_layout: QuantumRegisterLayout,
         optional_qreg_qubit_values: syrec.n_bit_values_container | None,
@@ -444,18 +504,16 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         if optional_qreg_qubit_values is not None:
             in_or_out_state_edit_field.setText(
-                SimulationRunEditorDialog.stringify_some_qubits_of_n_bit_values_container(
+                SimulationRunEditorDialog._stringify_some_qubits_of_n_bit_values_container(
                     optional_qreg_qubit_values, qreg_layout.first_qubit_of_qreg, qreg_layout.qreg_size
                 )
             )
-            # output_state_edit_field.setEnabled(not self.are_qubits_values_readonly)
         else:
             in_or_out_state_edit_field.setEnabled(False)
             in_or_out_state_edit_field.setPlaceholderText("-")
 
         in_or_out_state_edit_field.setCursorPosition(0)
         in_or_out_state_edit_field.setAlignment(QtCore.Qt.AlignmentFlag.AlignJustify)
-        # input_state_edit_field.setEnabled(not self.are_qubits_values_readonly and not self.is_input_state_readonly)
         in_or_out_state_edit_field.setValidator(
             QtGui.QRegularExpressionValidator(QtCore.QRegularExpression(R"^[0-1]*$"), self)
         )
@@ -466,21 +524,21 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # whether the QLineEdit widget lost focus.
         in_or_out_state_edit_field.editingFinished.connect(
             lambda associated_qreg_name=qreg_layout.qreg_name, expected_text_length=qreg_layout.qreg_size, is_editing_input_state=is_created_for_input_state: (
-                self.handle_input_or_output_state_text_change(
+                self._handle_input_or_output_state_text_change(
                     associated_qreg_name, expected_text_length, is_editing_input_state
                 )
             )
         )
         in_or_out_state_edit_field.focusOut.connect(
             lambda associated_qreg_name=qreg_layout.qreg_name, expected_text_length=qreg_layout.qreg_size, is_editing_input_state=is_created_for_input_state: (
-                self.handle_input_or_output_state_text_change(
+                self._handle_input_or_output_state_text_change(
                     associated_qreg_name, expected_text_length, is_editing_input_state
                 )
             )
         )
         return in_or_out_state_edit_field
 
-    def create_in_or_out_state_qubit_value_checkbox(
+    def _create_in_or_out_state_qubit_value_checkbox(
         self,
         associated_qreg_name: str,
         optional_qreg_qubit_values: syrec.n_bit_values_container | None,
@@ -495,7 +553,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         qubit_value_checkbox.setText(
             STRINGIFIED_QUBIT_VALUE_FORMAT.format(
-                stringified_qubit_value=SimulationRunEditorDialog.stringify_qubit_value(
+                stringified_qubit_value=SimulationRunEditorDialog._stringify_qubit_value(
                     None
                     if optional_qreg_qubit_values is None
                     else optional_qreg_qubit_values.test(relative_qubit_index_in_qreg),
@@ -506,18 +564,18 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         qubit_value_checkbox.setEnabled(optional_qreg_qubit_values is not None)
         qubit_value_checkbox.checkStateChanged.connect(
             lambda _, associated_qreg_name=associated_qreg_name, associated_qubit=associated_qubit, relative_qubit_index_in_quantum_register=relative_qubit_index_in_qreg: (
-                self.handle_input_state_qubit_value_checkbox_state_change(
+                self._handle_input_state_qubit_value_checkbox_state_change(
                     associated_qreg_name, associated_qubit, relative_qubit_index_in_quantum_register
                 )
                 if is_qubit_in_input_state
-                else self.handle_output_state_qubit_value_checkbox_state_change(
+                else self._handle_output_state_qubit_value_checkbox_state_change(
                     associated_qreg_name, associated_qubit, relative_qubit_index_in_quantum_register
                 )
             )
         )
         return qubit_value_checkbox
 
-    def create_search_controls_for_qubits_of_qreg(
+    def _create_search_controls_for_qubits_of_qreg(
         self, associated_qreg_layout: QuantumRegisterLayout
     ) -> QtWidgets.QLayout:
         qubit_search_layout = QtWidgets.QHBoxLayout()
@@ -534,7 +592,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         qubit_search_input_field.setPlaceholderText("<QUBIT_LABEL>")
 
         qubit_search_completer = QtWidgets.QCompleter(
-            SimulationRunEditorDialog.get_internal_qubit_labels_for_qreg(
+            SimulationRunEditorDialog._get_internal_qubit_labels_for_qreg(
                 self.annotatable_quantum_computation, first_qreg_qubit, last_qreg_qubit
             )
         )
@@ -545,15 +603,14 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         qubit_search_trigger_button = QtWidgets.QPushButton("Search")
         qubit_search_trigger_button.clicked.connect(
-            lambda _, associated_qreg_name=associated_qreg_name: self.handle_qubit_search_trigger_button_click(
+            lambda _, associated_qreg_name=associated_qreg_name: self._handle_qubit_search_trigger_button_click(
                 associated_qreg_name
             )
         )
         qubit_search_layout.addWidget(qubit_search_trigger_button)
         return qubit_search_layout
 
-    # TODO: Scroll area
-    def create_qubit_controls_groupbox(
+    def _create_qubit_controls_groupbox(
         self,
         associated_qreg_layout: QuantumRegisterLayout,
         initial_input_state: syrec.n_bit_values_container,
@@ -561,7 +618,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
     ) -> QtWidgets.QWidget:
         input_output_qubits_value_controls_groupbox_layout = QtWidgets.QGridLayout()
         input_output_qubits_value_controls_groupbox_layout.addLayout(
-            self.create_search_controls_for_qubits_of_qreg(associated_qreg_layout),
+            self._create_search_controls_for_qubits_of_qreg(associated_qreg_layout),
             0,
             0,
             1,
@@ -584,7 +641,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 qubit_label, 1 + relative_qubit_index_in_qreg, 0
             )
 
-            input_state_qubit_value_checkbox: QtWidgets.QCheckBox = self.create_in_or_out_state_qubit_value_checkbox(
+            input_state_qubit_value_checkbox: QtWidgets.QCheckBox = self._create_in_or_out_state_qubit_value_checkbox(
                 associated_qreg_layout.qreg_name,
                 initial_input_state,
                 associated_qubit=qubit,
@@ -598,7 +655,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 alignment=QtCore.Qt.AlignmentFlag.AlignLeft,
             )
 
-            output_state_qubit_value_checkbox: QtWidgets.QCheckBox = self.create_in_or_out_state_qubit_value_checkbox(
+            output_state_qubit_value_checkbox: QtWidgets.QCheckBox = self._create_in_or_out_state_qubit_value_checkbox(
                 associated_qreg_layout.qreg_name,
                 initial_expected_output_state,
                 associated_qubit=qubit,
@@ -612,7 +669,6 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 alignment=QtCore.Qt.AlignmentFlag.AlignLeft,
             )
 
-        # TODO: How can the column widths of the input fields and the checkbox columns be synced?
         input_output_qubits_value_controls_groupbox_layout.setColumnStretch(0, 1)
         input_output_qubits_value_controls_groupbox_layout.setColumnStretch(1, 1)
         input_output_qubits_value_controls_groupbox_layout.setColumnStretch(2, 1)
@@ -625,46 +681,69 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         input_output_qubits_value_controls_groupbox.setLayout(input_output_qubits_value_controls_groupbox_layout)
         return input_output_qubits_value_controls_groupbox
 
-    def handle_qubit_search_trigger_button_click(self, associated_quantum_register_name: str) -> None:
+    def _handle_qubit_search_trigger_button_click(self, associated_quantum_register_name: str) -> None:
         for qreg_layout in self.qreg_layouts:
             if qreg_layout.qreg_name != associated_quantum_register_name:
                 continue
 
-            qreg_qubits_groupbox: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
+            optional_qreg_qubits_groupbox: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
                 QtWidgets.QGroupBox,
                 QREG_QUBIT_VALUES_GROUPBOX_NAME_FORMAT.format(qreg_name=associated_quantum_register_name),
+                QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
             )
-            if qreg_qubits_groupbox is None:
-                # TODO: This should not happen
-                continue
 
-            qubit_search_input_field: QtWidgets.QtWidget | None = qreg_qubits_groupbox.findChild(
+            if not self._assert_all_required_widgets_found_or_close_dialog(
+                [optional_qreg_qubits_groupbox],
+                f"Failed to find required qubits groupbox for quantum register '{associated_quantum_register_name}' during handling of qubit label search!",
+            ):
+                return
+
+            qreg_qubits_groupbox = cast("QtWidgets.QGroupBox", optional_qreg_qubits_groupbox)
+            optional_qubit_search_input_field: QtWidgets.QtWidget | None = qreg_qubits_groupbox.findChild(
                 QtWidgets.QLineEdit,
                 QREG_QUBIT_SEARCH_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_quantum_register_name),
+                QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
             )
-            if qubit_search_input_field is None:
-                # TODO: This should not happen
-                continue
 
+            if not self._assert_all_required_widgets_found_or_close_dialog(
+                [optional_qubit_search_input_field],
+                f"Failed to find required qubit label search input field for quantum register '{associated_quantum_register_name}' during handling of qubit label search!",
+            ):
+                return
+
+            qubit_search_input_field = cast("QtWidgets.QLineEdit", optional_qubit_search_input_field)
             for qubit in range(
                 qreg_layout.first_qubit_of_qreg, qreg_layout.first_qubit_of_qreg + qreg_layout.qreg_size
             ):
-                qubit_value_label: QtWidgets.QtWidget | None = qreg_qubits_groupbox.findChild(
-                    QtWidgets.QLabel, QUBIT_LABEL_NAME_FORMAT.format(qubit=qubit)
+                optional_qubit_value_label: QtWidgets.QtWidget | None = qreg_qubits_groupbox.findChild(
+                    QtWidgets.QLabel,
+                    QUBIT_LABEL_NAME_FORMAT.format(qubit=qubit),
+                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
                 )
-                input_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
-                    QtWidgets.QCheckBox, INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
+                optional_input_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
+                    QtWidgets.QCheckBox,
+                    INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit),
+                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
                 )
-                output_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
-                    QtWidgets.QCheckBox, OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
+                optional_output_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
+                    QtWidgets.QCheckBox,
+                    OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit),
+                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
                 )
-                if (
-                    qubit_value_label is None
-                    or input_state_qubit_checkbox is None
-                    or output_state_qubit_checkbox is None
+
+                if not self._assert_all_required_widgets_found_or_close_dialog(
+                    [
+                        optional_qubit_value_label,
+                        optional_input_state_qubit_checkbox,
+                        optional_output_state_qubit_checkbox,
+                    ],
+                    f"Failed to find required controls for qubits for quantum register '{associated_quantum_register_name}' during handling of qubit label search!",
                 ):
-                    # TODO: This should not happen
-                    continue
+                    return
+
+                qubit_value_label = cast("QtWidgets.QLabel", optional_qubit_value_label)
+                input_state_qubit_checkbox = cast("QtWidgets.QCheckBox", optional_input_state_qubit_checkbox)
+                output_state_qubit_checkbox = cast("QtWidgets.QCheckBox", optional_output_state_qubit_checkbox)
 
                 does_qubit_label_match_search_text: bool = self.annotatable_quantum_computation.get_qubit_label(
                     qubit, syrec.qubit_label_type.internal
@@ -673,47 +752,73 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 input_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
                 output_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
 
-    def handle_qreg_qubit_values_edit_toggle_button_click(self, associated_qreg_name: str) -> None:
+    def _handle_qreg_qubit_values_edit_toggle_button_click(self, associated_qreg_name: str) -> None:
         for qreg_layout in self.qreg_layouts:
             qreg_name: str = qreg_layout.qreg_name
-            # TODO: QtCore.Qt.FindDirectChildrenOnly
-            qreg_input_state_input_field: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QLineEdit, QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+            optional_qreg_input_state_input_field: QtWidgets.QtWidget | None = (
+                self.simulation_run_wrapper_box.findChild(
+                    QtWidgets.QLineEdit,
+                    QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name),
+                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+                )
             )
-            qreg_output_state_input_field: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+            optional_qreg_output_state_input_field: QtWidgets.QtWidget | None = (
+                self.simulation_run_wrapper_box.findChild(
+                    QtWidgets.QLineEdit,
+                    QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name),
+                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+                )
             )
-            qubit_values_groupbox: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QGroupBox, QREG_QUBIT_VALUES_GROUPBOX_NAME_FORMAT.format(qreg_name=qreg_name)
+            optional_qubit_values_groupbox: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
+                QtWidgets.QGroupBox,
+                QREG_QUBIT_VALUES_GROUPBOX_NAME_FORMAT.format(qreg_name=qreg_name),
+                QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
             )
-            qubit_values_toggle_button: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QPushButton, QREG_QUBIT_VALUES_TOGGLE_BUTTON_NAME_FORMAT.format(qreg_name=qreg_name)
+            optional_qubit_values_toggle_button: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
+                QtWidgets.QPushButton,
+                QREG_QUBIT_VALUES_TOGGLE_BUTTON_NAME_FORMAT.format(qreg_name=qreg_name),
+                QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
             )
-            expected_output_state_value_toggle_button: QtWidgets.QtQWidget | None = (
+            optional_expected_output_state_value_toggle_button: QtWidgets.QtQWidget | None = (
                 self.simulation_run_wrapper_box.findChild(
                     QtWidgets.QPushButton,
                     QREG_EXPECTED_OUTPUT_STATE_VALUE_INIT_TOGGLE_NAME.format(qreg_name=associated_qreg_name),
+                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
                 )
             )
-            qubit_values_groupbox_qubit_search_field: QtWidgets.QtWidget | None = (
-                qubit_values_groupbox.findChild(
-                    QtWidgets.QLineEdit, QREG_QUBIT_SEARCH_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+            optional_qubit_values_groupbox_qubit_search_field: QtWidgets.QtWidget | None = (
+                optional_qubit_values_groupbox.findChild(
+                    QtWidgets.QLineEdit,
+                    QREG_QUBIT_SEARCH_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name),
+                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
                 )
-                if qubit_values_groupbox is not None
+                if optional_qubit_values_groupbox is not None
                 else None
             )
 
-            if (
-                qreg_input_state_input_field is None
-                or qreg_output_state_input_field is None
-                or qubit_values_groupbox is None
-                or qubit_values_toggle_button is None
-                or qubit_values_toggle_button is None
-                or expected_output_state_value_toggle_button is None
-                or qubit_values_groupbox_qubit_search_field is None
+            if not self._assert_all_required_widgets_found_or_close_dialog(
+                [
+                    optional_qreg_input_state_input_field,
+                    optional_qreg_output_state_input_field,
+                    optional_qubit_values_groupbox,
+                    optional_qubit_values_toggle_button,
+                    optional_expected_output_state_value_toggle_button,
+                    optional_qubit_values_groupbox_qubit_search_field,
+                ],
+                f"Failed to find all required QtWidgets for quantum register '{qreg_name}' during handling of edit toggle of output state!",
             ):
-                # TODO: This should not happen
-                continue
+                return
+
+            qreg_input_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_input_state_input_field)
+            qreg_output_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_output_state_input_field)
+            qubit_values_groupbox = cast("QtWidgets.QCheckBox", optional_qubit_values_groupbox)
+            qubit_values_toggle_button = cast("QtWidgets.QPushButton", optional_qubit_values_toggle_button)
+            expected_output_state_value_toggle_button = cast(
+                "QtWidgets.QPushButton", optional_expected_output_state_value_toggle_button
+            )
+            qubit_values_groupbox_qubit_search_field = cast(
+                "QtWidgets.QLineEdit", optional_qubit_values_groupbox_qubit_search_field
+            )
 
             if qreg_name == associated_qreg_name and not qubit_values_groupbox.isVisible():
                 qubit_values_groupbox.setVisible(True)
@@ -728,18 +833,26 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 qreg_input_state_input_field.setEnabled(True)
                 qreg_output_state_input_field.setEnabled(qreg_output_state_input_field.text() != "")  # noqa: PLC1901
                 qubit_values_groupbox_qubit_search_field.setText("")
-                self.handle_qubit_search_trigger_button_click(associated_qreg_name)
+                self._handle_qubit_search_trigger_button_click(associated_qreg_name)
 
-    def handle_init_expected_output_state_button_click(self, associated_qreg_name: str) -> None:
-        expected_output_state_value_toggle_button: QtWidgets.QtQWidget | None = (
+    def _handle_init_expected_output_state_button_click(self, associated_qreg_name: str) -> None:
+        optional_expected_output_state_value_toggle_button: QtWidgets.QtQWidget | None = (
             self.simulation_run_wrapper_box.findChild(
                 QtWidgets.QPushButton,
                 QREG_EXPECTED_OUTPUT_STATE_VALUE_INIT_TOGGLE_NAME.format(qreg_name=associated_qreg_name),
+                QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
             )
         )
 
-        if expected_output_state_value_toggle_button is None:
+        if not self._assert_all_required_widgets_found_or_close_dialog(
+            [optional_expected_output_state_value_toggle_button],
+            f"Failed to find all required QtWidgets for quantum register '{associated_qreg_name}' during handling of initialization/clearing of output state!",
+        ):
             return
+
+        expected_output_state_value_toggle_button = cast(
+            "QtWidgets.QPushButton", optional_expected_output_state_value_toggle_button
+        )
 
         should_reset_output_state: bool = self.edited_simulation_run_model.expected_output_state is not None
         if should_reset_output_state:
@@ -751,24 +864,33 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         for qreg_layout in self.qreg_layouts:
             qreg_name: str = qreg_layout.qreg_name
-            qreg_input_state_input_field: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QLineEdit, QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+            optional_qreg_input_state_input_field: QtWidgets.QtWidget | None = (
+                self.simulation_run_wrapper_box.findChild(
+                    QtWidgets.QLineEdit, QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+                )
             )
 
-            qreg_output_state_input_field: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+            optional_qreg_output_state_input_field: QtWidgets.QtWidget | None = (
+                self.simulation_run_wrapper_box.findChild(
+                    QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+                )
             )
 
-            if qreg_input_state_input_field is None or qreg_output_state_input_field is None:
-                # TODO: This should not happen
+            if not self._assert_all_required_widgets_found_or_close_dialog(
+                [optional_qreg_input_state_input_field, optional_qreg_output_state_input_field],
+                f"Failed to find all required QtWidgets for quantum register '{qreg_name}' during handling of initialization/clearing of output state!",
+            ):
                 return
+
+            qreg_input_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_input_state_input_field)
+            qreg_output_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_output_state_input_field)
 
             if should_reset_output_state:
                 qreg_output_state_input_field.setText("")
                 qreg_output_state_input_field.setEnabled(False)
             else:
                 qreg_output_state_input_field.setText(
-                    SimulationRunEditorDialog.stringify_some_qubits_of_n_bit_values_container(
+                    SimulationRunEditorDialog._stringify_some_qubits_of_n_bit_values_container(
                         self.edited_simulation_run_model.expected_output_state,
                         qreg_layout.first_qubit_of_qreg,
                         qreg_layout.qreg_size,
@@ -779,13 +901,19 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             for qubit in range(
                 qreg_layout.first_qubit_of_qreg, qreg_layout.first_qubit_of_qreg + qreg_layout.qreg_size
             ):
-                associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = self.simulation_run_wrapper_box.findChild(
-                    QtWidgets.QCheckBox, OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
+                optional_associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = (
+                    self.simulation_run_wrapper_box.findChild(
+                        QtWidgets.QCheckBox, OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
+                    )
                 )
-                if associated_qubit_value_checkbox is None:
-                    # TODO: This should not happen
+
+                if not self._assert_all_required_widgets_found_or_close_dialog(
+                    [optional_associated_qubit_value_checkbox],
+                    f"Failed to find all required QtWidget for qubit of output state of quantum register '{qreg_name}' during initialization/clearing of output state!",
+                ):
                     return
 
+                associated_qubit_value_checkbox = cast("QtWidgets.QCheckBox", optional_associated_qubit_value_checkbox)
                 qubit_value: bool | None = (
                     self.edited_simulation_run_model.expected_output_state.test(qubit)  # type: ignore[union-attr]
                     if not should_reset_output_state
@@ -794,198 +922,216 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 associated_qubit_value_checkbox.setChecked(qubit_value if qubit_value is not None else False)
                 associated_qubit_value_checkbox.setText(
                     STRINGIFIED_QUBIT_VALUE_FORMAT.format(
-                        stringified_qubit_value=SimulationRunEditorDialog.stringify_qubit_value(
+                        stringified_qubit_value=SimulationRunEditorDialog._stringify_qubit_value(
                             qubit_value, return_as_high_low_state=True
                         )
                     )
                 )
                 associated_qubit_value_checkbox.setEnabled(not should_reset_output_state)
 
-    def handle_input_or_output_state_text_change(
+    def _handle_input_or_output_state_text_change(
         self, associated_qreg_name: str, expected_qreg_size: int, is_editing_input_state: bool
     ) -> None:
-        input_state_text_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
-            QtWidgets.QLineEdit, QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_qreg_name)
+        optional_input_state_text_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
+            QtWidgets.QLineEdit,
+            QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_qreg_name),
+            QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
         )
 
-        output_state_text_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
-            QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_qreg_name)
+        optional_output_state_text_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
+            QtWidgets.QLineEdit,
+            QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_qreg_name),
+            QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
         )
 
-        qreg_qubit_values_edit_toggle_button: QtWidgets.QPushButton | None = self.simulation_run_wrapper_box.findChild(
-            QtWidgets.QPushButton,
-            QREG_QUBIT_VALUES_TOGGLE_BUTTON_NAME_FORMAT.format(qreg_name=associated_qreg_name),
+        optional_qreg_qubit_values_edit_toggle_button: QtWidgets.QPushButton | None = (
+            self.simulation_run_wrapper_box.findChild(
+                QtWidgets.QPushButton,
+                QREG_QUBIT_VALUES_TOGGLE_BUTTON_NAME_FORMAT.format(qreg_name=associated_qreg_name),
+                QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+            )
         )
 
-        expected_output_state_init_button: QtWidgets.QPushButton | None = self.simulation_run_wrapper_box.findChild(
-            QtWidgets.QPushButton, QREG_EXPECTED_OUTPUT_STATE_VALUE_INIT_TOGGLE_NAME
+        optional_expected_output_state_init_button: QtWidgets.QPushButton | None = (
+            self.simulation_run_wrapper_box.findChild(
+                QtWidgets.QPushButton,
+                QREG_EXPECTED_OUTPUT_STATE_VALUE_INIT_TOGGLE_NAME,
+                QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+            )
         )
 
-        dialog_save_button: QtWidgets.QPushButton | None = self.dialog_button_box.button(
+        optional_dialog_save_button: QtWidgets.QPushButton | None = self.dialog_button_box.button(
             QtWidgets.QDialogButtonBox.StandardButton.Save
         )
-        qreg_values_validation_error_lbl: QtWidgets.QLabel | None = self.findChild(
+        optional_qreg_values_validation_error_lbl: QtWidgets.QLabel | None = self.findChild(
             QtWidgets.QLabel, QREG_VALUES_VALIDATION_ERROR_LABEL_NAME
         )
 
-        if (
-            input_state_text_field is None
-            or output_state_text_field is None
-            or qreg_qubit_values_edit_toggle_button is None
-            or expected_output_state_init_button is None
-            or dialog_save_button is None
-            or qreg_values_validation_error_lbl is None
+        if not self._assert_all_required_widgets_found_or_close_dialog(
+            [
+                optional_input_state_text_field,
+                optional_output_state_text_field,
+                optional_qreg_qubit_values_edit_toggle_button,
+                optional_expected_output_state_init_button,
+                optional_dialog_save_button,
+                optional_qreg_values_validation_error_lbl,
+            ],
+            f"Failed to find all required QtWidgets for edited quantum register '{associated_qreg_name}' during handling of input/output state edit!",
         ):
-            # TODO: This should not happen
             return
 
-        are_stringified_qreg_contents_valid: bool = False
-        if is_editing_input_state:
-            are_stringified_qreg_contents_valid = (
-                input_state_text_field.hasAcceptableInput() and len(input_state_text_field.text()) == expected_qreg_size
-            )
-        else:
-            are_stringified_qreg_contents_valid = (
-                output_state_text_field.hasAcceptableInput()
-                and len(output_state_text_field.text()) == expected_qreg_size
-            )
+        input_state_text_field = cast("QtWidgets.QLineEdit", optional_input_state_text_field)
+        output_state_text_field = cast("QtWidgets.QLineEdit", optional_output_state_text_field)
+        qreg_qubit_values_edit_toggle_button = cast(
+            "QtWidgets.QPushButton", optional_qreg_qubit_values_edit_toggle_button
+        )
+        expected_output_state_init_button = cast("QtWidgets.QPushButton", optional_expected_output_state_init_button)
+        dialog_save_button = cast("QtWidgets.QPushButton", optional_dialog_save_button)
+        qreg_values_validation_error_lbl = cast("QtWidgets.QLabel", optional_qreg_values_validation_error_lbl)
+
+        curr_edited_input_text_field: QtWidgets.QLineEdit = (
+            input_state_text_field if is_editing_input_state else output_state_text_field
+        )
+        curr_not_edited_input_text_field: QtWidgets.QLineEdit = (
+            output_state_text_field if is_editing_input_state else input_state_text_field
+        )
+        are_stringified_qreg_contents_valid: Final[bool] = (
+            curr_edited_input_text_field.hasAcceptableInput()
+            and len(curr_edited_input_text_field.text()) == expected_qreg_size
+        )
 
         qreg_qubit_values_edit_toggle_button.setEnabled(are_stringified_qreg_contents_valid)
         expected_output_state_init_button.setEnabled(are_stringified_qreg_contents_valid)
         dialog_save_button.setEnabled(are_stringified_qreg_contents_valid)
 
-        if is_editing_input_state:
-            output_state_text_field.setEnabled(
-                are_stringified_qreg_contents_valid
-                if self.edited_simulation_run_model.expected_output_state is not None
-                else False
+        qreg_values_validation_error_lbl.setText(
+            QREG_VALUES_VALIDATION_ERROR_FORMAT.format(
+                qreg_name=associated_qreg_name,
+                expected_num_qubit_values=expected_qreg_size,
+                actual_num_qubit_values=len(curr_edited_input_text_field.text()),
+                input_or_output_state_ident="input" if is_editing_input_state else "output",
             )
-
-            if not are_stringified_qreg_contents_valid:
-                qreg_values_validation_error_lbl.setText(
-                    QREG_VALUES_VALIDATION_ERROR_FORMAT.format(
-                        qreg_name=associated_qreg_name,
-                        expected_num_qubit_values=expected_qreg_size,
-                        actual_num_qubit_values=len(input_state_text_field.text()),
-                        input_or_output_state_ident="input",
-                    )
-                )
-            else:
-                qreg_values_validation_error_lbl.setText("")
-        else:
-            input_state_text_field.setEnabled(
-                are_stringified_qreg_contents_valid
-                if self.edited_simulation_run_model.expected_output_state is not None
-                else False
-            )
-
-            if not are_stringified_qreg_contents_valid:
-                qreg_values_validation_error_lbl.setText(
-                    QREG_VALUES_VALIDATION_ERROR_FORMAT.format(
-                        qreg_name=associated_qreg_name,
-                        expected_num_qubit_values=expected_qreg_size,
-                        actual_num_qubit_values=len(output_state_text_field.text()),
-                        input_or_output_state_ident="output",
-                    )
-                )
-            else:
-                qreg_values_validation_error_lbl.setText("")
+            if not are_stringified_qreg_contents_valid
+            else ""
+        )
+        curr_not_edited_input_text_field.setEnabled(
+            are_stringified_qreg_contents_valid
+            and (self.edited_simulation_run_model.expected_output_state is not None or not is_editing_input_state)
+        )
 
         for qreg_layout in self.qreg_layouts:
-            if qreg_layout.qreg_name == associated_qreg_name:
-                if not are_stringified_qreg_contents_valid:
-                    continue
-
-                first_qubit_of_qreg: int = qreg_layout.first_qubit_of_qreg
-                n_qubits_of_qreg: int = qreg_layout.qreg_size
-
-                qubit_in_input_or_output_state: int
-                new_qubit_value: bool
-                if is_editing_input_state:
-                    for relative_qubit_idx_in_qreg in range(n_qubits_of_qreg):
-                        qubit_in_input_or_output_state = first_qubit_of_qreg + relative_qubit_idx_in_qreg
-                        associated_input_state_qubit_value_checkbox: QtWidgets.QCheckBox | None = (
-                            self.simulation_run_wrapper_box.findChild(
-                                QtWidgets.QCheckBox,
-                                INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit_in_input_or_output_state),
-                            )
-                        )
-
-                        if associated_input_state_qubit_value_checkbox is None:
-                            # TODO: This should not happen
-                            return
-
-                        new_qubit_value = input_state_text_field.text()[relative_qubit_idx_in_qreg] == "1"
-                        self.edited_simulation_run_model.update_input_state_qubit_value(
-                            qubit_in_input_or_output_state, new_qubit_value
-                        )
-                        associated_input_state_qubit_value_checkbox.setChecked(new_qubit_value)
-                        associated_input_state_qubit_value_checkbox.setText(
-                            STRINGIFIED_QUBIT_VALUE_FORMAT.format(
-                                stringified_qubit_value=SimulationRunEditorDialog.stringify_qubit_value(
-                                    new_qubit_value, return_as_high_low_state=True
-                                )
-                            )
-                        )
-                else:
-                    for relative_qubit_idx_in_qreg in range(n_qubits_of_qreg):
-                        qubit_in_input_or_output_state = first_qubit_of_qreg + relative_qubit_idx_in_qreg
-                        associated_output_state_qubit_value_checkbox: QtWidgets.QCheckBox | None = (
-                            self.simulation_run_wrapper_box.findChild(
-                                QtWidgets.QCheckBox,
-                                OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit_in_input_or_output_state),
-                            )
-                        )
-                        if associated_output_state_qubit_value_checkbox is None:
-                            # TODO: This should not happen
-                            return
-
-                        new_qubit_value = output_state_text_field.text()[relative_qubit_idx_in_qreg] == "1"
-                        self.edited_simulation_run_model.update_expected_output_state_qubit_value(
-                            qubit_in_input_or_output_state, new_qubit_value
-                        )
-                        associated_output_state_qubit_value_checkbox.setChecked(new_qubit_value)
-                        associated_output_state_qubit_value_checkbox.setText(
-                            STRINGIFIED_QUBIT_VALUE_FORMAT.format(
-                                stringified_qubit_value=SimulationRunEditorDialog.stringify_qubit_value(
-                                    new_qubit_value, return_as_high_low_state=True
-                                )
-                            )
-                        )
-
             qreg_name: str = qreg_layout.qreg_name
-            not_edited_input_state_text_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QLineEdit, QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
-            )
+            if qreg_name != associated_qreg_name:
+                optional_not_edited_input_state_text_field: QtWidgets.QLineEdit | None = (
+                    self.simulation_run_wrapper_box.findChild(
+                        QtWidgets.QLineEdit,
+                        QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name),
+                        QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+                    )
+                )
 
-            not_edited_output_state_text_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
-            )
+                optional_not_edited_output_state_text_field: QtWidgets.QLineEdit | None = (
+                    self.simulation_run_wrapper_box.findChild(
+                        QtWidgets.QLineEdit,
+                        QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name),
+                        QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+                    )
+                )
 
-            not_edited_qreg_qubit_values_edit_toggle_button: QtWidgets.QPushButton | None = (
+                optional_not_edited_qreg_qubit_values_edit_toggle_button: QtWidgets.QPushButton | None = (
+                    self.simulation_run_wrapper_box.findChild(
+                        QtWidgets.QPushButton,
+                        QREG_QUBIT_VALUES_TOGGLE_BUTTON_NAME_FORMAT.format(qreg_name=qreg_name),
+                        QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+                    )
+                )
+
+                if not self._assert_all_required_widgets_found_or_close_dialog(
+                    [
+                        optional_not_edited_input_state_text_field,
+                        optional_not_edited_output_state_text_field,
+                        optional_not_edited_qreg_qubit_values_edit_toggle_button,
+                    ],
+                    f"Failed to find all required QtWidgets for not edited quantum register '{qreg_name}' during handling of input/output state edit!",
+                ):
+                    return
+
+                not_edited_input_state_text_field = cast(
+                    "QtWidgets.QLineEdit", optional_not_edited_input_state_text_field
+                )
+                not_edited_output_state_text_field = cast(
+                    "QtWidgets.QLineEdit", optional_not_edited_output_state_text_field
+                )
+                not_edited_qreg_qubit_values_edit_toggle_button = cast(
+                    "QtWidgets.QPushButton", optional_not_edited_qreg_qubit_values_edit_toggle_button
+                )
+
+                not_edited_input_state_text_field.setEnabled(are_stringified_qreg_contents_valid)
+                not_edited_output_state_text_field.setEnabled(
+                    are_stringified_qreg_contents_valid
+                    and self.edited_simulation_run_model.expected_output_state is not None
+                )
+                not_edited_qreg_qubit_values_edit_toggle_button.setEnabled(are_stringified_qreg_contents_valid)
+
+            optional_not_edited_qreg_qubit_values_groupbox: QtWidgets.QGroupBox | None = (
                 self.simulation_run_wrapper_box.findChild(
-                    QtWidgets.QPushButton, QREG_QUBIT_VALUES_TOGGLE_BUTTON_NAME_FORMAT.format(qreg_name=qreg_name)
+                    QtWidgets.QGroupBox,
+                    QREG_QUBIT_VALUES_GROUPBOX_NAME_FORMAT.format(qreg_name=qreg_name),
+                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
                 )
             )
 
-            if (
-                not_edited_input_state_text_field is None
-                or not_edited_output_state_text_field is None
-                or not_edited_qreg_qubit_values_edit_toggle_button is None
+            if not self._assert_all_required_widgets_found_or_close_dialog(
+                [optional_not_edited_qreg_qubit_values_groupbox],
+                f"Failed to find required group box for not edited quantum register '{qreg_name}' QtWidgets during handling of input/output state edit!",
             ):
-                # TODO: This should not happen
                 return
 
-            not_edited_input_state_text_field.setEnabled(are_stringified_qreg_contents_valid)
-            not_edited_output_state_text_field.setEnabled(
-                are_stringified_qreg_contents_valid
-                if self.edited_simulation_run_model.expected_output_state is not None
-                else False
+            not_edited_qreg_qubit_values_groupbox = cast(
+                "QtWidgets.QGroupBox", optional_not_edited_qreg_qubit_values_groupbox
             )
-            not_edited_qreg_qubit_values_edit_toggle_button.setEnabled(are_stringified_qreg_contents_valid)
+            if not not_edited_qreg_qubit_values_groupbox.isVisible():
+                continue
+
+            first_qubit_of_qreg: int = qreg_layout.first_qubit_of_qreg
+            n_qubits_of_qreg: int = qreg_layout.qreg_size
+            for qubit in range(first_qubit_of_qreg, first_qubit_of_qreg + n_qubits_of_qreg):
+                optional_not_edited_input_state_qubit_checkbox: QtWidgets.QCheckBox | None = (
+                    not_edited_qreg_qubit_values_groupbox.findChild(
+                        QtWidgets.QCheckBox,
+                        INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit),
+                        QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+                    )
+                )
+                optional_not_edited_output_state_qubit_checkbox: QtWidgets.QCheckBox | None = (
+                    not_edited_qreg_qubit_values_groupbox.findChild(
+                        QtWidgets.QCheckBox,
+                        OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit),
+                        QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+                    )
+                )
+
+                if not self._assert_all_required_widgets_found_or_close_dialog(
+                    [optional_not_edited_input_state_qubit_checkbox, optional_not_edited_output_state_qubit_checkbox],
+                    f"Failed to find required QtWidgets for not edited input/output state qubit checkboxes of not edited quantum register '{qreg_name}' during handling of input/output state edit!",
+                ):
+                    return
+
+                not_edited_input_state_qubit_checkbox = cast(
+                    "QtWidgets.QGroupBox", optional_not_edited_input_state_qubit_checkbox
+                )
+                not_edited_output_state_qubit_checkbox = cast(
+                    "QtWidgets.QGroupBox", optional_not_edited_output_state_qubit_checkbox
+                )
+
+                not_edited_input_state_qubit_checkbox.setEnabled(are_stringified_qreg_contents_valid)
+                not_edited_output_state_qubit_checkbox.setEnabled(
+                    are_stringified_qreg_contents_valid
+                    and self.edited_simulation_run_model.expected_output_state is not None
+                )
 
     @staticmethod
-    def stringify_some_qubits_of_n_bit_values_container(
+    def _stringify_some_qubits_of_n_bit_values_container(
         n_bit_values_container: syrec.n_bit_values_container, first_qubit: int, n_qubits: int
     ) -> str:
         if (
@@ -998,7 +1144,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ])
 
     @staticmethod
-    def get_internal_qubit_labels_for_qreg(
+    def _get_internal_qubit_labels_for_qreg(
         annotatable_quantum_computation: syrec.annotatable_quantum_computation,
         first_qubit_of_qreg: int,
         n_qubits_in_qreg: int,
@@ -1014,7 +1160,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         return internal_qubit_labels
 
     @staticmethod
-    def stringify_qubit_value(qubit_value: bool | None, return_as_high_low_state: bool) -> str:
+    def _stringify_qubit_value(qubit_value: bool | None, return_as_high_low_state: bool) -> str:
         if qubit_value is None:
             return "UNKNOWN" if return_as_high_low_state else "-"
 
@@ -1022,3 +1168,30 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             return "HIGH" if return_as_high_low_state else "1"
 
         return "LOW" if return_as_high_low_state else "0"
+
+    def _assert_all_required_widgets_found_or_close_dialog(
+        self, required_widgets: Iterable[QtWidgets.QWidget], error_dialog_content: str
+    ) -> bool:
+        if all(widget is not None for widget in required_widgets):
+            return True
+
+        self.failed_due_to_internal_error = True
+        show_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.ERROR,
+            message_box_parent=self,
+            message_box_title="Not all required Qt widgets found!",
+            message_box_content=f"{error_dialog_content}\nUnsaved changed will be lost and edit dialog will be closed!",
+            is_cancellable=False,
+            log_contents=False,
+        )
+
+        stringified_found_widgets_object_names: Final[str] = "Object names of found widgets: " + (
+            ",".join([widget.objectName() for widget in filter(lambda widget: widget is not None, required_widgets)])
+        )
+        # We want to log the caller of this function as the origin of the error instead of this function itself.
+        log_error_to_console(
+            f"Not all required Qt widgets found, provided error text: {error_dialog_content}!\n{stringified_found_widgets_object_names}",
+            num_additionally_skipped_stack_frames_starting_from_caller_function=1,
+        )
+        self.reject()
+        return False
