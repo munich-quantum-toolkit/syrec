@@ -17,15 +17,15 @@ if TYPE_CHECKING:
 
     from mqt import syrec
 
-    from .qt_simulation_run_model import QtSimulationRunModel
+    from ..simulation_run_model import QtSimulationRunModel
 
-from ..logger_utils import log_error_to_console, log_info_to_console
-from ..message_box_utils import MessageBoxType, show_optionally_cancellable_notification
-from .dialogs.base_progress_dialog import BaseProgressDialog
-from .qt_simulation_run_worker import SimulationRunResult, SimulationRunWorker
-from .styled_item_delegates.qt_simulation_run_execution_styled_item_delegate import (
+from ...logger_utils import log_error_to_console, log_info_to_console
+from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ..styled_item_delegates.simulation_run_execution_styled_item_delegate import (
     SimulationRunExecutionStyledItemDelegate,
 )
+from ..workers.simulation_run_worker import SimulationRunResult, SimulationRunWorker
+from .base_progress_dialog import BaseProgressDialog
 
 
 class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):

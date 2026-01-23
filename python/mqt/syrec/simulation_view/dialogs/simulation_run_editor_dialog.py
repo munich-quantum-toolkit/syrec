@@ -14,18 +14,18 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
-from ..logger_utils import log_error_to_console
-from ..message_box_utils import MessageBoxType, show_optionally_cancellable_notification
-from .dialogs.base_progress_dialog import BaseProgressDialog
-from .qt_simulation_run_model import (
+from ...logger_utils import log_error_to_console
+from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ..simulation_run_model import (
     ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE,
     QUANTUM_REGISTER_LAYOUT_QT_ROLE,
 )
+from .base_progress_dialog import BaseProgressDialog
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from .qt_simulation_run_model import (
+    from ..simulation_run_model import (
         QuantumRegisterLayout,
         SimulationRunModel,
     )

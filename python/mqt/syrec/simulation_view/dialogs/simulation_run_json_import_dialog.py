@@ -17,13 +17,13 @@ if TYPE_CHECKING:
 
     from PyQt6 import QtGui
 
-    from .qt_simulation_run_model import QtSimulationRunModel, SimulationRunModel
+    from ..simulation_run_model import QtSimulationRunModel, SimulationRunModel
 
-from ..logger_utils import log_error_to_console, log_info_to_console
-from ..message_box_utils import MessageBoxType, show_optionally_cancellable_notification
-from .dialogs.base_progress_dialog import BaseProgressDialog
-from .qt_simulation_run_model import SimulationRunModel
-from .simulation_run_json_import_worker import SimulationRunJsonImportWorker
+from ...logger_utils import log_error_to_console, log_info_to_console
+from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ..simulation_run_model import SimulationRunModel
+from ..workers.simulation_run_json_import_worker import SimulationRunJsonImportWorker
+from .base_progress_dialog import BaseProgressDialog
 
 
 class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWorker]):

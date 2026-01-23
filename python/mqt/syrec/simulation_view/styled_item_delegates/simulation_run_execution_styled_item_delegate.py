@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Final
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-from ..qt_simulation_run_model import (
+from ..simulation_run_model import (
     LARGEST_FIRST_QUBIT_OF_QUANTUM_REGISTER_QT_ROLE,
     LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE,
     LARGEST_SIM_RUN_NUMBER_QT_ROLE,
@@ -35,7 +35,7 @@ from .base_simulation_run_styled_item_delegate import (
 )
 
 if TYPE_CHECKING:
-    from ..qt_simulation_run_model import (
+    from ..simulation_run_model import (
         SimulationRunModel,
     )
 

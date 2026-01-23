@@ -13,9 +13,9 @@ from typing import TYPE_CHECKING, Any, Final
 
 from PyQt6 import QtCore
 
-from ..logger_utils import log_error_to_console
+from ...logger_utils import log_error_to_console
+from ..simulation_run_model import SimulationRunModel
 from .cancellable_base_worker import CancellableBaseWorker
-from .qt_simulation_run_model import SimulationRunModel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

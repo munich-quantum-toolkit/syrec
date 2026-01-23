@@ -18,12 +18,12 @@ if TYPE_CHECKING:
 
     from PyQt6 import QtGui
 
-    from .qt_simulation_run_model import SimulationRunModel
-    from .simulation_run_json_export_worker import SimulationRunJsonExportWorker
-from ..logger_utils import log_info_to_console
-from ..message_box_utils import MessageBoxType, show_optionally_cancellable_notification
-from .dialogs.base_progress_dialog import BaseProgressDialog
-from .simulation_run_json_export_worker import SimulationRunJsonExportWorker
+    from ..simulation_run_model import SimulationRunModel
+    from ..workers.simulation_run_json_export_worker import SimulationRunJsonExportWorker
+from ...logger_utils import log_info_to_console
+from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ..workers.simulation_run_json_export_worker import SimulationRunJsonExportWorker
+from .base_progress_dialog import BaseProgressDialog
 
 
 class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWorker]):

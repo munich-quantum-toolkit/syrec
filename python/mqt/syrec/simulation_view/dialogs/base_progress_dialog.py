@@ -14,7 +14,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from ...logger_utils import log_error_to_console, log_info_to_console
 from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
-from ..cancellable_base_worker import CancellableBaseWorker
+from ..workers.cancellable_base_worker import CancellableBaseWorker
 
 T = TypeVar("T", bound=CancellableBaseWorker)
 

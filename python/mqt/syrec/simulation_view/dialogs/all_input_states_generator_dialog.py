@@ -15,13 +15,13 @@ from PyQt6 import QtCore
 if TYPE_CHECKING:
     from PyQt6 import QtGui, QtWidgets
 
-    from .qt_simulation_run_model import QtSimulationRunModel
+    from ..simulation_run_model import QtSimulationRunModel
 
-from ..logger_utils import log_error_to_console, log_info_to_console
-from ..message_box_utils import MessageBoxType, show_optionally_cancellable_notification
-from .all_input_states_generator_worker import AllInputStatesGeneratorWorker
-from .dialogs.base_progress_dialog import BaseProgressDialog
-from .qt_simulation_run_model import SimulationRunModel
+from ...logger_utils import log_error_to_console, log_info_to_console
+from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ..simulation_run_model import SimulationRunModel
+from ..workers.all_input_states_generator_worker import AllInputStatesGeneratorWorker
+from .base_progress_dialog import BaseProgressDialog
 
 
 class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWorker]):

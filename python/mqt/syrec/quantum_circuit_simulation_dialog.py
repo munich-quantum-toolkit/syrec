@@ -16,18 +16,18 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+from .simulation_view.dialogs.all_input_states_generator_dialog import AllInputStatesGeneratorDialog
 from .simulation_view.dialogs.base_progress_dialog import BaseProgressDialog
-from .simulation_view.qt_all_input_states_generator_dialog import AllInputStatesGeneratorDialog
-from .simulation_view.qt_simulation_run_dialog import SimulationRunDialog
-from .simulation_view.qt_simulation_run_editor_dialog import SimulationRunEditorDialog
-from .simulation_view.qt_simulation_run_json_export_dialog import SimulationRunJsonExportDialog
-from .simulation_view.qt_simulation_run_json_import_dialog import SimulationRunJsonImportDialog
-from .simulation_view.qt_simulation_run_model import (
+from .simulation_view.dialogs.simulation_run_dialog import SimulationRunDialog
+from .simulation_view.dialogs.simulation_run_editor_dialog import SimulationRunEditorDialog
+from .simulation_view.dialogs.simulation_run_json_export_dialog import SimulationRunJsonExportDialog
+from .simulation_view.dialogs.simulation_run_json_import_dialog import SimulationRunJsonImportDialog
+from .simulation_view.simulation_run_model import (
     SIMULATION_RUN_IO_STATE_QT_ROLE,
     QtSimulationRunModel,
     SimulationRunModel,
 )
-from .simulation_view.styled_item_delegates.qt_simulation_run_overview_styled_item_delegate import (
+from .simulation_view.styled_item_delegates.simulation_run_overview_styled_item_delegate import (
     SimulationRunOverviewStyledItemDelegate,
 )
 

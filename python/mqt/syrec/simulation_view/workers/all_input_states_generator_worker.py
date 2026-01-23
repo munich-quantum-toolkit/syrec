@@ -15,9 +15,9 @@ from PyQt6 import QtCore
 
 from mqt import syrec
 
-from ..logger_utils import log_error_to_console
+from ...logger_utils import log_error_to_console
+from ..simulation_run_model import SimulationRunModel
 from .cancellable_base_worker import CancellableBaseWorker
-from .qt_simulation_run_model import SimulationRunModel
 
 if TYPE_CHECKING:
     from .cancellable_base_worker import BatchTimestamps
