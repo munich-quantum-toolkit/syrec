@@ -102,7 +102,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             + SimulationRunOverviewStyledItemDelegate._get_pixel_height_of_text(option.font, QREG_LAYOUT_INFO_FONT_SIZE)
         )
         column_header_height: int = SimulationRunOverviewStyledItemDelegate._get_pixel_height_of_text(
-            option.font, QREG_LAYOUT_INFO_FONT_SIZE
+            option.font, CARD_CONTENT_FONT_SIZE
         )
         total_qreg_contents_text_height: int = n_qregs * qreg_contents_text_height
         total_simulation_run_group_box_height = (
@@ -110,6 +110,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             + group_box_title_height
             + CARD_TITLE_BOTTOM_Y_MARGIN
             + column_header_height
+            + QREG_CONTENT_Y_SPACING
             + total_qreg_contents_text_height
             + CARD_CONTENT_PADDING
         )
@@ -319,7 +320,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
 
         header_row_column_one_rect = QtCore.QRect(
             header_text_bottom_left_point.x(),
-            header_text_bottom_left_point.y() + 2 * CARD_TITLE_BOTTOM_Y_MARGIN,
+            header_text_bottom_left_point.y() + CARD_TITLE_BOTTOM_Y_MARGIN,
             qreg_name_and_layout_info_column_width,
             SimulationRunOverviewStyledItemDelegate._get_pixel_height_of_text(option.font, CARD_CONTENT_FONT_SIZE),
         )

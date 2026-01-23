@@ -21,6 +21,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from mqt import syrec
 
 from .logger_utils import configure_default_console_logger
+from .message_box_utils import MessageBoxType, show_optionally_cancellable_notification
 
 # We are using a relative import here: https://stackoverflow.com/questions/43728431/relative-imports-modulenotfounderror-no-module-named-x
 from .quantum_circuit_simulation_dialog import QuantumCircuitSimulationDialog
@@ -1279,6 +1280,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         QtWidgets.QWidget.__init__(self, parent)
 
+        self.quantum_circuit_sim_runs_dialog: QuantumCircuitSimulationDialog | None = None
         self.setWindowTitle("SyReC Editor")
 
         self.setup_widgets()
@@ -1354,14 +1356,25 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         self.viewer.load(annotatable_quantum_computation)
         self.qubits_information_lookup.set_lookup_information(annotatable_quantum_computation)
 
-        # TODO: Check other calls of dialog.exec(), see: https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QDialog.html#PySide6.QtWidgets.QDialog.exec
-        # TODO: Store internal dialog instance as dialog: T | None and use show() instead of exec() call since the latter start a separate event loop that might not be supported by all platforms
-        # TODO: Move setting modal declaration to QuantumCircuitSimulationDialog
-        dialog = QuantumCircuitSimulationDialog(annotatable_quantum_computation, parent=self)
-        dialog.modal = True
-        dialog.setWindowTitle("Update configurable options")
-        # dialog.show()
-        dialog.exec()
+        if self.quantum_circuit_sim_runs_dialog is not None:
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Internal error",
+                message_box_content="Single use simulation run dialog was not correctly reset, expected no instance to exist!",
+                is_cancellable=False,
+            )
+            return
+
+        self.quantum_circuit_sim_runs_dialog = QuantumCircuitSimulationDialog(
+            annotatable_quantum_computation, parent=self
+        )
+        self.quantum_circuit_sim_runs_dialog.finished.connect(self.handle_quantum_circuit_sim_runs_dialog_finished)
+        self.quantum_circuit_sim_runs_dialog.open()
+        self.quantum_circuit_sim_runs_dialog.show_save_changes_reminder()
+
+    def handle_quantum_circuit_sim_runs_dialog_finished(self, _: int) -> None:
+        self.quantum_circuit_sim_runs_dialog = None
 
     def clear_error_log_and_circuit_view(self) -> None:
         self.logWidget.clear()

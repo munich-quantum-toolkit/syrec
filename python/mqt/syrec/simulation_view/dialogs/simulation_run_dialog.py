@@ -28,6 +28,7 @@ from ..workers.simulation_run_worker import SimulationRunResult, SimulationRunWo
 from .base_progress_dialog import BaseProgressDialog
 
 
+# TODO: Should the user be able to transfer the determined actual output qubit values as the expected output qubit values?
 class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
     def __init__(self, parent: QtWidgets.QWidget):
         super().__init__(

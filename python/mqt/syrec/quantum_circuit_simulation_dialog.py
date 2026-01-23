@@ -16,6 +16,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
+from .message_box_utils import MessageBoxType, show_optionally_cancellable_notification
 from .simulation_view.dialogs.all_input_states_generator_dialog import AllInputStatesGeneratorDialog
 from .simulation_view.dialogs.base_progress_dialog import BaseProgressDialog
 from .simulation_view.dialogs.simulation_run_dialog import SimulationRunDialog
@@ -58,6 +59,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         self.title = "Define simulation runs for quantum computation"
         self.setWindowTitle(self.title)
+        self.setModal(True)
 
         dialog_size: Final[QtCore.QSize] = BaseProgressDialog.get_default_big_dialog_size()
         center_dialog_pos_for_size: Final[QtCore.QPoint] = BaseProgressDialog.get_center_screen_position_for_size(
@@ -96,17 +98,20 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             "Check input-output mapping combinations from file",
         )
 
-        n_simulation_runs_to_add: Final[int] = 10
-        QuantumCircuitSimulationDialog.generate_some_simulation_runs(
-            n_simulation_runs_to_add, self.annotatable_quantum_computation, self.simulation_runs_model
-        )
-
         self.layout = QtWidgets.QVBoxLayout()
         self.layout.addWidget(self.simulation_runs_tab_widget)
         self.setLayout(self.layout)
         self.setSizeGripEnabled(True)
 
-    # TODO: Load from file controls
+    def show_save_changes_reminder(self) -> None:
+        show_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.INFO,
+            message_box_parent=self,
+            message_box_title="Remember to save your changes",
+            message_box_content="All simulation runs not saved via the save to file option are removed when this dialog closes!",
+            is_cancellable=False,
+            log_contents=False,
+        )
 
     def initialize_simulation_runs_tab_widget(
         self,
@@ -478,23 +483,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         controls_layout.addStretch()
         return controls_layout
-
-    def generate_some_simulation_runs(
-        self: int,
-        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
-        shared_simulation_runs_model: QtSimulationRunModel,
-    ) -> None:
-        for i in range(self):
-            in_state = syrec.n_bit_values_container(annotatable_quantum_computation.num_data_qubits)
-            expected_out_state = syrec.n_bit_values_container(annotatable_quantum_computation.num_data_qubits)
-
-            sim_run_model: SimulationRunModel | None = None
-            if i < 2:
-                sim_run_model = SimulationRunModel(in_state, None)
-            else:
-                sim_run_model = SimulationRunModel(in_state, expected_out_state)
-
-            shared_simulation_runs_model.add_simulation_run_model(sim_run_model)
 
     # TODO: Check that number of generate simulation runs does not exceed sys.maxsize
     def handle_simulation_runs_tab_widget_tab_changed(self, switched_to_tab_index: int) -> None:

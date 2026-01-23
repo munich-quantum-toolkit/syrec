@@ -209,7 +209,6 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
         if dialog_button is not None:
             dialog_button.setEnabled(should_button_be_enabled)
         else:
-            # TODO: Log button name and not numeric value
             show_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=btn_not_found_notification_parent,
