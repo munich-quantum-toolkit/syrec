@@ -184,8 +184,16 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
 
     @staticmethod
     def sizeHint(option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:  # noqa: N802
-        return SimulationRunExecutionStyledItemDelegate._get_required_size_for_content(option, index)
+        required_content_size: Final[QtCore.QSize] = (
+            SimulationRunExecutionStyledItemDelegate._get_required_size_for_content(option, index)
+        )
+        available_content_rect: Final[QtCore.QRect] = option.rect
+        return QtCore.QSize(
+            min(available_content_rect.width(), required_content_size.width()),
+            min(available_content_rect.height(), required_content_size.height()),
+        )
 
+    # TODO: If the available height is smaller than required one, omit to print some quantum registers with a placeholder (like ...) while still printing the aggregate results?
     def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
         if not index.isValid() or option.rect.width() == 0:
             return

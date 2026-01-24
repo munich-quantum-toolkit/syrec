@@ -136,6 +136,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_runs_list_view.setModel(shared_simulation_runs_model)
         simulation_runs_list_view.setItemDelegate(SimulationRunOverviewStyledItemDelegate())  # type: ignore[no-untyped-call]
         simulation_runs_list_view.setUniformItemSizes(True)
+        simulation_runs_list_view.setResizeMode(QtWidgets.QListView.ResizeMode.Adjust)
         simulation_runs_list_view.setAutoFillBackground(False)
         simulation_runs_list_view.setSpacing(5)
         simulation_runs_list_view.setFlow(QtWidgets.QListView.Flow.TopToBottom)

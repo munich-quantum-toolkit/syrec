@@ -1,5 +1,5 @@
-# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
-# Copyright (c) 2025 Munich Quantum Software Company GmbH
+# Copyright (c) 2023 - 2026 Chair for Design Automation, TUM
+# Copyright (c) 2025 - 2026 Munich Quantum Software Company GmbH
 # All rights reserved.
 #
 # SPDX-License-Identifier: MIT
@@ -21,7 +21,9 @@ DEFAULT_QREG_NAME_COLUMN_HEADER: Final[str] = "Quantum register"
 DEFAULT_QREG_LAYOUT_TEXT_FORMAT: Final[str] = "(First qubit: {first_qubit:d} - Num. qubits: {n_qubits:d})"
 DEFAULT_SIMULATION_RUN_CARD_HEADER_FORMAT: Final[str] = "Simulation run #{simulation_run_number:d}"
 DEFAULT_INPUT_STATE_QREG_CONTENT_HEADER: Final[str] = "INPUT"
-DEFAULT_OUTPUT_STATE_QREG_CONTENT_HEADER: Final[str] = "EXPECTED OUTPUT"
+DEFAULT_OUTPUT_STATE_QREG_CONTENT_HEADER: Final[str] = "OUTPUT"
+DEFAULT_EXPECTED_OUTPUT_STATE_QREG_CONTENT_PREFIX: Final[str] = "Expected:"
+DEFAULT_ACTUAL_OUTPUT_STATE_QREG_CONTENT_PREFIX: Final[str] = "Actual:"
 DEFAULT_UNKNOWN_QREG_CONTENT_PLACEHOLDER_TEXT: Final[str] = "<UNKNOWN>"
 
 CARD_TITLE_FONT_SIZE: Final[int] = 14
@@ -77,16 +79,31 @@ class BaseSimulationRunStyledItemDelegate:
 
     @staticmethod
     def _get_estimated_quantum_register_contents_column_width(
-        option: QtWidgets.QStyleOptionViewItem, largest_quantum_register_size_in_qubits: int, font_size: int
+        option: QtWidgets.QStyleOptionViewItem,
+        largest_quantum_register_size_in_qubits: int,
+        font_size: int,
+        does_content_include_prefix: bool = False,
+        prefix_and_content_x_spacing: int = QREG_CONTENT_X_SPACING,
     ) -> int:
-        text_width_for_largest_qreg: int = BaseSimulationRunStyledItemDelegate._get_pixel_width_of_text(
+        prefix_text_width: Final[int] = max(
+            BaseSimulationRunStyledItemDelegate._get_pixel_width_of_text(
+                DEFAULT_EXPECTED_OUTPUT_STATE_QREG_CONTENT_PREFIX, option.font, font_size
+            ),
+            BaseSimulationRunStyledItemDelegate._get_pixel_width_of_text(
+                DEFAULT_ACTUAL_OUTPUT_STATE_QREG_CONTENT_PREFIX, option.font, font_size
+            ),
+        )
+
+        text_width_for_largest_qreg: Final[int] = BaseSimulationRunStyledItemDelegate._get_pixel_width_of_text(
             "".join(["0" for i in range(largest_quantum_register_size_in_qubits)]), option.font, font_size
         )
-        text_width_for_unknown_qreg_content: int = BaseSimulationRunStyledItemDelegate._get_pixel_width_of_text(
+        text_width_for_unknown_qreg_content: Final[int] = BaseSimulationRunStyledItemDelegate._get_pixel_width_of_text(
             "<UNKNOWN>", option.font, font_size
         )
         # We can ignore the text width of the headers of the INPUT and OUTPUT columns since the placeholder text for unknown quantum register contents is larger than both header texts
-        return max(text_width_for_largest_qreg, text_width_for_unknown_qreg_content)
+        return (prefix_text_width + prefix_and_content_x_spacing if does_content_include_prefix else 0) + max(
+            text_width_for_largest_qreg, text_width_for_unknown_qreg_content
+        )
 
     @staticmethod
     def _get_column_width_scaled_by_ratio_to_total_available_width(

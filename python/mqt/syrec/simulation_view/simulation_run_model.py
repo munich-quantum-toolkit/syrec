@@ -18,7 +18,6 @@ from mqt import syrec
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-# TODO: Mark as const: https://stackoverflow.com/a/57596202
 # Some debugging tips: https://www.eso.org/~eltmgr/ECS/documents-latest/CUT/sphinx_doc/latest/docs/500_gui_development.html#gdb
 # First custom item data role usable according to: https://doc.qt.io/qt-6/qt.html#ItemDataRole-enum
 

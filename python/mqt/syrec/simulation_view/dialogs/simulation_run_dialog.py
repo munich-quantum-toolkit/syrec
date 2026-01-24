@@ -28,7 +28,6 @@ from ..workers.simulation_run_worker import SimulationRunResult, SimulationRunWo
 from .base_progress_dialog import BaseProgressDialog
 
 
-# TODO: Should the user be able to transfer the determined actual output qubit values as the expected output qubit values?
 class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
     def __init__(self, parent: QtWidgets.QWidget):
         super().__init__(
@@ -55,6 +54,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self.simulation_runs_list_view: QtWidgets.QListView = QtWidgets.QListView()
         self.simulation_runs_list_view.setItemDelegate(SimulationRunExecutionStyledItemDelegate())  # type: ignore[no-untyped-call]
         self.simulation_runs_list_view.setUniformItemSizes(True)
+        self.simulation_runs_list_view.setResizeMode(QtWidgets.QListView.ResizeMode.Adjust)
         self.simulation_runs_list_view.setAutoFillBackground(False)
         self.simulation_runs_list_view.setSpacing(5)
         self.simulation_runs_list_view.setFlow(QtWidgets.QListView.Flow.TopToBottom)
