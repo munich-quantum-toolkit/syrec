@@ -271,6 +271,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
 class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
     widget: CodeEditor | None = None
+    annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
     build_successful: Callable[[syrec.annotatable_quantum_computation], None] | None = None
     build_failed: Callable[[str], None] | None = None
     before_build: Callable[[], None] | None = None
@@ -457,6 +458,8 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
             self.build_successful(self.annotatable_quantum_computation)
 
     def stat(self) -> None:
+        assert self.annotatable_quantum_computation is not None
+
         n_quantum_operations = self.annotatable_quantum_computation.num_ops
         n_total_qubits = self.annotatable_quantum_computation.num_qubits
         quantum_cost_for_synthesis = self.annotatable_quantum_computation.get_quantum_cost_for_synthesis()
@@ -476,6 +479,8 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         msg.exec()
 
     def sim(self) -> None:
+        assert self.annotatable_quantum_computation is not None
+
         bit1_mask = 0
 
         no_of_bits = self.annotatable_quantum_computation.num_qubits
@@ -1244,9 +1249,10 @@ class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
             return self.reject()
 
-        self.configurable_parser_and_synthesis_options.main_module_identifier = (
-            self.expected_main_module_identifier_textbox.text() or None
-        )
+        if self.configurable_parser_and_synthesis_options.main_module_identifier is not None:
+            self.configurable_parser_and_synthesis_options.main_module_identifier = (
+                self.expected_main_module_identifier_textbox.text()
+            )
         self.configurable_parser_and_synthesis_options.generate_inlined_qubit_debug_information = (
             self.generate_inlined_qubit_debug_information_checkbox.isChecked()
         )
