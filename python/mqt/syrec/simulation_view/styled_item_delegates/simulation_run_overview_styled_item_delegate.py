@@ -35,6 +35,8 @@ from .base_simulation_run_styled_item_delegate import (
     DEFAULT_UNKNOWN_QREG_CONTENT_PLACEHOLDER_TEXT,
     QREG_CONTENT_X_SPACING,
     QREG_CONTENT_Y_SPACING,
+    QREG_CONTENTS_HELP_TEXT,
+    QREG_CONTENTS_HELP_TEXT_FONT_SIZE,
     QREG_LAYOUT_INFO_FONT_SIZE,
     BaseSimulationRunStyledItemDelegate,
 )
@@ -45,11 +47,6 @@ if TYPE_CHECKING:
     from ..simulation_run_model import (
         SimulationRunModel,
     )
-
-HELP_TEXT: Final[str] = (
-    "Qubit values of quantum registers have to be read from left to right with the leftmost character (0 or 1) being equal to the value of the first qubit of the quantum register while the rightmost character displays the value of the last qubit of the quantum register. Unknown quantum register qubit values are replaced with a placeholder text."
-)
-HELP_TEXT_SIZE: Final[int] = 8
 
 
 # Progress bar delegate C++ example: https://doc.qt.io/qt-6/qtnetwork-torrent-example.html
@@ -91,20 +88,20 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         if not index.isValid():
             return QtCore.QSize(0, 0)
 
-        n_qregs: int = len(index.data(QUANTUM_REGISTER_LAYOUT_QT_ROLE))
+        n_qregs: Final[int] = len(index.data(QUANTUM_REGISTER_LAYOUT_QT_ROLE))
         # Quantum register contents are displayed as two rows containing the following information:
         # R0: <QREG_NAME> <STRINGIFIED_INPUT_QUBIT_VALUES>  <STRINGIFIED_OUTPUT_QUBIT_VALUES>
         # R1: <QREG_LAYOUT_INFO>
-        group_box_title_height: int = SimulationRunOverviewStyledItemDelegate._get_pixel_height_of_text(
+        group_box_title_height: Final[int] = SimulationRunOverviewStyledItemDelegate._get_pixel_height_of_text(
             option.font, CARD_TITLE_FONT_SIZE
         )
-        group_box_title_width: int = (
+        group_box_title_width: Final[int] = (
             SimulationRunOverviewStyledItemDelegate._get_pixel_width_for_longest_sim_run_header(
                 index.data(LARGEST_SIM_RUN_NUMBER_QT_ROLE), option.font, CARD_TITLE_FONT_SIZE
             )
         )
 
-        qreg_contents_text_height: int = (
+        qreg_contents_text_height: Final[int] = (
             QREG_CONTENT_Y_SPACING
             + SimulationRunOverviewStyledItemDelegate._get_pixel_height_of_text(option.font, CARD_CONTENT_FONT_SIZE)
             + QREG_CONTENT_Y_SPACING
@@ -114,7 +111,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         column_header_height: int = SimulationRunOverviewStyledItemDelegate._get_pixel_height_of_text(
             option.font, CARD_CONTENT_FONT_SIZE
         )
-        total_qreg_contents_text_height: int = n_qregs * qreg_contents_text_height
+        total_qreg_contents_text_height: Final[int] = n_qregs * qreg_contents_text_height
         total_simulation_run_group_box_height = (
             CARD_CONTENT_PADDING
             + group_box_title_height
@@ -128,17 +125,17 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             + CARD_CONTENT_PADDING
         )
 
-        qreg_name_and_layout_info_column_width: int = (
+        qreg_name_and_layout_info_column_width: Final[int] = (
             SimulationRunOverviewStyledItemDelegate._get_required_qreg_name_and_layout_column_width(
                 option, index, CARD_TITLE_FONT_SIZE
             )
         )
 
-        qreg_content_header_width: int = SimulationRunOverviewStyledItemDelegate._get_pixel_width_of_text(
+        qreg_content_header_width: Final[int] = SimulationRunOverviewStyledItemDelegate._get_pixel_width_of_text(
             DEFAULT_INPUT_STATE_QREG_CONTENT_HEADER, option.font, CARD_CONTENT_FONT_SIZE
         )
 
-        max_qreg_qubits_column_width: int = (
+        max_qreg_qubits_column_width: Final[int] = (
             SimulationRunOverviewStyledItemDelegate._get_estimated_quantum_register_contents_column_width(
                 option,
                 index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE),
@@ -147,10 +144,10 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             )
         )
 
-        required_help_text_width: int = SimulationRunOverviewStyledItemDelegate._get_pixel_width_of_text(
-            HELP_TEXT, option.font, HELP_TEXT_SIZE
+        required_help_text_width: Final[int] = SimulationRunOverviewStyledItemDelegate._get_pixel_width_of_text(
+            QREG_CONTENTS_HELP_TEXT, option.font, QREG_CONTENTS_HELP_TEXT_FONT_SIZE
         )
-        max_qreg_content_column_width: int = max(qreg_content_header_width, max_qreg_qubits_column_width)
+        max_qreg_content_column_width: Final[int] = max(qreg_content_header_width, max_qreg_qubits_column_width)
         total_simulation_run_group_box_width = max(
             group_box_title_width,
             (
@@ -175,8 +172,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         )
         available_content_rect: Final[QtCore.QRect] = option.rect
         return QtCore.QSize(
-            min(available_content_rect.width(), required_content_size.width()),
-            min(available_content_rect.height(), required_content_size.height()),
+            min(required_content_size.width(), available_content_rect.width()), required_content_size.height()
         )
 
     def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
@@ -184,6 +180,8 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             return
 
         associated_sim_run_model: SimulationRunModel = index.data(SIMULATION_RUN_IO_STATE_QT_ROLE)
+        largest_qreg_size: Final[int] = index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE)
+
         SimulationRunOverviewStyledItemDelegate._get_required_size_for_content(option, index)
         available_rect_for_content: QtCore.QRect = option.rect.adjusted(
             CARD_CONTENT_PADDING,
@@ -267,6 +265,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
                 associated_sim_run_model.expected_output_state,
                 first_qubit_of_qreg=qreg_layout.first_qubit_of_qreg,
                 qreg_size=qreg_layout.qreg_size,
+                largest_qreg_size=largest_qreg_size,
                 available_content_rect=header_row_column_three_text_rect.adjusted(
                     0, curr_row_y_offset, 0, curr_row_y_offset
                 ),
@@ -280,6 +279,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
                 associated_sim_run_model.actual_output_state,
                 first_qubit_of_qreg=qreg_layout.first_qubit_of_qreg,
                 qreg_size=qreg_layout.qreg_size,
+                largest_qreg_size=largest_qreg_size,
                 available_content_rect=header_row_column_three_text_rect.adjusted(
                     0, curr_row_y_offset + per_row_y_offset, 0, curr_row_y_offset + per_row_y_offset
                 ),
@@ -293,13 +293,15 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             header_row_column_one_text_rect.topLeft().x(),
             header_row_column_one_text_rect.topLeft().y() + y_offset_to_help_text,
             available_rect_for_content.width(),
-            SimulationRunOverviewStyledItemDelegate._get_pixel_height_of_text(option.font, HELP_TEXT_SIZE),
+            SimulationRunOverviewStyledItemDelegate._get_pixel_height_of_text(
+                option.font, QREG_CONTENTS_HELP_TEXT_FONT_SIZE
+            ),
         )
         SimulationRunOverviewStyledItemDelegate._draw_elided_text(
             painter,
-            HELP_TEXT,
+            QREG_CONTENTS_HELP_TEXT,
             help_text_content_rect,
-            font_size=HELP_TEXT_SIZE,
+            font_size=QREG_CONTENTS_HELP_TEXT_FONT_SIZE,
             text_color=QtCore.Qt.GlobalColor.gray,
         )
         painter.restore()
@@ -361,7 +363,16 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             )
             + QREG_CONTENT_X_SPACING
         )
-        output_state_qreg_content_column_width: int = input_state_qreg_content_column_width
+        output_state_qreg_content_column_width: int = (
+            QREG_CONTENT_X_SPACING
+            + SimulationRunOverviewStyledItemDelegate._get_estimated_quantum_register_contents_column_width(
+                option,
+                index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE),
+                CARD_CONTENT_FONT_SIZE,
+                does_content_include_prefix=True,
+            )
+            + QREG_CONTENT_X_SPACING
+        )
 
         scaled_column_widths: list[int] = (
             SimulationRunOverviewStyledItemDelegate._scale_column_widths_based_on_ratio_to_total_available_width(
@@ -451,6 +462,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         qreg_contents_container: syrec.n_bit_values_container | None,
         first_qubit_of_qreg: int,
         qreg_size: int,
+        largest_qreg_size: int,
         available_content_rect: QtCore.QRect,
         font_size: int,
     ) -> None:
@@ -479,8 +491,10 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
                 DEFAULT_ACTUAL_OUTPUT_STATE_QREG_CONTENT_PREFIX, option.font, font_size
             ),
         )
-        required_qreg_contents_width: Final[int] = SimulationRunOverviewStyledItemDelegate._get_pixel_width_of_text(
-            stringified_qreg_contents, option.font, font_size
+        required_qreg_contents_width: Final[int] = (
+            SimulationRunOverviewStyledItemDelegate._get_estimated_quantum_register_contents_column_width(
+                option, largest_qreg_size, font_size
+            )
         )
         total_qreg_contents_width: Final[int] = (
             required_qreg_prefix_width + QREG_CONTENT_X_SPACING + required_qreg_contents_width

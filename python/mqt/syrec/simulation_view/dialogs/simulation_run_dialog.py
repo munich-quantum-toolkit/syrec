@@ -58,6 +58,8 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self.simulation_runs_list_view.setAutoFillBackground(False)
         self.simulation_runs_list_view.setSpacing(5)
         self.simulation_runs_list_view.setFlow(QtWidgets.QListView.Flow.TopToBottom)
+        # By default the vertical scroll mode is set to ScrollPerItem which will prevent the user to view not displayed if the vertical viewport size is larger than the required height of the list view item.
+        self.simulation_runs_list_view.setVerticalScrollMode(QtWidgets.QAbstractItemView.ScrollMode.ScrollPerPixel)
         # Select with click on item, unselect with Ctrl+Click on already selected item (see https://doc.qt.io/qt-6/qabstractitemview.html#SelectionMode-enum)
         self.simulation_runs_list_view.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
         # self.simulation_runs_list_view.selectionModel().selectionChanged.connect(self.handle_simulation_run_selection_change)
@@ -66,18 +68,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         simulation_runs_list_scrollarea.setAutoFillBackground(False)
         simulation_runs_list_scrollarea.setWidget(self.simulation_runs_list_view)
         simulation_runs_list_scrollarea.setWidgetResizable(True)
-
-        simulation_runs_list_layout.addItem(
-            QtWidgets.QSpacerItem(
-                2, 2, QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
-            )
-        )
         simulation_runs_list_layout.addWidget(simulation_runs_list_scrollarea)
-        simulation_runs_list_layout.addItem(
-            QtWidgets.QSpacerItem(
-                2, 2, QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
-            )
-        )
         layout.addLayout(simulation_runs_list_layout)
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.total_runtime_info_text_lbl)

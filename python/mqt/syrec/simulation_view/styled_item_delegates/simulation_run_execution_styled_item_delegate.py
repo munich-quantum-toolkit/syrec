@@ -31,6 +31,8 @@ from .base_simulation_run_styled_item_delegate import (
     DEFAULT_UNKNOWN_QREG_CONTENT_PLACEHOLDER_TEXT,
     QREG_CONTENT_X_SPACING,
     QREG_CONTENT_Y_SPACING,
+    QREG_CONTENTS_HELP_TEXT,
+    QREG_CONTENTS_HELP_TEXT_FONT_SIZE,
     BaseSimulationRunStyledItemDelegate,
 )
 
@@ -138,15 +140,17 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
         if not index.isValid():
             return QtCore.QSize(0, 0)
 
-        card_title_height: int = SimulationRunExecutionStyledItemDelegate._get_pixel_height_of_text(
+        card_title_height: Final[int] = SimulationRunExecutionStyledItemDelegate._get_pixel_height_of_text(
             option.font, CARD_TITLE_FONT_SIZE
         )
 
-        card_title_width: int = SimulationRunExecutionStyledItemDelegate._get_pixel_width_for_longest_sim_run_header(
-            index.data(LARGEST_SIM_RUN_NUMBER_QT_ROLE), option.font, CARD_TITLE_FONT_SIZE
+        card_title_width: Final[int] = (
+            SimulationRunExecutionStyledItemDelegate._get_pixel_width_for_longest_sim_run_header(
+                index.data(LARGEST_SIM_RUN_NUMBER_QT_ROLE), option.font, CARD_TITLE_FONT_SIZE
+            )
         )
 
-        n_qregs: int = len(index.data(QUANTUM_REGISTER_LAYOUT_QT_ROLE))
+        n_qregs: Final[int] = len(index.data(QUANTUM_REGISTER_LAYOUT_QT_ROLE))
         # Quantum register contents are displayed in the following format for every quantum register:
         # R0: <QREG_NAME_LABEL>:        <QREG_NAME> <QREG_LAYOUT_INFO>
         # R1: <INPUT_LABEL>:            <INPUT_STATE_QREG_VALUES>
@@ -156,29 +160,38 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
         # Additionally, below the content of all quantum registers the aggregate result of the simulation run is displayed as:
         # R5: <AGGR_RESULT_LABEL>:      <AGGR_RESULT_TEXT>
         # R6: <RUNTIME>:                <RUNTIME_IN_MS>
-        required_text_line_height: int = (
+        required_text_line_height: Final[int] = (
             QREG_CONTENT_Y_SPACING
             + SimulationRunExecutionStyledItemDelegate._get_pixel_height_of_text(option.font, CARD_CONTENT_FONT_SIZE)
         )
-        required_qreg_contents_height: int = 4 * required_text_line_height
-        required_total_qreg_contents_height: int = (n_qregs * required_qreg_contents_height) + (
+        required_qreg_contents_height: Final[int] = 4 * required_text_line_height
+        required_total_qreg_contents_height: Final[int] = (n_qregs * required_qreg_contents_height) + (
             (n_qregs - 1) * QREG_CONTENT_Y_SPACING if n_qregs > 1 else 0
         )
-        required_aggregate_result_text_height: int = 2 * required_text_line_height
-        required_total_card_height: int = (
+        required_aggregate_result_text_height: Final[int] = 2 * required_text_line_height
+        required_help_text_height: Final[int] = SimulationRunExecutionStyledItemDelegate._get_pixel_height_of_text(
+            option.font, QREG_CONTENTS_HELP_TEXT_FONT_SIZE
+        )
+        required_total_card_height: Final[int] = (
             CARD_CONTENT_PADDING
             + card_title_height
             + CARD_TITLE_BOTTOM_Y_MARGIN
             + required_total_qreg_contents_height
             + AGGREGATE_RESULT_TOP_Y_MARGIN
             + required_aggregate_result_text_height
+            + QREG_CONTENT_Y_SPACING
+            + required_help_text_height
             + CARD_CONTENT_PADDING
         )
-        required_total_card_width: int = max(
+        required_help_text_width: Final[int] = SimulationRunExecutionStyledItemDelegate._get_pixel_width_of_text(
+            QREG_CONTENTS_HELP_TEXT, option.font, QREG_CONTENTS_HELP_TEXT_FONT_SIZE
+        )
+        required_total_card_width: Final[int] = max(
             card_title_width,
             SimulationRunExecutionStyledItemDelegate._get_required_width_for_qreg_contents_and_outputs_match_result(
                 option, index, CARD_CONTENT_FONT_SIZE
             ),
+            required_help_text_width,
         )
         return QtCore.QSize(required_total_card_width, required_total_card_height)
 
@@ -189,11 +202,9 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
         )
         available_content_rect: Final[QtCore.QRect] = option.rect
         return QtCore.QSize(
-            min(available_content_rect.width(), required_content_size.width()),
-            min(available_content_rect.height(), required_content_size.height()),
+            min(required_content_size.width(), available_content_rect.width()), required_content_size.height()
         )
 
-    # TODO: If the available height is smaller than required one, omit to print some quantum registers with a placeholder (like ...) while still printing the aggregate results?
     def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
         if not index.isValid() or option.rect.width() == 0:
             return
@@ -461,6 +472,22 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
             value_col_text_color=QtCore.Qt.GlobalColor.gray
             if associated_input_output_mapping.execution_runtime_in_ms is None
             else QtCore.Qt.GlobalColor.black,
+        )
+
+        help_text_content_rect: QtCore.QRect = QtCore.QRect(
+            available_rect_for_content.x(),
+            aggregate_result_row_runtime_label_col_rect.bottomLeft().y() + QREG_CONTENT_Y_SPACING,
+            available_rect_for_content.width(),
+            SimulationRunExecutionStyledItemDelegate._get_pixel_height_of_text(
+                option.font, QREG_CONTENTS_HELP_TEXT_FONT_SIZE
+            ),
+        )
+        SimulationRunExecutionStyledItemDelegate._draw_elided_text(
+            painter,
+            QREG_CONTENTS_HELP_TEXT,
+            help_text_content_rect,
+            font_size=QREG_CONTENTS_HELP_TEXT_FONT_SIZE,
+            text_color=QtCore.Qt.GlobalColor.gray,
         )
         painter.restore()
 

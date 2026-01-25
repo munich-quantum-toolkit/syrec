@@ -25,6 +25,9 @@ DEFAULT_OUTPUT_STATE_QREG_CONTENT_HEADER: Final[str] = "OUTPUT"
 DEFAULT_EXPECTED_OUTPUT_STATE_QREG_CONTENT_PREFIX: Final[str] = "Expected:"
 DEFAULT_ACTUAL_OUTPUT_STATE_QREG_CONTENT_PREFIX: Final[str] = "Actual:"
 DEFAULT_UNKNOWN_QREG_CONTENT_PLACEHOLDER_TEXT: Final[str] = "<UNKNOWN>"
+QREG_CONTENTS_HELP_TEXT: Final[str] = (
+    "Qubit values of quantum registers have to be read from left to right with the leftmost character (0 or 1) being equal to the value of the first qubit of the quantum register while the rightmost character displays the value of the last qubit of the quantum register. Unknown quantum register qubit values are replaced with a placeholder text."
+)
 
 CARD_TITLE_FONT_SIZE: Final[int] = 14
 CARD_CONTENT_FONT_SIZE: Final[int] = 10
@@ -33,6 +36,7 @@ CARD_TITLE_BOTTOM_Y_MARGIN: Final[int] = 8
 QREG_CONTENT_Y_SPACING: Final[int] = 4
 QREG_CONTENT_X_SPACING: Final[int] = 6
 CARD_CONTENT_PADDING: Final[int] = 20
+QREG_CONTENTS_HELP_TEXT_FONT_SIZE: Final[int] = 8
 
 
 class BaseSimulationRunStyledItemDelegate:

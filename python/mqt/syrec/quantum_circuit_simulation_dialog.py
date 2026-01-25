@@ -140,6 +140,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_runs_list_view.setAutoFillBackground(False)
         simulation_runs_list_view.setSpacing(5)
         simulation_runs_list_view.setFlow(QtWidgets.QListView.Flow.TopToBottom)
+        # By default the vertical scroll mode is set to ScrollPerItem which will prevent the user to view not displayed if the vertical viewport size is larger than the required height of the list view item.
+        simulation_runs_list_view.setVerticalScrollMode(QtWidgets.QAbstractItemView.ScrollMode.ScrollPerPixel)
         # Select with click on item, unselect with Ctrl+Click on already selected item (see https://doc.qt.io/qt-6/qabstractitemview.html#SelectionMode-enum)
         simulation_runs_list_view.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
         simulation_runs_list_view.selectionModel().selectionChanged.connect(self.handle_simulation_run_selection_change)
