@@ -8,9 +8,12 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING, Final, cast
 
 from PyQt6 import QtCore, QtGui, QtWidgets
+from typing_extensions import assert_never
 
 from mqt import syrec
 
@@ -29,6 +32,18 @@ if TYPE_CHECKING:
         QuantumRegisterLayout,
         SimulationRunModel,
     )
+
+
+class QubitLocation(Enum):
+    INPUT_STATE = 0
+    EXPECTED_OUTPUT_STATE = 1
+    ACTUAL_OUTPUT_STATE = 2
+
+
+@dataclass(frozen=True)
+class QubitValueLabelAndCheckbox:
+    optional_label: QtWidgets.QLabel | None
+    checkbox: QtWidgets.QCheckBox
 
 
 class LineEditWithDynamicWidth(QtWidgets.QLineEdit):  # type: ignore[misc]
@@ -55,15 +70,30 @@ class LineEditWithDynamicWidth(QtWidgets.QLineEdit):  # type: ignore[misc]
         self.focus_out.emit()
 
 
+@dataclass(frozen=True)
+class QRegContentsLabelAndCheckbox:
+    optional_label: QtWidgets.QLabel | None
+    contents_widget: QtWidgets.QLabel | LineEditWithDynamicWidth
+
+
 QUBIT_LABEL_NAME_FORMAT: Final[str] = "q_{qubit:d}_lbl"
 INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT: Final[str] = "q_{qubit:d}_in_checkB"
-OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT: Final[str] = "q_{qubit:d}_out_checkB"
+EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT: Final[str] = "q_{qubit:d}_expected_out_checkB"
+EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_LABEL_NAME_FORMAT: Final[str] = "q_{qubit:d}_expected_out_checkB_lbl"
+ACTUAL_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT: Final[str] = "q_{qubit:d}_actual_out_checkB"
+ACTUAL_OUTPUT_STATE_QUBIT_CHECKBOX_LABEL_NAME_FORMAT: Final[str] = "q_{qubit:d}_actual_out_checkB_lbl"
 
 QREG_QUBIT_VALUES_GROUPBOX_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_qubit_values_groupbox"
 QREG_LABEL_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_lbl"
 QREG_LAYOUT_INFO_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_layout_info_lbl"
 QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_input_state"
-QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_output_state"
+
+EXPECTED_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_expected_output_state"
+EXPECTED_QREG_OUTPUT_STATE_PREFIX_LABEL_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_expected_output_state_lbl"
+
+ACTUAL_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_actual_output_state"
+ACTUAL_QREG_OUTPUT_STATE_PREFIX_LABEL_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_actual_output_state_lbl"
+
 QREG_QUBIT_VALUES_TOGGLE_BUTTON_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_qubit_values_toggle"
 QREG_QUBIT_SEARCH_INPUT_FIELD_NAME_FORMAT: Final[str] = "qreg_{qreg_name:s}_qubit_search_input"
 
@@ -99,6 +129,9 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         initial_input_state: syrec.n_bit_values_container = self.edited_simulation_run_model.input_state
         initial_expected_output_state: syrec.n_bit_values_container | None = (
             self.edited_simulation_run_model.expected_output_state
+        )
+        initial_actual_output_state: syrec.n_bit_values_container | None = (
+            self.edited_simulation_run_model.actual_output_state
         )
 
         self.setModal(True)
@@ -172,30 +205,51 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 alignment=QtCore.Qt.AlignmentFlag.AlignLeft,
             )
 
-            input_state_edit_field = self._create_in_or_out_state_edit_field(
-                qreg_layout, optional_qreg_qubit_values=initial_input_state, is_created_for_input_state=True
+            input_state_widgets: QRegContentsLabelAndCheckbox = self._create_in_or_out_state_edit_field(
+                qreg_layout, optional_qreg_qubit_values=initial_input_state, qubit_location=QubitLocation.INPUT_STATE
             )
             quantum_register_controls_grid_layout.addWidget(
-                input_state_edit_field,
+                input_state_widgets.contents_widget,
                 qreg_controls_grid_row,
                 1,
                 alignment=QtCore.Qt.AlignmentFlag.AlignCenter,
             )
 
-            output_state_edit_field = self._create_in_or_out_state_edit_field(
-                qreg_layout, optional_qreg_qubit_values=initial_expected_output_state, is_created_for_input_state=False
+            expected_output_state_widgets: QRegContentsLabelAndCheckbox = self._create_in_or_out_state_edit_field(
+                qreg_layout,
+                optional_qreg_qubit_values=initial_expected_output_state,
+                qubit_location=QubitLocation.EXPECTED_OUTPUT_STATE,
             )
-            quantum_register_controls_grid_layout.addWidget(
-                output_state_edit_field,
+            actual_output_state_widgets: QRegContentsLabelAndCheckbox = self._create_in_or_out_state_edit_field(
+                qreg_layout,
+                optional_qreg_qubit_values=initial_actual_output_state,
+                qubit_location=QubitLocation.ACTUAL_OUTPUT_STATE,
+            )
+
+            output_state_widgets_layout: QtWidgets.QGridLayout = QtWidgets.QGridLayout()
+            output_state_widgets_layout.addWidget(expected_output_state_widgets.optional_label, 0, 0)
+            output_state_widgets_layout.addWidget(expected_output_state_widgets.contents_widget, 0, 1)
+            output_state_widgets_layout.addWidget(actual_output_state_widgets.optional_label, 1, 0)
+            output_state_widgets_layout.addWidget(actual_output_state_widgets.contents_widget, 1, 1)
+
+            output_state_widgets_layout.setColumnStretch(0, 1)
+            output_state_widgets_layout.setColumnStretch(1, 0)
+            output_state_widgets_layout.setColumnStretch(2, 1)
+            quantum_register_controls_grid_layout.addLayout(
+                output_state_widgets_layout,
                 qreg_controls_grid_row,
                 2,
-                alignment=QtCore.Qt.AlignmentFlag.AlignCenter,
+                2,
+                1,
+                alignment=QtCore.Qt.AlignmentFlag.AlignLeft,
             )
 
             edit_qubit_values_toggle_button = QtWidgets.QPushButton(
                 "Edit qubit values", objectName=QREG_QUBIT_VALUES_TOGGLE_BUTTON_NAME_FORMAT.format(qreg_name=qreg_name)
             )
-            quantum_register_controls_grid_layout.addWidget(edit_qubit_values_toggle_button, qreg_controls_grid_row, 3)
+            quantum_register_controls_grid_layout.addWidget(
+                edit_qubit_values_toggle_button, qreg_controls_grid_row, 3, 2, 1
+            )
             # We need to ignore the checked parameter that is passed to the clicked slot of the QPushButton
             edit_qubit_values_toggle_button.clicked.connect(
                 lambda _, associated_qreg_name=qreg_name: self._handle_qreg_qubit_values_edit_toggle_button_click(
@@ -216,7 +270,9 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             n_cols_in_quantum_register_controls_grid_layout: int = 3
             qreg_controls_grid_row += 1
             quantum_register_controls_grid_layout.addWidget(
-                self._create_qubit_controls_groupbox(qreg_layout, initial_input_state, initial_expected_output_state),
+                self._create_qubit_controls_groupbox(
+                    qreg_layout, initial_input_state, initial_expected_output_state, initial_actual_output_state
+                ),
                 qreg_controls_grid_row,
                 0,
                 1,
@@ -313,9 +369,24 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                     QtWidgets.QLineEdit, QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
                 )
             )
-            optional_qreg_output_state_input_field: QtWidgets.QLineEdit | None = (
+            optional_qreg_expected_output_state_label: QtWidgets.QLabel | None = (
                 self.simulation_run_wrapper_box.findChild(
-                    QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+                    QtWidgets.QLabel, EXPECTED_QREG_OUTPUT_STATE_PREFIX_LABEL_NAME_FORMAT.format(qreg_name=qreg_name)
+                )
+            )
+            optional_qreg_expected_output_state_input_field: QtWidgets.QLineEdit | None = (
+                self.simulation_run_wrapper_box.findChild(
+                    QtWidgets.QLineEdit, EXPECTED_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+                )
+            )
+            optional_qreg_actual_output_state_label: QtWidgets.QLabel | None = (
+                self.simulation_run_wrapper_box.findChild(
+                    QtWidgets.QLabel, ACTUAL_QREG_OUTPUT_STATE_PREFIX_LABEL_NAME_FORMAT.format(qreg_name=qreg_name)
+                )
+            )
+            optional_qreg_actual_output_state_widget: QtWidgets.QLabel | None = (
+                self.simulation_run_wrapper_box.findChild(
+                    QtWidgets.QLabel, ACTUAL_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
                 )
             )
             optional_qreg_edit_qubit_values_toggle_button: QtWidgets.QPushButton | None = (
@@ -330,7 +401,10 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                     optional_qreg_name_label,
                     optional_qreg_layout_info_label,
                     optional_qreg_input_state_input_field,
-                    optional_qreg_output_state_input_field,
+                    optional_qreg_expected_output_state_label,
+                    optional_qreg_expected_output_state_input_field,
+                    optional_qreg_actual_output_state_label,
+                    optional_qreg_actual_output_state_widget,
                     optional_qreg_edit_qubit_values_toggle_button,
                 ],
                 f"Failed to locate all required Qt widgets required for quantum register '{qreg_name}' during quantum register search",
@@ -341,7 +415,12 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             qreg_name_label = cast("QtWidgets.QLabel", optional_qreg_name_label)
             qreg_layout_info_label = cast("QtWidgets.QLabel", optional_qreg_layout_info_label)
             qreg_input_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_input_state_input_field)
-            qreg_output_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_output_state_input_field)
+            qreg_expected_output_state_label = cast("QtWidgets.QLabel", optional_qreg_expected_output_state_label)
+            qreg_expected_output_state_input_field = cast(
+                "QtWidgets.QLineEdit", optional_qreg_expected_output_state_input_field
+            )
+            qreg_actual_output_state_label = cast("QtWidgets.QLabel", optional_qreg_actual_output_state_label)
+            qreg_actual_output_state_widget = cast("QtWidgets.QLabel", optional_qreg_actual_output_state_widget)
             qreg_edit_qubit_values_toggle_button = cast(
                 "QtWidgets.QPushButton", optional_qreg_edit_qubit_values_toggle_button
             )
@@ -352,7 +431,10 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             qreg_name_label.setVisible(should_control_be_visible)
             qreg_layout_info_label.setVisible(should_control_be_visible)
             qreg_input_state_input_field.setVisible(should_control_be_visible)
-            qreg_output_state_input_field.setVisible(should_control_be_visible)
+            qreg_expected_output_state_label.setVisible(should_control_be_visible)
+            qreg_expected_output_state_input_field.setVisible(should_control_be_visible)
+            qreg_actual_output_state_label.setVisible(should_control_be_visible)
+            qreg_actual_output_state_widget.setVisible(should_control_be_visible)
             qreg_edit_qubit_values_toggle_button.setVisible(should_control_be_visible)
 
     def _handle_input_state_qubit_value_checkbox_state_change(
@@ -406,18 +488,19 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             + curr_stringified_input_state[relative_qubit_index_in_quantum_register + 1 :]
         )
 
-    def _handle_output_state_qubit_value_checkbox_state_change(
+    def _handle_expected_output_state_qubit_value_checkbox_state_change(
         self, associated_qreg_name: str, associated_qubit: int, relative_qubit_index_in_quantum_register: int
     ) -> None:
         optional_associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = (
             self.simulation_run_wrapper_box.findChild(
                 QtWidgets.QCheckBox,
-                OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=associated_qubit),
+                EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=associated_qubit),
             )
         )
 
         optional_qreg_output_state_input_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
-            QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_qreg_name)
+            QtWidgets.QLineEdit,
+            EXPECTED_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_qreg_name),
         )
 
         if not self._assert_all_required_widgets_found_or_close_dialog(
@@ -493,13 +576,47 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self,
         qreg_layout: QuantumRegisterLayout,
         optional_qreg_qubit_values: syrec.n_bit_values_container | None,
-        is_created_for_input_state: bool,
-    ) -> LineEditWithDynamicWidth:
+        qubit_location: QubitLocation,
+    ) -> QRegContentsLabelAndCheckbox:
+
+        unknown_qreg_contents_placeholder: Final[str] = "-"
+        prefix_label: QtWidgets.QLabel | None = None
+        match qubit_location:
+            case QubitLocation.INPUT_STATE:
+                prefix_label = None
+            case QubitLocation.EXPECTED_OUTPUT_STATE:
+                prefix_label = QtWidgets.QLabel(
+                    "Expected:",
+                    objectName=EXPECTED_QREG_OUTPUT_STATE_PREFIX_LABEL_NAME_FORMAT.format(
+                        qreg_name=qreg_layout.qreg_name
+                    ),
+                )
+            case QubitLocation.ACTUAL_OUTPUT_STATE:
+                prefix_label = QtWidgets.QLabel(
+                    "Actual:",
+                    objectName=ACTUAL_QREG_OUTPUT_STATE_PREFIX_LABEL_NAME_FORMAT.format(
+                        qreg_name=qreg_layout.qreg_name
+                    ),
+                )
+                actual_contents_widget = QtWidgets.QLabel(
+                    SimulationRunEditorDialog._stringify_some_qubits_of_n_bit_values_container(
+                        optional_qreg_qubit_values, qreg_layout.first_qubit_of_qreg, qreg_layout.qreg_size
+                    )
+                    if optional_qreg_qubit_values is not None
+                    else unknown_qreg_contents_placeholder,
+                    objectName=ACTUAL_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_layout.qreg_name),
+                )
+                return QRegContentsLabelAndCheckbox(prefix_label, actual_contents_widget)
+            case _:
+                # Added guard to fail on unhandled new qubit location enum values
+                assert_never(qubit_location)
+
+        is_control_created_for_input_state: Final[bool] = qubit_location == QubitLocation.INPUT_STATE
         in_or_out_state_edit_field = LineEditWithDynamicWidth(qreg_layout.qreg_size)
         in_or_out_state_edit_field.setObjectName(
             QREG_INPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_layout.qreg_name)
-            if is_created_for_input_state
-            else QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_layout.qreg_name)
+            if is_control_created_for_input_state
+            else EXPECTED_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_layout.qreg_name)
         )
 
         if optional_qreg_qubit_values is not None:
@@ -523,20 +640,20 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # One could in a custom overwrite of the QLineEdit class use the focusOutEvent to emit a custom signal when the QLineEdit element looses focus or use the application-level focusChanged signal to determine
         # whether the QLineEdit widget lost focus.
         in_or_out_state_edit_field.editingFinished.connect(
-            lambda associated_qreg_name=qreg_layout.qreg_name, expected_text_length=qreg_layout.qreg_size, is_editing_input_state=is_created_for_input_state: (
+            lambda associated_qreg_name=qreg_layout.qreg_name, expected_text_length=qreg_layout.qreg_size, is_editing_input_state=is_control_created_for_input_state: (
                 self._handle_input_or_output_state_text_change(
                     associated_qreg_name, expected_text_length, is_editing_input_state
                 )
             )
         )
         in_or_out_state_edit_field.focusOut.connect(
-            lambda associated_qreg_name=qreg_layout.qreg_name, expected_text_length=qreg_layout.qreg_size, is_editing_input_state=is_created_for_input_state: (
+            lambda associated_qreg_name=qreg_layout.qreg_name, expected_text_length=qreg_layout.qreg_size, is_editing_input_state=is_control_created_for_input_state: (
                 self._handle_input_or_output_state_text_change(
                     associated_qreg_name, expected_text_length, is_editing_input_state
                 )
             )
         )
-        return in_or_out_state_edit_field
+        return QRegContentsLabelAndCheckbox(prefix_label, in_or_out_state_edit_field)
 
     def _create_in_or_out_state_qubit_value_checkbox(
         self,
@@ -544,13 +661,26 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         optional_qreg_qubit_values: syrec.n_bit_values_container | None,
         associated_qubit: int,
         relative_qubit_index_in_qreg: int,
-        is_qubit_in_input_state: bool,
-    ) -> QtWidgets.QCheckBox:
-        qubit_value_checkbox = QtWidgets.QCheckBox(
-            objectName=INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=associated_qubit)
-            if is_qubit_in_input_state
-            else OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=associated_qubit)
-        )
+        qubit_location: QubitLocation,
+    ) -> QubitValueLabelAndCheckbox:
+
+        qubit_value_checkbox_objectname: str = ""
+        match qubit_location:
+            case QubitLocation.INPUT_STATE:
+                qubit_value_checkbox_objectname = INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=associated_qubit)
+            case QubitLocation.EXPECTED_OUTPUT_STATE:
+                qubit_value_checkbox_objectname = EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(
+                    qubit=associated_qubit
+                )
+            case QubitLocation.ACTUAL_OUTPUT_STATE:
+                qubit_value_checkbox_objectname = ACTUAL_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(
+                    qubit=associated_qubit
+                )
+            case _:
+                # Added guard to fail on unhandled new qubit location enum values
+                assert_never(qubit_location)
+
+        qubit_value_checkbox = QtWidgets.QCheckBox(objectName=qubit_value_checkbox_objectname)
         qubit_value_checkbox.setText(
             STRINGIFIED_QUBIT_VALUE_FORMAT.format(
                 stringified_qubit_value=SimulationRunEditorDialog._stringify_qubit_value(
@@ -561,19 +691,37 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 )
             )
         )
-        qubit_value_checkbox.setEnabled(optional_qreg_qubit_values is not None)
-        qubit_value_checkbox.checkStateChanged.connect(
-            lambda _, associated_qreg_name=associated_qreg_name, associated_qubit=associated_qubit, relative_qubit_index_in_quantum_register=relative_qubit_index_in_qreg: (
-                self._handle_input_state_qubit_value_checkbox_state_change(
-                    associated_qreg_name, associated_qubit, relative_qubit_index_in_quantum_register
-                )
-                if is_qubit_in_input_state
-                else self._handle_output_state_qubit_value_checkbox_state_change(
-                    associated_qreg_name, associated_qubit, relative_qubit_index_in_quantum_register
-                )
-            )
+        qubit_value_checkbox.setEnabled(
+            optional_qreg_qubit_values is not None and qubit_location != QubitLocation.ACTUAL_OUTPUT_STATE
         )
-        return qubit_value_checkbox
+        qubit_value_label: QtWidgets.QLabel | None = None
+        match qubit_location:
+            case QubitLocation.INPUT_STATE:
+                qubit_value_checkbox.checkStateChanged.connect(
+                    lambda _, associated_qreg_name=associated_qreg_name, associated_qubit=associated_qubit, relative_qubit_index_in_quantum_register=relative_qubit_index_in_qreg: (
+                        self._handle_input_state_qubit_value_checkbox_state_change(
+                            associated_qreg_name, associated_qubit, relative_qubit_index_in_quantum_register
+                        )
+                    )
+                )
+            case QubitLocation.EXPECTED_OUTPUT_STATE:
+                qubit_value_checkbox.checkStateChanged.connect(
+                    lambda _, associated_qreg_name=associated_qreg_name, associated_qubit=associated_qubit, relative_qubit_index_in_quantum_register=relative_qubit_index_in_qreg: (
+                        self._handle_expected_output_state_qubit_value_checkbox_state_change(
+                            associated_qreg_name, associated_qubit, relative_qubit_index_in_quantum_register
+                        )
+                    )
+                )
+                qubit_value_label = QtWidgets.QLabel(
+                    "Expected:",
+                    objectName=EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_LABEL_NAME_FORMAT.format(qubit=associated_qubit),
+                )
+            case QubitLocation.ACTUAL_OUTPUT_STATE:
+                qubit_value_label = QtWidgets.QLabel(
+                    "Actual:",
+                    objectName=ACTUAL_OUTPUT_STATE_QUBIT_CHECKBOX_LABEL_NAME_FORMAT.format(qubit=associated_qubit),
+                )
+        return QubitValueLabelAndCheckbox(qubit_value_label, qubit_value_checkbox)
 
     def _create_search_controls_for_qubits_of_qreg(
         self, associated_qreg_layout: QuantumRegisterLayout
@@ -615,8 +763,11 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         associated_qreg_layout: QuantumRegisterLayout,
         initial_input_state: syrec.n_bit_values_container,
         initial_expected_output_state: syrec.n_bit_values_container | None,
+        initial_actual_output_state: syrec.n_bit_values_container | None,
     ) -> QtWidgets.QWidget:
         input_output_qubits_value_controls_groupbox_layout = QtWidgets.QGridLayout()
+        # The inability to use named parameters for the addWidget(...) or addLayout(...) calls makes the code a bit more harder read (https://forum.qt.io/topic/160589/pyside6-unsupported-keyword-on-grid-layout/2)
+        # when used in combination with a QGridLayout.
         input_output_qubits_value_controls_groupbox_layout.addLayout(
             self._create_search_controls_for_qubits_of_qreg(associated_qreg_layout),
             0,
@@ -637,36 +788,83 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 "Qubit: " + fetched_internal_qubit_label if fetched_internal_qubit_label is not None else "<UNKNOWN>",
                 objectName=QUBIT_LABEL_NAME_FORMAT.format(qubit=qubit),
             )
+
+            qubit_controls_grid_layout_row: int = 1 + (2 * relative_qubit_index_in_qreg)
             input_output_qubits_value_controls_groupbox_layout.addWidget(
-                qubit_label, 1 + relative_qubit_index_in_qreg, 0
+                qubit_label, qubit_controls_grid_layout_row, 0, 2, 1
             )
 
-            input_state_qubit_value_checkbox: QtWidgets.QCheckBox = self._create_in_or_out_state_qubit_value_checkbox(
-                associated_qreg_layout.qreg_name,
-                initial_input_state,
-                associated_qubit=qubit,
-                relative_qubit_index_in_qreg=relative_qubit_index_in_qreg,
-                is_qubit_in_input_state=True,
+            input_state_qubit_value_checkbox_and_lbl: QubitValueLabelAndCheckbox = (
+                self._create_in_or_out_state_qubit_value_checkbox(
+                    associated_qreg_layout.qreg_name,
+                    initial_input_state,
+                    associated_qubit=qubit,
+                    relative_qubit_index_in_qreg=relative_qubit_index_in_qreg,
+                    qubit_location=QubitLocation.INPUT_STATE,
+                )
             )
             input_output_qubits_value_controls_groupbox_layout.addWidget(
-                input_state_qubit_value_checkbox,
-                1 + relative_qubit_index_in_qreg,
-                1,
-                alignment=QtCore.Qt.AlignmentFlag.AlignLeft,
+                input_state_qubit_value_checkbox_and_lbl.checkbox, qubit_controls_grid_layout_row, 1, 2, 1
             )
 
-            output_state_qubit_value_checkbox: QtWidgets.QCheckBox = self._create_in_or_out_state_qubit_value_checkbox(
-                associated_qreg_layout.qreg_name,
-                initial_expected_output_state,
-                associated_qubit=qubit,
-                relative_qubit_index_in_qreg=relative_qubit_index_in_qreg,
-                is_qubit_in_input_state=False,
+            expected_output_state_qubit_value_checkbox_and_lbl: QubitValueLabelAndCheckbox = (
+                self._create_in_or_out_state_qubit_value_checkbox(
+                    associated_qreg_layout.qreg_name,
+                    initial_expected_output_state,
+                    associated_qubit=qubit,
+                    relative_qubit_index_in_qreg=relative_qubit_index_in_qreg,
+                    qubit_location=QubitLocation.EXPECTED_OUTPUT_STATE,
+                )
             )
-            input_output_qubits_value_controls_groupbox_layout.addWidget(
-                output_state_qubit_value_checkbox,
-                1 + relative_qubit_index_in_qreg,
+
+            output_qubits_controls_layout = QtWidgets.QGridLayout()
+            if expected_output_state_qubit_value_checkbox_and_lbl.optional_label is None:
+                log_error_to_console(
+                    f"Failed to create label for expected output state qubit {relative_qubit_index_in_qreg}",
+                    num_additionally_skipped_stack_frames_starting_from_caller_function=1,
+                )
+            else:
+                output_qubits_controls_layout.addWidget(
+                    expected_output_state_qubit_value_checkbox_and_lbl.optional_label, 0, 0
+                )
+            output_qubits_controls_layout.addWidget(expected_output_state_qubit_value_checkbox_and_lbl.checkbox, 0, 1)
+
+            actual_output_state_qubit_value_checkbox_and_lbl: QubitValueLabelAndCheckbox = (
+                self._create_in_or_out_state_qubit_value_checkbox(
+                    associated_qreg_layout.qreg_name,
+                    initial_actual_output_state,
+                    associated_qubit=qubit,
+                    relative_qubit_index_in_qreg=relative_qubit_index_in_qreg,
+                    qubit_location=QubitLocation.ACTUAL_OUTPUT_STATE,
+                )
+            )
+
+            if actual_output_state_qubit_value_checkbox_and_lbl.optional_label is None:
+                log_error_to_console(
+                    f"Failed to create label for actual output state qubit {relative_qubit_index_in_qreg}",
+                    num_additionally_skipped_stack_frames_starting_from_caller_function=1,
+                )
+            else:
+                output_qubits_controls_layout.addWidget(
+                    actual_output_state_qubit_value_checkbox_and_lbl.optional_label, 1, 0
+                )
+            output_qubits_controls_layout.addWidget(actual_output_state_qubit_value_checkbox_and_lbl.checkbox, 1, 1)
+
+            output_qubits_controls_layout.addItem(
+                QtWidgets.QSpacerItem(
+                    2, 2, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding
+                ),
+                qubit_controls_grid_layout_row,
                 2,
-                alignment=QtCore.Qt.AlignmentFlag.AlignLeft,
+                1,
+                1,
+            )
+
+            output_qubits_controls_layout.setColumnStretch(0, 0)
+            output_qubits_controls_layout.setColumnStretch(1, 1)
+            output_qubits_controls_layout.setColumnStretch(2, 1)
+            input_output_qubits_value_controls_groupbox_layout.addLayout(
+                output_qubits_controls_layout, qubit_controls_grid_layout_row, 2, 2, 1
             )
 
         input_output_qubits_value_controls_groupbox_layout.setColumnStretch(0, 1)
@@ -725,17 +923,34 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                     INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit),
                     QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
                 )
-                optional_output_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
-                    QtWidgets.QCheckBox,
-                    OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit),
-                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+                optional_expected_output_state_qubit_checkbox_label: QtWidgets.QLabel | None = (
+                    qreg_qubits_groupbox.findChild(
+                        QtWidgets.QLabel, EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_LABEL_NAME_FORMAT.format(qubit=qubit)
+                    )
                 )
-
+                optional_expected_output_state_qubit_checkbox: QtWidgets.QCheckBox | None = (
+                    qreg_qubits_groupbox.findChild(
+                        QtWidgets.QCheckBox, EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
+                    )
+                )
+                optional_actual_output_state_qubit_checkbox_label: QtWidgets.QLabel | None = (
+                    qreg_qubits_groupbox.findChild(
+                        QtWidgets.QLabel, ACTUAL_OUTPUT_STATE_QUBIT_CHECKBOX_LABEL_NAME_FORMAT.format(qubit=qubit)
+                    )
+                )
+                optional_actual_output_state_qubit_checkbox: QtWidgets.QCheckBox | None = (
+                    qreg_qubits_groupbox.findChild(
+                        QtWidgets.QCheckBox, ACTUAL_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
+                    )
+                )
                 if not self._assert_all_required_widgets_found_or_close_dialog(
                     [
                         optional_qubit_value_label,
                         optional_input_state_qubit_checkbox,
-                        optional_output_state_qubit_checkbox,
+                        optional_expected_output_state_qubit_checkbox_label,
+                        optional_expected_output_state_qubit_checkbox,
+                        optional_actual_output_state_qubit_checkbox_label,
+                        optional_actual_output_state_qubit_checkbox,
                     ],
                     f"Failed to find required controls for qubits for quantum register '{associated_quantum_register_name}' during handling of qubit label search!",
                 ):
@@ -743,14 +958,28 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
                 qubit_value_label = cast("QtWidgets.QLabel", optional_qubit_value_label)
                 input_state_qubit_checkbox = cast("QtWidgets.QCheckBox", optional_input_state_qubit_checkbox)
-                output_state_qubit_checkbox = cast("QtWidgets.QCheckBox", optional_output_state_qubit_checkbox)
+                expected_output_state_qubit_checkbox_label = cast(
+                    "QtWidgets.QLabel", optional_expected_output_state_qubit_checkbox_label
+                )
+                expected_output_state_qubit_checkbox = cast(
+                    "QtWidgets.QCheckBox", optional_expected_output_state_qubit_checkbox
+                )
+                actual_output_state_qubit_checkbox_label = cast(
+                    "QtWidgets.QLabel", optional_actual_output_state_qubit_checkbox_label
+                )
+                actual_output_state_qubit_checkbox = cast(
+                    "QtWidgets.QCheckBox", optional_actual_output_state_qubit_checkbox
+                )
 
                 does_qubit_label_match_search_text: bool = self.annotatable_quantum_computation.get_qubit_label(
                     qubit, syrec.qubit_label_type.internal
                 ).startswith(qubit_search_input_field.text())
                 qubit_value_label.setVisible(does_qubit_label_match_search_text)
                 input_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
-                output_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
+                expected_output_state_qubit_checkbox_label.setVisible(does_qubit_label_match_search_text)
+                expected_output_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
+                actual_output_state_qubit_checkbox_label.setVisible(does_qubit_label_match_search_text)
+                actual_output_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
 
     def _handle_qreg_qubit_values_edit_toggle_button_click(self, associated_qreg_name: str) -> None:
         for qreg_layout in self.qreg_layouts:
@@ -762,11 +991,9 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                     QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
                 )
             )
-            optional_qreg_output_state_input_field: QtWidgets.QtWidget | None = (
+            optional_qreg_expected_output_state_input_field: QtWidgets.QtWidget | None = (
                 self.simulation_run_wrapper_box.findChild(
-                    QtWidgets.QLineEdit,
-                    QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name),
-                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+                    QtWidgets.QLineEdit, EXPECTED_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
                 )
             )
             optional_qubit_values_groupbox: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
@@ -799,7 +1026,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             if not self._assert_all_required_widgets_found_or_close_dialog(
                 [
                     optional_qreg_input_state_input_field,
-                    optional_qreg_output_state_input_field,
+                    optional_qreg_expected_output_state_input_field,
                     optional_qubit_values_groupbox,
                     optional_qubit_values_toggle_button,
                     optional_expected_output_state_value_toggle_button,
@@ -810,7 +1037,9 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 return
 
             qreg_input_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_input_state_input_field)
-            qreg_output_state_input_field = cast("QtWidgets.QLineEdit", optional_qreg_output_state_input_field)
+            qreg_expected_output_state_input_field = cast(
+                "QtWidgets.QLineEdit", optional_qreg_expected_output_state_input_field
+            )
             qubit_values_groupbox = cast("QtWidgets.QCheckBox", optional_qubit_values_groupbox)
             qubit_values_toggle_button = cast("QtWidgets.QPushButton", optional_qubit_values_toggle_button)
             expected_output_state_value_toggle_button = cast(
@@ -824,14 +1053,14 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 qubit_values_groupbox.setVisible(True)
                 qubit_values_toggle_button.setText("Toggle qubit values edit")
                 qreg_input_state_input_field.setEnabled(False)
-                qreg_output_state_input_field.setEnabled(False)
+                qreg_expected_output_state_input_field.setEnabled(False)
                 expected_output_state_value_toggle_button.setEnabled(False)
             else:
                 qubit_values_groupbox.setVisible(False)
                 qubit_values_toggle_button.setText("Edit qubit values")
                 expected_output_state_value_toggle_button.setEnabled(True)
                 qreg_input_state_input_field.setEnabled(True)
-                qreg_output_state_input_field.setEnabled(qreg_output_state_input_field.text() != "")  # noqa: PLC1901
+                qreg_expected_output_state_input_field.setEnabled(qreg_expected_output_state_input_field.text() != "")  # noqa: PLC1901
                 qubit_values_groupbox_qubit_search_field.setText("")
                 self._handle_qubit_search_trigger_button_click(associated_qreg_name)
 
@@ -872,7 +1101,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
             optional_qreg_output_state_input_field: QtWidgets.QtWidget | None = (
                 self.simulation_run_wrapper_box.findChild(
-                    QtWidgets.QLineEdit, QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
+                    QtWidgets.QLineEdit, EXPECTED_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name)
                 )
             )
 
@@ -903,7 +1132,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             ):
                 optional_associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = (
                     self.simulation_run_wrapper_box.findChild(
-                        QtWidgets.QCheckBox, OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
+                        QtWidgets.QCheckBox, EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
                     )
                 )
 
@@ -940,7 +1169,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         optional_output_state_text_field: QtWidgets.QLineEdit | None = self.simulation_run_wrapper_box.findChild(
             QtWidgets.QLineEdit,
-            QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_qreg_name),
+            EXPECTED_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_qreg_name),
             QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
         )
 
@@ -1033,7 +1262,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 optional_not_edited_output_state_text_field: QtWidgets.QLineEdit | None = (
                     self.simulation_run_wrapper_box.findChild(
                         QtWidgets.QLineEdit,
-                        QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name),
+                        EXPECTED_QREG_OUTPUT_STATE_INPUT_FIELD_NAME_FORMAT.format(qreg_name=qreg_name),
                         QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
                     )
                 )
@@ -1105,9 +1334,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 )
                 optional_not_edited_output_state_qubit_checkbox: QtWidgets.QCheckBox | None = (
                     not_edited_qreg_qubit_values_groupbox.findChild(
-                        QtWidgets.QCheckBox,
-                        OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit),
-                        QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+                        QtWidgets.QCheckBox, EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
                     )
                 )
 
@@ -1190,7 +1417,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         # We want to log the caller of this function as the origin of the error instead of this function itself.
         log_error_to_console(
-            f"Not all required Qt widgets found, provided error text: {error_dialog_content}!\n{stringified_found_widgets_object_names}",
+            f"{error_dialog_content}\n{stringified_found_widgets_object_names}",
             num_additionally_skipped_stack_frames_starting_from_caller_function=1,
         )
         self.reject()
