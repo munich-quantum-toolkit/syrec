@@ -50,6 +50,8 @@ class SimulationRunWorker(CancellableBaseWorker):
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_simulations(self) -> None:
+        curr_sim_run_num: int = 0
+
         try:
             SimulationRunWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
             self_raised_error_msg: str | None = ""
@@ -64,14 +66,23 @@ class SimulationRunWorker(CancellableBaseWorker):
             batch_start_timestamp: float = 0
             batch_timestamps: BatchTimestamps | None = None
             n_sim_runs_to_execute: Final[int] = self.shared_simulation_runs_model.rowCount(QtCore.QModelIndex())
+            self.shared_simulation_runs_model.reset_prev_simulation_run_execution_results()
 
             batch_idx: int = 0
-            curr_sim_run_num: int = 0
             do_output_states_match: bool | None = None
-            while not self.is_cancellation_requested() and curr_sim_run_num < n_sim_runs_to_execute:
+            found_first_output_state_mismatch: bool = False
+            while (
+                not self.is_cancellation_requested()
+                and curr_sim_run_num < n_sim_runs_to_execute
+                and (not self.should_stop_at_first_output_state_mismatch or not found_first_output_state_mismatch)
+            ):
                 batch_start_timestamp = SimulationRunWorker._get_timestamp()
                 for _ in range(self.batch_size):
-                    if self.is_cancellation_requested() or curr_sim_run_num == n_sim_runs_to_execute:
+                    if (
+                        self.is_cancellation_requested()
+                        or curr_sim_run_num == n_sim_runs_to_execute
+                        or (self.should_stop_at_first_output_state_mismatch and found_first_output_state_mismatch)
+                    ):
                         break
 
                     curr_sim_run_model: SimulationRunModel = SimulationRunWorker._fetch_sim_model_or_throw(
@@ -92,13 +103,11 @@ class SimulationRunWorker(CancellableBaseWorker):
                         do_output_states_match,
                     )
 
-                    if (
+                    found_first_output_state_mismatch = (
                         self.should_stop_at_first_output_state_mismatch
                         and do_output_states_match is not None
                         and not do_output_states_match
-                    ):
-                        self.set_cancellation_requested_flag(True)
-
+                    )
                     curr_sim_run_num += 1
                     batch_idx += 1
                 if batch_idx > 0 and batch_idx != self.batch_size:

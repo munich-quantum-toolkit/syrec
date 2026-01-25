@@ -197,6 +197,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         save_simulation_runs_to_file_button.clicked.connect(self.handle_sim_run_save_to_file_btn_click)
         save_simulation_runs_to_file_button.setEnabled(False)
+        save_simulation_runs_to_file_button.setToolTip(
+            "Save the defined simulation runs to a .json file (only input state and expected output qubit values are exported)"
+        )
         simulation_runs_execution_buttons_layout.addWidget(save_simulation_runs_to_file_button)
 
         run_simulation_runs_button = QtWidgets.QPushButton(
@@ -210,12 +213,15 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         run_simulation_runs_stop_at_first_failure_button = QtWidgets.QPushButton(
             QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.MediaPlaybackStart),
-            "Run simulation runs (stop at first failure)",
+            "Run simulation runs (stop at first output qubit values mismatch)",
             objectName=RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME,
         )
         run_simulation_runs_stop_at_first_failure_button.setEnabled(False)
         run_simulation_runs_stop_at_first_failure_button.clicked.connect(
             self.handle_run_all_simulation_runs_stop_at_first_failure_button_click
+        )
+        run_simulation_runs_stop_at_first_failure_button.setToolTip(
+            "Perform a simulation of all defined simulation runs until a mismatch between the expected and actual output state qubit values is detected (the value of both output states needs to be known)"
         )
         simulation_runs_execution_buttons_layout.addWidget(run_simulation_runs_stop_at_first_failure_button)
 
@@ -316,6 +322,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         copy_of_reference_sim_run_model: SimulationRunModel = SimulationRunModel(
             reference_sim_run_model.input_state,
             reference_sim_run_model.expected_output_state,
+            reference_sim_run_model.actual_output_state,
             create_new_n_bit_values_container_instances=True,
         )
 
@@ -530,7 +537,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         if to_be_switched_to_tab_widget.objectName() == self.all_sim_runs_tab_widget_name:
             n_input_state_combinations: int = 2**self.annotatable_quantum_computation.num_data_qubits
-            # TODO: A large number of state combinations will lag the UI thread since the generation runs on the UI thread
             pressed_message_box_button_in_all_sim_run_generation_warning: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
                 self,
                 "Generating all possible input state combinations!",
@@ -548,13 +554,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             self.handle_open_and_start_all_input_states_generator_dialog(
                 self.annotatable_quantum_computation.num_data_qubits
             )
-
-            # QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            #     to_be_switched_to_tab_widget, True
-            # )
-            # # TODO: Can we ignore return value?
-            # self.simulation_runs_model.add_all_possible_simulation_run_models()
-
         QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
             prev_active_tab_widget, False
         )

@@ -541,6 +541,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             qreg_contents_prefix,
             qreg_prefix_text_rect,
             font_size,
+            text_alignment=QtCore.Qt.AlignmentFlag.AlignRight,
             text_color=QtCore.Qt.GlobalColor.gray,
         )
 
@@ -551,5 +552,9 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             qreg_contents_text_height,
         )
         SimulationRunOverviewStyledItemDelegate._draw_elided_text(
-            painter, stringified_qreg_contents, qreg_contents_text_rect, font_size
+            painter,
+            stringified_qreg_contents,
+            qreg_contents_text_rect,
+            font_size,
+            text_alignment=QtCore.Qt.AlignmentFlag.AlignLeft,
         )

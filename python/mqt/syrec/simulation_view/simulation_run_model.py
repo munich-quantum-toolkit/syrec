@@ -15,22 +15,13 @@ from PyQt6 import QtCore
 
 from mqt import syrec
 
+from ..logger_utils import log_error_to_console
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
 # Some debugging tips: https://www.eso.org/~eltmgr/ECS/documents-latest/CUT/sphinx_doc/latest/docs/500_gui_development.html#gdb
 # First custom item data role usable according to: https://doc.qt.io/qt-6/qt.html#ItemDataRole-enum
-
-# TODO: Why does the mypy checker report the error "no-any-return" when processing the python function:
-#  def _get_vertical_text_width(options: QtWidgets.QStyleOptionsViewItem, font_size: int) -> int:
-#   return QtGui.QFontMetrics(QtGui.QFont(options.font.family(), font_size, options.font.weight())).height()
-#
-# The most common reason is that mypy does not have type information for the QtGui or QtWidgets modules. If you haven't installed the type stubs for your Qt bindings, mypy treats all calls to those libraries as returning Any.
-# When you call .height(), mypy sees it as Any. Returning Any from a function marked as -> int triggers the no-any-return warning because mypy cannot verify that the value is actually an integer.
-# Solution:
-# Install the appropriate type stubs for your framework:
-# - For PyQt6: pip install PyQt6-stubs
-# - For PySide6: pip install shiboken6 (Type information is usually bundled, but ensure your environment is configured correctly).
 SIMULATION_RUN_IO_STATE_QT_ROLE: Final[int] = QtCore.Qt.ItemDataRole.UserRole
 QUANTUM_REGISTER_LAYOUT_QT_ROLE: Final[int] = SIMULATION_RUN_IO_STATE_QT_ROLE + 1
 LONGEST_QUANTUM_REGISTER_NAME_QT_ROLE: Final[int] = QUANTUM_REGISTER_LAYOUT_QT_ROLE + 1
@@ -58,15 +49,22 @@ class SimulationRunModel:
         self,
         input_state: syrec.n_bit_values_container,
         expected_output_state: syrec.n_bit_values_container | None = None,
+        actual_output_state: syrec.n_bit_values_container | None = None,
         create_new_n_bit_values_container_instances: bool = False,
     ):
         if expected_output_state is not None and input_state.size() != expected_output_state.size():
             msg = f"Expected output state size (n_qubits = {expected_output_state.size()}) did not match input state size (n_qubits = {input_state.size()})"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
+            raise ValueError(msg)
+        if actual_output_state is not None and input_state.size() != actual_output_state.size():
+            msg = f"Actual output state size (n_qubits = {actual_output_state.size()}) did not match input state size (n_qubits = {input_state.size()})"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
 
         if not create_new_n_bit_values_container_instances:
             self.input_state = input_state
             self.expected_output_state = expected_output_state
+            self.actual_output_state = actual_output_state
         else:
             self.input_state = syrec.n_bit_values_container(input_state.size())
             for qubit in range(input_state.size()):
@@ -75,6 +73,10 @@ class SimulationRunModel:
                 self.expected_output_state = syrec.n_bit_values_container(expected_output_state.size())
                 for qubit in range(expected_output_state.size()):
                     self.expected_output_state.set(qubit, expected_output_state.test(qubit))
+            if actual_output_state is not None:
+                self.actual_output_state = syrec.n_bit_values_container(actual_output_state.size())
+                for qubit in range(actual_output_state.size()):
+                    self.actual_output_state.set(qubit, actual_output_state.test(qubit))
 
     def initialize_expected_output_state_as_copy_of_input_state(self) -> None:
         if self.expected_output_state is not None:
@@ -90,28 +92,27 @@ class SimulationRunModel:
         self.execution_runtime_in_ms = None
 
     def set_result_of_simulation_execution(
-        self, actual_output_state: syrec.n_bit_values_container, execution_runtime_in_ms: float
+        self,
+        actual_output_state: syrec.n_bit_values_container,
+        do_expected_and_actual_output_states_match: bool,
+        execution_runtime_in_ms: float,
     ) -> None:
         if actual_output_state.size() != self.input_state.size():
             msg = f"Actual output state size (n_qubits = {actual_output_state.size()}) did not match input state size (n_qubits = {self.input_state.size()})"
-            raise ValueError(msg)
-        if self.expected_output_state is None:
-            msg = "Tried to set actual output state when expected output state was not set!"
-            raise ValueError(msg)
-        if self.expected_output_state.size() != actual_output_state.size():
-            msg = f"Actual output state size (n_qubits = {actual_output_state.size()}) did not match expected output state size (n_qubits = {self.expected_output_state.size()})"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
         if execution_runtime_in_ms < 0:
             msg = f"Invalid execution runtime value {execution_runtime_in_ms}"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
 
         if self.actual_output_state is None:
-            self.actual_output_state = actual_output_state
-        else:
             self.actual_output_state = syrec.n_bit_values_container(self.input_state.size())
-            for i in range(self.expected_output_state.size()):
-                self.actual_output_state.set(actual_output_state.test(i))
 
+        for i in range(self.input_state.size()):
+            self.actual_output_state.set(i, actual_output_state.test(i))
+
+        self.do_expected_and_actual_outputs_match = do_expected_and_actual_output_states_match
         self.execution_runtime_in_ms = execution_runtime_in_ms
 
     def update_input_state_qubit_value(self, qubit: int, new_qubit_value: bool) -> bool:
@@ -125,6 +126,32 @@ class SimulationRunModel:
             self.expected_output_state, qubit, new_qubit_value
         )
 
+    def update_user_editable_data(
+        self,
+        edited_input_state: syrec.n_bit_values_container,
+        edited_expected_output_state: syrec.n_bit_values_container | None,
+    ) -> None:
+        if self.input_state.size() != edited_input_state.size():
+            msg = f"Updated input state size state size (n_qubits = {edited_input_state.size()}) did not match current input state size (n_qubits = {self.input_state.size()})"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
+            raise ValueError(msg)
+
+        if edited_expected_output_state is not None and edited_expected_output_state.size() != self.input_state.size():
+            msg = f"Expected output state size (n_qubits = {edited_expected_output_state.size()}) did not match input state size (n_qubits = {self.input_state.size()})"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
+            raise ValueError(msg)
+
+        for i in range(self.input_state.size()):
+            self.input_state.set(i, edited_input_state.test(i))
+
+        if edited_expected_output_state is None:
+            self.expected_output_state = None
+        else:
+            if self.expected_output_state is None:
+                self.expected_output_state = syrec.n_bit_values_container(self.input_state.size())
+            for i in range(self.input_state.size()):
+                self.expected_output_state.set(i, edited_expected_output_state.test(i))
+
     @staticmethod
     def do_output_states_match(
         expected_output_state: syrec.n_bit_values_container | None, actual_output_state: syrec.n_bit_values_container
@@ -134,6 +161,7 @@ class SimulationRunModel:
 
         if expected_output_state.size() != actual_output_state.size():
             msg = f"Expected output state to have {expected_output_state.size()} qubits but actual output state contained {actual_output_state.size()} qubits!"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
 
         return all(
@@ -262,7 +290,6 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         if self.is_model_index_valid(index):
             self.simulation_run_models.pop(index.row())
             self.endRemoveRows()
-            # self.layoutChanged.emit()
             return True
 
         self.endRemoveRows()
@@ -272,6 +299,14 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self.beginResetModel()
         self.simulation_run_models.clear()
         self.endResetModel()
+
+    def reset_prev_simulation_run_execution_results(self) -> None:
+        if self.rowCount(QtCore.QModelIndex()) == 0:
+            return
+
+        for sim_run_model in self.simulation_run_models:
+            sim_run_model.reset_result_of_execution()
+        self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(len(self.simulation_run_models) - 1, 0))
 
     def add_all_possible_simulation_run_models(self) -> bool:
         if self.rowCount(QtCore.QModelIndex()) > 0:
@@ -299,44 +334,31 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
     ) -> None:
         if not self.is_model_index_valid(index):
             msg = "Invalid model index!"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
 
-        # TODO: Further validation
-
-        self.simulation_run_models[index.row()] = updated_simulation_run_data
+        self.simulation_run_models[index.row()].update_user_editable_data(
+            updated_simulation_run_data.input_state, updated_simulation_run_data.expected_output_state
+        )
         self.dataChanged.emit(index, index)
 
     # TODO: Check that no duplicate input or expected output_state is added
-    # TODO: Add custom error messages if validation fails
     def update_model_using_simulation_run_result(
         self,
         index: QtCore.QModelIndex,
         actual_output_state: syrec.n_bit_values_container,
-        do_expected_and_actual_outputs_match: bool | None,
+        do_expected_and_actual_output_states_match: bool | None,
         execution_runtime_in_ms: float,
     ) -> None:
         if not self.is_model_index_valid(index):
             msg = "Invalid model index!"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
 
-        to_be_updated_simulation_run_model: SimulationRunModel = self.simulation_run_models[index.row()]
-        # TODO: Should we validate that the current expected output state is equal to the input state
-        # if updated_simulation_run_model.expected_output_state is not None and updated_simulation_run_model.expected_output_state.size() != to_be_updated_simulation_run_model.input_state.size():
-        #     msg = "Input state sizes did not match"
-        #     raise ValueError(msg)
-
-        if (
-            actual_output_state is not None
-            and actual_output_state.size() != to_be_updated_simulation_run_model.input_state.size()
-        ):
-            msg = "Input state sizes did not match"
-            raise ValueError(msg)
-
-        self.simulation_run_models[index.row()].actual_output_state = actual_output_state
-        self.simulation_run_models[
-            index.row()
-        ].do_expected_and_actual_outputs_match = do_expected_and_actual_outputs_match
-        self.simulation_run_models[index.row()].execution_runtime_in_ms = execution_runtime_in_ms
+        self.simulation_run_models[index.row()]
+        self.simulation_run_models[index.row()].set_result_of_simulation_execution(
+            actual_output_state, do_expected_and_actual_output_states_match, execution_runtime_in_ms
+        )
         self.dataChanged.emit(index, index)
 
     def is_model_index_valid(self, index: QtCore.QModelIndex) -> bool:
