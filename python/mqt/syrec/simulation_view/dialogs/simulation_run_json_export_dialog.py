@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     from ..simulation_run_model import SimulationRunModel
 from ...logger_utils import log_info_to_console
-from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 from ..workers.simulation_run_json_export_worker import ExportedBatchData, SimulationRunJsonExportWorker
 from .base_progress_dialog import BaseProgressDialog
 
@@ -77,7 +77,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
             self.progress_bar.setMaximum(num_sim_runs_to_export)
             self.progress_bar.setValue(0)
         else:
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Required widget not found",
@@ -163,7 +163,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         if self.worker is None:
             return True
 
-        if show_optionally_cancellable_notification(
+        if show_and_request_ok_in_optionally_cancellable_notification(
             message_box_type=MessageBoxType.QUESTION,
             message_box_parent=self,
             message_box_title="Cancellation of export to json file!",

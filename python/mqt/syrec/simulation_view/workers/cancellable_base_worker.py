@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Final, TypeVar
 
 from PyQt6 import QtCore
 
-from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 
 if TYPE_CHECKING:
     from PyQt6 import QtWidgets
@@ -87,7 +87,7 @@ class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
         batch_data: Any, expected_batch_element_type: type[T], parent_widget_for_error_notification: QtWidgets.QWidget
     ) -> bool:
         if not isinstance(batch_data, list):
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.WARNING,
                 message_box_parent=parent_widget_for_error_notification,
                 message_box_title="Cannot handle batch data",
@@ -104,7 +104,7 @@ class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
             # All elements of list match expected element type or list was empty
             return True
 
-        show_optionally_cancellable_notification(
+        show_and_request_ok_in_optionally_cancellable_notification(
             message_box_type=MessageBoxType.WARNING,
             message_box_parent=parent_widget_for_error_notification,
             message_box_title="Cannot handle batch data",
@@ -120,7 +120,7 @@ class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
         if isinstance(batch_data, expected_batch_type):
             return True
 
-        show_optionally_cancellable_notification(
+        show_and_request_ok_in_optionally_cancellable_notification(
             message_box_type=MessageBoxType.WARNING,
             message_box_parent=parent_widget_for_error_notification,
             message_box_title="Cannot handle batch data",

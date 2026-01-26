@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Final
 
 from PyQt6 import QtCore
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from ..simulation_run_model import QtSimulationRunModel
 
 from ...logger_utils import log_error_to_console, log_info_to_console
-from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 from ..simulation_run_model import SimulationRunModel
 from ..workers.all_input_states_generator_worker import AllInputStatesGeneratorWorker
 from .base_progress_dialog import BaseProgressDialog
@@ -42,13 +43,27 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
     ) -> None:
         self.shared_simulation_runs_model = shared_simulation_runs_model
         self.title_lbl.setText(f"Generating simulation runs with batch size {batch_size}!")
-        # TODO: Validation that maximum value can actually be stored in progress bar maximum (should validation be performed in dialog or by caller?)
+
+        # Since the operands of the exponentiation operator are casted to floats, the result (a float) could exceed the maximum storable value in an integer so we need to check this error case since
+        # otherwise setting the maximum value of the QtWidgets.QProgressBar would raise an exception/no matching overload will be found since said function expects an integer parameter.
+        n_expected_sim_runs_to_generate: Final[float] = 2**expected_input_state_size
+        if n_expected_sim_runs_to_generate >= sys.maxsize:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Number of to be generated simulation runs not supported!",
+                message_box_content=f"The number of to be generated simulation runs (n={n_expected_sim_runs_to_generate}) exceeded the maximum supported value of {sys.maxsize} for the given expected input state size {expected_input_state_size}!",
+                is_cancellable=False,
+            )
+            self.reject()
+            return
+
         if self.progress_bar is not None:
             self.progress_bar.setMinimum(0)
-            self.progress_bar.setMaximum(2**expected_input_state_size)
+            self.progress_bar.setMaximum(int(n_expected_sim_runs_to_generate))
             self.progress_bar.setValue(0)
         else:
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Required widget not found",
@@ -150,7 +165,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         if self.worker is None:
             return True
 
-        if show_optionally_cancellable_notification(
+        if show_and_request_ok_in_optionally_cancellable_notification(
             message_box_type=MessageBoxType.QUESTION,
             message_box_parent=self,
             message_box_title="Cancellation of generation of input states requested!",
@@ -175,7 +190,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
             try:
                 self.shared_simulation_runs_model.delete_all_simulation_run_models()
             except Exception:
-                show_optionally_cancellable_notification(
+                show_and_request_ok_in_optionally_cancellable_notification(
                     message_box_type=MessageBoxType.ERROR,
                     message_box_parent=self,
                     message_box_title="Internal error!",
@@ -183,7 +198,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
                     is_cancellable=False,
                 )
         else:
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Internal state error!",

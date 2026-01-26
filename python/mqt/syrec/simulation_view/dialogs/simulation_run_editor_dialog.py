@@ -18,7 +18,8 @@ from typing_extensions import assert_never
 from mqt import syrec
 
 from ...logger_utils import log_error_to_console
-from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
+from ...widget_check_utils import assert_all_required_widgets_found_or_close_dialog
 from ..simulation_run_model import (
     ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE,
     QUANTUM_REGISTER_LAYOUT_QT_ROLE,
@@ -327,7 +328,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     def reject(self) -> None:
         # Ask for confirmation before closing dialog
-        if self.failed_due_to_internal_error or show_optionally_cancellable_notification(
+        if self.failed_due_to_internal_error or show_and_request_ok_in_optionally_cancellable_notification(
             message_box_type=MessageBoxType.QUESTION,
             message_box_parent=self,
             message_box_title="Confirm close",
@@ -343,7 +344,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             return
 
         # Ask for confirmation before closing dialog
-        if show_optionally_cancellable_notification(
+        if show_and_request_ok_in_optionally_cancellable_notification(
             message_box_type=MessageBoxType.QUESTION,
             message_box_parent=self,
             message_box_title="Confirm close",
@@ -474,7 +475,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
 
         if not self.edited_simulation_run_model.update_input_state_qubit_value(associated_qubit, updated_qubit_value):
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Failed to updated qubit value",
@@ -545,7 +546,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         if not self.edited_simulation_run_model.update_expected_output_state_qubit_value(
             associated_qubit, updated_qubit_value
         ):
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Failed to updated qubit value",
@@ -1281,7 +1282,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
             if edited_qreg_layout is None:
                 self.failed_due_to_internal_error = True
-                show_optionally_cancellable_notification(
+                show_and_request_ok_in_optionally_cancellable_notification(
                     message_box_type=MessageBoxType.ERROR,
                     message_box_parent=self,
                     message_box_title="Could not find layout of quantum register!",
@@ -1487,26 +1488,38 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def _assert_all_required_widgets_found_or_close_dialog(
         self, required_widgets: Iterable[QtWidgets.QWidget], error_dialog_content: str
     ) -> bool:
-        if all(widget is not None for widget in required_widgets):
+        if assert_all_required_widgets_found_or_close_dialog(
+            self,
+            required_widgets,
+            error_dialog_content,
+            num_additionally_skipped_stack_frames_starting_from_caller_function=1,
+        ):
             return True
 
         self.failed_due_to_internal_error = True
-        show_optionally_cancellable_notification(
-            message_box_type=MessageBoxType.ERROR,
-            message_box_parent=self,
-            message_box_title="Not all required Qt widgets found!",
-            message_box_content=f"{error_dialog_content}\nUnsaved changed will be lost and edit dialog will be closed!",
-            is_cancellable=False,
-            log_contents=False,
-        )
-
-        stringified_found_widgets_object_names: Final[str] = "Object names of found widgets: " + (
-            ",".join([widget.objectName() for widget in filter(lambda widget: widget is not None, required_widgets)])
-        )
-        # We want to log the caller of this function as the origin of the error instead of this function itself.
-        log_error_to_console(
-            f"{error_dialog_content}\n{stringified_found_widgets_object_names}",
-            num_additionally_skipped_stack_frames_starting_from_caller_function=1,
-        )
         self.reject()
         return False
+
+        # if all(widget is not None for widget in required_widgets):
+        #     return True
+
+        # self.failed_due_to_internal_error = True
+        # show_and_request_ok_in_optionally_cancellable_notification(
+        #     message_box_type=MessageBoxType.ERROR,
+        #     message_box_parent=self,
+        #     message_box_title="Not all required Qt widgets found!",
+        #     message_box_content=f"{error_dialog_content}\nUnsaved changed will be lost and edit dialog will be closed!",
+        #     is_cancellable=False,
+        #     log_contents=False,
+        # )
+
+        # stringified_found_widgets_object_names: Final[str] = "Object names of found widgets: " + (
+        #     ",".join([widget.objectName() for widget in filter(lambda widget: widget is not None, required_widgets)])
+        # )
+        # # We want to log the caller of this function as the origin of the error instead of this function itself.
+        # log_error_to_console(
+        #     f"{error_dialog_content}\n{stringified_found_widgets_object_names}",
+        #     num_additionally_skipped_stack_frames_starting_from_caller_function=1,
+        # )
+        # self.reject()
+        # return False

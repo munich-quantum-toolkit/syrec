@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from ..simulation_run_model import QtSimulationRunModel
 
 from ...logger_utils import log_error_to_console, log_info_to_console
-from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 from ..styled_item_delegates.simulation_run_execution_styled_item_delegate import (
     SimulationRunExecutionStyledItemDelegate,
 )
@@ -93,7 +93,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
 
         expected_input_state_size: Final[int] = self.annotatable_quantum_computation.num_data_qubits
         if batch_size <= 0 or expected_input_state_size <= 0:
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Invalid input parameters detected",
@@ -112,7 +112,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             self.progress_bar.setMaximum(expected_total_num_simulation_runs)
             self.progress_bar.setValue(0)
         else:
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Required widget not found",
@@ -181,7 +181,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         if self.worker is None:
             return True
 
-        if show_optionally_cancellable_notification(
+        if show_and_request_ok_in_optionally_cancellable_notification(
             message_box_type=MessageBoxType.QUESTION,
             message_box_parent=self,
             message_box_title="Cancellation of simulation runs requested!",

@@ -13,7 +13,7 @@ from typing import Final, Generic, TypeVar
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from ...logger_utils import log_error_to_console, log_info_to_console
-from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 from ..workers.cancellable_base_worker import CancellableBaseWorker
 
 T = TypeVar("T", bound=CancellableBaseWorker)
@@ -209,7 +209,7 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
         if dialog_button is not None:
             dialog_button.setEnabled(should_button_be_enabled)
         else:
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=btn_not_found_notification_parent,
                 message_box_title="Internal error",

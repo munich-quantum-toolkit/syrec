@@ -21,7 +21,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from mqt import syrec
 
 from .logger_utils import configure_default_console_logger
-from .message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from .message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 
 # We are using a relative import here: https://stackoverflow.com/questions/43728431/relative-imports-modulenotfounderror-no-module-named-x
 from .quantum_circuit_simulation_dialog import QuantumCircuitSimulationDialog
@@ -1357,7 +1357,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         self.qubits_information_lookup.set_lookup_information(annotatable_quantum_computation)
 
         if self.quantum_circuit_sim_runs_dialog is not None:
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Internal error",

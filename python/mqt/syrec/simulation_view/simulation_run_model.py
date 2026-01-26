@@ -266,7 +266,6 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
     def get_all_simulation_run_models(self) -> Iterable[SimulationRunModel]:
         yield from self.simulation_run_models
 
-    # TODO: Check for duplicates?
     def add_simulation_run_model(self, simulation_run_model: SimulationRunModel) -> bool:
         n_simulation_runs: int = len(self.simulation_run_models)
         self.beginInsertRows(QtCore.QModelIndex(), n_simulation_runs, n_simulation_runs)
@@ -342,7 +341,6 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         )
         self.dataChanged.emit(index, index)
 
-    # TODO: Check that no duplicate input or expected output_state is added
     def update_model_using_simulation_run_result(
         self,
         index: QtCore.QModelIndex,

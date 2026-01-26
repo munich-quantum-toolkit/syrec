@@ -23,7 +23,7 @@ class MessageBoxType(Enum):
     ERROR = 3
 
 
-def show_optionally_cancellable_notification(
+def show_and_request_ok_in_optionally_cancellable_notification(
     message_box_type: MessageBoxType,
     message_box_parent: QtWidgets.QWidget,
     message_box_title: str,
@@ -47,9 +47,7 @@ def show_optionally_cancellable_notification(
                 buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable),
                 defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable),
             )
-            return _check_whether_message_box_cancellation_was_clicked(
-                message_box_type, is_cancellable, clicked_message_box_button
-            )
+            return _check_whether_message_ok_was_clicked(message_box_type, is_cancellable, clicked_message_box_button)
         case MessageBoxType.INFO:
             if log_contents:
                 log_info_to_console(
@@ -64,9 +62,7 @@ def show_optionally_cancellable_notification(
                 buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable),
                 defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable),
             )
-            return _check_whether_message_box_cancellation_was_clicked(
-                message_box_type, is_cancellable, clicked_message_box_button
-            )
+            return _check_whether_message_ok_was_clicked(message_box_type, is_cancellable, clicked_message_box_button)
         case MessageBoxType.WARNING:
             if log_contents:
                 log_warning_to_console(
@@ -81,9 +77,7 @@ def show_optionally_cancellable_notification(
                 buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable),
                 defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable),
             )
-            return _check_whether_message_box_cancellation_was_clicked(
-                message_box_type, is_cancellable, clicked_message_box_button
-            )
+            return _check_whether_message_ok_was_clicked(message_box_type, is_cancellable, clicked_message_box_button)
         case MessageBoxType.ERROR:
             if log_contents:
                 log_error_to_console(
@@ -98,9 +92,7 @@ def show_optionally_cancellable_notification(
                 buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable),
                 defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable),
             )
-            return _check_whether_message_box_cancellation_was_clicked(
-                message_box_type, is_cancellable, clicked_message_box_button
-            )
+            return _check_whether_message_ok_was_clicked(message_box_type, is_cancellable, clicked_message_box_button)
         case _:
             # Added guard to handle new message box types
             assert_never(message_box_type)
@@ -131,7 +123,7 @@ def _get_default_button_for_message_box_type(
     return QtWidgets.QMessageBox.StandardButton.Cancel if is_cancellable else QtWidgets.QMessageBox.StandardButton.Ok
 
 
-def _check_whether_message_box_cancellation_was_clicked(
+def _check_whether_message_ok_was_clicked(
     message_box_type: MessageBoxType,
     is_cancellable: bool,
     clicked_message_box_button: QtWidgets.QMessageBox.StandardButton,

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from ..simulation_run_model import QtSimulationRunModel, SimulationRunModel
 
 from ...logger_utils import log_error_to_console, log_info_to_console
-from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 from ..simulation_run_model import SimulationRunModel
 from ..workers.simulation_run_json_import_worker import SimulationRunJsonImportWorker
 from .base_progress_dialog import BaseProgressDialog
@@ -183,7 +183,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         if self.worker is None:
             return True
 
-        if show_optionally_cancellable_notification(
+        if show_and_request_ok_in_optionally_cancellable_notification(
             message_box_type=MessageBoxType.QUESTION,
             message_box_parent=self,
             message_box_title="Cancellation of import from json file!",
@@ -205,7 +205,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
             try:
                 self.shared_simulation_runs_model.delete_all_simulation_run_models()
             except Exception:
-                show_optionally_cancellable_notification(
+                show_and_request_ok_in_optionally_cancellable_notification(
                     message_box_type=MessageBoxType.ERROR,
                     message_box_parent=self,
                     message_box_title="Internal error!",
@@ -213,7 +213,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
                     is_cancellable=False,
                 )
         else:
-            show_optionally_cancellable_notification(
+            show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Internal state error!",

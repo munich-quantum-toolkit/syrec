@@ -10,13 +10,13 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Final
+from typing import Final, cast
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
 
-from .message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+from .message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 from .simulation_view.dialogs.all_input_states_generator_dialog import AllInputStatesGeneratorDialog
 from .simulation_view.dialogs.base_progress_dialog import BaseProgressDialog
 from .simulation_view.dialogs.simulation_run_dialog import SimulationRunDialog
@@ -31,6 +31,7 @@ from .simulation_view.simulation_run_model import (
 from .simulation_view.styled_item_delegates.simulation_run_overview_styled_item_delegate import (
     SimulationRunOverviewStyledItemDelegate,
 )
+from .widget_check_utils import assert_all_required_widgets_found_or_close_dialog
 
 LOADED_FROM_FILE_INPUT_FIELD_NAME: Final[str] = "load_from_file_input_field"
 IMPORT_FROM_FILE_BUTTON_NAME: Final[str] = "import_from_file_btn"
@@ -104,7 +105,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.setSizeGripEnabled(True)
 
     def show_save_changes_reminder(self) -> None:
-        show_optionally_cancellable_notification(
+        show_and_request_ok_in_optionally_cancellable_notification(
             message_box_type=MessageBoxType.INFO,
             message_box_parent=self,
             message_box_title="Remember to save your changes",
@@ -232,31 +233,53 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # END: Create simulation runs execution Qt elements
         return tab_wrapper_widget
 
-    # TODO: After edit of simulation run is finished via click on save button will cause the run simulations buttons to only be executed after selecting/deselecting the element
     def handle_simulation_run_selection_change(
         self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection
     ) -> None:
         if selected.isEmpty() == deselected.isEmpty():
             return
 
-        curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
-        if curr_active_tab_widget is None:
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_curr_active_tab_widget],
+            error_dialog_content="Failed to locate current active tab widget during simulation run selection change",
+        ):
             return
 
         is_list_item_selected: bool = not selected.isEmpty() and deselected.isEmpty()
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
 
-        add_simulation_run_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
+        optional_add_simulation_run_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
             QtWidgets.QPushButton, ADD_SIM_RUN_BTN_NAME
         )
-        edit_simulation_run_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
+        optional_edit_simulation_run_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
             QtWidgets.QPushButton, EDIT_SIM_RUN_BTN_NAME
         )
-        delete_simulation_run_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
+        optional_delete_simulation_run_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
             QtWidgets.QPushButton, DELETE_SIM_RUN_BTN_NAME
         )
 
-        if add_simulation_run_btn is None or edit_simulation_run_btn is None or delete_simulation_run_btn is None:
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[
+                optional_add_simulation_run_btn,
+                optional_edit_simulation_run_btn,
+                optional_delete_simulation_run_btn,
+            ],
+            error_dialog_content="Failed to locate simulation run control buttons during simulation run selection change",
+        ):
             return
+
+        add_simulation_run_btn: Final[QtWidgets.QWidget] = cast(
+            "QtWidgets.QPushButton", optional_add_simulation_run_btn
+        )
+        edit_simulation_run_btn: Final[QtWidgets.QWidget] = cast(
+            "QtWidgets.QPushButton", optional_edit_simulation_run_btn
+        )
+        delete_simulation_run_btn: Final[QtWidgets.QWidget] = cast(
+            "QtWidgets.QPushButton", optional_delete_simulation_run_btn
+        )
 
         add_simulation_run_btn.setEnabled(not is_list_item_selected)
         edit_simulation_run_btn.setEnabled(is_list_item_selected)
@@ -275,32 +298,51 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
-        if curr_active_tab_widget is None:
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_curr_active_tab_widget],
+            error_dialog_content="Failed to locate current active tab widget during simulation run add button click",
+        ):
             return
 
-        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            curr_active_tab_widget, True
-        )
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(curr_active_tab_widget, True)
 
-        simulation_runs_list_view: QtWidgets.QListView | None = curr_active_tab_widget.findChild(
+        optional_simulation_runs_list_view: QtWidgets.QWidget | None = curr_active_tab_widget.findChild(
             QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME
         )
-        if simulation_runs_list_view is None:
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_simulation_runs_list_view],
+            error_dialog_content="Failed to locate simulation run list view during simulation run add button click",
+        ):
             return
 
+        simulation_runs_list_view: Final[QtWidgets.QListView] = cast(
+            "QtWidgets.QListView", optional_simulation_runs_list_view
+        )
         simulation_runs_list_view.scrollToBottom()
 
     def handle_simulation_run_edit_btn_click(self) -> None:
-        curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
-        if curr_active_tab_widget is None:
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
+        optional_simulation_runs_list_view: QtWidgets.QListView | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_curr_active_tab_widget, optional_simulation_runs_list_view],
+            error_dialog_content="Failed to locate required QtWidgets during simulation run edit button click",
+        ):
             return
 
-        simulation_runs_list_view: QtWidgets.QListView | None = curr_active_tab_widget.findChild(
-            QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME
+        cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        simulation_runs_list_view: Final[QtWidgets.QWidget] = cast(
+            "QtWidgets.QListView", optional_simulation_runs_list_view
         )
-        if simulation_runs_list_view is None:
-            return
 
         reference_sim_run_model: SimulationRunModel = simulation_runs_list_view.currentIndex().data(
             SIMULATION_RUN_IO_STATE_QT_ROLE
@@ -309,11 +351,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             reference_sim_run_model.expected_output_state is not None
             and reference_sim_run_model.input_state.size() != reference_sim_run_model.expected_output_state.size()
         ):
-            QtWidgets.QMessageBox.critical(
-                self,
-                "Initial simulation run model validation error",
-                f"Expected reference simulation runs input state size (n={reference_sim_run_model.input_state.size()}) to match expected output states size (n={reference_sim_run_model.expected_output_state.size()})",
-                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Initial simulation run model validation error",
+                message_box_content=f"Expected reference simulation runs input state size (n={reference_sim_run_model.input_state.size()}) to match expected output states size (n={reference_sim_run_model.expected_output_state.size()})",
+                is_cancellable=False,
+                log_contents=False,
             )
             return
 
@@ -343,22 +387,28 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 self.simulation_run_editor_dialog.edited_simulation_run_model,
             )
         except ValueError as err:
-            pressed_message_box_button: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.critical(
-                self,
-                "Simulation run model update error!",
-                f"Update of simulation run model {self.simulation_run_editor_dialog.simulation_run_model_index.row()} failed due to an error!\nReason: {err}",
-                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Simulation run model update error!",
+                message_box_content=f"Update of simulation run model {self.simulation_run_editor_dialog.simulation_run_model_index.row()} failed due to an error!\nReason: {err}",
+                is_cancellable=False,
+                log_contents=False,
             )
-
-            if pressed_message_box_button == QtWidgets.QMessageBox.StandardButton:
-                pass
         finally:
             self.simulation_run_editor_dialog = None
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def handle_sim_run_save_to_file_btn_click(self) -> None:
         if self.simulation_run_export_to_file_dialog is not None:
-            # TODO: Error logging
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Simulation run export dialog initialization error!",
+                message_box_content="Expected no simulation run export dialog instance to exist.",
+                is_cancellable=False,
+                log_contents=True,
+            )
             return
 
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -383,7 +433,14 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     def handle_open_and_start_all_input_states_generator_dialog(self, input_state_size: int) -> None:
         if self.all_input_states_generator_dialog is not None:
-            # TODO: Error logging?
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Input states generator dialog initialization error!",
+                message_box_content="Expected no input states generator dialog instance to exist.",
+                is_cancellable=False,
+                log_contents=True,
+            )
             return
 
         self.all_input_states_generator_dialog = AllInputStatesGeneratorDialog(self)
@@ -394,24 +451,38 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def handle_input_states_generator_dialog_close(self, result: int) -> None:
         self.all_input_states_generator_dialog = None
 
-        curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
-        if curr_active_tab_widget is None:
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_curr_active_tab_widget],
+            error_dialog_content="Failed to locate active tab widget in input states generator dialog close handler",
+        ):
             return
 
-        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
             curr_active_tab_widget, result == QtWidgets.QDialog.DialogCode.Accepted
         )
 
     def handle_simulation_run_delete_btn_click(self) -> None:
-        curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
-        if curr_active_tab_widget is None:
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
+        optional_simulation_runs_list_view: QtWidgets.QListView | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_curr_active_tab_widget, optional_simulation_runs_list_view],
+            error_dialog_content="Failed to locate required QtWidgets during simulation run delete button click",
+        ):
             return
 
-        simulation_runs_list_view: QtWidgets.QListView | None = curr_active_tab_widget.findChild(
-            QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        simulation_runs_list_view: Final[QtWidgets.QWidget] = cast(
+            "QtWidgets.QListView", optional_simulation_runs_list_view
         )
-        if simulation_runs_list_view is None:
-            return
 
         if not self.simulation_runs_model.delete_simulation_run_model(simulation_runs_list_view.currentIndex()):
             return
@@ -420,9 +491,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # and the subsequent update of the backing model of the QListView selection will switch to the element the index
         # of the previously selected element thus the simulation run execution controls should not be enabled after an element
         # is deleted
-        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            curr_active_tab_widget, False
-        )
+        self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(curr_active_tab_widget, False)
 
     def initialize_load_simulation_runs_from_file_controls(self) -> QtWidgets.QLayout:
         controls_layout = QtWidgets.QHBoxLayout()
@@ -494,7 +563,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         controls_layout.addStretch()
         return controls_layout
 
-    # TODO: Check that number of generate simulation runs does not exceed sys.maxsize
     def handle_simulation_runs_tab_widget_tab_changed(self, switched_to_tab_index: int) -> None:
         if switched_to_tab_index == -1:
             return
@@ -502,61 +570,58 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         if switched_to_tab_index == self.prev_active_simulation_runs_tab_idx:
             return
 
-        prev_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+        optional_prev_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
             self.prev_active_simulation_runs_tab_idx
         )
-        if prev_active_tab_widget is None:
-            return
-
-        to_be_switched_to_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+        optional_to_be_switched_to_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
             switched_to_tab_index
         )
-        if to_be_switched_to_tab_widget is None:
-            self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_prev_active_tab_widget, optional_to_be_switched_to_tab_widget],
+            error_dialog_content="Failed to locate previous/current active tab widget during simulation run tab change handler",
+        ):
+            if optional_to_be_switched_to_tab_widget is None:
+                self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
             return
 
-        if self.simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0:
-            pressed_message_box_button_in_tab_switch_warning: QtWidgets.QMessageBox.StandardButton = (
-                QtWidgets.QMessageBox.warning(
-                    self,
-                    "Existing simulation runs detected!",
-                    "Switching tabs will delete all existing simulation runs. Do you want to continue?",
-                    buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
-                    defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-                )
-            )
+        prev_active_tab_widget: Final[QtWidgets.QLabel] = cast("QtWidgets.QWidget", optional_prev_active_tab_widget)
+        to_be_switched_to_tab_widget: Final[QtWidgets.QLabel] = cast(
+            "QtWidgets.QWidget", optional_to_be_switched_to_tab_widget
+        )
 
-            if pressed_message_box_button_in_tab_switch_warning == QtWidgets.QMessageBox.StandardButton.Cancel:
+        if self.simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0:
+            if not show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.WARNING,
+                message_box_parent=self,
+                message_box_title="Existing simulation runs detected!",
+                message_box_content="Switching tabs will delete all existing simulation runs. Do you want to continue?",
+                is_cancellable=True,
+                log_contents=False,
+            ):
                 self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
                 return
             self.simulation_runs_model.delete_all_simulation_run_models()
 
-        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            to_be_switched_to_tab_widget, False
-        )
+        self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(to_be_switched_to_tab_widget, False)
 
         if to_be_switched_to_tab_widget.objectName() == self.all_sim_runs_tab_widget_name:
             n_input_state_combinations: int = 2**self.annotatable_quantum_computation.num_data_qubits
-            pressed_message_box_button_in_all_sim_run_generation_warning: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
-                self,
-                "Generating all possible input state combinations!",
-                f"Are you sure that you want to generate {n_input_state_combinations} simulation runs, one for each input state combination?",
-                buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
-                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-            )
-
-            if (
-                pressed_message_box_button_in_all_sim_run_generation_warning
-                == QtWidgets.QMessageBox.StandardButton.Cancel
+            if not show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.WARNING,
+                message_box_parent=self,
+                message_box_title="Generating all possible input state combinations!",
+                message_box_content=f"Are you sure that you want to generate {n_input_state_combinations} simulation runs, one for each input state combination?",
+                is_cancellable=True,
+                log_contents=False,
             ):
                 self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
                 return
+
             self.handle_open_and_start_all_input_states_generator_dialog(
                 self.annotatable_quantum_computation.num_data_qubits
             )
-        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            prev_active_tab_widget, False
-        )
+        self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(prev_active_tab_widget, False)
         self.prev_active_simulation_runs_tab_idx = switched_to_tab_index
 
     def handle_run_all_simulation_runs_button_click(self) -> None:
@@ -567,25 +632,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     def open_simulation_runs_execution_dialog(self, stop_at_first_output_state_mismatch: bool) -> None:
         if self.simulation_run_dialog is not None:
-            # TODO: Error logging?
-            return
-
-        # TODO: Should this validation be performed in the dialog itself? Can this condition even be met?
-        num_simulation_runs: Final[int] = self.simulation_runs_model.rowCount(QtCore.QModelIndex())
-        if num_simulation_runs >= sys.maxsize:
-            QtWidgets.QMessageBox.critical(
-                self,
-                "Number of simulation runs not supported!",
-                f"The maximum number of simulation runs is limited to {sys.maxsize} while you tried to execute {num_simulation_runs}!",
-                buttons=QtWidgets.QMessageBox.StandardButton.Ok,
-                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-            )
-
-            curr_tab_widget: QtWidgets.QWidget = self.simulation_runs_tab_widget.widget(
-                self.simulation_runs_tab_widget.currentIndex()
-            )
-            QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-                curr_tab_widget, False
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Simulation run dialog initialization error!",
+                message_box_content="Expected no simulation run dialog instance to exist.",
+                is_cancellable=False,
+                log_contents=True,
             )
             return
 
@@ -596,7 +649,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             self.annotatable_quantum_computation, self.simulation_runs_model, stop_at_first_output_state_mismatch
         )
 
-    # TODO: Toggle state after edits in simulation runs were performed?
     def handle_simulation_runs_dialog_close(self, _: int) -> None:
         self.simulation_run_dialog = None
 
@@ -606,24 +658,36 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             self, "Select a file to import simulation runs from", str(Path.home()), "Json files (*.json)"
         )
 
-        active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
-            self.simulation_runs_tab_widget.currentIndex()
-        )
-        selected_filename_lbl: QtWidgets.QWidget | None = (
-            active_tab_widget.findChild(QtWidgets.QLabel, LOADED_FROM_FILE_INPUT_FIELD_NAME)
-            if active_tab_widget is not None
-            else None
-        )
-        load_from_file_btn: QtWidgets.QWidget | None = (
-            active_tab_widget.findChild(QtWidgets.QPushButton, IMPORT_FROM_FILE_BUTTON_NAME)
-            if active_tab_widget is not None
-            else None
-        )
-        if active_tab_widget is None or selected_filename_lbl is None or load_from_file_btn is None:
-            return
-
         if not filename:
             return
+
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            self.simulation_runs_tab_widget.currentIndex()
+        )
+        optional_selected_filename_lbl: QtWidgets.QWidget | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QLabel, LOADED_FROM_FILE_INPUT_FIELD_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+        optional_load_from_file_btn: QtWidgets.QWidget | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QPushButton, IMPORT_FROM_FILE_BUTTON_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[
+                optional_curr_active_tab_widget,
+                optional_selected_filename_lbl,
+                optional_load_from_file_btn,
+            ],
+            error_dialog_content="Failed to locate required QtWidgets in open import file handle",
+        ):
+            return
+
+        selected_filename_lbl: Final[QtWidgets.QLabel] = cast("QtWidgets.QLabel", optional_selected_filename_lbl)
+        load_from_file_btn: Final[QtWidgets.QLabel] = cast("QtWidgets.QLabel", optional_load_from_file_btn)
 
         selected_filename_lbl.setText(filename)
         load_from_file_btn.setEnabled(True)
@@ -631,29 +695,42 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def open_import_from_file_dialog(self) -> None:
         if self.simulation_run_import_from_file_dialog is not None:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Simulation run import dialog initialization error!",
+                message_box_content="Expected no simulation run import dialog instance to exist.",
+                is_cancellable=False,
+                log_contents=True,
+            )
             return
 
-        active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
             self.simulation_runs_tab_widget.currentIndex()
         )
-
-        selected_filename_lbl: QtWidgets.QWidget | None = (
-            active_tab_widget.findChild(QtWidgets.QLabel, LOADED_FROM_FILE_INPUT_FIELD_NAME)
-            if active_tab_widget is not None
+        optional_selected_filename_lbl: QtWidgets.QWidget | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QLabel, LOADED_FROM_FILE_INPUT_FIELD_NAME)
+            if optional_curr_active_tab_widget is not None
             else None
         )
-        if active_tab_widget is None or selected_filename_lbl is None:
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_curr_active_tab_widget, optional_selected_filename_lbl],
+            error_dialog_content="Failed to locate required QtWidgets on import simulation runs from file click",
+        ):
             return
 
+        selected_filename_lbl: Final[QtWidgets.QLabel] = cast("QtWidgets.QLabel", optional_selected_filename_lbl)
         if self.simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0:
-            pressed_btn_in_confirm_dialog: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.warning(
-                self,
-                "Existing simulation runs detected",
-                "Importing from a file will delete any existing simulation runs. Do you want to continue?",
-                buttons=QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
-                defaultButton=QtWidgets.QMessageBox.StandardButton.Ok,
-            )
-            if pressed_btn_in_confirm_dialog == QtWidgets.QMessageBox.StandardButton.Cancel:
+            if not show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.WARNING,
+                message_box_parent=self,
+                message_box_title="Existing simulation runs detected",
+                message_box_content="Importing from a file will delete any existing simulation runs. Do you want to continue?",
+                is_cancellable=True,
+                log_contents=False,
+            ):
                 return
             self.simulation_runs_model.delete_all_simulation_run_models()
 
@@ -669,49 +746,69 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_import_from_file_dialog_close(self, result: int) -> None:
         self.simulation_run_import_from_file_dialog = None
-        curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
-        if curr_active_tab_widget is None:
-            # TODO: Error logging
-            return
 
-        QuantumCircuitSimulationDialog.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            curr_active_tab_widget, result == QtWidgets.QDialog.DialogCode.Accepted
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            self.simulation_runs_tab_widget.currentIndex()
         )
-
-        load_from_file_btn: QtWidgets.QWidget | None = curr_active_tab_widget.findChild(
-            QtWidgets.QPushButton, IMPORT_FROM_FILE_BUTTON_NAME
-        )
-        add_sim_run_btn: QtWidgets.QWidget | None = curr_active_tab_widget.findChild(
-            QtWidgets.QPushButton, ADD_SIM_RUN_BTN_NAME
-        )
-        if load_from_file_btn is None or add_sim_run_btn is None:
-            # TODO: Error logging
-            return
-
-        add_sim_run_btn.setEnabled(result == QtWidgets.QDialog.DialogCode.Accepted)
-
-    @staticmethod
-    def set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-        tab_widget: QtWidgets.QWidget, should_controls_be_enabled: bool
-    ) -> None:
-        run_simulation_runs_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
-            QtWidgets.QPushButton, RUN_SIM_RUNS_BTN_NAME
-        )
-        run_simulation_runs_stop_at_first_failure_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
-            QtWidgets.QPushButton, RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME
-        )
-        save_simulation_runs_to_file_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
-            QtWidgets.QPushButton, SAVE_SIM_RUNS_TO_FILE_BTN_NAME
-        )
-
-        if (
-            run_simulation_runs_btn is None
-            or run_simulation_runs_stop_at_first_failure_btn is None
-            or save_simulation_runs_to_file_btn is None
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_curr_active_tab_widget],
+            error_dialog_content="Failed to locate active tab widget in import simulation runs from file dialog close handler",
         ):
             return
 
+        curr_active_tab_widget: Final[QtWidgets.QLabel] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+            curr_active_tab_widget, result == QtWidgets.QDialog.DialogCode.Accepted
+        )
+
+        optional_add_sim_run_btn: QtWidgets.QWidget | None = curr_active_tab_widget.findChild(
+            QtWidgets.QPushButton, ADD_SIM_RUN_BTN_NAME
+        )
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_add_sim_run_btn],
+            error_dialog_content="Failed to locate required QtWidgets in import simulation runs from file dialog close handler",
+        ):
+            return
+
+        add_sim_run_btn: Final[QtWidgets.QLabel] = cast("QtWidgets.QPushButton", optional_add_sim_run_btn)
+        add_sim_run_btn.setEnabled(result == QtWidgets.QDialog.DialogCode.Accepted)
+
+    def set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
+        self, tab_widget: QtWidgets.QWidget, should_controls_be_enabled: bool
+    ) -> None:
+        optional_run_simulation_runs_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
+            QtWidgets.QPushButton, RUN_SIM_RUNS_BTN_NAME
+        )
+        optional_run_simulation_runs_stop_at_first_failure_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
+            QtWidgets.QPushButton, RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME
+        )
+        optional_save_simulation_runs_to_file_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
+            QtWidgets.QPushButton, SAVE_SIM_RUNS_TO_FILE_BTN_NAME
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[
+                optional_run_simulation_runs_btn,
+                optional_run_simulation_runs_stop_at_first_failure_btn,
+                optional_save_simulation_runs_to_file_btn,
+            ],
+            error_dialog_content="Failed to locate required QtWidgets during change of enabled state of simulation run execution controls",
+        ):
+            return
+
+        run_simulation_runs_btn: Final[QtWidgets.QLabel] = cast(
+            "QtWidgets.QPushButton", optional_run_simulation_runs_btn
+        )
+        run_simulation_runs_stop_at_first_failure_btn: Final[QtWidgets.QLabel] = cast(
+            "QtWidgets.QPushButton", optional_run_simulation_runs_stop_at_first_failure_btn
+        )
+        save_simulation_runs_to_file_btn: Final[QtWidgets.QLabel] = cast(
+            "QtWidgets.QPushButton", optional_save_simulation_runs_to_file_btn
+        )
+
         run_simulation_runs_btn.setEnabled(should_controls_be_enabled)
         run_simulation_runs_stop_at_first_failure_btn.setEnabled(should_controls_be_enabled)
-        # TODO: Button should only be enabled if all simulation runs have their expected output state set?
         save_simulation_runs_to_file_btn.setEnabled(should_controls_be_enabled)
