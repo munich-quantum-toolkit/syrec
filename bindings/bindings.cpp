@@ -216,11 +216,11 @@ NB_MODULE(MQT_SYREC_MODULE_NAME, m) {
     nb::class_<NBitValuesContainer>(m, "n_bit_values_container")
             .def(nb::init<>(), "Constructs an empty container of size zero.")
             .def(nb::init<std::size_t>(), "n"_a, "Constructs a zero-initialized container of size n.")
-            .def(nb::init<std::size_t, uint64_t>(), "n"_a, "initialLineValues"_a, "Constructs a container of size n from an integer initialLineValues")
+            .def(nb::init<std::size_t, uint64_t>(), "n"_a, "initial_line_values"_a, "Constructs a container of size n from an integer initial_line_values")
             .def("__getitem__", [](const NBitValuesContainer& nBitValuesContainer, std::size_t bitIndex) { return nBitValuesContainer[bitIndex]; })
             .def("test", &NBitValuesContainer::test, "n"_a, "Determine the value of the bit at position n")
-            .def("set", nb::overload_cast<std::size_t>(&NBitValuesContainer::set), "n"_a, "Set the value of the bit at position n to TRUE")                 // NOLINT(misc-include-cleaner)
-            .def("set", nb::overload_cast<std::size_t, bool>(&NBitValuesContainer::set), "n"_a, "value"_a, "Set the bit at position n to a specific value") // NOLINT(misc-include-cleaner)
+            .def("set", nb::overload_cast<std::size_t>(&NBitValuesContainer::set), "n"_a, "Set the value of the bit at position n to TRUE")
+            .def("set", nb::overload_cast<std::size_t, bool>(&NBitValuesContainer::set), "n"_a, "value"_a, "Set the bit at position n to a specific value")
             .def("reset", &NBitValuesContainer::reset, "n"_a, "Set the value of the bit at position n to FALSE")
             .def("resize", &NBitValuesContainer::resize, "n"_a, "Changes the number of bits stored in the container")
             .def("size", &NBitValuesContainer::size, "Get the number of values stored in the container")
@@ -246,12 +246,11 @@ NB_MODULE(MQT_SYREC_MODULE_NAME, m) {
 
     nb::class_<Program>(m, "program")
             .def(nb::init<>(), "Constructs SyReC program object.")
-            .def("add_module", &Program::addModule)
             .def("read", &Program::read, "filename"_a, "configurable_options"_a = ConfigurableOptions(), "Read and process a SyReC program from a file.")
-            .def("read_from_string", &Program::readFromString, "stringifiedProgram"_a, "configurable_options"_a = ConfigurableOptions(), "Process an already stringified SyReC program.");
+            .def("read_from_string", &Program::readFromString, "stringified_program"_a, "configurable_options"_a = ConfigurableOptions(), "Process an already stringified SyReC program.");
 
     // Due to the cost and line aware synthesizers reporting found synthesis errors on the std::cerr output stream an explicit redirection to the python sys.stderr output stream is required. However, this should only be a temporary solution and the synthesizer should either use a return value or output parameter to return the found synthesis errors similarly to how the SyReC parser is doing it.
     m.def("cost_aware_synthesis", &CostAwareSynthesis::synthesize, nb::call_guard<scoped_estream_redirect>(), "annotated_quantum_computation"_a, "program"_a, "configurable_options"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = nullptr, "Cost-aware synthesis of the SyReC program.");
     m.def("line_aware_synthesis", &LineAwareSynthesis::synthesize, nb::call_guard<scoped_estream_redirect>(), "annotated_quantum_computation"_a, "program"_a, "configurable_options"_a = ConfigurableOptions(), "optional_recorded_statistics"_a = nullptr, "Line-aware synthesis of the SyReC program.");
-    m.def("simple_simulation", &simpleSimulation, "output"_a, "quantum_computation"_a, "input"_a, "optional_recorded_statistics"_a = nullptr, "Simulation of a synthesized SyReC program");
+    m.def("simple_simulation", &simpleSimulation, "output"_a, "quantum_computation"_a, "input_"_a, "optional_recorded_statistics"_a = nullptr, "Simulation of a synthesized SyReC program");
 }
