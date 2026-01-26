@@ -101,6 +101,11 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         else:
             event.ignore()
 
+    # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
+    def reject(self) -> None:
+        if self._handle_input_state_generation_cancel_button_click():
+            super().reject()
+
     @QtCore.pyqtSlot(Exception)  # type: ignore[untyped-decorator]
     def _handle_input_state_generator_failure(self, err: Exception) -> None:
         self._handle_non_recoverable_error(err)

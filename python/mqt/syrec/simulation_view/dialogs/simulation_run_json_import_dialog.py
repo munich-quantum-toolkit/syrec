@@ -115,6 +115,11 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
         self._change_dialog_cancel_button_enable_state(True)
 
+    # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
+    def reject(self) -> None:
+        if self._handle_import_from_file_cancel_button_click():
+            super().reject()
+
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
         # Ask for confirmation before closing
         if self._handle_import_from_file_cancel_button_click():

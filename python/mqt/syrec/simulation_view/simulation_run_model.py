@@ -68,15 +68,15 @@ class SimulationRunModel:
         else:
             self.input_state = syrec.n_bit_values_container(input_state.size())
             for qubit in range(input_state.size()):
-                self.input_state.set(qubit, input_state.test(qubit))
+                self.input_state.set(qubit, input_state.test(qubit))  # type: ignore[arg-type]
             if expected_output_state is not None:
                 self.expected_output_state = syrec.n_bit_values_container(expected_output_state.size())
                 for qubit in range(expected_output_state.size()):
-                    self.expected_output_state.set(qubit, expected_output_state.test(qubit))
+                    self.expected_output_state.set(qubit, expected_output_state.test(qubit))  # type: ignore[arg-type]
             if actual_output_state is not None:
                 self.actual_output_state = syrec.n_bit_values_container(actual_output_state.size())
                 for qubit in range(actual_output_state.size()):
-                    self.actual_output_state.set(qubit, actual_output_state.test(qubit))
+                    self.actual_output_state.set(qubit, actual_output_state.test(qubit))  # type: ignore[arg-type]
 
     def initialize_expected_output_state_as_copy_of_input_state(self) -> None:
         if self.expected_output_state is not None:
@@ -84,7 +84,7 @@ class SimulationRunModel:
 
         self.expected_output_state = syrec.n_bit_values_container(self.input_state.size())
         for i in range(self.expected_output_state.size()):
-            self.expected_output_state.set(i, self.input_state.test(i))
+            self.expected_output_state.set(i, self.input_state.test(i))  # type: ignore[arg-type]
 
     def reset_result_of_execution(self) -> None:
         self.actual_output_state = None
@@ -109,8 +109,8 @@ class SimulationRunModel:
         if self.actual_output_state is None:
             self.actual_output_state = syrec.n_bit_values_container(self.input_state.size())
 
-        for i in range(self.input_state.size()):
-            self.actual_output_state.set(i, actual_output_state.test(i))
+        for i in range(self.actual_output_state.size()):
+            self.actual_output_state.set(i, actual_output_state.test(i))  # type: ignore[arg-type]
 
         self.do_expected_and_actual_outputs_match = do_expected_and_actual_output_states_match
         self.execution_runtime_in_ms = execution_runtime_in_ms
@@ -142,15 +142,15 @@ class SimulationRunModel:
             raise ValueError(msg)
 
         for i in range(self.input_state.size()):
-            self.input_state.set(i, edited_input_state.test(i))
+            self.input_state.set(i, edited_input_state.test(i))  # type: ignore[arg-type]
 
         if edited_expected_output_state is None:
             self.expected_output_state = None
         else:
             if self.expected_output_state is None:
                 self.expected_output_state = syrec.n_bit_values_container(self.input_state.size())
-            for i in range(self.input_state.size()):
-                self.expected_output_state.set(i, edited_expected_output_state.test(i))
+            for i in range(self.expected_output_state.size()):
+                self.expected_output_state.set(i, edited_expected_output_state.test(i))  # type: ignore[arg-type]
 
     @staticmethod
     def do_output_states_match(
@@ -218,8 +218,11 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
     ) -> list[QuantumRegisterLayout]:
         quantum_register_layouts: list[QuantumRegisterLayout] = []
         for qreg in annotatable_quantum_computation.qregs.values():
+            internal_qubit_label: str | None = annotatable_quantum_computation.get_qubit_label(
+                qreg.start, syrec.qubit_label_type.internal
+            )
             if qreg.size == 0 or QtSimulationRunModel._does_qubit_label_start_with_internal_qubit_label_prefix(
-                annotatable_quantum_computation.get_qubit_label(qreg.start, syrec.qubit_label_type.internal)
+                internal_qubit_label if internal_qubit_label is not None else ""
             ):
                 continue
 
