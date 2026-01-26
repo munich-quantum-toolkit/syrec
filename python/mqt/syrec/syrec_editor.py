@@ -458,7 +458,9 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
             self.build_successful(self.annotatable_quantum_computation)
 
     def stat(self) -> None:
-        assert self.annotatable_quantum_computation is not None
+        if self.annotatable_quantum_computation is None:
+            msg = "Set annotatable_quantum_computation before calling stat()"
+            raise RuntimeError(msg)
 
         n_quantum_operations = self.annotatable_quantum_computation.num_ops
         n_total_qubits = self.annotatable_quantum_computation.num_qubits
@@ -479,7 +481,9 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         msg.exec()
 
     def sim(self) -> None:
-        assert self.annotatable_quantum_computation is not None
+        if self.annotatable_quantum_computation is None:
+            msg = "Set annotatable_quantum_computation before calling sim()"
+            raise RuntimeError(msg)
 
         bit1_mask = 0
 
@@ -1249,10 +1253,10 @@ class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
             return self.reject()
 
-        if self.configurable_parser_and_synthesis_options.main_module_identifier is not None:
-            self.configurable_parser_and_synthesis_options.main_module_identifier = (
-                self.expected_main_module_identifier_textbox.text()
-            )
+        main_module_identifier = self.expected_main_module_identifier_textbox.text().strip()
+        if main_module_identifier:
+            self.configurable_parser_and_synthesis_options.main_module_identifier = main_module_identifier
+
         self.configurable_parser_and_synthesis_options.generate_inlined_qubit_debug_information = (
             self.generate_inlined_qubit_debug_information_checkbox.isChecked()
         )
