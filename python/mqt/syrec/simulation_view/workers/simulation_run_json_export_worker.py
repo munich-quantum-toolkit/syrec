@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
 from PyQt6 import QtCore
@@ -24,6 +25,12 @@ if TYPE_CHECKING:
     from .cancellable_base_worker import BatchTimestamps
 
 
+@dataclass(frozen=True)
+class ExportedBatchData:
+    exported_sim_runs: int
+    skipped_sim_runs: int
+
+
 class SimulationRunJsonExportWorker(CancellableBaseWorker):
     def __init__(
         self, path_to_json_file: Path, simulation_runs_to_export: Iterable[SimulationRunModel], export_batch_size: int
@@ -34,7 +41,6 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
         self.simulation_runs_to_export: Iterable[SimulationRunModel] = simulation_runs_to_export
         self.export_batch_size: Final[int] = export_batch_size
 
-    # TODO: Pretty printing
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_export(self) -> None:
         if self.export_batch_size < 1:
@@ -43,8 +49,9 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
         n_generated_batches: int = 0
         try:
             batch_idx: int = 0
+            n_skipped_sim_runs_in_batch: int = 0
+            n_exported_sim_runs_in_batch: int = 0
             with self.path_to_json_file.open("w", encoding="ascii") as file:
-                # file.write("{\n\t\"simulationRuns\": [\n")
                 file.write('{"simulationRuns":[')
                 batch_start_timestamp: float = SimulationRunJsonExportWorker._get_timestamp()
                 batch_timestamps: BatchTimestamps | None = None
@@ -52,13 +59,15 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
                     if self.is_cancellation_requested():
                         break
 
-                    # if batch_idx > 0:
-                    #     file.write(",\n")
-                    # file.write(json.dumps(sim_run, default=SimulationRunJsonExportWorker.serialize_to_json, indent=2))
-
-                    if batch_idx > 0 or (batch_idx == 0 and n_generated_batches > 0):
-                        file.write(",")
-                    file.write(json.dumps(sim_run, default=SimulationRunJsonExportWorker.serialize_to_json))
+                    if sim_run.expected_output_state is None:
+                        n_skipped_sim_runs_in_batch += 1
+                    else:
+                        if n_exported_sim_runs_in_batch > 0 or (
+                            n_exported_sim_runs_in_batch == 0 and n_generated_batches > 0
+                        ):
+                            file.write(",")
+                        file.write(json.dumps(sim_run, default=SimulationRunJsonExportWorker.serialize_to_json))
+                        n_exported_sim_runs_in_batch += 1
 
                     batch_idx += 1
                     if batch_idx == self.export_batch_size:
@@ -68,10 +77,14 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
                             )
                         )
                         batch_start_timestamp = batch_timestamps.end
-                        self.batchCompleted.emit(batch_timestamps.duration, self.export_batch_size)
+                        self.batchCompleted.emit(
+                            batch_timestamps.duration,
+                            ExportedBatchData(n_exported_sim_runs_in_batch, n_skipped_sim_runs_in_batch),
+                        )
                         batch_idx = 0
+                        n_skipped_sim_runs_in_batch = 0
+                        n_exported_sim_runs_in_batch = 0
                         n_generated_batches += 1
-                # file.write("\n\t]\n}")
                 # An error during during the serialization of the simulation runs to their .json representation will cause the content of the
                 # exported to .json file to be invalid .json due to the simulation runs JSON array as well as the top level JSON object missing
                 # their closing symbol.
@@ -83,7 +96,10 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
                         batch_start_timestamp
                     )
                 )
-                self.batchCompleted.emit(batch_timestamps.duration, batch_idx)
+                self.batchCompleted.emit(
+                    batch_timestamps.duration,
+                    ExportedBatchData(batch_idx - n_skipped_sim_runs_in_batch, n_skipped_sim_runs_in_batch),
+                )
             self.finished.emit(self.cancellation_requested)
         except Exception as error:
             error_msg: Final[str] = (
@@ -94,9 +110,10 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
 
     @staticmethod
     def serialize_to_json(obj: Any) -> object:
-        if isinstance(obj, SimulationRunModel):
-            if obj.expected_output_state is None:
-                return {"in": str(obj.input_state)}
-            return {"in": str(obj.input_state), "out": str(obj.expected_output_state)}
-        msg = f"Cannot serialize object of {type(obj)}"
-        raise TypeError(msg)
+        if not isinstance(obj, SimulationRunModel):
+            msg = f"Cannot serialize object of {type(obj)}"
+            raise TypeError(msg)
+
+        if obj.expected_output_state is None:
+            return {"in": str(obj.input_state)}
+        return {"in": str(obj.input_state), "out": str(obj.expected_output_state)}

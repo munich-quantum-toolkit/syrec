@@ -644,10 +644,9 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                     optional_qreg_qubit_values, qreg_layout.first_qubit_of_qreg, qreg_layout.qreg_size
                 )
             )
-        else:
-            in_or_out_state_edit_field.setEnabled(False)
-            in_or_out_state_edit_field.setPlaceholderText("-")
 
+        in_or_out_state_edit_field.setEnabled(optional_qreg_qubit_values is not None)
+        in_or_out_state_edit_field.setPlaceholderText(unknown_qreg_contents_placeholder)
         in_or_out_state_edit_field.setCursorPosition(0)
         in_or_out_state_edit_field.setAlignment(QtCore.Qt.AlignmentFlag.AlignJustify)
         in_or_out_state_edit_field.setValidator(

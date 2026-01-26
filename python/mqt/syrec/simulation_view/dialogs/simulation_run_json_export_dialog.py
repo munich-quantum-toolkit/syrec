@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final, cast
 
 from PyQt6 import QtCore, QtWidgets
 
@@ -19,11 +19,14 @@ if TYPE_CHECKING:
     from PyQt6 import QtGui
 
     from ..simulation_run_model import SimulationRunModel
-    from ..workers.simulation_run_json_export_worker import SimulationRunJsonExportWorker
 from ...logger_utils import log_info_to_console
 from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
-from ..workers.simulation_run_json_export_worker import SimulationRunJsonExportWorker
+from ..workers.simulation_run_json_export_worker import ExportedBatchData, SimulationRunJsonExportWorker
 from .base_progress_dialog import BaseProgressDialog
+
+EXPORTED_SIM_RUNS_DATA_LABEL: Final[str] = (
+    "In total {n_exported_sim_runs:d} simulation runs where exported with {n_skipped_sim_runs:d} simulation runs being skipped"
+)
 
 
 class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWorker]):
@@ -31,15 +34,21 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         super().__init__(
             parent,
             dialog_title="Exporting simulation runs...",
-            optional_progress_bar_text_format="Exported simulation run %v of %m",
+            optional_progress_bar_text_format="Processed simulation run %v of %m",
             create_default_layout=False,
         )
-        self.num_exported_simulation_runs: int = 0
+        self.num_processed_sim_runs: int = 0
+        self.total_num_exported_sim_runs: int = 0
+        self.total_num_skipped_sim_runs: int = 0
         self.dialog_button_box.accepted.connect(self.accept)
         self.dialog_button_box.rejected.connect(self._handle_export_to_file_cancel_button_click)
 
         self.export_location_info_lbl = QtWidgets.QLabel("")
         self.export_location_info_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+
+        self.exported_sim_runs_data_lbl = QtWidgets.QLabel("")
+        self.exported_sim_runs_data_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.exported_sim_runs_data_lbl.setStyleSheet("QLabel { color : gray; }")
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.title_lbl)
@@ -49,6 +58,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         layout.addStretch()
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.total_runtime_info_text_lbl)
+        layout.addWidget(self.exported_sim_runs_data_lbl)
         layout.addWidget(self.dialog_button_box)
         self.setLayout(layout)
 
@@ -108,25 +118,30 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
 
     @QtCore.pyqtSlot(float, object)  # type: ignore[untyped-decorator]
     def _handle_batch_exported(self, batch_generation_duration_in_seconds: float, batch_data: object) -> None:
-        if not isinstance(batch_data, int):
-            # TODO: Better logging of mismatched type/s in list
-            show_optionally_cancellable_notification(
-                message_box_type=MessageBoxType.INFO,
-                message_box_parent=self,
-                message_box_title="Cannot handle batch data",
-                message_box_content=f"Expected batch data to be of type {type(int)} but was actually {type(batch_data)}! This should not happen.",
-                is_cancellable=False,
-            )
+        if not SimulationRunJsonExportWorker.is_batch_data_of_type(
+            batch_data, ExportedBatchData, parent_widget_for_error_notification=self
+        ):
             if self.worker is not None:
                 self.worker.ack_batch_processed()
             return
 
-        self._update_progress_text_with_batch_info(batch_data, batch_generation_duration_in_seconds)
+        casted_batch_data: Final[ExportedBatchData] = cast("ExportedBatchData", batch_data)
+        self.progress_info_text_lbl.setText(
+            f"Batch completed! Exported {casted_batch_data.exported_sim_runs} and skipping {casted_batch_data.skipped_sim_runs} simulation runs. Runtime [in seconds]: {batch_generation_duration_in_seconds}"
+        )
         self._accumulate_and_update_total_runtime(batch_generation_duration_in_seconds)
-        self.num_exported_simulation_runs += batch_data
+        self.num_processed_sim_runs += casted_batch_data.exported_sim_runs + casted_batch_data.skipped_sim_runs
 
         if self.progress_bar is not None:
-            self.progress_bar.setValue(self.num_exported_simulation_runs)
+            self.progress_bar.setValue(self.num_processed_sim_runs)
+
+        self.total_num_exported_sim_runs += casted_batch_data.exported_sim_runs
+        self.total_num_skipped_sim_runs += casted_batch_data.skipped_sim_runs
+        self.exported_sim_runs_data_lbl.setText(
+            EXPORTED_SIM_RUNS_DATA_LABEL.format(
+                n_exported_sim_runs=self.total_num_exported_sim_runs, n_skipped_sim_runs=self.total_num_skipped_sim_runs
+            )
+        )
 
     @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
     def _handle_export_completion(self, was_cancellation_requested: bool) -> None:

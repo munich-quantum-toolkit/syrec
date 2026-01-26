@@ -198,7 +198,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         save_simulation_runs_to_file_button.clicked.connect(self.handle_sim_run_save_to_file_btn_click)
         save_simulation_runs_to_file_button.setEnabled(False)
         save_simulation_runs_to_file_button.setToolTip(
-            "Save the defined simulation runs to a .json file (only input state and expected output qubit values are exported)"
+            "Save the defined simulation runs to a .json file (only the input and expected output qubit values of simulation runs in which both input and output qubit values are known are exported)"
         )
         simulation_runs_execution_buttons_layout.addWidget(save_simulation_runs_to_file_button)
 

@@ -10,9 +10,14 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Any, Final, TypeVar
+from typing import TYPE_CHECKING, Any, Final, TypeVar
 
 from PyQt6 import QtCore
+
+from ...message_box_utils import MessageBoxType, show_optionally_cancellable_notification
+
+if TYPE_CHECKING:
+    from PyQt6 import QtWidgets
 
 T = TypeVar("T")
 
@@ -78,10 +83,51 @@ class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
         self.cancellation_flag_mutex.unlock()
 
     @staticmethod
-    def are_list_of_batch_items_of_type(batch_data: Any, expected_batch_element_type: type[T]) -> bool:
-        return isinstance(batch_data, list) and all(
-            isinstance(batch_item, expected_batch_element_type) for batch_item in batch_data
+    def is_batch_data_list_of_expected_type(
+        batch_data: Any, expected_batch_element_type: type[T], parent_widget_for_error_notification: QtWidgets.QWidget
+    ) -> bool:
+        if not isinstance(batch_data, list):
+            show_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.WARNING,
+                message_box_parent=parent_widget_for_error_notification,
+                message_box_title="Cannot handle batch data",
+                message_box_content=f"Expected batch data to be a list of {expected_batch_element_type} but was actually {type(batch_data)}! This should not happen.",
+                is_cancellable=False,
+            )
+            return False
+
+        mismatched_elem_type: type | None = next(
+            filter(lambda elem_type: elem_type != expected_batch_element_type, (type(elem) for elem in batch_data)),
+            None,
         )
+        if mismatched_elem_type is None:
+            # All elements of list match expected element type or list was empty
+            return True
+
+        show_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.WARNING,
+            message_box_parent=parent_widget_for_error_notification,
+            message_box_title="Cannot handle batch data",
+            message_box_content=f"Expected batch data to be a list of {expected_batch_element_type} but was actually a list that contained an element of type {mismatched_elem_type}! This should not happen.",
+            is_cancellable=False,
+        )
+        return False
+
+    @staticmethod
+    def is_batch_data_of_type(
+        batch_data: Any, expected_batch_type: type[T], parent_widget_for_error_notification: QtWidgets.QWidget
+    ) -> bool:
+        if isinstance(batch_data, expected_batch_type):
+            return True
+
+        show_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.WARNING,
+            message_box_parent=parent_widget_for_error_notification,
+            message_box_title="Cannot handle batch data",
+            message_box_content=f"Expected batch data to be of type {expected_batch_type} but was actually of type {type(batch_data)}! This should not happen.",
+            is_cancellable=False,
+        )
+        return False
 
     @staticmethod
     def _get_timestamp() -> float:

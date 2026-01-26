@@ -201,14 +201,9 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         if self.stop_processing_recv_batches:
             return
 
-        if not SimulationRunWorker.are_list_of_batch_items_of_type(batch_data, SimulationRunResult):
-            show_optionally_cancellable_notification(
-                message_box_type=MessageBoxType.INFO,
-                message_box_parent=self,
-                message_box_title="Cannot handle batch data",
-                message_box_content=f"Expected batch data to be a list of SimulationRunResults but was actually {type(batch_data)}. Skipping batch!",
-                is_cancellable=False,
-            )
+        if not SimulationRunWorker.is_batch_data_list_of_expected_type(
+            batch_data, SimulationRunResult, parent_widget_for_error_notification=self
+        ):
             if self.worker is not None:
                 self.worker.ack_batch_processed()
             return
