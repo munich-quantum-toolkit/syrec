@@ -154,7 +154,7 @@ explicit_package_bases = true
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["mqt.syrec.pysyrec.*", "PyQt6.*"]
+module = ["mqt.syrec.pysyrec.*", "PyQt6.*", "ijson.*"]
 ignore_missing_imports = true
 
 

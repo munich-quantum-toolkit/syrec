@@ -11,9 +11,8 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Any, Final
 
-# TODO: Correctly configure third-party package for mypy
 # The fastest of the supported parser backends according to the documentation (https://pypi.org/project/ijson/#toc-entry-15)
-import ijson.backends.yajl2_c as ijson  # type: ignore[import-not-found]
+import ijson.backends.yajl2_c as ijson
 from PyQt6 import QtCore
 
 from mqt import syrec

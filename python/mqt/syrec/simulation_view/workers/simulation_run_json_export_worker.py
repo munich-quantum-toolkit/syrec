@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
@@ -33,10 +34,15 @@ class ExportedBatchData:
 
 class SimulationRunJsonExportWorker(CancellableBaseWorker):
     def __init__(
-        self, path_to_json_file: Path, simulation_runs_to_export: Iterable[SimulationRunModel], export_batch_size: int
+        self,
+        path_to_json_file: Path,
+        associated_stringified_syrec_program: str,
+        simulation_runs_to_export: Iterable[SimulationRunModel],
+        export_batch_size: int,
     ):
         super().__init__(do_batches_require_ack=False)
 
+        self.associated_stringified_syrec_program = associated_stringified_syrec_program
         self.path_to_json_file: Final[Path] = path_to_json_file
         self.simulation_runs_to_export: Iterable[SimulationRunModel] = simulation_runs_to_export
         self.export_batch_size: Final[int] = export_batch_size
@@ -52,7 +58,9 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
             n_skipped_sim_runs_in_batch: int = 0
             n_exported_sim_runs_in_batch: int = 0
             with self.path_to_json_file.open("w", encoding="ascii") as file:
-                file.write('{"simulationRuns":[')
+                file.write(
+                    f'{{"inputCircuit":"{SimulationRunJsonExportWorker.convert_to_single_line_string(self.associated_stringified_syrec_program)}", "simulationRuns":['
+                )
                 batch_start_timestamp: float = SimulationRunJsonExportWorker._get_timestamp()
                 batch_timestamps: BatchTimestamps | None = None
                 for sim_run in self.simulation_runs_to_export:
@@ -117,3 +125,7 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
         if obj.expected_output_state is None:
             return {"in": str(obj.input_state)}
         return {"in": str(obj.input_state), "out": str(obj.expected_output_state)}
+
+    @staticmethod
+    def convert_to_single_line_string(stringified_syrec_program: str) -> str:
+        return re.sub(r"\s+", " ", stringified_syrec_program)

@@ -46,13 +46,16 @@ SIMULATION_RUNS_LIST_VIEW_NAME: Final[str] = "sim_runs_list_view"
 IMPORT_FROM_FILE_NO_FILE_SELECTED_PLACEHOLDER_TEXT: Final[str] = "<NONE>"
 
 
-# TODO: Should a confirmation be requested when the dialog is closed and simulation runs exist?
 class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def __init__(
-        self, annotatable_quantum_computation: syrec.annotatable_quantum_computation, parent: QtWidgets.QWidget
+        self,
+        associated_stringified_syrec_program: str,
+        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
+        parent: QtWidgets.QWidget,
     ) -> None:
         super().__init__()
         self.parent = parent
+        self.associated_stringified_syrec_program = associated_stringified_syrec_program
         self.annotatable_quantum_computation = annotatable_quantum_computation
         self.some_sim_runs_tab_widget_name = "some_sim_runs_tab"
         self.all_sim_runs_tab_widget_name = "all_sim_runs_tab"
@@ -78,7 +81,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
         self.simulation_run_dialog: SimulationRunDialog | None = None
 
-        # TODO: Default background of tabwidget is white on windows (https://forum.qt.io/topic/82262/default-background-color-of-qtabwidget-and-qwidget-qgroupbox/4)
         self.prev_active_simulation_runs_tab_idx: int = 0
         self.simulation_runs_tab_widget = QtWidgets.QTabWidget(self)
         self.simulation_runs_tab_widget.currentChanged.connect(self.handle_simulation_runs_tab_widget_tab_changed)
@@ -232,6 +234,25 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         tab_wrapper_widget_layout.addLayout(simulation_runs_execution_buttons_layout)
         # END: Create simulation runs execution Qt elements
         return tab_wrapper_widget
+
+    def show_close_confirmation_dialog_and_return_boolean_user_choice(self) -> bool:
+        return show_and_request_ok_in_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.INFO,
+            message_box_parent=self,
+            message_box_title="Confirm dialog close",
+            message_box_content="Do you want to close the simulation run dialog, any unsaved simulation runs will be lost?",
+            is_cancellable=True,
+            log_contents=False,
+        )
+
+    # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
+    def reject(self) -> None:
+        if self.show_close_confirmation_dialog_and_return_boolean_user_choice():
+            super().reject()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
+        # Ask for confirmation before closing
+        self.accept() if self.show_close_confirmation_dialog_and_return_boolean_user_choice() else event.ignore()
 
     def handle_simulation_run_selection_change(
         self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection
@@ -422,6 +443,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_run_export_to_file_dialog.finished.connect(self.handle_sim_run_export_to_file_dialog_close)
         self.simulation_run_export_to_file_dialog.start_export(
             Path(filename),
+            self.associated_stringified_syrec_program,
             self.simulation_runs_model.get_all_simulation_run_models(),
             self.simulation_runs_model.rowCount(QtCore.QModelIndex()),
         )

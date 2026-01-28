@@ -65,6 +65,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
     def start_export(
         self,
         export_location: Path,
+        associated_stringified_syrec_program: str,
         sim_runs_to_export: Iterable[SimulationRunModel],
         num_sim_runs_to_export: int,
         batch_size: int = 500,
@@ -86,7 +87,9 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
             )
 
         # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
-        self.worker = SimulationRunJsonExportWorker(export_location, sim_runs_to_export, batch_size)
+        self.worker = SimulationRunJsonExportWorker(
+            export_location, associated_stringified_syrec_program, sim_runs_to_export, batch_size
+        )
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
         self.worker.batchCompleted.connect(self._handle_batch_exported, QtCore.Qt.ConnectionType.QueuedConnection)
