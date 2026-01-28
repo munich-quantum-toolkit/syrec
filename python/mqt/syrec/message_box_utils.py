@@ -8,10 +8,15 @@
 
 from __future__ import annotations
 
+import sys
 from enum import Enum
 
 from PyQt6 import QtWidgets
-from typing_extensions import assert_never
+
+if sys.version_info >= (3, 11):
+    from typing import assert_never
+else:
+    from typing_extensions import assert_never
 
 from .logger_utils import log_debug_to_console, log_error_to_console, log_info_to_console, log_warning_to_console
 

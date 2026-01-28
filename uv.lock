@@ -1169,6 +1169,7 @@ dependencies = [
     { name = "ijson" },
     { name = "mqt-core" },
     { name = "pyqt6" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 
 [package.dev-dependencies]
@@ -1217,9 +1218,10 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ijson", specifier = "~=3.4.0" },
+    { name = "ijson", specifier = ">=3.4.0" },
     { name = "mqt-core", specifier = "~=3.4.0" },
     { name = "pyqt6", specifier = ">=6.8" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'", specifier = ">=4.15.0" },
 ]
 
 [package.metadata.requires-dev]

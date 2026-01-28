@@ -8,12 +8,17 @@
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Final, cast
 
 from PyQt6 import QtCore, QtGui, QtWidgets
-from typing_extensions import assert_never
+
+if sys.version_info >= (3, 11):
+    from typing import assert_never
+else:
+    from typing_extensions import assert_never
 
 from mqt import syrec
 
