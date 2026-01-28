@@ -254,6 +254,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # Ask for confirmation before closing
         self.accept() if self.show_close_confirmation_dialog_and_return_boolean_user_choice() else event.ignore()
 
+    @QtCore.pyqtSlot(QtCore.QItemSelection, QtCore.QItemSelection)  # type: ignore[untyped-decorator]
     def handle_simulation_run_selection_change(
         self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection
     ) -> None:
@@ -310,6 +311,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             not is_list_item_selected and (self.simulation_runs_model.rowCount(QtCore.QModelIndex()) < sys.maxsize),
         )
 
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def handle_simulation_run_add_btn_click(self) -> None:
         if not self.simulation_runs_model.add_simulation_run_model(
             SimulationRunModel(
@@ -345,6 +347,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         simulation_runs_list_view.scrollToBottom()
 
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def handle_simulation_run_edit_btn_click(self) -> None:
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
         optional_simulation_runs_list_view: QtWidgets.QListView | None = (
@@ -397,6 +400,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_run_editor_dialog.finished.connect(self.handle_simulation_run_editor_dialog_close)
         self.simulation_run_editor_dialog.show()
 
+    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_simulation_run_editor_dialog_close(self, result: int) -> None:
         # This should not happen but is checked nevertheless
         if self.simulation_run_editor_dialog is None or result == QtWidgets.QDialog.DialogCode.Rejected:
@@ -453,6 +457,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def handle_sim_run_export_to_file_dialog_close(self, _: int) -> None:
         self.simulation_run_export_to_file_dialog = None
 
+    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_open_and_start_all_input_states_generator_dialog(self, input_state_size: int) -> None:
         if self.all_input_states_generator_dialog is not None:
             show_and_request_ok_in_optionally_cancellable_notification(
@@ -470,6 +475,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.all_input_states_generator_dialog.show()
         self.all_input_states_generator_dialog.start_generation(self.simulation_runs_model, input_state_size)
 
+    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_input_states_generator_dialog_close(self, result: int) -> None:
         self.all_input_states_generator_dialog = None
 
@@ -486,6 +492,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             curr_active_tab_widget, result == QtWidgets.QDialog.DialogCode.Accepted
         )
 
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def handle_simulation_run_delete_btn_click(self) -> None:
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
         optional_simulation_runs_list_view: QtWidgets.QListView | None = (
@@ -585,6 +592,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         controls_layout.addStretch()
         return controls_layout
 
+    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_simulation_runs_tab_widget_tab_changed(self, switched_to_tab_index: int) -> None:
         if switched_to_tab_index == -1:
             return
@@ -638,6 +646,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 log_contents=False,
             ):
                 self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
+                self.set_default_simulation_run_modification_buttons_enabled_state()
                 return
 
             self.handle_open_and_start_all_input_states_generator_dialog(
@@ -646,9 +655,11 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(prev_active_tab_widget, False)
         self.prev_active_simulation_runs_tab_idx = switched_to_tab_index
 
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def handle_run_all_simulation_runs_button_click(self) -> None:
         self.open_simulation_runs_execution_dialog(stop_at_first_output_state_mismatch=False)
 
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def handle_run_all_simulation_runs_stop_at_first_failure_button_click(self) -> None:
         self.open_simulation_runs_execution_dialog(stop_at_first_output_state_mismatch=True)
 
@@ -671,6 +682,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             self.annotatable_quantum_computation, self.simulation_runs_model, stop_at_first_output_state_mismatch
         )
 
+    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_simulation_runs_dialog_close(self, _: int) -> None:
         self.simulation_run_dialog = None
 
@@ -834,3 +846,46 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         run_simulation_runs_btn.setEnabled(should_controls_be_enabled)
         run_simulation_runs_stop_at_first_failure_btn.setEnabled(should_controls_be_enabled)
         save_simulation_runs_to_file_btn.setEnabled(should_controls_be_enabled)
+
+    def set_default_simulation_run_modification_buttons_enabled_state(self) -> None:
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            self.simulation_runs_tab_widget.currentIndex()
+        )
+
+        optional_add_sim_run_btn: QtWidgets.QWidget | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QPushButton, ADD_SIM_RUN_BTN_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+
+        optional_edit_sim_run_btn: QtWidgets.QWidget | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QPushButton, EDIT_SIM_RUN_BTN_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+
+        optional_delete_sim_run_btn: QtWidgets.QWidget | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QPushButton, DELETE_SIM_RUN_BTN_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[
+                optional_curr_active_tab_widget,
+                optional_add_sim_run_btn,
+                optional_edit_sim_run_btn,
+                optional_delete_sim_run_btn,
+            ],
+            error_dialog_content="Failed to locate required QtWidgets during switch back to previous tab widget",
+        ):
+            return
+
+        add_sim_run_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_add_sim_run_btn)
+        edit_sim_run_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_edit_sim_run_btn)
+        delete_sim_run_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_delete_sim_run_btn)
+
+        add_sim_run_btn.setEnabled(True)
+        edit_sim_run_btn.setEnabled(False)
+        delete_sim_run_btn.setEnabled(False)
