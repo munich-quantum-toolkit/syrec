@@ -22,7 +22,7 @@ DEFAULT_TOTAL_RUNTIME_INFO_TEXT_FORMAT: Final[str] = (
     "Total runtime [in seconds] (excluding model updates, internal waits): {total_runtime_in_seconds:f}"
 )
 DEFAULT_BATCH_RUNTIME_INFO_TEXT_FORMAT: Final[str] = (
-    "Batch of {n_batch_elements:d} completed! Runtime [in seconds]: {batch_duration_in_seconds:f}"
+    "Batch of {n_batch_elements:d} completed! Runtime [in ms]: {batch_duration_in_ms:f}"
 )
 
 SMALL_DIALOG_WIDTH: Final[int] = 600
@@ -125,7 +125,7 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
     def _update_progress_text_with_batch_info(self, n_batch_elements: int, batch_duration_in_seconds: float) -> None:
         self.progress_info_text_lbl.setText(
             DEFAULT_BATCH_RUNTIME_INFO_TEXT_FORMAT.format(
-                n_batch_elements=n_batch_elements, batch_duration_in_seconds=batch_duration_in_seconds
+                n_batch_elements=n_batch_elements, batch_duration_in_ms=batch_duration_in_seconds * 1000
             )
         )
 

@@ -228,7 +228,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
                     self.shared_simulation_runs_model.index(to_be_updated_simulation_run_number),
                     casted_batch_data[i].actual_output_state,
                     casted_batch_data[i].do_expected_and_actual_outputs_match,
-                    simulation_run_execution_duration_in_seconds / 1000
+                    simulation_run_execution_duration_in_seconds * 1000
                     if simulation_run_execution_duration_in_seconds > 0
                     else 0,
                 )

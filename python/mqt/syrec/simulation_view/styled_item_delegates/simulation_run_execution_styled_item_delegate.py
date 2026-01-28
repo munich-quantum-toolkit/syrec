@@ -468,7 +468,9 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
             aggregate_result_row_runtime_label_col_rect,
             RUNTIME_LABEL_TEXT,
             aggregate_result_row_runtime_value_col_rect,
-            str(associated_input_output_mapping.execution_runtime_in_ms),
+            SimulationRunExecutionStyledItemDelegate._truncate_and_stringify_simulation_runtime(
+                associated_input_output_mapping.execution_runtime_in_ms
+            ),
             value_col_text_color=QtCore.Qt.GlobalColor.gray
             if associated_input_output_mapping.execution_runtime_in_ms is None
             else QtCore.Qt.GlobalColor.black,
@@ -553,13 +555,6 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
             text_color=value_col_text_color,
         )
 
-        # SimulationRunExecutionStyledItemDelegate._paint_rect_edge_points(
-        #     painter, label_col_rect, 5, QtCore.Qt.GlobalColor.red, 0
-        # )
-        # SimulationRunExecutionStyledItemDelegate._paint_rect_edge_points(
-        #     painter, value_col_rect, 5, QtCore.Qt.GlobalColor.blue, 0
-        # )
-
     @staticmethod
     def _determine_color_for_outputs_match_result_text(do_outputs_match: bool | None) -> QtCore.Qt.GlobalColor:
         if do_outputs_match is None:
@@ -573,3 +568,7 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
             return OUTPUTS_MATCH_UNKNOWN_TEXT
 
         return OUTPUTS_MATCH_TEXT if do_outputs_match else OUTPUTS_MISMATCH_TEXT
+
+    @staticmethod
+    def _truncate_and_stringify_simulation_runtime(simulation_runtime_in_ms: float | None) -> str:
+        return f"{simulation_runtime_in_ms:.7}" if simulation_runtime_in_ms is not None else "NONE"

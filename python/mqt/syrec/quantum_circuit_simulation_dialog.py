@@ -436,7 +436,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
             return
 
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Select a file to export simulation runs to", str(Path.home()), "Json files (*.json)"
         )
 
