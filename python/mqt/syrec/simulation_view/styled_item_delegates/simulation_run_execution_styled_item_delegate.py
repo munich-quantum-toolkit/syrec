@@ -245,20 +245,20 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
             available_header_width=required_text_width_for_header_for_largest_sim_run_number,
         )
 
-        group_box_content_font_size: int = SimulationRunExecutionStyledItemDelegate._get_pixel_height_of_text(
+        group_box_content_line_height: int = SimulationRunExecutionStyledItemDelegate._get_pixel_height_of_text(
             option.font, CARD_CONTENT_FONT_SIZE
         )
-        group_box_content_line_height_with_spacing: Final[int] = group_box_content_font_size + QREG_CONTENT_Y_SPACING
+        group_box_content_line_height_with_spacing: Final[int] = group_box_content_line_height + QREG_CONTENT_Y_SPACING
 
         available_content_width: Final[int] = available_rect_for_content.width()
         required_label_column_width: Final[int] = (
             SimulationRunExecutionStyledItemDelegate._get_required_width_for_labels_column(
-                option, group_box_content_font_size
+                option, CARD_CONTENT_FONT_SIZE
             )
         )
         required_values_column_width: Final[int] = (
             SimulationRunExecutionStyledItemDelegate._get_required_width_for_qreg_contents_and_outputs_match_result(
-                option, index, group_box_content_font_size
+                option, index, CARD_CONTENT_FONT_SIZE
             )
         )
 
@@ -338,7 +338,7 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
                 base_row_i_value_col_rect.topLeft().x(),
                 base_row_i_value_col_rect.topLeft().y(),
                 scaled_width_for_longest_qreg_name,
-                group_box_content_font_size,
+                group_box_content_line_height,
             )
             SimulationRunExecutionStyledItemDelegate._draw_elided_text(
                 painter,
@@ -353,7 +353,7 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
                 qreg_name_rect.topRight().x(),
                 qreg_name_rect.topRight().y(),
                 scaled_width_for_largest_qreg_layout_info_text,
-                group_box_content_font_size,
+                group_box_content_line_height,
             )
             SimulationRunExecutionStyledItemDelegate._draw_elided_text(
                 painter,

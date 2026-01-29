@@ -135,4 +135,4 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
 
     @staticmethod
     def convert_to_single_line_string(stringified_syrec_program: str) -> str:
-        return json.dumps(re.sub(r"\s+", " ", stringified_syrec_program))
+        return re.sub(r"\s+", " ", stringified_syrec_program)

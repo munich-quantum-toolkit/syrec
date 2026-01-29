@@ -11,6 +11,11 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING, Final
 
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
+
 from PyQt6 import QtCore
 
 if TYPE_CHECKING:
@@ -47,18 +52,12 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         # Since the operands of the exponentiation operator are casted to floats, the result (a float) could exceed the maximum storable value in an integer so we need to check this error case since
         # otherwise setting the maximum value of the QtWidgets.QProgressBar would raise an exception/no matching overload will be found since said function expects an integer parameter.
         n_expected_sim_runs_to_generate: Final[float] = 2**expected_input_state_size
-        if n_expected_sim_runs_to_generate >= sys.maxsize:
-            show_and_request_ok_in_optionally_cancellable_notification(
-                message_box_type=MessageBoxType.ERROR,
-                message_box_parent=self,
-                message_box_title="Number of to be generated simulation runs not supported!",
-                message_box_content=f"The number of to be generated simulation runs (n={n_expected_sim_runs_to_generate}) exceeded the maximum supported value of {sys.maxsize} for the given expected input state size {expected_input_state_size}!",
-                is_cancellable=False,
-            )
-            self.reject()
-            return
-
         if self.progress_bar is not None:
+            if not self._can_value_can_be_used_as_progress_bar_max_value(int(n_expected_sim_runs_to_generate)):
+                # We do not ask for confirmation to close the dialog since we faulted before the input state generation started.
+                super().reject()
+                return
+
             self.progress_bar.setMinimum(0)
             self.progress_bar.setMaximum(int(n_expected_sim_runs_to_generate))
             self.progress_bar.setValue(0)
@@ -91,7 +90,8 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
         self._change_dialog_cancel_button_enable_state(True)
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
+    @override
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         # Ask for confirmation before closing
         if self._handle_input_state_generation_cancel_button_click():
             if not self.error_text_lbl.text():
@@ -103,6 +103,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
             event.ignore()
 
     # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
+    @override
     def reject(self) -> None:
         if self._handle_input_state_generation_cancel_button_click():
             super().reject()

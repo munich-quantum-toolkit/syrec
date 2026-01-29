@@ -8,7 +8,13 @@
 
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Final, cast
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 from PyQt6 import QtCore, QtWidgets
 
@@ -74,6 +80,11 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         self.export_location_info_lbl.setText(f"Export destination: {export_location!s}")
 
         if self.progress_bar is not None:
+            if not self._can_value_can_be_used_as_progress_bar_max_value(num_sim_runs_to_export):
+                # We do not ask for confirmation to close the dialog since we faulted before the export started.
+                super().reject()
+                return
+
             self.progress_bar.setMinimum(0)
             self.progress_bar.setMaximum(num_sim_runs_to_export)
             self.progress_bar.setValue(0)
@@ -106,11 +117,13 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         self._change_dialog_cancel_button_enable_state(True)
 
     # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
+    @override
     def reject(self) -> None:
         if self._handle_export_to_file_cancel_button_click():
             super().reject()
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
+    @override
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         # Ask for confirmation before closing
         if self._handle_export_to_file_cancel_button_click():
             if not self.error_text_lbl.text():

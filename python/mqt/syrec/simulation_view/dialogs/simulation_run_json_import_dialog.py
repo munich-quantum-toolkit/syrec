@@ -8,7 +8,13 @@
 
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Final
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 from PyQt6 import QtCore, QtWidgets
 
@@ -116,11 +122,13 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         self._change_dialog_cancel_button_enable_state(True)
 
     # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
+    @override
     def reject(self) -> None:
         if self._handle_import_from_file_cancel_button_click():
             super().reject()
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
+    @override
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         # Ask for confirmation before closing
         if self._handle_import_from_file_cancel_button_click():
             if not self.error_text_lbl.text():

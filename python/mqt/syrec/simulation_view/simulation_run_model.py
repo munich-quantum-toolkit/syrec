@@ -94,7 +94,7 @@ class SimulationRunModel:
     def set_result_of_simulation_execution(
         self,
         actual_output_state: syrec.n_bit_values_container,
-        do_expected_and_actual_output_states_match: bool,
+        do_expected_and_actual_output_states_match: bool | None,
         execution_runtime_in_ms: float,
     ) -> None:
         if actual_output_state.size() != self.input_state.size():
@@ -287,15 +287,13 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self.endInsertRows()
 
     def delete_simulation_run_model(self, index: QtCore.QModelIndex) -> bool:
+        if not index.isValid():
+            return False
+
         self.beginRemoveRows(QtCore.QModelIndex(), index.row(), index.row())
-
-        if self.is_model_index_valid(index):
-            self.simulation_run_models.pop(index.row())
-            self.endRemoveRows()
-            return True
-
+        self.simulation_run_models.pop(index.row())
         self.endRemoveRows()
-        return False
+        return True
 
     def delete_all_simulation_run_models(self) -> None:
         self.beginResetModel()

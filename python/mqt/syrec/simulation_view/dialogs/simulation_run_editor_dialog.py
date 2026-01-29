@@ -15,6 +15,11 @@ from typing import TYPE_CHECKING, Final, cast
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
+
 if sys.version_info >= (3, 11):
     from typing import assert_never
 else:
@@ -331,6 +336,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         main_layout.addWidget(self.dialog_button_box)
         self.setLayout(main_layout)
 
+    @override
     def reject(self) -> None:
         # Ask for confirmation before closing dialog
         if self.failed_due_to_internal_error or show_and_request_ok_in_optionally_cancellable_notification(
@@ -343,7 +349,8 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             super().reject()
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
+    @override
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if self.failed_due_to_internal_error:
             self.reject()
             return
@@ -773,7 +780,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         qubit_search_completer = QtWidgets.QCompleter(
             SimulationRunEditorDialog._get_internal_qubit_labels_for_qreg(
-                self.annotatable_quantum_computation, first_qreg_qubit, last_qreg_qubit
+                self.annotatable_quantum_computation, first_qreg_qubit, last_qreg_qubit - first_qreg_qubit
             )
         )
         qubit_search_completer.setCaseSensitivity(QtCore.Qt.CaseSensitivity.CaseSensitive)

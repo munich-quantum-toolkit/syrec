@@ -93,7 +93,6 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
             # For placeholder values see: https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QProgressBar.html#PySide6.QtWidgets.QProgressBar.format
             # self.progress_bar.setFormat("Generated %v out of %m input states")
             self.progress_bar.setFormat(optional_progress_bar_text_format)
-            self.progress_bar.setFormat(optional_progress_bar_text_format)
             self.progress_bar.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.total_runtime_info_text_lbl = QtWidgets.QLabel()
@@ -118,14 +117,14 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
             self.setLayout(layout)
 
     @staticmethod
-    def get_default_big_dialog_size() -> QtCore.Size:
+    def get_default_big_dialog_size() -> QtCore.QSize:
         return QtCore.QSize(
             int(QtGui.QGuiApplication.primaryScreen().availableSize().width() / 1.5),
             int(QtGui.QGuiApplication.primaryScreen().availableSize().height() / 1.5),
         )
 
     @staticmethod
-    def get_center_screen_position_for_size(dialog_size: QtCore.Size) -> QtCore.QPoint:
+    def get_center_screen_position_for_size(dialog_size: QtCore.QSize) -> QtCore.QPoint:
         return QtCore.QPoint(
             (QtGui.QGuiApplication.primaryScreen().availableSize().width() // 2) - (dialog_size.width() // 2),
             (QtGui.QGuiApplication.primaryScreen().availableSize().height() // 2) - (dialog_size.height() // 2),
@@ -233,3 +232,16 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
     @staticmethod
     def _stringify_error(error: Exception) -> str:
         return f"Error during long running worker operation! Reason: {type(error)=}, {error=}"
+
+    def _can_value_can_be_used_as_progress_bar_max_value(self, value: int) -> bool:
+        max_allowed_value: Final[int] = (1 << 31) - 1
+        if value > max_allowed_value:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Number not supported as maximum value of progress bar!",
+                message_box_content=f"Attempted to use value {value} as maximum value of progress bar that was larger than the maximum supported value of {max_allowed_value}!",
+                is_cancellable=False,
+            )
+            return False
+        return True

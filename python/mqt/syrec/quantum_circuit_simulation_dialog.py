@@ -281,6 +281,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def handle_simulation_run_selection_change(
         self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection
     ) -> None:
+        # We want to only update the simulation run execution controls in case that a selected simulation run was deselected without selecting a new simulation run or vice versa.
+        # In all other cases leave the enabled state of the simulation run controls the same by simply returning from this function.
         if selected.isEmpty() == deselected.isEmpty():
             return
 
@@ -386,7 +388,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
         simulation_runs_list_view: Final[QtWidgets.QWidget] = cast(
             "QtWidgets.QListView", optional_simulation_runs_list_view
         )
@@ -638,8 +639,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
             return
 
-        prev_active_tab_widget: Final[QtWidgets.QLabel] = cast("QtWidgets.QWidget", optional_prev_active_tab_widget)
-        to_be_switched_to_tab_widget: Final[QtWidgets.QLabel] = cast(
+        prev_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_prev_active_tab_widget)
+        to_be_switched_to_tab_widget: Final[QtWidgets.QWidget] = cast(
             "QtWidgets.QWidget", optional_to_be_switched_to_tab_widget
         )
 
@@ -744,7 +745,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             return
 
         selected_filename_lbl: Final[QtWidgets.QLabel] = cast("QtWidgets.QLabel", optional_selected_filename_lbl)
-        load_from_file_btn: Final[QtWidgets.QLabel] = cast("QtWidgets.QLabel", optional_load_from_file_btn)
+        load_from_file_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_load_from_file_btn)
 
         selected_filename_lbl.setText(filename)
         load_from_file_btn.setEnabled(True)
@@ -814,7 +815,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        curr_active_tab_widget: Final[QtWidgets.QLabel] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
             curr_active_tab_widget, result == QtWidgets.QDialog.DialogCode.Accepted
         )
@@ -829,7 +830,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        add_sim_run_btn: Final[QtWidgets.QLabel] = cast("QtWidgets.QPushButton", optional_add_sim_run_btn)
+        add_sim_run_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_add_sim_run_btn)
         add_sim_run_btn.setEnabled(result == QtWidgets.QDialog.DialogCode.Accepted)
 
     def set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
@@ -856,13 +857,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        run_simulation_runs_btn: Final[QtWidgets.QLabel] = cast(
+        run_simulation_runs_btn: Final[QtWidgets.QPushButton] = cast(
             "QtWidgets.QPushButton", optional_run_simulation_runs_btn
         )
-        run_simulation_runs_stop_at_first_failure_btn: Final[QtWidgets.QLabel] = cast(
+        run_simulation_runs_stop_at_first_failure_btn: Final[QtWidgets.QPushButton] = cast(
             "QtWidgets.QPushButton", optional_run_simulation_runs_stop_at_first_failure_btn
         )
-        save_simulation_runs_to_file_btn: Final[QtWidgets.QLabel] = cast(
+        save_simulation_runs_to_file_btn: Final[QtWidgets.QPushButton] = cast(
             "QtWidgets.QPushButton", optional_save_simulation_runs_to_file_btn
         )
 
