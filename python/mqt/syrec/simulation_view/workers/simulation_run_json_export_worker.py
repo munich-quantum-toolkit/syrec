@@ -49,15 +49,14 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_export(self) -> None:
-        if self.export_batch_size < 1:
-            return
-
-        n_generated_batches: int = 0
         try:
+            SimulationRunJsonExportWorker._validate_parameters(self.export_batch_size)
+
+            n_generated_batches: int = 0
             batch_idx: int = 0
             n_skipped_sim_runs_in_batch: int = 0
             n_exported_sim_runs_in_batch: int = 0
-            with self.path_to_json_file.open("w", encoding="ascii") as file:
+            with self.path_to_json_file.open("w") as file:
                 file.write(
                     f'{{"inputCircuit":"{SimulationRunJsonExportWorker.convert_to_single_line_string(self.associated_stringified_syrec_program)}", "simulationRuns":['
                 )
@@ -108,7 +107,7 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
                     batch_timestamps.duration,
                     ExportedBatchData(batch_idx - n_skipped_sim_runs_in_batch, n_skipped_sim_runs_in_batch),
                 )
-            self.finished.emit(self.cancellation_requested)
+            self.finished.emit(self.is_cancellation_requested())
         except Exception as error:
             error_msg: Final[str] = (
                 f"Error in simulaton run export worker (exported .json file could be incomplete)! Reason: {type(error)=}, {error=}"
@@ -117,15 +116,23 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
             self.failed.emit(error)
 
     @staticmethod
+    def _validate_parameters(batch_size: int) -> None:
+        if batch_size < 1:
+            msg = f"Batch size must be larger than 0 but was actually {batch_size}"
+            raise ValueError(msg)
+
+    @staticmethod
     def serialize_to_json(obj: Any) -> object:
         if not isinstance(obj, SimulationRunModel):
             msg = f"Cannot serialize object of {type(obj)}"
             raise TypeError(msg)
 
         if obj.expected_output_state is None:
-            return {"in": str(obj.input_state)}
+            msg = "Cannot serialize simulation run with unknown expected output state"
+            raise TypeError(msg)
+
         return {"in": str(obj.input_state), "out": str(obj.expected_output_state)}
 
     @staticmethod
     def convert_to_single_line_string(stringified_syrec_program: str) -> str:
-        return re.sub(r"\s+", " ", stringified_syrec_program)
+        return json.dumps(re.sub(r"\s+", " ", stringified_syrec_program))

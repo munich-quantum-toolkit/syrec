@@ -97,7 +97,8 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
             if not self.error_text_lbl.text():
                 self.accept()
             else:
-                self.reject()
+                # Avoid requiring duplicate confirmation of close operation by calling reject() function of super class instead of overridden reject function.
+                super().reject()
         else:
             event.ignore()
 
@@ -156,6 +157,9 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         if self.progress_bar is not None:
             self.progress_bar.setVisible(False)
 
+        # Cancelling the long running operation through a click on the cancel button of the dialog will already request a shutdown of the worker
+        # and its associated thread but the same operation also needs to be execute when the worker completes successfully. However, when cancellation
+        # was already requested, skip this operation.
         if not was_cancellation_requested:
             if self.worker is not None:
                 self._request_worker_cancellation()

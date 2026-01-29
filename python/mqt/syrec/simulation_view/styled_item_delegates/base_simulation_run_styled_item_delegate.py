@@ -72,14 +72,13 @@ class BaseSimulationRunStyledItemDelegate:
     def _stringify_some_qubits_of_n_bit_values_container(
         n_bit_values_container: syrec.n_bit_values_container, first_qubit: int, n_qubits: int
     ) -> str:
-        last_qubit_of_qreg: int = first_qubit + (n_qubits - 1)
+        last_qubit_of_qreg: Final[int] = first_qubit + (n_qubits - 1)
 
-        if first_qubit >= n_bit_values_container.size() or last_qubit_of_qreg >= n_bit_values_container.size():
-            return ""
-
-        return "".join([
-            "1" if n_bit_values_container.test(i) else "0" for i in range(first_qubit, last_qubit_of_qreg + 1)
-        ])
+        if first_qubit <= last_qubit_of_qreg < n_bit_values_container.size():
+            return "".join([
+                "1" if n_bit_values_container.test(i) else "0" for i in range(first_qubit, last_qubit_of_qreg + 1)
+            ])
+        return DEFAULT_UNKNOWN_QREG_CONTENT_PLACEHOLDER_TEXT
 
     @staticmethod
     def _get_estimated_quantum_register_contents_column_width(
@@ -113,7 +112,11 @@ class BaseSimulationRunStyledItemDelegate:
     def _get_column_width_scaled_by_ratio_to_total_available_width(
         required_column_width: int, total_required_width: int, total_available_width: int
     ) -> int:
-        return int(float(required_column_width / total_required_width) * total_available_width)
+        return (
+            int(float(required_column_width / total_required_width) * total_available_width)
+            if total_required_width > 0
+            else 0
+        )
 
     @staticmethod
     def _scale_column_widths_based_on_ratio_to_total_available_width(

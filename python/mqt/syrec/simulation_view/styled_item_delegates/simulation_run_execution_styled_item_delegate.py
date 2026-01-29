@@ -8,7 +8,13 @@
 
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Final
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
@@ -61,7 +67,7 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
         super().__init__(parent)
 
     @staticmethod
-    def _get_required_width_for_labels_column(option: QtWidgets.QStyleItemOptionViewItem, font_size: int) -> int:
+    def _get_required_width_for_labels_column(option: QtWidgets.QStyleOptionViewItem, font_size: int) -> int:
         return (
             QREG_CONTENT_X_SPACING
             + max(
@@ -195,8 +201,8 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
         )
         return QtCore.QSize(required_total_card_width, required_total_card_height)
 
-    @staticmethod
-    def sizeHint(option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:  # noqa: N802
+    @override
+    def sizeHint(self, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:
         required_content_size: Final[QtCore.QSize] = (
             SimulationRunExecutionStyledItemDelegate._get_required_size_for_content(option, index)
         )
@@ -205,6 +211,7 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
             min(required_content_size.width(), available_content_rect.width()), required_content_size.height()
         )
 
+    @override
     def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
         if not index.isValid() or option.rect.width() == 0:
             return
@@ -214,7 +221,6 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
             return
 
         associated_input_output_mapping: SimulationRunModel = index.data(SIMULATION_RUN_IO_STATE_QT_ROLE)
-        SimulationRunExecutionStyledItemDelegate._get_required_size_for_content(option, index)
         available_rect_for_content: QtCore.QRect = option.rect.adjusted(
             CARD_CONTENT_PADDING,
             CARD_CONTENT_PADDING,
@@ -426,8 +432,6 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
             )
             row_idx += 1
 
-        painter.drawLine(base_row_i_label_col_rect.bottomLeft(), base_row_i_value_col_rect.bottomRight())
-
         y_offset_from_card_header_to_aggregate_result_row: int = (
             qreg_contents_height_without_spacing + AGGREGATE_RESULT_TOP_Y_MARGIN
         )
@@ -440,6 +444,16 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
         aggregate_result_row_outputs_match_value_col_rect: QtCore.QRect = base_value_column_rect.adjusted(
             0, y_offset_from_card_header_to_aggregate_result_row, 0, y_offset_from_card_header_to_aggregate_result_row
         )
+
+        delimiter_line_start_pos: Final[QtCore.QPoint] = QtCore.QPoint(
+            aggregate_result_row_outputs_match_label_col_rect.topLeft().x(),
+            aggregate_result_row_outputs_match_label_col_rect.topLeft().y() - AGGREGATE_RESULT_TOP_Y_MARGIN,
+        )
+        delimiter_line_end_pos: Final[QtCore.QPoint] = QtCore.QPoint(
+            aggregate_result_row_outputs_match_value_col_rect.bottomRight().x(), delimiter_line_start_pos.y()
+        )
+        painter.drawLine(delimiter_line_start_pos, delimiter_line_end_pos)
+
         SimulationRunExecutionStyledItemDelegate._draw_label_and_value(
             painter,
             aggregate_result_row_outputs_match_label_col_rect,

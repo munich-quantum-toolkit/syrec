@@ -68,7 +68,7 @@ class LineEditWithDynamicWidth(QtWidgets.QLineEdit):  # type: ignore[misc]
         fm = QtGui.QFontMetrics(self.font())
         nominal = fm.boundingRect("W" * self.expected_max_num_characters).width()
         # use the offered width
-        preferred = min(nominal, self.width())
+        preferred = max(nominal, self.width())
         return QtCore.QSize(preferred, sh.height())
 
     def focusOutEvent(self, ev: QtGui.QFocusEvent) -> None:  # noqa: N802
@@ -912,111 +912,109 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         return input_output_qubits_value_controls_groupbox
 
     def _handle_qubit_search_trigger_button_click(self, associated_quantum_register_name: str) -> None:
-        for qreg_layout in self.qreg_layouts:
-            if qreg_layout.qreg_name != associated_quantum_register_name:
-                continue
+        associated_qreg_layout: Final[QuantumRegisterLayout | None] = next(
+            filter(lambda qreg_layout: qreg_layout.qreg_name == associated_quantum_register_name, self.qreg_layouts),
+            None,
+        )
+        if associated_qreg_layout is None:
+            return
 
-            optional_qreg_qubits_groupbox: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
-                QtWidgets.QGroupBox,
-                QREG_QUBIT_VALUES_GROUPBOX_NAME_FORMAT.format(qreg_name=associated_quantum_register_name),
+        optional_qreg_qubits_groupbox: QtWidgets.QtWidget | None = self.simulation_run_wrapper_box.findChild(
+            QtWidgets.QGroupBox,
+            QREG_QUBIT_VALUES_GROUPBOX_NAME_FORMAT.format(qreg_name=associated_quantum_register_name),
+            QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+        )
+
+        if not self._assert_all_required_widgets_found_or_close_dialog(
+            [optional_qreg_qubits_groupbox],
+            f"Failed to find required qubits groupbox for quantum register '{associated_quantum_register_name}' during handling of qubit label search!",
+        ):
+            return
+
+        qreg_qubits_groupbox = cast("QtWidgets.QGroupBox", optional_qreg_qubits_groupbox)
+        optional_qubit_search_input_field: QtWidgets.QtWidget | None = qreg_qubits_groupbox.findChild(
+            QtWidgets.QLineEdit,
+            QREG_QUBIT_SEARCH_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_quantum_register_name),
+            QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+        )
+
+        if not self._assert_all_required_widgets_found_or_close_dialog(
+            [optional_qubit_search_input_field],
+            f"Failed to find required qubit label search input field for quantum register '{associated_quantum_register_name}' during handling of qubit label search!",
+        ):
+            return
+
+        qubit_search_input_field = cast("QtWidgets.QLineEdit", optional_qubit_search_input_field)
+        for qubit in range(
+            associated_qreg_layout.first_qubit_of_qreg,
+            associated_qreg_layout.first_qubit_of_qreg + associated_qreg_layout.qreg_size,
+        ):
+            optional_qubit_value_label: QtWidgets.QtWidget | None = qreg_qubits_groupbox.findChild(
+                QtWidgets.QLabel,
+                QUBIT_LABEL_NAME_FORMAT.format(qubit=qubit),
                 QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
             )
-
+            optional_input_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
+                QtWidgets.QCheckBox,
+                INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit),
+                QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+            )
+            optional_expected_output_state_qubit_checkbox_label: QtWidgets.QLabel | None = (
+                qreg_qubits_groupbox.findChild(
+                    QtWidgets.QLabel, EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_LABEL_NAME_FORMAT.format(qubit=qubit)
+                )
+            )
+            optional_expected_output_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
+                QtWidgets.QCheckBox, EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
+            )
+            optional_actual_output_state_qubit_checkbox_label: QtWidgets.QLabel | None = qreg_qubits_groupbox.findChild(
+                QtWidgets.QLabel, ACTUAL_OUTPUT_STATE_QUBIT_CHECKBOX_LABEL_NAME_FORMAT.format(qubit=qubit)
+            )
+            optional_actual_output_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
+                QtWidgets.QCheckBox, ACTUAL_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
+            )
             if not self._assert_all_required_widgets_found_or_close_dialog(
-                [optional_qreg_qubits_groupbox],
-                f"Failed to find required qubits groupbox for quantum register '{associated_quantum_register_name}' during handling of qubit label search!",
+                [
+                    optional_qubit_value_label,
+                    optional_input_state_qubit_checkbox,
+                    optional_expected_output_state_qubit_checkbox_label,
+                    optional_expected_output_state_qubit_checkbox,
+                    optional_actual_output_state_qubit_checkbox_label,
+                    optional_actual_output_state_qubit_checkbox,
+                ],
+                f"Failed to find required controls for qubits for quantum register '{associated_quantum_register_name}' during handling of qubit label search!",
             ):
                 return
 
-            qreg_qubits_groupbox = cast("QtWidgets.QGroupBox", optional_qreg_qubits_groupbox)
-            optional_qubit_search_input_field: QtWidgets.QtWidget | None = qreg_qubits_groupbox.findChild(
-                QtWidgets.QLineEdit,
-                QREG_QUBIT_SEARCH_INPUT_FIELD_NAME_FORMAT.format(qreg_name=associated_quantum_register_name),
-                QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
+            qubit_value_label = cast("QtWidgets.QLabel", optional_qubit_value_label)
+            input_state_qubit_checkbox = cast("QtWidgets.QCheckBox", optional_input_state_qubit_checkbox)
+            expected_output_state_qubit_checkbox_label = cast(
+                "QtWidgets.QLabel", optional_expected_output_state_qubit_checkbox_label
+            )
+            expected_output_state_qubit_checkbox = cast(
+                "QtWidgets.QCheckBox", optional_expected_output_state_qubit_checkbox
+            )
+            actual_output_state_qubit_checkbox_label = cast(
+                "QtWidgets.QLabel", optional_actual_output_state_qubit_checkbox_label
+            )
+            actual_output_state_qubit_checkbox = cast(
+                "QtWidgets.QCheckBox", optional_actual_output_state_qubit_checkbox
             )
 
-            if not self._assert_all_required_widgets_found_or_close_dialog(
-                [optional_qubit_search_input_field],
-                f"Failed to find required qubit label search input field for quantum register '{associated_quantum_register_name}' during handling of qubit label search!",
-            ):
-                return
-
-            qubit_search_input_field = cast("QtWidgets.QLineEdit", optional_qubit_search_input_field)
-            for qubit in range(
-                qreg_layout.first_qubit_of_qreg, qreg_layout.first_qubit_of_qreg + qreg_layout.qreg_size
-            ):
-                optional_qubit_value_label: QtWidgets.QtWidget | None = qreg_qubits_groupbox.findChild(
-                    QtWidgets.QLabel,
-                    QUBIT_LABEL_NAME_FORMAT.format(qubit=qubit),
-                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
-                )
-                optional_input_state_qubit_checkbox: QtWidgets.QCheckBox | None = qreg_qubits_groupbox.findChild(
-                    QtWidgets.QCheckBox,
-                    INPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit),
-                    QtCore.Qt.FindChildOption.FindDirectChildrenOnly,
-                )
-                optional_expected_output_state_qubit_checkbox_label: QtWidgets.QLabel | None = (
-                    qreg_qubits_groupbox.findChild(
-                        QtWidgets.QLabel, EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_LABEL_NAME_FORMAT.format(qubit=qubit)
-                    )
-                )
-                optional_expected_output_state_qubit_checkbox: QtWidgets.QCheckBox | None = (
-                    qreg_qubits_groupbox.findChild(
-                        QtWidgets.QCheckBox, EXPECTED_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
-                    )
-                )
-                optional_actual_output_state_qubit_checkbox_label: QtWidgets.QLabel | None = (
-                    qreg_qubits_groupbox.findChild(
-                        QtWidgets.QLabel, ACTUAL_OUTPUT_STATE_QUBIT_CHECKBOX_LABEL_NAME_FORMAT.format(qubit=qubit)
-                    )
-                )
-                optional_actual_output_state_qubit_checkbox: QtWidgets.QCheckBox | None = (
-                    qreg_qubits_groupbox.findChild(
-                        QtWidgets.QCheckBox, ACTUAL_OUTPUT_STATE_QUBIT_CHECKBOX_NAME_FORMAT.format(qubit=qubit)
-                    )
-                )
-                if not self._assert_all_required_widgets_found_or_close_dialog(
-                    [
-                        optional_qubit_value_label,
-                        optional_input_state_qubit_checkbox,
-                        optional_expected_output_state_qubit_checkbox_label,
-                        optional_expected_output_state_qubit_checkbox,
-                        optional_actual_output_state_qubit_checkbox_label,
-                        optional_actual_output_state_qubit_checkbox,
-                    ],
-                    f"Failed to find required controls for qubits for quantum register '{associated_quantum_register_name}' during handling of qubit label search!",
-                ):
-                    return
-
-                qubit_value_label = cast("QtWidgets.QLabel", optional_qubit_value_label)
-                input_state_qubit_checkbox = cast("QtWidgets.QCheckBox", optional_input_state_qubit_checkbox)
-                expected_output_state_qubit_checkbox_label = cast(
-                    "QtWidgets.QLabel", optional_expected_output_state_qubit_checkbox_label
-                )
-                expected_output_state_qubit_checkbox = cast(
-                    "QtWidgets.QCheckBox", optional_expected_output_state_qubit_checkbox
-                )
-                actual_output_state_qubit_checkbox_label = cast(
-                    "QtWidgets.QLabel", optional_actual_output_state_qubit_checkbox_label
-                )
-                actual_output_state_qubit_checkbox = cast(
-                    "QtWidgets.QCheckBox", optional_actual_output_state_qubit_checkbox
-                )
-
-                matched_with_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
-                    qubit, syrec.qubit_label_type.internal
-                )
-                does_qubit_label_match_search_text: bool = (
-                    matched_with_qubit_label.startswith(qubit_search_input_field.text())
-                    if matched_with_qubit_label is not None
-                    else False
-                )
-                qubit_value_label.setVisible(does_qubit_label_match_search_text)
-                input_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
-                expected_output_state_qubit_checkbox_label.setVisible(does_qubit_label_match_search_text)
-                expected_output_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
-                actual_output_state_qubit_checkbox_label.setVisible(does_qubit_label_match_search_text)
-                actual_output_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
+            matched_with_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
+                qubit, syrec.qubit_label_type.internal
+            )
+            does_qubit_label_match_search_text: bool = (
+                matched_with_qubit_label.startswith(qubit_search_input_field.text())
+                if matched_with_qubit_label is not None
+                else False
+            )
+            qubit_value_label.setVisible(does_qubit_label_match_search_text)
+            input_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
+            expected_output_state_qubit_checkbox_label.setVisible(does_qubit_label_match_search_text)
+            expected_output_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
+            actual_output_state_qubit_checkbox_label.setVisible(does_qubit_label_match_search_text)
+            actual_output_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
 
     def _handle_qreg_qubit_values_edit_toggle_button_click(self, associated_qreg_name: str) -> None:
         is_any_qubit_values_groupbox_collapsed: bool = False
@@ -1486,14 +1484,13 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def _stringify_some_qubits_of_n_bit_values_container(
         n_bit_values_container: syrec.n_bit_values_container, first_qubit: int, n_qubits: int
     ) -> str:
-        if (
-            first_qubit >= n_bit_values_container.size()
-            or first_qubit + (n_qubits - 1) >= n_bit_values_container.size()
-        ):
-            return ""
-        return "".join([
-            "1" if n_bit_values_container.test(i) else "0" for i in range(first_qubit, first_qubit + n_qubits)
-        ])
+        last_qubit_of_qreg: Final[int] = first_qubit + (n_qubits - 1)
+
+        if first_qubit <= last_qubit_of_qreg < n_bit_values_container.size():
+            return "".join([
+                "1" if n_bit_values_container.test(i) else "0" for i in range(first_qubit, last_qubit_of_qreg + 1)
+            ])
+        return "<UNKNOWN>"
 
     @staticmethod
     def _get_internal_qubit_labels_for_qreg(
@@ -1535,27 +1532,3 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.failed_due_to_internal_error = True
         self.reject()
         return False
-
-        # if all(widget is not None for widget in required_widgets):
-        #     return True
-
-        # self.failed_due_to_internal_error = True
-        # show_and_request_ok_in_optionally_cancellable_notification(
-        #     message_box_type=MessageBoxType.ERROR,
-        #     message_box_parent=self,
-        #     message_box_title="Not all required Qt widgets found!",
-        #     message_box_content=f"{error_dialog_content}\nUnsaved changed will be lost and edit dialog will be closed!",
-        #     is_cancellable=False,
-        #     log_contents=False,
-        # )
-
-        # stringified_found_widgets_object_names: Final[str] = "Object names of found widgets: " + (
-        #     ",".join([widget.objectName() for widget in filter(lambda widget: widget is not None, required_widgets)])
-        # )
-        # # We want to log the caller of this function as the origin of the error instead of this function itself.
-        # log_error_to_console(
-        #     f"{error_dialog_content}\n{stringified_found_widgets_object_names}",
-        #     num_additionally_skipped_stack_frames_starting_from_caller_function=1,
-        # )
-        # self.reject()
-        # return False

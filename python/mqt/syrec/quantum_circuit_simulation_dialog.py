@@ -53,8 +53,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         annotatable_quantum_computation: syrec.annotatable_quantum_computation,
         parent: QtWidgets.QWidget,
     ) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent)
         self.associated_stringified_syrec_program = associated_stringified_syrec_program
         self.annotatable_quantum_computation = annotatable_quantum_computation
         self.some_sim_runs_tab_widget_name = "some_sim_runs_tab"

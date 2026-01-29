@@ -262,7 +262,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         return None
 
     def get_simulation_run_model(self, index: int) -> SimulationRunModel | None:
-        if index >= 0 and index < len(self.simulation_run_models):
+        if 0 <= index < len(self.simulation_run_models):
             return self.simulation_run_models[index]
         return None
 
@@ -310,27 +310,6 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             sim_run_model.reset_result_of_execution()
         self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(len(self.simulation_run_models) - 1, 0))
 
-    def add_all_possible_simulation_run_models(self) -> bool:
-        if self.rowCount(QtCore.QModelIndex()) > 0:
-            return False
-
-        self.beginInsertRows(QtCore.QModelIndex(), 0, 0)
-        for i in range(2**self.n_data_qubits):
-            binary_string_of_i = format(i, "b")
-            input_state = syrec.n_bit_values_container(self.n_data_qubits)
-
-            n_qubits_to_process_in_binary_string: int = min(self.n_data_qubits, len(binary_string_of_i))
-            qubit_idx_in_binary_string: int = n_qubits_to_process_in_binary_string - 1
-            for qubit in range(n_qubits_to_process_in_binary_string):
-                qubit_value: bool = binary_string_of_i[qubit_idx_in_binary_string] == "1"
-                input_state.set(qubit, qubit_value)
-                qubit_idx_in_binary_string -= 1
-
-            output_state: syrec.n_bit_values_container | None = None
-            self.simulation_run_models.append(SimulationRunModel(input_state, output_state))
-        self.endInsertRows()
-        return True
-
     def update_edited_simulation_run_model(
         self, index: QtCore.QModelIndex, updated_simulation_run_data: SimulationRunModel
     ) -> None:
@@ -356,7 +335,6 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
 
-        self.simulation_run_models[index.row()]
         self.simulation_run_models[index.row()].set_result_of_simulation_execution(
             actual_output_state, do_expected_and_actual_output_states_match, execution_runtime_in_ms
         )

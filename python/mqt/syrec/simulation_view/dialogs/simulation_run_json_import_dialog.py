@@ -126,7 +126,8 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
             if not self.error_text_lbl.text():
                 self.accept()
             else:
-                self.reject()
+                # Avoid requiring duplicate confirmation of close operation by calling reject() function of super class instead of overridden reject function.
+                super().reject()
         else:
             event.ignore()
 
@@ -174,8 +175,11 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
     @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
     def _handle_import_completion(self, was_cancellation_requested: bool) -> None:
         self.progress_info_text_lbl.setText("Simulation run import finished!")
-        log_info_to_console("Simulation run export finished!")
+        log_info_to_console("Simulation run import finished!")
 
+        # Cancelling the long running operation through a click on the cancel button of the dialog will already request a shutdown of the worker
+        # and its associated thread but the same operation also needs to be execute when the worker completes successfully. However, when cancellation
+        # was already requested, skip this operation.
         if not was_cancellation_requested:
             self._request_worker_cancellation()
             self._shutdown_worker_thread_and_await_completion()
@@ -196,7 +200,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
             is_cancellable=True,
             log_contents=False,
         ):
-            log_info_to_console("Cancellation of simulation run export requested!")
+            log_info_to_console("Cancellation of simulation run import requested!")
             self._handle_non_recoverable_error(None)
             return True
         return False

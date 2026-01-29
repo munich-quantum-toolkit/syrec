@@ -25,20 +25,26 @@ def assert_all_required_widgets_found_or_close_dialog(
     error_dialog_content: str,
     num_additionally_skipped_stack_frames_starting_from_caller_function: int = 0,
 ) -> bool:
-    if all(widget is not None for widget in required_widgets):
+    # Iterables may be one-shot iterables which will be consumed by the all predicate which would prevent
+    # the correct logging of the iterable if the predicate is not fulfilled since said iterable would already
+    # be consumed at that point.
+    required_widgets_materialized: Final[list[QtWidgets.QWidget]] = list(required_widgets)
+    if all(widget is not None for widget in required_widgets_materialized):
         return True
 
     show_and_request_ok_in_optionally_cancellable_notification(
         message_box_type=MessageBoxType.ERROR,
         message_box_parent=error_notification_parent_widget,
         message_box_title="Not all required Qt widgets found!",
-        message_box_content=f"{error_dialog_content}\nUnsaved changed will be lost and edit dialog will be closed!",
+        message_box_content=f"{error_dialog_content}\nUnsaved changes will be lost and edit dialog will be closed!",
         is_cancellable=False,
         log_contents=False,
     )
 
     stringified_found_widgets_object_names: Final[str] = "Object names of found widgets: " + (
-        ",".join([widget.objectName() for widget in filter(lambda widget: widget is not None, required_widgets)])
+        ",".join([
+            widget.objectName() for widget in filter(lambda widget: widget is not None, required_widgets_materialized)
+        ])
     )
     # We want to log the caller of this function as the origin of the error instead of this function itself.
     log_error_to_console(

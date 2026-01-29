@@ -30,6 +30,12 @@ SMALL_DIALOG_HEIGHT: Final[int] = 300
 
 
 class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
+    """Base class for progress dialogs with worker thread management.
+
+    Note: Instances of this dialog are designed to be used only once.
+    Create a new instance for each operation rather than reusing the same dialog.
+    """
+
     def __init__(
         self,
         parent: QtWidgets.QWidget,
@@ -46,6 +52,8 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
         self.stop_processing_recv_batches: bool = False
         self.total_runtime_in_seconds: float = 0
 
+        # Ensure the dialog is deleted when closed this may not be strictly necessary but seems to be a good cleanup practice
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setModal(True)
         self.setSizeGripEnabled(True)
         self.setWindowTitle(dialog_title)
@@ -103,7 +111,8 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
             layout.addWidget(self.progress_info_text_lbl)
             layout.addWidget(self.error_text_lbl)
             layout.addStretch()
-            layout.addWidget(self.progress_bar)
+            if optional_progress_bar_text_format is not None:
+                layout.addWidget(self.progress_bar)
             layout.addWidget(self.total_runtime_info_text_lbl)
             layout.addWidget(self.dialog_button_box)
             self.setLayout(layout)

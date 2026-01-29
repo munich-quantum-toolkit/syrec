@@ -8,7 +8,13 @@
 
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Final
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
@@ -61,7 +67,6 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         if not index.isValid():
             return 0
 
-        index.data(LONGEST_QUANTUM_REGISTER_NAME_QT_ROLE)
         largest_quantum_register_size: int = index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE)
         largest_first_qubit_of_quantum_registers: int = index.data(LARGEST_FIRST_QUBIT_OF_QUANTUM_REGISTER_QT_ROLE)
 
@@ -165,8 +170,8 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         )
         return QtCore.QSize(total_simulation_run_group_box_width, total_simulation_run_group_box_height)
 
-    @staticmethod
-    def sizeHint(option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:  # noqa: N802
+    @override
+    def sizeHint(self, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:
         required_content_size: Final[QtCore.QSize] = (
             SimulationRunOverviewStyledItemDelegate._get_required_size_for_content(option, index)
         )
@@ -175,6 +180,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
             min(required_content_size.width(), available_content_rect.width()), required_content_size.height()
         )
 
+    @override
     def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
         if not index.isValid() or option.rect.width() == 0:
             return
@@ -182,7 +188,6 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         associated_sim_run_model: SimulationRunModel = index.data(SIMULATION_RUN_IO_STATE_QT_ROLE)
         largest_qreg_size: Final[int] = index.data(LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE)
 
-        SimulationRunOverviewStyledItemDelegate._get_required_size_for_content(option, index)
         available_rect_for_content: QtCore.QRect = option.rect.adjusted(
             CARD_CONTENT_PADDING,
             CARD_CONTENT_PADDING,

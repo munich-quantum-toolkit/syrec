@@ -79,7 +79,7 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
                 for i in range(len(batch_data)):
                     batch_data[i] = None
                 batch_idx = 0
-            self.finished.emit(self.cancellation_requested)
+            self.finished.emit(self.is_cancellation_requested())
         except Exception as error:
             self_raised_error_msg = f"Error in all input states generator worker! Reason: {type(error)=}, {error=}"
             log_error_to_console(self_raised_error_msg)
@@ -87,7 +87,7 @@ class AllInputStatesGeneratorWorker(CancellableBaseWorker):
 
     @staticmethod
     def _validate_parameters(expected_input_state_size: int, batch_size: int) -> None:
-        if expected_input_state_size < 0:
+        if expected_input_state_size < 1:
             msg = f"Expected input state size must be a positive integer but was actually {expected_input_state_size}!"
             raise ValueError(msg)
 

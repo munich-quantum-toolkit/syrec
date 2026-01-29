@@ -97,7 +97,7 @@ class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
             return False
 
         mismatched_elem_type: type | None = next(
-            filter(lambda elem_type: elem_type != expected_batch_element_type, (type(elem) for elem in batch_data)),
+            (type(elem) for elem in batch_data if not isinstance(elem, expected_batch_element_type)),
             None,
         )
         if mismatched_elem_type is None:
