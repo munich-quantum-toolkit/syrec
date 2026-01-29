@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "nanobind>=2.10.2",
+    "nanobind==2.10.2",
     "scikit-build-core>=0.11.6",
     "setuptools-scm>=9.2.2",
     "mqt.core~=3.4.0",
@@ -229,7 +229,7 @@ known-first-party = ["mqt.syrec"]
 "docs/**" = ["T20"]
 "python/mqt/syrec/syrec_editor.py" = ["T20"]
 "noxfile.py" = ["T20", "TID251"]
-"*.pyi" = ["D418", "E501", "N801", "PYI021"]
+"*.pyi" = ["D418", "E501", "PYI021"]
 "*.ipynb" = [
     "D",    # pydocstyle
     "E402", # Allow imports to appear anywhere in Jupyter notebooks
@@ -326,7 +326,7 @@ mqt-syrec = { workspace = true }
 
 [dependency-groups]
 build = [
-    "nanobind>=2.10.2",
+    "nanobind==2.10.2",
     "scikit-build-core>=0.11.6",
     "setuptools-scm>=9.2.2",
     "mqt.core~=3.4.0",
