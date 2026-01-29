@@ -73,6 +73,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         self.title = "Define simulation runs for quantum computation"
         self.setWindowTitle(self.title)
+        # Ensure the dialog is deleted when closed this may not be strictly necessary but seems to be a good cleanup practice
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setModal(True)
 
         dialog_size: Final[QtCore.QSize] = BaseProgressDialog.get_default_big_dialog_size()

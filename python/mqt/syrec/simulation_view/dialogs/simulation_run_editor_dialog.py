@@ -149,6 +149,8 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             self.edited_simulation_run_model.actual_output_state
         )
 
+        # Ensure the dialog is deleted when closed this may not be strictly necessary but seems to be a good cleanup practice
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setModal(True)
         self.setSizeGripEnabled(True)
         self.setWindowTitle("Edit qubit values of quantum registers for simulation run")
@@ -453,10 +455,10 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             qreg_actual_output_state_widget.setVisible(should_control_be_visible)
             qreg_edit_qubit_values_toggle_button.setVisible(should_control_be_visible)
 
-    @QtCore.pyqtSlot(QtCore.CheckState, str, int, int, bool)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(QtCore.Qt.CheckState, str, int, int, bool)  # type: ignore[untyped-decorator]
     def _handle_input_state_qubit_value_checkbox_state_change(
         self,
-        new_checkbox_state: QtCore.CheckState,
+        new_checkbox_state: QtCore.Qt.CheckState,
         associated_qreg_name: str,
         associated_qubit: int,
         relative_qubit_index_in_quantum_register: int,
@@ -513,10 +515,10 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         else:
             associated_qubit_value_checkbox.setCheckState(new_checkbox_state)
 
-    @QtCore.pyqtSlot(QtCore.CheckState, str, int, int, bool)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(QtCore.Qt.CheckState, str, int, int, bool)  # type: ignore[untyped-decorator]
     def _handle_expected_output_state_qubit_value_checkbox_state_change(
         self,
-        new_checkbox_state: QtCore.CheckState,
+        new_checkbox_state: QtCore.Qt.CheckState,
         associated_qreg_name: str,
         associated_qubit: int,
         relative_qubit_index_in_quantum_register: int,
@@ -1136,8 +1138,8 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         qreg_search_input_field.setEnabled(not is_any_qubit_values_groupbox_collapsed)
         qreg_search_trigger_btn.setEnabled(not is_any_qubit_values_groupbox_collapsed)
 
-    @QtCore.pyqtSlot(str)  # type: ignore[untyped-decorator]
-    def _handle_init_expected_output_state_button_click(self, associated_qreg_name: str) -> None:
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    def _handle_init_expected_output_state_button_click(self) -> None:
         optional_expected_output_state_value_toggle_button: QtWidgets.QtQWidget | None = (
             self.simulation_run_wrapper_box.findChild(
                 QtWidgets.QPushButton,
@@ -1148,7 +1150,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         if not self._assert_all_required_widgets_found_or_close_dialog(
             [optional_expected_output_state_value_toggle_button],
-            f"Failed to find all required QtWidgets for quantum register '{associated_qreg_name}' during handling of initialization/clearing of output state!",
+            "Failed to find all required QtWidgets for init/clear operation of expected output state!",
         ):
             return
 
