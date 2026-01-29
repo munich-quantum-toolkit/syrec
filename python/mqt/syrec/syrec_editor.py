@@ -908,7 +908,7 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
             # We know at this point that the inline stack is not empty and thus not None
             parent_tree_model_entry = self.create_tree_view_entry_for_inline_stack_entry(
                 inline_stack[i],  # type: ignore[index]
-                i == inline_stack_size - 1,
+                only_print_signature=i == inline_stack_size - 1,
             )
 
             if prev_tree_model_entry is not None:
@@ -928,7 +928,9 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
 
     @staticmethod
     def create_tree_view_entry_for_inline_stack_entry(
-        inline_stack_entry: QubitInliningStackEntry, only_print_signature: bool
+        inline_stack_entry: QubitInliningStackEntry,
+        *,
+        only_print_signature: bool,
     ) -> QtGui.QStandardItem:
         tree_entry = QtGui.QStandardItem(inline_stack_entry.stringified_signature_of_called_module)
         bold_font = QtGui.QFont()
