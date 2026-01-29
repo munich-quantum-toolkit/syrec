@@ -368,6 +368,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         else:
             event.ignore()
 
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _handle_quantum_register_name_search(self) -> None:
         for qreg_layout in self.qreg_layouts:
             qreg_name: str = qreg_layout.qreg_name
@@ -452,6 +453,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             qreg_actual_output_state_widget.setVisible(should_control_be_visible)
             qreg_edit_qubit_values_toggle_button.setVisible(should_control_be_visible)
 
+    @QtCore.pyqtSlot(QtCore.CheckState, str, int, int, bool)  # type: ignore[untyped-decorator]
     def _handle_input_state_qubit_value_checkbox_state_change(
         self,
         new_checkbox_state: QtCore.CheckState,
@@ -511,6 +513,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         else:
             associated_qubit_value_checkbox.setCheckState(new_checkbox_state)
 
+    @QtCore.pyqtSlot(QtCore.CheckState, str, int, int, bool)  # type: ignore[untyped-decorator]
     def _handle_expected_output_state_qubit_value_checkbox_state_change(
         self,
         new_checkbox_state: QtCore.CheckState,
@@ -918,6 +921,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         input_output_qubits_value_controls_groupbox.setLayout(input_output_qubits_value_controls_groupbox_layout)
         return input_output_qubits_value_controls_groupbox
 
+    @QtCore.pyqtSlot(str)  # type: ignore[untyped-decorator]
     def _handle_qubit_search_trigger_button_click(self, associated_quantum_register_name: str) -> None:
         associated_qreg_layout: Final[QuantumRegisterLayout | None] = next(
             filter(lambda qreg_layout: qreg_layout.qreg_name == associated_quantum_register_name, self.qreg_layouts),
@@ -1023,6 +1027,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             actual_output_state_qubit_checkbox_label.setVisible(does_qubit_label_match_search_text)
             actual_output_state_qubit_checkbox.setVisible(does_qubit_label_match_search_text)
 
+    @QtCore.pyqtSlot(str)  # type: ignore[untyped-decorator]
     def _handle_qreg_qubit_values_edit_toggle_button_click(self, associated_qreg_name: str) -> None:
         is_any_qubit_values_groupbox_collapsed: bool = False
         optional_expected_output_state_value_toggle_button: QtWidgets.QtQWidget | None = (
@@ -1131,6 +1136,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         qreg_search_input_field.setEnabled(not is_any_qubit_values_groupbox_collapsed)
         qreg_search_trigger_btn.setEnabled(not is_any_qubit_values_groupbox_collapsed)
 
+    @QtCore.pyqtSlot(str)  # type: ignore[untyped-decorator]
     def _handle_init_expected_output_state_button_click(self, associated_qreg_name: str) -> None:
         optional_expected_output_state_value_toggle_button: QtWidgets.QtQWidget | None = (
             self.simulation_run_wrapper_box.findChild(
@@ -1227,6 +1233,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 )
                 associated_qubit_value_checkbox.setEnabled(not should_reset_output_state)
 
+    @QtCore.pyqtSlot(str, int, bool)  # type: ignore[untyped-decorator]
     def _handle_input_or_output_state_text_change(
         self, associated_qreg_name: str, expected_qreg_size: int, is_editing_input_state: bool
     ) -> None:
