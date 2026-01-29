@@ -32,7 +32,7 @@ EXPECTED_OUTPUT_STATE_JSON_KEY: Final[str] = "out"
 
 
 class SimulationRunJsonImportWorker(CancellableBaseWorker):
-    def __init__(self, path_to_json_file: Path, expected_input_state_size: int, batch_size: int):
+    def __init__(self, path_to_json_file: Path, expected_input_state_size: int, batch_size: int) -> None:
         super().__init__(do_batches_require_ack=True)
 
         self.path_to_json_file = path_to_json_file

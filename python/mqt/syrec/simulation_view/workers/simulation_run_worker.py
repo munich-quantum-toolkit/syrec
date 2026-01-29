@@ -40,7 +40,7 @@ class SimulationRunWorker(CancellableBaseWorker):
         expected_input_state_size: int,
         batch_size: int,
         stop_at_first_output_state_mismatch: bool,
-    ):
+    ) -> None:
         super().__init__(do_batches_require_ack=True)
         self.batch_size = batch_size
         self.expected_input_state_size = expected_input_state_size

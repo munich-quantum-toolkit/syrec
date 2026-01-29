@@ -44,7 +44,7 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
         create_default_layout: bool = True,
         user_provided_dialog_size: QtCore.QSize | None = None,
         center_dialog: bool = True,
-    ):
+    ) -> None:
         super().__init__(parent)
 
         self.worker_thread: QtCore.QThread | None = None

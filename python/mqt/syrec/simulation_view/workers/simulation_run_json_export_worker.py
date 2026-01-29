@@ -39,7 +39,7 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
         associated_stringified_syrec_program: str,
         simulation_runs_to_export: Iterable[SimulationRunModel],
         export_batch_size: int,
-    ):
+    ) -> None:
         super().__init__(do_batches_require_ack=False)
 
         self.associated_stringified_syrec_program = associated_stringified_syrec_program

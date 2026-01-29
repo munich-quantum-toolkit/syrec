@@ -63,7 +63,7 @@ OUTPUTS_MATCH_UNKNOWN_TEXT: Final[str] = "UNKNOWN"
 
 # Progress bar delegate C++ example: https://doc.qt.io/qt-6/qtnetwork-torrent-example.html
 class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelegate, QtWidgets.QStyledItemDelegate):  # type: ignore[misc]
-    def __init__(self, parent=None):
+    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
 
     @staticmethod

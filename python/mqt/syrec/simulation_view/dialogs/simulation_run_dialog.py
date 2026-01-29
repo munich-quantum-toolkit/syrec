@@ -35,7 +35,7 @@ from .base_progress_dialog import BaseProgressDialog
 
 
 class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
-    def __init__(self, parent: QtWidgets.QWidget):
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(
             parent,
             dialog_title="Executing simulation runs...",
@@ -58,7 +58,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
 
         simulation_runs_list_layout = QtWidgets.QHBoxLayout()
         self.simulation_runs_list_view: QtWidgets.QListView = QtWidgets.QListView()
-        self.simulation_runs_list_view.setItemDelegate(SimulationRunExecutionStyledItemDelegate())  # type: ignore[no-untyped-call]
+        self.simulation_runs_list_view.setItemDelegate(SimulationRunExecutionStyledItemDelegate())
         self.simulation_runs_list_view.setUniformItemSizes(True)
         self.simulation_runs_list_view.setResizeMode(QtWidgets.QListView.ResizeMode.Adjust)
         self.simulation_runs_list_view.setAutoFillBackground(False)
@@ -114,7 +114,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             f"Executing {expected_total_num_simulation_runs} simulation runs with batch size {batch_size}!"
         )
         if self.progress_bar is not None:
-            if not self._can_value_can_be_used_as_progress_bar_max_value(expected_input_state_size):
+            if not self._can_value_can_be_used_as_progress_bar_max_value(expected_total_num_simulation_runs):
                 # We do not ask for confirmation to close the dialog since we faulted before the simulation run execution started.
                 super().reject()
                 return

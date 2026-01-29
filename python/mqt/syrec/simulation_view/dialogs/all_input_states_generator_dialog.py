@@ -31,7 +31,7 @@ from .base_progress_dialog import BaseProgressDialog
 
 
 class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWorker]):
-    def __init__(self, parent: QtWidgets.QWidget):
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(
             parent,
             dialog_title="Generating simulation runs...",

@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class AllInputStatesGeneratorWorker(CancellableBaseWorker):
-    def __init__(self, expected_input_state_size: int, batch_size: int):
+    def __init__(self, expected_input_state_size: int, batch_size: int) -> None:
         super().__init__(do_batches_require_ack=True)
         self.expected_input_state_size: Final[int] = expected_input_state_size
         self.batch_size: Final[int] = batch_size

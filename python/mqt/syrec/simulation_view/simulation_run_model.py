@@ -51,7 +51,7 @@ class SimulationRunModel:
         expected_output_state: syrec.n_bit_values_container | None = None,
         actual_output_state: syrec.n_bit_values_container | None = None,
         create_new_n_bit_values_container_instances: bool = False,
-    ):
+    ) -> None:
         if expected_output_state is not None and input_state.size() != expected_output_state.size():
             msg = f"Expected output state size (n_qubits = {expected_output_state.size()}) did not match input state size (n_qubits = {input_state.size()})"
             log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
@@ -183,7 +183,7 @@ class SimulationRunModel:
 class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
     def __init__(
         self, annotatable_quantum_computation: syrec.annotatable_quantum_computation, parent: QtCore.QObject = None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.n_data_qubits: int = annotatable_quantum_computation.num_data_qubits
         self.simulation_run_models: list[SimulationRunModel] = []

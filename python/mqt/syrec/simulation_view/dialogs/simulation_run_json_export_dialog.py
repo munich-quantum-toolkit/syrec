@@ -36,7 +36,7 @@ EXPORTED_SIM_RUNS_DATA_LABEL: Final[str] = (
 
 
 class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWorker]):
-    def __init__(self, parent: QtWidgets.QWidget):
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(
             parent,
             dialog_title="Exporting simulation runs...",

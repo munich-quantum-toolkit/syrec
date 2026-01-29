@@ -43,7 +43,7 @@ class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
     finished = QtCore.pyqtSignal(bool, name="finished")
     failed = QtCore.pyqtSignal(Exception, name="failed")
 
-    def __init__(self, do_batches_require_ack: bool):
+    def __init__(self, do_batches_require_ack: bool) -> None:
         super().__init__()
 
         self.cancellation_requested = False

@@ -128,7 +128,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_run_model_index: QtCore.QModelIndex,
         copy_of_reference_edit_sim_run_model: SimulationRunModel,
         parent: QtWidgets.QWidget,
-    ):
+    ) -> None:
         super().__init__(parent)
         self.failed_due_to_internal_error: bool = False
         self.simulation_run_model_index: QtCore.QModelIndex = simulation_run_model_index
