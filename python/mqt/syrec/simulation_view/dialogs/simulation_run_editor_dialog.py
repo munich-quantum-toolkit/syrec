@@ -64,7 +64,7 @@ class LineEditWithDynamicWidth(QtWidgets.QLineEdit):  # type: ignore[misc]
         super().__init__(parent)
         self.expected_max_num_characters = expected_max_num_characters
         self.setMaxLength(expected_max_num_characters)
-        self.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
 
     # Make the widget greedy: whenever the layout offers more
     # than the nominal width, grab it.
@@ -203,9 +203,6 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         quantum_register_controls_grid_layout.addWidget(
             output_column_label, 1, 2, alignment=QtCore.Qt.AlignmentFlag.AlignCenter
         )
-
-        n_bit_values_container_contents_validator_regular_expr = QtCore.QRegularExpression(R"^[0-1]*$")
-        QtGui.QRegularExpressionValidator(n_bit_values_container_contents_validator_regular_expr, self)
 
         qreg_controls_grid_row: int = 2
         for qreg_layout in self.qreg_layouts:
