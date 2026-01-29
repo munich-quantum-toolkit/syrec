@@ -520,6 +520,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         self.quantum_circuit_sim_runs_dialog.finished.connect(self.handle_quantum_circuit_sim_runs_dialog_finished)
         self.quantum_circuit_sim_runs_dialog.open()
         self.quantum_circuit_sim_runs_dialog.show_save_changes_reminder()
+        self.quantum_circuit_sim_runs_dialog.show_optional_comments_in_syrec_program_not_supported_notification()
 
 
 class SyReCHighlighter(QtGui.QSyntaxHighlighter):  # type: ignore[misc]

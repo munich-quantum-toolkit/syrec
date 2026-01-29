@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from typing import Final, cast
@@ -47,6 +48,10 @@ IMPORT_FROM_FILE_NO_FILE_SELECTED_PLACEHOLDER_TEXT: Final[str] = "<NONE>"
 
 
 class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
+    # We would like to reuse the regex in multiple one-time use dialog instances. Additionally, the regex is used only once in these instances so declaring the
+    # regex as an instance variable seems wasteful. Whether a compiled or non-compiled regex should be used would have to be benchmarked.
+    __syrec_program_comment_regex: re.Pattern[str] = re.compile("|".join(map(re.escape, [r"//", r"/*"])))
+
     def __init__(
         self,
         associated_stringified_syrec_program: str,
@@ -54,7 +59,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         parent: QtWidgets.QWidget,
     ) -> None:
         super().__init__(parent)
-        self.associated_stringified_syrec_program = associated_stringified_syrec_program
+        self.did_syrec_program_contain_comments: Final[bool] = (
+            self.__syrec_program_comment_regex.search(associated_stringified_syrec_program) is not None
+        )
+        self.associated_stringified_syrec_program: str = (
+            associated_stringified_syrec_program if not self.did_syrec_program_contain_comments else ""
+        )
+
         self.annotatable_quantum_computation = annotatable_quantum_computation
         self.some_sim_runs_tab_widget_name = "some_sim_runs_tab"
         self.all_sim_runs_tab_widget_name = "all_sim_runs_tab"
@@ -111,6 +122,19 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             message_box_parent=self,
             message_box_title="Remember to save your changes",
             message_box_content="All simulation runs not saved via the save to file option are removed when this dialog closes!",
+            is_cancellable=False,
+            log_contents=False,
+        )
+
+    def show_optional_comments_in_syrec_program_not_supported_notification(self) -> None:
+        if not self.did_syrec_program_contain_comments:
+            return
+
+        show_and_request_ok_in_optionally_cancellable_notification(
+            message_box_type=MessageBoxType.WARNING,
+            message_box_parent=self,
+            message_box_title="Synthesized SyReC program contained line or block comments!",
+            message_box_content="SyReC programs containing line or block comments cannot be serialized to JSON since this would generate invalid JSON. Export to JSON functionality is disabled.",
             is_cancellable=False,
             log_contents=False,
         )
@@ -844,7 +868,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         run_simulation_runs_btn.setEnabled(should_controls_be_enabled)
         run_simulation_runs_stop_at_first_failure_btn.setEnabled(should_controls_be_enabled)
-        save_simulation_runs_to_file_btn.setEnabled(should_controls_be_enabled)
+        save_simulation_runs_to_file_btn.setEnabled(
+            should_controls_be_enabled and not self.did_syrec_program_contain_comments
+        )
 
     def set_default_simulation_run_modification_buttons_enabled_state(self) -> None:
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
