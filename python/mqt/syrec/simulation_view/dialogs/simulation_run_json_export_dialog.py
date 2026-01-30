@@ -206,7 +206,5 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         if err is not None:
             self._update_displayed_error_text(err, num_additionally_skipped_stack_frames_starting_from_this_function=2)
 
-        if self.worker is not None:
-            self._request_worker_cancellation()
-        if self.worker_thread is not None:
-            self._shutdown_worker_thread_and_await_completion()
+        self._request_worker_cancellation()
+        self._shutdown_worker_thread_and_await_completion()

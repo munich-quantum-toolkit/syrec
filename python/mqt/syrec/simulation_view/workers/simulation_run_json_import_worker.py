@@ -43,7 +43,7 @@ class SimulationRunJsonImportWorker(CancellableBaseWorker):
     def start_import(self) -> None:
         try:
             SimulationRunJsonImportWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
-            self_raised_error_msg: str | None = ""
+            self_raised_error_msg: str | None = None
 
             if self.wait_on_batch_processed_acknowledgement_condition is None:
                 self_raised_error_msg = "Internal batch processed acknowledgement condition was not initialized"

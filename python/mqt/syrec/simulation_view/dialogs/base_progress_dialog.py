@@ -118,16 +118,26 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
 
     @staticmethod
     def get_default_big_dialog_size() -> QtCore.QSize:
+        # None could be returned when running the application in headless mode which should not happen but we cover this case nevertheless
+        optional_primary_screen: QtGui.QScreen | None = QtGui.QGuiApplication.primaryScreen()
+        if optional_primary_screen is None:
+            return QtCore.QSize(0, 0)
+
         return QtCore.QSize(
-            int(QtGui.QGuiApplication.primaryScreen().availableSize().width() / 1.5),
-            int(QtGui.QGuiApplication.primaryScreen().availableSize().height() / 1.5),
+            int(optional_primary_screen.availableSize().width() / 1.5),
+            int(optional_primary_screen.availableSize().height() / 1.5),
         )
 
     @staticmethod
     def get_center_screen_position_for_size(dialog_size: QtCore.QSize) -> QtCore.QPoint:
+        # None could be returned when running the application in headless mode which should not happen but we cover this case nevertheless
+        optional_primary_screen: QtGui.QScreen | None = QtGui.QGuiApplication.primaryScreen()
+        if optional_primary_screen is None:
+            return QtCore.QSize(0, 0)
+
         return QtCore.QPoint(
-            (QtGui.QGuiApplication.primaryScreen().availableSize().width() // 2) - (dialog_size.width() // 2),
-            (QtGui.QGuiApplication.primaryScreen().availableSize().height() // 2) - (dialog_size.height() // 2),
+            (optional_primary_screen.availableSize().width() // 2) - (dialog_size.width() // 2),
+            (optional_primary_screen.availableSize().height() // 2) - (dialog_size.height() // 2),
         )
 
     def _update_progress_text_with_batch_info(self, n_batch_elements: int, batch_duration_in_seconds: float) -> None:
@@ -165,14 +175,16 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
         self.progress_info_text_lbl.setText("Worker thread finished!")
 
     def _request_worker_cancellation(self) -> None:
+        if self.worker is None:
+            return
+
         self.stop_processing_recv_batches = True
         self.progress_info_text_lbl.setText("Requesting cancellation of long running worker!")
-        if self.worker is not None:
-            log_info_to_console(
-                "Requesting cancellation of long running worker",
-                num_additionally_skipped_stack_frames_starting_from_caller_function=1,
-            )
-            self.worker.request_cancellation()
+        log_info_to_console(
+            "Requesting cancellation of long running worker",
+            num_additionally_skipped_stack_frames_starting_from_caller_function=1,
+        )
+        self.worker.request_cancellation()
         self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
 
     def _change_dialog_cancel_button_enable_state(self, should_button_be_enabled: bool) -> None:

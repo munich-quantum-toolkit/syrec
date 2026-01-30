@@ -351,7 +351,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
     @override
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if self.failed_due_to_internal_error:
-            self.reject()
+            super().reject()
             return
 
         # Ask for confirmation before closing dialog
@@ -363,7 +363,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             is_cancellable=True,
             log_contents=False,
         ):
-            self.accept()
+            super().reject()
         else:
             event.ignore()
 

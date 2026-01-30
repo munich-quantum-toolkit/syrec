@@ -132,7 +132,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
 
         qreg_name_and_layout_info_column_width: Final[int] = (
             SimulationRunOverviewStyledItemDelegate._get_required_qreg_name_and_layout_column_width(
-                option, index, CARD_TITLE_FONT_SIZE
+                option, index, CARD_CONTENT_FONT_SIZE
             )
         )
 

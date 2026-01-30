@@ -162,7 +162,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # BEGIN: Create simulation runs list view Qt elements
         simulation_runs_list_view: QtWidgets.QListView = QtWidgets.QListView(objectName=SIMULATION_RUNS_LIST_VIEW_NAME)
         simulation_runs_list_view.setModel(shared_simulation_runs_model)
-        simulation_runs_list_view.setItemDelegate(SimulationRunOverviewStyledItemDelegate())  # type: ignore[no-untyped-call]
+        simulation_runs_list_view.setItemDelegate(SimulationRunOverviewStyledItemDelegate())
         simulation_runs_list_view.setUniformItemSizes(True)
         simulation_runs_list_view.setResizeMode(QtWidgets.QListView.ResizeMode.Adjust)
         simulation_runs_list_view.setAutoFillBackground(False)
@@ -797,7 +797,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_run_import_from_file_dialog = SimulationRunJsonImportDialog(self)
         self.simulation_run_import_from_file_dialog.finished.connect(self.handle_import_from_file_dialog_close)
         self.simulation_run_import_from_file_dialog.show()
-        self.simulation_run_import_from_file_dialog.start_generation(
+        self.simulation_run_import_from_file_dialog.start_import(
             Path(selected_filename_lbl.text()),
             self.simulation_runs_model,
             expected_input_state_size=self.annotatable_quantum_computation.num_data_qubits,

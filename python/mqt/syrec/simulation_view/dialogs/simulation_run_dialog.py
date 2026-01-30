@@ -186,10 +186,8 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         # and its associated thread but the same operation also needs to be execute when the worker completes successfully. However, when cancellation
         # was already requested, skip this operation.
         if not was_cancellation_requested:
-            if self.worker is not None:
-                self._request_worker_cancellation()
-            if self.worker_thread is not None:
-                self._shutdown_worker_thread_and_await_completion()
+            self._request_worker_cancellation()
+            self._shutdown_worker_thread_and_await_completion()
 
         self._change_dialog_ok_button_enable_state(should_button_be_enabled=True)
         self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
@@ -272,7 +270,5 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         if err is not None:
             self._update_displayed_error_text(err, num_additionally_skipped_stack_frames_starting_from_this_function=2)
 
-        if self.worker is not None:
-            self._request_worker_cancellation()
-        if self.worker_thread is not None:
-            self._shutdown_worker_thread_and_await_completion()
+        self._request_worker_cancellation()
+        self._shutdown_worker_thread_and_await_completion()

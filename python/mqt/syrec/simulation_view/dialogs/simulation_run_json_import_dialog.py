@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from PyQt6 import QtGui
 
-    from ..simulation_run_model import QtSimulationRunModel, SimulationRunModel
+    from ..simulation_run_model import QtSimulationRunModel
 
 from ...logger_utils import log_error_to_console, log_info_to_console
 from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
@@ -67,7 +67,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         layout.addWidget(self.dialog_button_box)
         self.setLayout(layout)
 
-    def start_generation(
+    def start_import(
         self,
         path_to_json_file: Path,
         shared_simulation_runs_model: QtSimulationRunModel,
@@ -238,7 +238,5 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
                 is_cancellable=False,
             )
 
-        if self.worker is not None:
-            self._request_worker_cancellation()
-        if self.worker_thread is not None:
-            self._shutdown_worker_thread_and_await_completion()
+        self._request_worker_cancellation()
+        self._shutdown_worker_thread_and_await_completion()

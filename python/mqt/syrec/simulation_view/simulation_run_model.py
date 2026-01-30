@@ -86,8 +86,10 @@ class SimulationRunModel:
         for i in range(self.expected_output_state.size()):
             self.expected_output_state.set(i, self.input_state.test(i))  # type: ignore[arg-type]
 
-    def reset_result_of_execution(self) -> None:
-        self.actual_output_state = None
+    def reset_result_of_execution(self, reset_actual_output_state: bool = True) -> None:
+        if reset_actual_output_state:
+            self.actual_output_state = None
+
         self.do_expected_and_actual_outputs_match = None
         self.execution_runtime_in_ms = None
 
@@ -141,16 +143,27 @@ class SimulationRunModel:
             log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
 
+        did_input_state_change: bool = False
         for i in range(self.input_state.size()):
+            did_input_state_change |= self.input_state.test(i) != edited_input_state.test(i)
             self.input_state.set(i, edited_input_state.test(i))  # type: ignore[arg-type]
+
+        # If the edited input state does not match the current input state of this instance then reset the previously determined simulation run execution results
+        # since they were based on the current input state
+        if did_input_state_change:
+            self.reset_result_of_execution()
 
         if edited_expected_output_state is None:
             self.expected_output_state = None
+            # We do not need to reset the actual output state since its value depends only on the input state
+            self.reset_result_of_execution(reset_actual_output_state=False)
         else:
             if self.expected_output_state is None:
                 self.expected_output_state = syrec.n_bit_values_container(self.input_state.size())
             for i in range(self.expected_output_state.size()):
                 self.expected_output_state.set(i, edited_expected_output_state.test(i))  # type: ignore[arg-type]
+            # We do not need to reset the actual output state since its value depends only on the input state
+            self.reset_result_of_execution(reset_actual_output_state=False)
 
     @staticmethod
     def do_output_states_match(
