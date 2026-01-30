@@ -18,10 +18,26 @@ from typing import TYPE_CHECKING, Any, cast
 from mqt.core.ir.operations import OpType
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-from mqt import syrec
+from mqt.syrec import (
+    AnnotatableQuantumComputation,
+    ConfigurableOptions,
+    IntegerConstantTruncationOperation,
+    NBitValuesContainer,
+    Program,
+    QubitLabelType,
+    cost_aware_synthesis,
+    line_aware_synthesis,
+    simple_simulation,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from mqt.syrec import (
+        InlinedQubitInformation,
+        QubitInliningStack,
+        QubitInliningStackEntry,
+    )
 
 STRINGIFIED_CIRCUIT_VIEW_QUBIT_LABEL_COMPONENTS_EXTRACTOR_REGEX: re.Pattern[str] = re.compile(
     r"^Q:\s*(?P<q>\d+)\s*\|\s*(?P<label>.+)$"
@@ -80,7 +96,7 @@ class CircuitLineItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
 class GateItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
     def __init__(
         self,
-        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
+        annotatable_quantum_computation: AnnotatableQuantumComputation,
         quantum_operation_index: int,
         parent: QtWidgets.QWidget | None = None,
     ) -> None:
@@ -131,7 +147,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
     def __init__(
         self,
-        annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None,
+        annotatable_quantum_computation: AnnotatableQuantumComputation | None = None,
         parent: QtWidgets.QWidget | None = None,
     ) -> None:
         QtWidgets.QGraphicsView.__init__(self, parent)
@@ -141,7 +157,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
         self.scene().setBackgroundBrush(QtGui.QColorConstants.White)
 
         # Load circuit
-        self.annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
+        self.annotatable_quantum_computation: AnnotatableQuantumComputation | None = None
         # We are assuming that the majority of the qubits in a quantum computation are either garbage or ancillary qubits, so checking whether a given qubit is ancillary or garbage is then
         # equal to whether the lookup does NOT contain an entry for the qubit (this should save us some memory since we only need to store the qubit labels of the non-ancillary and non-garbage qubits)
         self.non_ancillary_or_garbage_qubits_lookup: set[int] = set()
@@ -180,7 +196,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
         super().mousePressEvent(event)
 
-    def load(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
+    def load(self, annotatable_quantum_computation: AnnotatableQuantumComputation) -> None:
         self.clear()
 
         self.annotatable_quantum_computation = annotatable_quantum_computation
@@ -194,7 +210,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
             circuit_view_qubit_label = CircuitViewQubitLabel(i, "")
             internal_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
-                i, syrec.qubit_label_type.internal
+                i, QubitLabelType.internal
             )
             circuit_view_qubit_label.internal_qubit_label = (
                 "<UNKNOWN>" if internal_qubit_label is None else internal_qubit_label
@@ -271,8 +287,8 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
 class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
     widget: CodeEditor | None = None
-    annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
-    build_successful: Callable[[syrec.annotatable_quantum_computation], None] | None = None
+    annotatable_quantum_computation: AnnotatableQuantumComputation | None = None
+    build_successful: Callable[[AnnotatableQuantumComputation], None] | None = None
     build_failed: Callable[[str], None] | None = None
     before_build: Callable[[], None] | None = None
     parser_failed: Callable[[str], None] | None = None
@@ -330,7 +346,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
 
         self.stat_action.triggered.connect(self.stat)
 
-        self.configurable_parser_and_synthesis_options = syrec.configurable_options()
+        self.configurable_parser_and_synthesis_options = ConfigurableOptions()
         self.configurable_parser_and_synthesis_options.generate_quantum_operation_annotations = True
 
         self.configurable_parser_and_synthesis_options_update_button = QtWidgets.QPushButton(
@@ -393,7 +409,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         if self.before_build is not None:
             self.before_build()
 
-        self.prog = syrec.program()
+        self.prog = Program()
 
         error_string = self.prog.read_from_string(self.getText(), self.configurable_parser_and_synthesis_options)
 
@@ -407,7 +423,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
                 self.build_failed(error_string)
             return
 
-        self.annotatable_quantum_computation = syrec.annotatable_quantum_computation(
+        self.annotatable_quantum_computation = AnnotatableQuantumComputation(
             self.configurable_parser_and_synthesis_options.generate_quantum_operation_annotations
         )
 
@@ -419,11 +435,11 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         aggregate_synthesis_error: str = ""
         try:
             if self.cost_aware_synthesis:
-                was_synthesis_successful = syrec.cost_aware_synthesis(
+                was_synthesis_successful = cost_aware_synthesis(
                     self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options
                 )
             else:
-                was_synthesis_successful = syrec.line_aware_synthesis(
+                was_synthesis_successful = line_aware_synthesis(
                     self.annotatable_quantum_computation, self.prog, self.configurable_parser_and_synthesis_options
                 )
         finally:
@@ -535,11 +551,11 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         final_out = []
 
         for i in input_list:
-            my_inp_bitset = syrec.n_bit_values_container(no_of_bits, i)
-            my_out_bitset = syrec.n_bit_values_container(no_of_bits)
-            syrec.simple_simulation(my_out_bitset, self.annotatable_quantum_computation, my_inp_bitset)
+            my_inp_bitset = NBitValuesContainer(no_of_bits, i)
+            my_out_bitset = NBitValuesContainer(no_of_bits)
+            simple_simulation(my_out_bitset, self.annotatable_quantum_computation, my_inp_bitset)
 
-            inp_bitset_with_ancillaes_set = syrec.n_bit_values_container(no_of_bits, i + bit1_mask)
+            inp_bitset_with_ancillaes_set = NBitValuesContainer(no_of_bits, i + bit1_mask)
             combination_inp.append(str(inp_bitset_with_ancillaes_set))
             combination_out.append(str(my_out_bitset))
 
@@ -572,7 +588,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         for i in range(no_of_bits):
             # One could display the user declared qubit label for the qubits of the local variables of a module but since these variable identifiers could be identical to ones from a different module, we display the internal qubit label instead.
             io_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
-                i, syrec.qubit_label_type.internal
+                i, QubitLabelType.internal
             )
             # Fetching the matching label for a qubit of the annotatable quantum computation should not fail but in case it does, assume a default qubit label <UNKNOWN>.
             # We still display the column in any case because otherwise the user would be shown a different number of qubits than the number of qubits that actual exist in the annotatable quantum computation.
@@ -863,7 +879,7 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
         self,
         internal_qubit_label: str,
         user_declared_qubit_label: str | None,
-        inline_stack: syrec.qubit_inlining_stack | None,
+        inline_stack: QubitInliningStack | None,
     ) -> None:
         self.clear_inline_data_controls()
         self.toggle_all_inline_information_controls(show_inline_information=True)
@@ -892,7 +908,7 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
             # We know at this point that the inline stack is not empty and thus not None
             parent_tree_model_entry = self.create_tree_view_entry_for_inline_stack_entry(
                 inline_stack[i],  # type: ignore[index]
-                i == inline_stack_size - 1,
+                only_print_signature=i == inline_stack_size - 1,
             )
 
             if prev_tree_model_entry is not None:
@@ -912,7 +928,9 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
 
     @staticmethod
     def create_tree_view_entry_for_inline_stack_entry(
-        inline_stack_entry: syrec.qubit_inlining_stack_entry, only_print_signature: bool
+        inline_stack_entry: QubitInliningStackEntry,
+        *,
+        only_print_signature: bool,
     ) -> QtGui.QStandardItem:
         tree_entry = QtGui.QStandardItem(inline_stack_entry.stringified_signature_of_called_module)
         bold_font = QtGui.QFont()
@@ -942,7 +960,7 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__()
         self.parent = parent
-        self.annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
+        self.annotatable_quantum_computation: AnnotatableQuantumComputation | None = None
         self.qubits_labels_of_local_variables_lookup: set[str] = set()
 
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -982,14 +1000,14 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         self.selectable_qubit_labels_combobox.clear()
         self.selectable_qubit_labels_combobox.setDisabled(True)
 
-    def set_lookup_information(self, annotatable_quantum_computation: syrec.annotatable_quantum_computation) -> None:
+    def set_lookup_information(self, annotatable_quantum_computation: AnnotatableQuantumComputation) -> None:
         self.reset_combobox()
         self.annotatable_quantum_computation = annotatable_quantum_computation
 
         sorted_qubit_labels: list[str] = []
         for i in range(self.annotatable_quantum_computation.num_qubits):
             internal_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
-                i, syrec.qubit_label_type.internal
+                i, QubitLabelType.internal
             )
 
             # Fetching the internal qubit label for a valid qubit of the annotatable quantum computation should not fail but we handle the error case nevertheless.
@@ -1066,7 +1084,7 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
             self.selectable_qubit_labels_combobox.setCurrentIndex(combobox_item_idx_matching_label)
 
         self.qubit_info_widget.toggle_all_inline_information_controls(show_inline_information=True)
-        inline_information_of_qubit: syrec.inlined_qubit_information | None = (
+        inline_information_of_qubit: InlinedQubitInformation | None = (
             self.annotatable_quantum_computation.get_inlined_qubit_information(
                 qubit_internal_label_and_index.associated_qubit
             )
@@ -1110,7 +1128,7 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
 
 
 class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):  # type: ignore[misc]
-    def __init__(self, parent: QtWidgets.QWidget, configurable_settings: syrec.configurable_options) -> None:
+    def __init__(self, parent: QtWidgets.QWidget, configurable_settings: ConfigurableOptions) -> None:
         super().__init__()
         self.parent = parent
         self.configurable_parser_and_synthesis_options = configurable_settings
@@ -1155,8 +1173,8 @@ class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self.integer_constant_truncation_operation_combobox = QtWidgets.QComboBox()
         self.integer_constant_truncation_operation_combobox.addItems([
-            syrec.integer_constant_truncation_operation.bitwise_and.name,
-            syrec.integer_constant_truncation_operation.modulo.name,
+            IntegerConstantTruncationOperation.bitwise_and.name,
+            IntegerConstantTruncationOperation.modulo.name,
         ])
         to_be_selected_integer_constant_truncation_operation_idx: int = (
             self.integer_constant_truncation_operation_combobox.findText(
@@ -1224,10 +1242,10 @@ class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.setLayout(dialog_layout)
 
     def save_settings(self) -> QtWidgets.QDialog.DialogCode:
-        mapped_to_integer_constant_truncation_operation: syrec.integer_constant_truncation_operation | None = None
+        mapped_to_integer_constant_truncation_operation: IntegerConstantTruncationOperation | None = None
         try:
             mapped_to_integer_constant_truncation_operation = getattr(
-                syrec.integer_constant_truncation_operation,
+                IntegerConstantTruncationOperation,
                 self.integer_constant_truncation_operation_combobox.currentText(),
             )
         except AttributeError:
@@ -1344,7 +1362,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
                 self.logWidget.addMessage(f"-- line ? col ?: {synthesis_error}")
 
     def update_circuit_view_and_qubit_information(
-        self, annotatable_quantum_computation: syrec.annotatable_quantum_computation
+        self, annotatable_quantum_computation: AnnotatableQuantumComputation
     ) -> None:
         self.viewer.load(annotatable_quantum_computation)
         self.qubits_information_lookup.set_lookup_information(annotatable_quantum_computation)

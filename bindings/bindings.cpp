@@ -184,27 +184,27 @@ NB_MODULE(MQT_SYREC_MODULE_NAME, m) {
 
     m.doc() = "Python interface for the SyReC programming language for the synthesis of reversible circuits";
 
-    nb::class_<QubitInliningStack::QubitInliningStackEntry>(m, "qubit_inlining_stack_entry")
+    nb::class_<QubitInliningStack::QubitInliningStackEntry>(m, "QubitInliningStackEntry")
             .def(nb::init<>(), "Constructs an empty qubit inlining stack entry")
             .def_prop_ro("line_number_of_call_of_target_module", [](const QubitInliningStack::QubitInliningStackEntry& stackEntry) { return stackEntry.lineNumberOfCallOfTargetModule; }, "Returns the line number in the source file in which the call statement variant was defined")
             .def_prop_ro("is_target_module_accessed_via_call_stmt", [](const QubitInliningStack::QubitInliningStackEntry& stackEntry) { return stackEntry.isTargetModuleAccessedViaCallStmt; }, "Returns whether the target module was called using a CallStatement")
             .def_prop_ro("stringified_signature_of_called_module", &QubitInliningStack::QubitInliningStackEntry::stringifySignatureOfCalledModule, "Returns the stringified target module signature");
 
-    nb::class_<QubitInliningStack>(m, "qubit_inlining_stack")
+    nb::class_<QubitInliningStack>(m, "QubitInliningStack")
             .def(nb::init<>(), "Constructs an empty qubit inlining stack")
             .def("size", &QubitInliningStack::size, "Get the number of stack entries")
             .def("__getitem__", &QubitInliningStack::getStackEntryAt, "idx"_a, nb::rv_policy::reference_internal);
 
-    nb::class_<AnnotatableQuantumComputation::InlinedQubitInformation>(m, "inlined_qubit_information")
+    nb::class_<AnnotatableQuantumComputation::InlinedQubitInformation>(m, "InlinedQubitInformation")
             .def(nb::init<>(), "Constructs an empty inlined qubit information container")
             .def_prop_ro("user_declared_qubit_label", [](const AnnotatableQuantumComputation::InlinedQubitInformation& inlinedQubitInfo) { return inlinedQubitInfo.userDeclaredQubitLabel; }, "Get the label of the qubit as defined by the user in the SyReC program")
             .def_prop_ro("inline_stack", [](const AnnotatableQuantumComputation::InlinedQubitInformation& inlinedQubitInfo) { return inlinedQubitInfo.inlineStack; }, "Get the inline stack associated with the qubit");
 
-    nb::enum_<AnnotatableQuantumComputation::QubitLabelType>(m, "qubit_label_type")
+    nb::enum_<AnnotatableQuantumComputation::QubitLabelType>(m, "QubitLabelType")
             .value("internal", AnnotatableQuantumComputation::QubitLabelType::Internal, "Generate the qubit label using the internal qubit identifier (only available for ancillary qubits and local SyReC module variables)")
             .value("user_declared", AnnotatableQuantumComputation::QubitLabelType::UserDeclared, "Generate the qubit label using the user declared variable identifier (only available for the qubits of the variables of a SyReC program [ancillary qubits are not associated with a variable and thus have no user declared label])");
 
-    nb::class_<AnnotatableQuantumComputation, qc::QuantumComputation>(m, "annotatable_quantum_computation")
+    nb::class_<AnnotatableQuantumComputation, qc::QuantumComputation>(m, "AnnotatableQuantumComputation")
             .def(nb::init<>(), "Constructs an annotatable quantum computation")
             .def(nb::init<bool>(), "generate_quantum_operation_annotations"_a, "Constructs an annotatable quantum computation while also specifying whether quantum operation annotations can be generated")
             .def("get_qubit_label", &AnnotatableQuantumComputation::getQubitLabel, "qubit"_a, "qubit_label_type"_a, "Get either the internal or user-declared label of a qubit as a stringified SyReC variable access based on its location in the quantum register storing the qubit and, optionally, the layout of the SyReC variable stored in the register.")
@@ -213,7 +213,7 @@ NB_MODULE(MQT_SYREC_MODULE_NAME, m) {
             .def("get_annotations_of_quantum_operation", &AnnotatableQuantumComputation::getAnnotationsOfQuantumOperation, "quantum_operation_index_in_quantum_operation"_a, "Get the annotations of a specific quantum operation in the quantum computation")
             .def("get_inlined_qubit_information", &AnnotatableQuantumComputation::getInlinedQubitInformation, "qubit"_a, "Get the inlined information of a qubit");
 
-    nb::class_<NBitValuesContainer>(m, "n_bit_values_container")
+    nb::class_<NBitValuesContainer>(m, "NBitValuesContainer")
             .def(nb::init<>(), "Constructs an empty container of size zero.")
             .def(nb::init<std::size_t>(), "n"_a, "Constructs a zero-initialized container of size n.")
             .def(nb::init<std::size_t, uint64_t>(), "n"_a, "initial_line_values"_a, "Constructs a container of size n from an integer initial_line_values")
@@ -227,15 +227,15 @@ NB_MODULE(MQT_SYREC_MODULE_NAME, m) {
             .def("flip", &NBitValuesContainer::flip, "n"_a, "Flip the value of the bit at position n")
             .def("__str__", [](const NBitValuesContainer& container) { return container.stringify(); }, "Returns a string containing the stringified values of the stored bits.");
 
-    nb::class_<Statistics>(m, "statistics")
+    nb::class_<Statistics>(m, "Statistics")
             .def(nb::init<>(), "Constructs an object to record collected statistics.")
             .def_rw("runtime_in_milliseconds", &Statistics::runtimeInMilliseconds, "The recorded runtime in milliseconds");
 
-    nb::enum_<utils::IntegerConstantTruncationOperation>(m, "integer_constant_truncation_operation")
+    nb::enum_<utils::IntegerConstantTruncationOperation>(m, "IntegerConstantTruncationOperation")
             .value("modulo", utils::IntegerConstantTruncationOperation::Modulo, "Use the modulo operation for the truncation of constant values")
             .value("bitwise_and", utils::IntegerConstantTruncationOperation::BitwiseAnd, "Use the bitwise AND operation for the truncation of constant values");
 
-    nb::class_<ConfigurableOptions>(m, "configurable_options")
+    nb::class_<ConfigurableOptions>(m, "ConfigurableOptions")
             .def(nb::init<>(), "Constructs a configurable options object.")
             .def_rw("default_bitwidth", &ConfigurableOptions::defaultBitwidth, "Defines the default variable bitwidth used by the SyReC parser for variables whose bitwidth specification was omitted")
             .def_rw("integer_constant_truncation_operation", &ConfigurableOptions::integerConstantTruncationOperation, "Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language")
@@ -244,7 +244,7 @@ NB_MODULE(MQT_SYREC_MODULE_NAME, m) {
             .def_rw("generate_inlined_qubit_debug_information", &ConfigurableOptions::generatedInlinedQubitDebugInformation, "Should debug information for the qubits associated with the local variables of a SyReC module be generated")
             .def_rw("generate_quantum_operation_annotations", &ConfigurableOptions::generateQuantumOperationAnnotations, "Should the optional quantum operation annotations be generated during the synthesis of a SyReC program, disabled by default");
 
-    nb::class_<Program>(m, "program")
+    nb::class_<Program>(m, "Program")
             .def(nb::init<>(), "Constructs SyReC program object.")
             .def("read", &Program::read, "filename"_a, "configurable_options"_a = ConfigurableOptions(), "Read and process a SyReC program from a file.")
             .def("read_from_string", &Program::readFromString, "stringified_program"_a, "configurable_options"_a = ConfigurableOptions(), "Process an already stringified SyReC program.");

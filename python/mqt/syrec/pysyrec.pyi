@@ -11,7 +11,7 @@ from typing import overload
 
 import mqt.core.ir
 
-class qubit_inlining_stack_entry:
+class QubitInliningStackEntry:
     def __init__(self) -> None:
         """Constructs an empty qubit inlining stack entry"""
 
@@ -29,16 +29,16 @@ class qubit_inlining_stack_entry:
     def stringified_signature_of_called_module(self) -> str | None:
         """Returns the stringified target module signature"""
 
-class qubit_inlining_stack:
+class QubitInliningStack:
     def __init__(self) -> None:
         """Constructs an empty qubit inlining stack"""
 
     def size(self) -> int:
         """Get the number of stack entries"""
 
-    def __getitem__(self, idx: int) -> qubit_inlining_stack_entry: ...
+    def __getitem__(self, idx: int) -> QubitInliningStackEntry: ...
 
-class inlined_qubit_information:
+class InlinedQubitInformation:
     def __init__(self) -> None:
         """Constructs an empty inlined qubit information container"""
 
@@ -47,10 +47,10 @@ class inlined_qubit_information:
         """Get the label of the qubit as defined by the user in the SyReC program"""
 
     @property
-    def inline_stack(self) -> qubit_inlining_stack | None:
+    def inline_stack(self) -> QubitInliningStack | None:
         """Get the inline stack associated with the qubit"""
 
-class qubit_label_type(enum.Enum):
+class QubitLabelType(enum.Enum):
     internal = 0
     """
     Generate the qubit label using the internal qubit identifier (only available for ancillary qubits and local SyReC module variables)
@@ -61,7 +61,7 @@ class qubit_label_type(enum.Enum):
     Generate the qubit label using the user declared variable identifier (only available for the qubits of the variables of a SyReC program [ancillary qubits are not associated with a variable and thus have no user declared label])
     """
 
-class annotatable_quantum_computation(mqt.core.ir.QuantumComputation):
+class AnnotatableQuantumComputation(mqt.core.ir.QuantumComputation):
     @overload
     def __init__(self) -> None:
         """Constructs an annotatable quantum computation"""
@@ -72,7 +72,7 @@ class annotatable_quantum_computation(mqt.core.ir.QuantumComputation):
         Constructs an annotatable quantum computation while also specifying whether quantum operation annotations can be generated
         """
 
-    def get_qubit_label(self, qubit: int, qubit_label_type: qubit_label_type) -> str | None:
+    def get_qubit_label(self, qubit: int, qubit_label_type: QubitLabelType) -> str | None:
         """
         Get either the internal or user-declared label of a qubit as a stringified SyReC variable access based on its location in the quantum register storing the qubit and, optionally, the layout of the SyReC variable stored in the register.
         """
@@ -88,10 +88,10 @@ class annotatable_quantum_computation(mqt.core.ir.QuantumComputation):
         Get the annotations of a specific quantum operation in the quantum computation
         """
 
-    def get_inlined_qubit_information(self, qubit: int) -> inlined_qubit_information | None:
+    def get_inlined_qubit_information(self, qubit: int) -> InlinedQubitInformation | None:
         """Get the inlined information of a qubit"""
 
-class n_bit_values_container:
+class NBitValuesContainer:
     @overload
     def __init__(self) -> None:
         """Constructs an empty container of size zero."""
@@ -128,7 +128,7 @@ class n_bit_values_container:
     def flip(self, n: int) -> bool:
         """Flip the value of the bit at position n"""
 
-class statistics:
+class Statistics:
     def __init__(self) -> None:
         """Constructs an object to record collected statistics."""
 
@@ -139,14 +139,14 @@ class statistics:
     @runtime_in_milliseconds.setter
     def runtime_in_milliseconds(self, arg: float, /) -> None: ...
 
-class integer_constant_truncation_operation(enum.Enum):
+class IntegerConstantTruncationOperation(enum.Enum):
     modulo = 0
     """Use the modulo operation for the truncation of constant values"""
 
     bitwise_and = 1
     """Use the bitwise AND operation for the truncation of constant values"""
 
-class configurable_options:
+class ConfigurableOptions:
     def __init__(self) -> None:
         """Constructs a configurable options object."""
 
@@ -159,13 +159,13 @@ class configurable_options:
     @default_bitwidth.setter
     def default_bitwidth(self, arg: int, /) -> None: ...
     @property
-    def integer_constant_truncation_operation(self) -> integer_constant_truncation_operation:
+    def integer_constant_truncation_operation(self) -> IntegerConstantTruncationOperation:
         """
         Defines the operation used by the SyReC parser for the truncation of integer constant values. For further details we refer to the semantics of the SyReC language
         """
 
     @integer_constant_truncation_operation.setter
-    def integer_constant_truncation_operation(self, arg: integer_constant_truncation_operation, /) -> None: ...
+    def integer_constant_truncation_operation(self, arg: IntegerConstantTruncationOperation, /) -> None: ...
     @property
     def allow_access_on_assigned_to_variable_parts_in_dimension_access_of_variable_access(self) -> bool:
         """
@@ -201,36 +201,36 @@ class configurable_options:
     @generate_quantum_operation_annotations.setter
     def generate_quantum_operation_annotations(self, arg: bool, /) -> None: ...
 
-class program:
+class Program:
     def __init__(self) -> None:
         """Constructs SyReC program object."""
 
-    def read(self, filename: str, configurable_options: configurable_options = ...) -> str:
+    def read(self, filename: str, configurable_options: ConfigurableOptions = ...) -> str:
         """Read and process a SyReC program from a file."""
 
-    def read_from_string(self, stringified_program: str, configurable_options: configurable_options = ...) -> str:
+    def read_from_string(self, stringified_program: str, configurable_options: ConfigurableOptions = ...) -> str:
         """Process an already stringified SyReC program."""
 
 def cost_aware_synthesis(
-    annotated_quantum_computation: annotatable_quantum_computation,
-    program: program,
-    configurable_options: configurable_options = ...,
-    optional_recorded_statistics: statistics | None = None,
+    annotated_quantum_computation: AnnotatableQuantumComputation,
+    program: Program,
+    configurable_options: ConfigurableOptions = ...,
+    optional_recorded_statistics: Statistics | None = None,
 ) -> bool:
     """Cost-aware synthesis of the SyReC program."""
 
 def line_aware_synthesis(
-    annotated_quantum_computation: annotatable_quantum_computation,
-    program: program,
-    configurable_options: configurable_options = ...,
-    optional_recorded_statistics: statistics | None = None,
+    annotated_quantum_computation: AnnotatableQuantumComputation,
+    program: Program,
+    configurable_options: ConfigurableOptions = ...,
+    optional_recorded_statistics: Statistics | None = None,
 ) -> bool:
     """Line-aware synthesis of the SyReC program."""
 
 def simple_simulation(
-    output: n_bit_values_container,
+    output: NBitValuesContainer,
     quantum_computation: mqt.core.ir.QuantumComputation,
-    input_: n_bit_values_container,
-    optional_recorded_statistics: statistics | None = None,
+    input_: NBitValuesContainer,
+    optional_recorded_statistics: Statistics | None = None,
 ) -> None:
     """Simulation of a synthesized SyReC program"""
