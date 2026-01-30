@@ -13,6 +13,11 @@ import sys
 from pathlib import Path
 from typing import Final, cast
 
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
+
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from mqt import syrec
@@ -271,11 +276,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
 
     # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
+    @override
     def reject(self) -> None:
         if self.show_close_confirmation_dialog_and_return_boolean_user_choice():
             super().reject()
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
+    @override
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         # Ask for confirmation before closing
         self.accept() if self.show_close_confirmation_dialog_and_return_boolean_user_choice() else event.ignore()
 
