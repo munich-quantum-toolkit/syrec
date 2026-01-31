@@ -12,6 +12,7 @@ import time
 from typing import TYPE_CHECKING, Any, Final
 
 # The fastest of the supported parser backends according to the documentation (https://pypi.org/project/ijson/#toc-entry-15)
+# TODO: Try catch and fallback incase that import fails
 import ijson.backends.yajl2_c as ijson
 from PyQt6 import QtCore
 

@@ -58,7 +58,7 @@ class QubitValueLabelAndCheckbox:
 
 
 class LineEditWithDynamicWidth(QtWidgets.QLineEdit):  # type: ignore[misc]
-    focus_out = QtCore.pyqtSignal(name="focusOut")
+    focusOut = QtCore.pyqtSignal()  # noqa: N815
 
     def __init__(self, expected_max_num_characters: int, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
@@ -78,7 +78,7 @@ class LineEditWithDynamicWidth(QtWidgets.QLineEdit):  # type: ignore[misc]
 
     def focusOutEvent(self, ev: QtGui.QFocusEvent) -> None:  # noqa: N802
         super().focusOutEvent(ev)
-        self.focus_out.emit()
+        self.focusOut.emit()
 
 
 @dataclass(frozen=True)

@@ -133,7 +133,7 @@ class GateItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
 
 
 class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
-    qubit_label_clicked = QtCore.pyqtSignal(str, name="qubitLabelClicked")
+    qubitLabelClicked = QtCore.pyqtSignal(str)  # noqa: N815
 
     def __init__(
         self,
@@ -182,7 +182,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
                     + "\nto internal DTO. This should not happen!",
                 )
             elif destringified_qubit_label.associated_qubit not in self.non_ancillary_or_garbage_qubits_lookup:
-                self.qubit_label_clicked.emit(str(destringified_qubit_label))
+                self.qubitLabelClicked.emit(str(destringified_qubit_label))
 
         super().mousePressEvent(event)
 

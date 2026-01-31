@@ -30,7 +30,7 @@ class BatchTimestamps:
 
 
 class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
-    batch_completed = QtCore.pyqtSignal(float, object, name="batchCompleted")
+    batchCompleted = QtCore.pyqtSignal(float, object)  # noqa: N815
     # While the cancellation operation is assumed to request the cancellation of the internal worker
     # as well as the worker_thread, due to the Qt event loop the QThread.finished signal is received
     # after the finished signal of the worker, i.e. the order of events in case of a cancellation or error will be:
@@ -40,8 +40,8 @@ class CancellableBaseWorker(QtCore.QObject):  # type: ignore[misc]
     # assuming that the cancel/error handler will request the worker shutdown, when the finished slot of the worker
     # perform the shutdown of the worker. Thus we introduce an additional flag in  the finished signal to perform a
     # conditional shutdown of the worker in the slot that is connected to the finished signal.
-    finished = QtCore.pyqtSignal(bool, name="finished")
-    failed = QtCore.pyqtSignal(Exception, name="failed")
+    finished = QtCore.pyqtSignal(bool)
+    failed = QtCore.pyqtSignal(Exception)
 
     def __init__(self, do_batches_require_ack: bool) -> None:
         super().__init__()

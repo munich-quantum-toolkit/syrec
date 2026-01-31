@@ -8,8 +8,14 @@
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 from PyQt6 import QtCore
 
@@ -244,9 +250,11 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         quantum_register_layouts.sort(key=lambda qreg_layout: qreg_layout.first_qubit_of_qreg)
         return quantum_register_layouts
 
-    def rowCount(self, parent: QtCore.QModelIndex) -> int:  # noqa: N802
+    @override
+    def rowCount(self, parent: QtCore.QModelIndex) -> int:
         return 0 if parent.isValid() else len(self.simulation_run_models)
 
+    @override
     def data(self, index: QtCore.QModelIndex, role: int) -> object:
         if not index.isValid():
             return None

@@ -133,11 +133,13 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
         # None could be returned when running the application in headless mode which should not happen but we cover this case nevertheless
         optional_primary_screen: QtGui.QScreen | None = QtGui.QGuiApplication.primaryScreen()
         if optional_primary_screen is None:
-            return QtCore.QSize(0, 0)
+            return QtCore.QPoint(0, 0)
 
         return QtCore.QPoint(
-            (optional_primary_screen.availableSize().width() // 2) - (dialog_size.width() // 2),
-            (optional_primary_screen.availableSize().height() // 2) - (dialog_size.height() // 2),
+            (optional_primary_screen.availableSize().width() // 2)
+            - ((dialog_size.width() // 2) if dialog_size.width() > 0 else 0),
+            (optional_primary_screen.availableSize().height() // 2)
+            - ((dialog_size.height() // 2) if dialog_size.height() > 0 else 0),
         )
 
     def _update_progress_text_with_batch_info(self, n_batch_elements: int, batch_duration_in_seconds: float) -> None:
