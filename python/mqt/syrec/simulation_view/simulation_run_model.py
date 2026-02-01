@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final
+from typing import Final
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -22,9 +22,6 @@ from PyQt6 import QtCore
 from mqt import syrec
 
 from ..logger_utils import log_error_to_console
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
 
 # Some debugging tips: https://www.eso.org/~eltmgr/ECS/documents-latest/CUT/sphinx_doc/latest/docs/500_gui_development.html#gdb
 # First custom item data role usable according to: https://doc.qt.io/qt-6/qt.html#ItemDataRole-enum
@@ -287,25 +284,11 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             return self.simulation_run_models[index]
         return None
 
-    def get_all_simulation_run_models(self) -> Iterable[SimulationRunModel]:
-        yield from self.simulation_run_models
-
+    # TODO: Should we perform a validation here?
     def add_simulation_run_model(self, simulation_run_model: SimulationRunModel) -> None:
         n_simulation_runs: Final[int] = self.rowCount(QtCore.QModelIndex())
         self.beginInsertRows(QtCore.QModelIndex(), n_simulation_runs, n_simulation_runs)
         self.simulation_run_models.append(simulation_run_model)
-        self.endInsertRows()
-
-    def add_simulation_run_models(self, to_be_added_simulation_run_models: list[SimulationRunModel]) -> None:
-        if len(to_be_added_simulation_run_models) == 0:
-            return
-
-        idx_of_first_new_sim_run_model: Final[int] = self.rowCount(QtCore.QModelIndex())
-        idx_of_last_new_sim_run_model: Final[int] = (
-            idx_of_first_new_sim_run_model + len(to_be_added_simulation_run_models) - 1
-        )
-        self.beginInsertRows(QtCore.QModelIndex(), idx_of_first_new_sim_run_model, idx_of_last_new_sim_run_model)
-        self.simulation_run_models.extend(to_be_added_simulation_run_models)
         self.endInsertRows()
 
     def delete_simulation_run_model(self, index: QtCore.QModelIndex) -> bool:

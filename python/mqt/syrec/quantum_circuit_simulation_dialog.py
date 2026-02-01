@@ -347,13 +347,12 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def handle_simulation_run_add_btn_click(self) -> None:
-        if not self.simulation_runs_model.add_simulation_run_model(
+        self.simulation_runs_model.add_simulation_run_model(
             SimulationRunModel(
                 input_state=syrec.n_bit_values_container(self.expected_input_output_state_size),
                 expected_output_state=None,
             )
-        ):
-            return
+        )
 
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.currentWidget()
         if not assert_all_required_widgets_found_or_close_dialog(
@@ -481,7 +480,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.simulation_run_export_to_file_dialog.start_export(
             Path(filename),
             self.associated_stringified_syrec_program,
-            self.simulation_runs_model.get_all_simulation_run_models(),
+            self.simulation_runs_model,
             self.simulation_runs_model.rowCount(QtCore.QModelIndex()),
         )
         self.simulation_run_export_to_file_dialog.show()

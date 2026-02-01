@@ -8,8 +8,9 @@
 
 from __future__ import annotations
 
+import queue
 import sys
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -19,16 +20,16 @@ else:
 from PyQt6 import QtCore, QtWidgets
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
     from pathlib import Path
 
     from PyQt6 import QtGui
 
-    from ..simulation_run_model import SimulationRunModel
+    from ..simulation_run_model import QtSimulationRunModel, SimulationRunModel
 from ...logger_utils import log_info_to_console
 from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
+from ..workers.cancellable_worker_variants import QueueConfig
 from ..workers.simulation_run_json_export_worker import ExportedBatchData, SimulationRunJsonExportWorker
-from .base_progress_dialog import BaseProgressDialog
+from .base_progress_dialog import DEFAULT_SMALL_QUEUE_SIZE, DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, BaseProgressDialog
 
 EXPORTED_SIM_RUNS_DATA_LABEL: Final[str] = (
     "In total {n_exported_sim_runs:d} simulation runs were exported with {n_skipped_sim_runs:d} simulation runs being skipped"
@@ -46,6 +47,13 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         self.num_processed_sim_runs: int = 0
         self.total_num_exported_sim_runs: int = 0
         self.total_num_skipped_sim_runs: int = 0
+        self.last_exported_sim_run_num: int = 0
+
+        self.worker_recv_queue_batch_size: int = 0
+        self.worker_send_queue: queue.SimpleQueue[ExportedBatchData] = queue.SimpleQueue()
+        self.worker_recv_queue: queue.SimpleQueue[SimulationRunModel | None] = queue.SimpleQueue()
+        self.shared_simulation_runs_model: QtSimulationRunModel | None = None
+
         self.dialog_button_box.accepted.connect(self.accept)
         self.dialog_button_box.rejected.connect(self._handle_export_to_file_cancel_button_click)
 
@@ -72,12 +80,23 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         self,
         export_location: Path,
         associated_stringified_syrec_program: str,
-        sim_runs_to_export: Iterable[SimulationRunModel],
+        shared_simulation_run_model: QtSimulationRunModel,
         num_sim_runs_to_export: int,
-        batch_size: int = 500,
+        worker_recv_queue_batch_size: int = DEFAULT_SMALL_QUEUE_SIZE,
     ) -> None:
-        self.title_lbl.setText(f"Exporting simulation runs with batch size {batch_size}!")
+        self.title_lbl.setText(f"Exporting simulation runs with batch size {worker_recv_queue_batch_size}!")
         self.export_location_info_lbl.setText(f"Export destination: {export_location!s}")
+
+        if worker_recv_queue_batch_size < 1 or num_sim_runs_to_export < 1:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Invalid input parameters detected",
+                message_box_content=f"Expected worker receive queue batch size (value={worker_recv_queue_batch_size}) and number of expected simulation runs (value={num_sim_runs_to_export}) to be a positive integers!",
+                is_cancellable=False,
+            )
+            super().reject()
+            return
 
         if self.progress_bar is not None:
             if not self._can_value_can_be_used_as_progress_bar_max_value(num_sim_runs_to_export):
@@ -97,13 +116,23 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
                 is_cancellable=False,
             )
 
+        self.shared_simulation_runs_model = shared_simulation_run_model
+        self.worker_recv_queue_batch_size = worker_recv_queue_batch_size
         # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
         self.worker = SimulationRunJsonExportWorker(
-            export_location, associated_stringified_syrec_program, sim_runs_to_export, batch_size
+            export_location,
+            associated_stringified_syrec_program,
+            worker_send_queue_config=QueueConfig(queue_instance=self.worker_send_queue, queue_batch_size=1),
+            worker_recv_queue_config=QueueConfig(
+                queue_instance=self.worker_recv_queue, queue_batch_size=self.worker_recv_queue_batch_size
+            ),
         )
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
         self.worker.batchCompleted.connect(self._handle_batch_exported, QtCore.Qt.ConnectionType.QueuedConnection)
+        self.worker.requestingData.connect(
+            self._enqueue_next_simulation_runs_to_export, QtCore.Qt.ConnectionType.QueuedConnection
+        )
         self.worker.finished.connect(self._handle_export_completion, QtCore.Qt.ConnectionType.QueuedConnection)
         self.worker.failed.connect(self._handle_export_failure, QtCore.Qt.ConnectionType.QueuedConnection)
 
@@ -115,6 +144,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         self.worker_thread.finished.connect(self._reset_workers)
         self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
         self._change_dialog_cancel_button_enable_state(True)
+        self._enqueue_next_simulation_runs_to_export()
 
     # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
     @override
@@ -138,32 +168,59 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
     def _handle_export_failure(self, err: Exception) -> None:
         self._handle_non_recoverable_error(err)
 
-    @QtCore.pyqtSlot(float, object)  # type: ignore[untyped-decorator]
-    def _handle_batch_exported(self, batch_generation_duration_in_seconds: float, batch_data: object) -> None:
-        if not SimulationRunJsonExportWorker.is_batch_data_of_type(
-            batch_data, ExportedBatchData, parent_widget_for_error_notification=self
-        ):
-            if self.worker is not None:
-                self.worker.ack_batch_processed()
+    @QtCore.pyqtSlot(float)  # type: ignore[untyped-decorator]
+    def _handle_batch_exported(self, batch_generation_duration_in_seconds: float) -> None:
+        batch_data: ExportedBatchData = ExportedBatchData(exported_sim_runs=0, skipped_sim_runs=0)
+        try:
+            batch_data = self.worker_send_queue.get_nowait()
+        except queue.Empty:
+            # TODO: This should not happen
+            QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
+            return
+        except Exception as err:
+            self._handle_non_recoverable_error(err)
             return
 
-        casted_batch_data: Final[ExportedBatchData] = cast("ExportedBatchData", batch_data)
         self.progress_info_text_lbl.setText(
-            f"Batch completed! Exported {casted_batch_data.exported_sim_runs} and skipping {casted_batch_data.skipped_sim_runs} simulation runs. Runtime [in seconds]: {batch_generation_duration_in_seconds}"
+            f"Batch completed! Exported {batch_data.exported_sim_runs} and skipping {batch_data.skipped_sim_runs} simulation runs. Runtime [in seconds]: {batch_generation_duration_in_seconds}"
         )
         self._accumulate_and_update_total_runtime(batch_generation_duration_in_seconds)
-        self.num_processed_sim_runs += casted_batch_data.exported_sim_runs + casted_batch_data.skipped_sim_runs
+        self.num_processed_sim_runs += batch_data.exported_sim_runs + batch_data.skipped_sim_runs
 
         if self.progress_bar is not None:
             self.progress_bar.setValue(self.num_processed_sim_runs)
 
-        self.total_num_exported_sim_runs += casted_batch_data.exported_sim_runs
-        self.total_num_skipped_sim_runs += casted_batch_data.skipped_sim_runs
+        self.total_num_exported_sim_runs += batch_data.exported_sim_runs
+        self.total_num_skipped_sim_runs += batch_data.skipped_sim_runs
         self.exported_sim_runs_data_lbl.setText(
             EXPORTED_SIM_RUNS_DATA_LABEL.format(
                 n_exported_sim_runs=self.total_num_exported_sim_runs, n_skipped_sim_runs=self.total_num_skipped_sim_runs
             )
         )
+        QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
+
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    def _enqueue_next_simulation_runs_to_export(self) -> None:
+        try:
+            assert self.shared_simulation_runs_model is not None
+            for i in range(
+                self.last_exported_sim_run_num, self.last_exported_sim_run_num + self.worker_recv_queue_batch_size
+            ):
+                to_be_enqueued_sim_run_model: SimulationRunModel | None = (
+                    self.shared_simulation_runs_model.get_simulation_run_model(i)
+                )
+                self.last_exported_sim_run_num += 1
+                self.worker_recv_queue.put_nowait(to_be_enqueued_sim_run_model)
+                if to_be_enqueued_sim_run_model is None:
+                    break
+            QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
+        except Exception as err:
+            # TODO: Better error
+            self._handle_non_recoverable_error(
+                ValueError(
+                    f"Error during enqueue of new simulation runs, reason: {SimulationRunJsonExportDialog._stringify_error(err)}"
+                )
+            )
 
     @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
     def _handle_export_completion(self, was_cancellation_requested: bool) -> None:

@@ -52,7 +52,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_simulations(self) -> None:
         curr_sim_run_num: int = 0
-        request_more_queue_size_threshold: Final[int] = int(self.send_queue_batch_size * 0.2)
+        request_more_queue_size_threshold: Final[int] = int(self.recv_queue_batch_size * 0.2)
 
         batch_start_timestamp: float = 0
         batch_timestamps: BatchTimestamps | None = None

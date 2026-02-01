@@ -89,7 +89,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Invalid input parameters detected",
-                message_box_content=f"Expected worker send queue batch size (value={worker_send_queue_batch_size}) and expected input state size(value={expected_input_state_size}) to be a positive integer!",
+                message_box_content=f"Expected worker send queue batch size (value={worker_send_queue_batch_size}) and expected input state size(value={expected_input_state_size}) to be a positive integers!",
                 is_cancellable=False,
             )
             super().reject()

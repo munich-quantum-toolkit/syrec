@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import json
+import queue
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
@@ -17,13 +18,12 @@ from PyQt6 import QtCore
 
 from ...logger_utils import log_error_to_console
 from ..simulation_run_model import SimulationRunModel
-from .cancellable_base_worker import CancellableBaseWorker
+from .cancellable_worker_variants import CancellableProducerConsumerWorker
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
     from pathlib import Path
 
-    from .cancellable_base_worker import BatchTimestamps
+    from .cancellable_worker_variants import BatchTimestamps, QueueConfig
 
 
 @dataclass(frozen=True)
@@ -32,81 +32,124 @@ class ExportedBatchData:
     skipped_sim_runs: int
 
 
-class SimulationRunJsonExportWorker(CancellableBaseWorker):
+class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[SimulationRunModel, ExportedBatchData]):
     def __init__(
         self,
         path_to_json_file: Path,
         associated_stringified_syrec_program: str,
-        simulation_runs_to_export: Iterable[SimulationRunModel],
-        export_batch_size: int,
+        worker_recv_queue_config: QueueConfig[SimulationRunModel | None],
+        worker_send_queue_config: QueueConfig[ExportedBatchData],
     ) -> None:
-        super().__init__(do_batches_require_ack=False)
+        super().__init__(
+            worker_send_queue_config=worker_send_queue_config,
+            worker_recv_queue_config=worker_recv_queue_config,
+        )
 
         self.associated_stringified_syrec_program = associated_stringified_syrec_program
         self.path_to_json_file: Final[Path] = path_to_json_file
-        self.simulation_runs_to_export: Iterable[SimulationRunModel] = simulation_runs_to_export
-        self.export_batch_size: Final[int] = export_batch_size
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_export(self) -> None:
-        try:
-            SimulationRunJsonExportWorker._validate_parameters(self.export_batch_size)
+        request_more_queue_size_threshold: Final[int] = int(self.recv_queue_batch_size * 0.2)
 
-            n_generated_batches: int = 0
-            batch_idx: int = 0
-            n_skipped_sim_runs_in_batch: int = 0
-            n_exported_sim_runs_in_batch: int = 0
+        batch_start_timestamp: float = 0
+        batch_timestamps: BatchTimestamps | None = None
+
+        n_remaining_sim_runs_in_batch_to_process: int = self.recv_queue_batch_size
+        n_skipped_sim_runs_in_batch: int = 0
+        n_exported_sim_runs_in_batch: int = 0
+        has_exported_first_batch: bool = False
+        has_reached_end_sentinel: bool = False
+
+        try:
+            self._assert_valid_user_provided_parameter_values()
+
+            batch_start_timestamp = SimulationRunJsonExportWorker.get_timestamp()
             with self.path_to_json_file.open("w") as file:
                 file.write(
                     f'{{"inputCircuit":"{SimulationRunJsonExportWorker.convert_to_single_line_string(self.associated_stringified_syrec_program)}", "simulationRuns":['
                 )
-                batch_start_timestamp: float = SimulationRunJsonExportWorker._get_timestamp()
-                batch_timestamps: BatchTimestamps | None = None
-                for sim_run in self.simulation_runs_to_export:
+
+                while (
+                    not self.is_cancellation_requested()
+                    and n_remaining_sim_runs_in_batch_to_process > 0
+                    and not has_reached_end_sentinel
+                ):
+                    self._wait_on_cancellation_or_input_data()
+
+                    one_time_request_new_data_flag: bool = False
+                    for _ in range(self.recv_queue_batch_size):
+                        if self.is_cancellation_requested() or n_remaining_sim_runs_in_batch_to_process < 0:
+                            break
+
+                        dequeued_sim_run_model: SimulationRunModel | None = None
+                        try:
+                            dequeued_sim_run_model = self.recv_queue.get(block=False, timeout=0.2)
+                        except queue.Empty:
+                            self.requestingData.emit()
+                            break
+
+                        has_reached_end_sentinel = dequeued_sim_run_model is None
+                        # We use an element that is None as the sentinel value of the receive queue (i.e. dequeueing None means that we have reached processed the last enqueued element from the sender)
+                        if has_reached_end_sentinel:
+                            break
+
+                        if (
+                            not one_time_request_new_data_flag
+                            and self.recv_queue.qsize() < request_more_queue_size_threshold
+                        ):
+                            self.requestingData.emit()
+                            # The sender could take some time to produce new data so we do not want to repeatedly trigger this process by emitting the associated signal
+                            # but only notify the sender once in the current loop. This can still trigger multiple signal emits depending on how fast the sender enqueues elements
+                            # in the receive queue but will at least limit the signal emits for the current number of remaining queue elements.
+                            one_time_request_new_data_flag = True
+
+                        n_remaining_sim_runs_in_batch_to_process -= 1
+                        # The mypy type-checker does not seem to infer that the dequeued simulation run model should be not None at this point since we already covered
+                        # the None case in our check for the sentinel value
+                        assert dequeued_sim_run_model is not None
+                        if dequeued_sim_run_model.expected_output_state is None:
+                            n_skipped_sim_runs_in_batch += 1
+                            continue
+
+                        if SimulationRunJsonExportWorker._should_sim_run_export_delimiter_be_serialized(
+                            has_exported_first_batch, n_exported_sim_runs_in_batch
+                        ):
+                            file.write(",")
+
+                        file.write(
+                            json.dumps(dequeued_sim_run_model, default=SimulationRunJsonExportWorker.serialize_to_json)
+                        )
+                        n_exported_sim_runs_in_batch += 1
+
                     if self.is_cancellation_requested():
                         break
 
-                    if sim_run.expected_output_state is None:
-                        n_skipped_sim_runs_in_batch += 1
-                    else:
-                        if n_exported_sim_runs_in_batch > 0 or (
-                            n_exported_sim_runs_in_batch == 0 and n_generated_batches > 0
-                        ):
-                            file.write(",")
-                        file.write(json.dumps(sim_run, default=SimulationRunJsonExportWorker.serialize_to_json))
-                        n_exported_sim_runs_in_batch += 1
+                    if n_remaining_sim_runs_in_batch_to_process > 0 and not has_reached_end_sentinel:
+                        continue
 
-                    batch_idx += 1
-                    if batch_idx == self.export_batch_size:
-                        batch_timestamps = (
-                            SimulationRunJsonExportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
-                                batch_start_timestamp
-                            )
+                    batch_timestamps = (
+                        SimulationRunJsonExportWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(
+                            batch_start_timestamp
                         )
-                        batch_start_timestamp = batch_timestamps.end
-                        self.batchCompleted.emit(
-                            batch_timestamps.duration,
-                            ExportedBatchData(n_exported_sim_runs_in_batch, n_skipped_sim_runs_in_batch),
+                    )
+                    batch_start_timestamp = batch_timestamps.end
+                    self.batchCompleted.emit(batch_timestamps.duration)
+                    self.send_queue.put_nowait(
+                        ExportedBatchData(
+                            exported_sim_runs=n_exported_sim_runs_in_batch, skipped_sim_runs=n_skipped_sim_runs_in_batch
                         )
-                        batch_idx = 0
-                        n_skipped_sim_runs_in_batch = 0
-                        n_exported_sim_runs_in_batch = 0
-                        n_generated_batches += 1
+                    )
+
+                    n_skipped_sim_runs_in_batch = 0
+                    n_exported_sim_runs_in_batch = 0
+                    has_exported_first_batch = True
+                    n_remaining_sim_runs_in_batch_to_process = self.recv_queue_batch_size
+
                 # An error during during the serialization of the simulation runs to their .json representation will cause the content of the
                 # exported to .json file to be invalid .json due to the simulation runs JSON array as well as the top level JSON object missing
                 # their closing symbol.
                 file.write("]}")
-
-            if batch_idx > 0 and not self.is_cancellation_requested():
-                batch_timestamps = (
-                    SimulationRunJsonExportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
-                        batch_start_timestamp
-                    )
-                )
-                self.batchCompleted.emit(
-                    batch_timestamps.duration,
-                    ExportedBatchData(batch_idx - n_skipped_sim_runs_in_batch, n_skipped_sim_runs_in_batch),
-                )
             self.finished.emit(self.is_cancellation_requested())
         except Exception as error:
             error_msg: Final[str] = (
@@ -114,6 +157,12 @@ class SimulationRunJsonExportWorker(CancellableBaseWorker):
             )
             log_error_to_console(error_msg)
             self.failed.emit(error)
+
+    @staticmethod
+    def _should_sim_run_export_delimiter_be_serialized(
+        has_exported_first_batch: bool, num_exported_elements_in_current_batch: int
+    ) -> bool:
+        return num_exported_elements_in_current_batch > 0 or has_exported_first_batch
 
     @staticmethod
     def _validate_parameters(batch_size: int) -> None:
