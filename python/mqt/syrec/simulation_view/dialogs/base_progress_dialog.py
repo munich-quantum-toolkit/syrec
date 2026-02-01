@@ -8,15 +8,13 @@
 
 from __future__ import annotations
 
-from typing import Final, Generic, TypeVar
+from typing import Any, Final, Generic, TypeVar
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from ...logger_utils import log_error_to_console, log_info_to_console
 from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
-from ..workers.cancellable_base_worker import CancellableBaseWorker
-
-T = TypeVar("T", bound=CancellableBaseWorker)
+from ..workers.cancellable_worker_variants import CancellableProducerConsumerWorker, CancellableProducerWorker
 
 DEFAULT_TOTAL_RUNTIME_INFO_TEXT_FORMAT: Final[str] = (
     "Total runtime [in seconds] (excluding model updates, internal waits): {total_runtime_in_seconds:f}"
@@ -27,9 +25,14 @@ DEFAULT_BATCH_RUNTIME_INFO_TEXT_FORMAT: Final[str] = (
 
 SMALL_DIALOG_WIDTH: Final[int] = 600
 SMALL_DIALOG_HEIGHT: Final[int] = 300
+DEFAULT_SMALL_QUEUE_SIZE: Final[int] = 500
+DEFAULT_MEDIUM_QUEUE_SIZE: Final[int] = 1000
+DEFAULT_WORKER_CONTINUE_DELAY_IN_MS: Final[int] = 250
+
+WorkerType = TypeVar("WorkerType", bound=CancellableProducerWorker[Any] | CancellableProducerConsumerWorker[Any, Any])
 
 
-class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
+class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignore[misc]
     """Base class for progress dialogs with worker thread management.
 
     Note: Instances of this dialog are designed to be used only once.
@@ -48,7 +51,7 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
         super().__init__(parent)
 
         self.worker_thread: QtCore.QThread | None = None
-        self.worker: T | None = None
+        self.worker: WorkerType | None = None
         self.stop_processing_recv_batches: bool = False
         self.total_runtime_in_seconds: float = 0
 
@@ -142,6 +145,18 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
             - ((dialog_size.height() // 2) if dialog_size.height() > 0 else 0),
         )
 
+    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    def _allow_worker_to_continue(self) -> None:
+        if self.worker is None:
+            return
+
+        try:
+            self.worker.notify_to_continue_processing()
+        except Exception as err:
+            self._handle_non_recoverable_error(
+                f"Error while trying to notify simulation run execution worker about new batch data being available, reason: {BaseProgressDialog._stringify_error(err)}"
+            )
+
     def _update_progress_text_with_batch_info(self, n_batch_elements: int, batch_duration_in_seconds: float) -> None:
         self.progress_info_text_lbl.setText(
             DEFAULT_BATCH_RUNTIME_INFO_TEXT_FORMAT.format(
@@ -219,6 +234,10 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
             )
         self.error_text_lbl.setText(err_msg)
 
+    def _reset_workers(self) -> None:
+        self.worker_thread = None
+        self.worker = None
+
     @staticmethod
     def _change_dialog_button_enable_state(
         dialog_button_box: QtWidgets.QDialogButtonBox,
@@ -238,10 +257,6 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[T]):  # type: ignore[misc]
                 message_box_content=f"Could not find {to_be_modified_button.name} button of dialog, this should not happen",
                 is_cancellable=False,
             )
-
-    def _reset_workers(self) -> None:
-        self.worker_thread = None
-        self.worker = None
 
     @staticmethod
     def _stringify_error(error: Exception) -> str:

@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-import time
+import queue
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
@@ -18,11 +18,10 @@ from mqt import syrec
 
 from ...logger_utils import log_error_to_console
 from ..simulation_run_model import SimulationRunModel
-from .cancellable_base_worker import CancellableBaseWorker
+from .cancellable_worker_variants import CancellableProducerConsumerWorker
 
 if TYPE_CHECKING:
-    from ..simulation_run_model import QtSimulationRunModel
-    from .cancellable_base_worker import BatchTimestamps
+    from .cancellable_worker_variants import BatchTimestamps, QueueConfig
 
 
 @dataclass(frozen=True)
@@ -30,124 +29,138 @@ class SimulationRunResult:
     simulation_run_number: int
     actual_output_state: syrec.n_bit_values_container
     do_expected_and_actual_outputs_match: bool | None
+    sim_runtime_in_ms: float
 
 
-class SimulationRunWorker(CancellableBaseWorker):
+class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, SimulationRunResult]):
     def __init__(
         self,
         annotatable_quantum_computation: syrec.annotatable_quantum_computation,
-        shared_simulation_runs_model: QtSimulationRunModel,
         expected_input_state_size: int,
-        batch_size: int,
         stop_at_first_output_state_mismatch: bool,
+        worker_recv_queue_config: QueueConfig[SimulationRunModel | None],
+        worker_send_queue_config: QueueConfig[SimulationRunResult],
     ) -> None:
-        super().__init__(do_batches_require_ack=True)
-        self.batch_size = batch_size
+        super().__init__(
+            worker_send_queue_config=worker_send_queue_config,
+            worker_recv_queue_config=worker_recv_queue_config,
+        )
         self.expected_input_state_size = expected_input_state_size
-        self.shared_simulation_runs_model = shared_simulation_runs_model
         self.annotatable_quantum_computation = annotatable_quantum_computation
         self.should_stop_at_first_output_state_mismatch: bool = stop_at_first_output_state_mismatch
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_simulations(self) -> None:
         curr_sim_run_num: int = 0
+        request_more_queue_size_threshold: Final[int] = int(self.send_queue_batch_size * 0.2)
+
+        batch_start_timestamp: float = 0
+        batch_timestamps: BatchTimestamps | None = None
+
+        found_outputs_mismatch: bool = False
+        has_reached_end_sentinel: bool = False
 
         try:
-            SimulationRunWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
-            self_raised_error_msg: str | None = None
+            self._assert_valid_user_provided_parameter_values()
+            batch_start_timestamp = SimulationRunWorker.get_timestamp()
+            n_remaining_batch_elems_to_generate: int = self.send_queue_batch_size
 
-            if self.wait_on_batch_processed_acknowledgement_condition is None:
-                self_raised_error_msg = "Internal batch processed acknowledgement condition was not initialized"
-                log_error_to_console(self_raised_error_msg)
-                self.failed.emit(ValueError(self_raised_error_msg))
-                return
+            while self._should_continue_processing(found_outputs_mismatch, has_reached_end_sentinel):
+                self._wait_on_cancellation_or_input_data()
 
-            batch_data: list[SimulationRunResult | None] = [None for _ in range(self.batch_size)]
-            batch_start_timestamp: float = 0
-            batch_timestamps: BatchTimestamps | None = None
-            n_sim_runs_to_execute: Final[int] = self.shared_simulation_runs_model.rowCount(QtCore.QModelIndex())
-            self.shared_simulation_runs_model.reset_prev_simulation_run_execution_results()
-
-            batch_idx: int = 0
-            do_output_states_match: bool | None = None
-            found_first_output_state_mismatch: bool = False
-            while (
-                not self.is_cancellation_requested()
-                and curr_sim_run_num < n_sim_runs_to_execute
-                and (not self.should_stop_at_first_output_state_mismatch or not found_first_output_state_mismatch)
-            ):
-                batch_start_timestamp = SimulationRunWorker._get_timestamp()
-                for _ in range(self.batch_size):
+                one_time_request_new_data_flag: bool = False
+                for _ in range(self.send_queue_batch_size):
                     if (
-                        self.is_cancellation_requested()
-                        or curr_sim_run_num == n_sim_runs_to_execute
-                        or (self.should_stop_at_first_output_state_mismatch and found_first_output_state_mismatch)
+                        not self._should_continue_processing(found_outputs_mismatch, has_reached_end_sentinel)
+                        or n_remaining_batch_elems_to_generate < 0
                     ):
                         break
 
-                    curr_sim_run_model: SimulationRunModel = SimulationRunWorker._fetch_sim_model_or_throw(
-                        self.shared_simulation_runs_model, curr_sim_run_num
-                    )
-                    curr_input_state: syrec.n_bit_values_container = curr_sim_run_model.input_state
-                    expected_output_state: syrec.n_bit_values_container | None = (
-                        curr_sim_run_model.expected_output_state
-                    )
-                    actual_output_state = syrec.n_bit_values_container(self.expected_input_state_size)
-                    syrec.simple_simulation(actual_output_state, self.annotatable_quantum_computation, curr_input_state)
-                    do_output_states_match = SimulationRunModel.do_output_states_match(
-                        expected_output_state, actual_output_state
-                    )
-                    batch_data[batch_idx] = SimulationRunResult(
-                        curr_sim_run_num,
-                        actual_output_state,
-                        do_output_states_match,
-                    )
+                    try:
+                        dequeued_sim_run_model: SimulationRunModel | None = self.recv_queue.get(
+                            block=False, timeout=0.2
+                        )
+                        has_reached_end_sentinel = dequeued_sim_run_model is None
+                        # We use an element that is None as the sentinel value of the receive queue (i.e. dequeueing None means that we have reached processed the last enqueued element from the sender)
+                        if has_reached_end_sentinel:
+                            break
 
-                    found_first_output_state_mismatch = (
-                        self.should_stop_at_first_output_state_mismatch
-                        and do_output_states_match is not None
-                        and not do_output_states_match
-                    )
-                    curr_sim_run_num += 1
-                    batch_idx += 1
-                if batch_idx > 0 and batch_idx != self.batch_size:
-                    del batch_data[batch_idx:]
+                        if (
+                            not one_time_request_new_data_flag
+                            and self.recv_queue.qsize() < request_more_queue_size_threshold
+                        ):
+                            self.requestingData.emit()
+                            # The sender could take some time to produce new data so we do not want to repeatedly trigger this process by emitting the associated signal
+                            # but only notify the sender once in the current loop. This can still trigger multiple signal emits depending on how fast the sender enqueues elements
+                            # in the receive queue but will at least limit the signal emits for the current number of remaining queue elements.
+                            one_time_request_new_data_flag = True
 
-                batch_timestamps = SimulationRunWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                        # The mypy type-checker does not seem to infer that the dequeued simulation run model should be not None at this point since we already covered
+                        # the None case in our check for the sentinel value
+                        assert dequeued_sim_run_model is not None
+                        sim_run_execution_result: SimulationRunResult = (
+                            SimulationRunWorker._perform_single_sim_run_execution(
+                                self.annotatable_quantum_computation,
+                                curr_sim_run_num,
+                                dequeued_sim_run_model.input_state,
+                                dequeued_sim_run_model.expected_output_state,
+                            )
+                        )
+                        self.send_queue.put_nowait(sim_run_execution_result)
+                        found_outputs_mismatch |= (
+                            sim_run_execution_result.do_expected_and_actual_outputs_match is not None
+                            and not sim_run_execution_result.do_expected_and_actual_outputs_match
+                        )
+                        n_remaining_batch_elems_to_generate -= 1
+                        curr_sim_run_num += 1
+                    except queue.Empty:
+                        self.requestingData.emit()
+                        break
+
+                if self.is_cancellation_requested():
+                    break
+
+                if n_remaining_batch_elems_to_generate > 0 and not has_reached_end_sentinel:
+                    # We dequeued all elements of the receive queue but have not reached the required batch size in the send queue to emit a new batch.
+                    # Since we are expecting more elements from the sender due to not having reached the sentinel value of the receive queue we simply continue
+                    # in the processing queue
+                    continue
+
+                n_remaining_batch_elems_to_generate = self.send_queue_batch_size
+                batch_timestamps = SimulationRunWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(
                     batch_start_timestamp
                 )
-                self.batchCompleted.emit(batch_timestamps.duration, batch_data.copy())
-                with QtCore.QMutexLocker(self.batch_ack_mutex):
-                    if not self.is_cancellation_requested():
-                        self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
-                # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
-                # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
-                time.sleep(0.2)
-
-                for i in range(len(batch_data)):
-                    batch_data[i] = None
-                batch_idx = 0
+                self.batchCompleted.emit(batch_timestamps.duration)
+                batch_start_timestamp = batch_timestamps.end
             self.finished.emit(self.is_cancellation_requested())
         except Exception as error:
-            self_raised_error_msg = f"Error in simulation run execution worker (curr. simulation run idx: {curr_sim_run_num}), reason: {type(error)=}, {error=}"
-            log_error_to_console(self_raised_error_msg)
+            error_msg = f"Error in simulation run execution worker (curr. simulation run idx: {curr_sim_run_num}), reason: {type(error)=}, {error=}"
+            log_error_to_console(error_msg)
             self.failed.emit(error)
 
-    @staticmethod
-    def _validate_parameters(expected_input_state_size: int, batch_size: int) -> None:
-        if expected_input_state_size < 1:
-            msg = f"Expected state size must be a positive integer but was actually {expected_input_state_size}"
-            raise ValueError(msg)
-
-        if batch_size < 1:
-            msg = f"Batch size must be larger than 0 but was actually {batch_size}"
-            raise ValueError(msg)
+    def _should_continue_processing(self, output_state_mismatch_flag: bool, reached_end_sentinel_flag: bool) -> bool:
+        return (
+            not self.is_cancellation_requested()
+            and (not self.should_stop_at_first_output_state_mismatch or not output_state_mismatch_flag)
+            and not reached_end_sentinel_flag
+        )
 
     @staticmethod
-    def _fetch_sim_model_or_throw(sim_runs_model: QtSimulationRunModel, sim_run_num: int) -> SimulationRunModel:
-        sim_run_model: SimulationRunModel | None = sim_runs_model.get_simulation_run_model(sim_run_num)
+    def _perform_single_sim_run_execution(
+        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
+        sim_run_num: int,
+        input_state: syrec.n_bit_values_container,
+        expected_output_state: syrec.n_bit_values_container | None,
+    ) -> SimulationRunResult:
+        actual_output_state = syrec.n_bit_values_container(input_state.size())
 
-        if sim_run_model is None:
-            msg = f"Failed to fetch simulation run model #{sim_run_num}"
-            raise ValueError(msg)
-        return sim_run_model
+        sim_start_timestamp: Final[float] = SimulationRunWorker.get_timestamp()
+        syrec.simple_simulation(actual_output_state, annotatable_quantum_computation, input_state)
+        do_output_states_match: Final[bool | None] = SimulationRunModel.do_output_states_match(
+            expected_output_state, actual_output_state
+        )
+        sim_duration_in_ms: Final[float] = (
+            SimulationRunWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(sim_start_timestamp).duration
+            * 1000
+        )
+        return SimulationRunResult(sim_run_num, actual_output_state, do_output_states_match, sim_duration_in_ms)

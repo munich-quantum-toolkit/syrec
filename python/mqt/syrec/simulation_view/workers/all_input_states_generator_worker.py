@@ -8,8 +8,13 @@
 
 from __future__ import annotations
 
-import time
+import sys
 from typing import TYPE_CHECKING, Final
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 from PyQt6 import QtCore
 
@@ -17,82 +22,74 @@ from mqt import syrec
 
 from ...logger_utils import log_error_to_console
 from ..simulation_run_model import SimulationRunModel
-from .cancellable_base_worker import CancellableBaseWorker
+from .cancellable_worker_variants import CancellableProducerWorker
 
 if TYPE_CHECKING:
-    from .cancellable_base_worker import BatchTimestamps
+    from .cancellable_worker_variants import BatchTimestamps, QueueConfig
 
 
-class AllInputStatesGeneratorWorker(CancellableBaseWorker):
-    def __init__(self, expected_input_state_size: int, batch_size: int) -> None:
-        super().__init__(do_batches_require_ack=True)
+class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel]):
+    def __init__(
+        self, expected_input_state_size: int, worker_send_queue_config: QueueConfig[SimulationRunModel]
+    ) -> None:
+        super().__init__(worker_send_queue_config)
         self.expected_input_state_size: Final[int] = expected_input_state_size
-        self.batch_size: Final[int] = batch_size
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_generation(self) -> None:
+        batch_start_timestamp: float = 0
+        batch_timestamps: BatchTimestamps | None = None
+        integer_encoding_first_input_state_of_batch: int = 0
+
         try:
-            AllInputStatesGeneratorWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
-            self_raised_error_msg: str | None = None
-            if self.wait_on_batch_processed_acknowledgement_condition is None:
-                self_raised_error_msg = "Internal batch processed acknowledgement condition was not initialized"
-                log_error_to_console(self_raised_error_msg)
-                self.failed.emit(ValueError(self_raised_error_msg))
-                return
+            self._assert_valid_user_provided_parameter_values()
 
-            integer_encoding_input_state: int = 0
+            # We are assuming that the caller has validated that the 2^x operation will not overflow the maximum value of a 32 bit integer.
             n_states_to_generate: Final[int] = 2**self.expected_input_state_size
-
-            batch_data: list[SimulationRunModel | None] = [None for _ in range(self.batch_size)]
-            batch_start_timestamp: float = 0
-            batch_timestamps: BatchTimestamps | None = None
-
-            batch_idx: int = 0
-            while not self.is_cancellation_requested() and integer_encoding_input_state < n_states_to_generate:
-                batch_start_timestamp = AllInputStatesGeneratorWorker._get_timestamp()
-                for _ in range(self.batch_size):
-                    if self.is_cancellation_requested() or integer_encoding_input_state == n_states_to_generate:
+            batch_start_timestamp = AllInputStatesGeneratorWorker.get_timestamp()
+            while (
+                not self.is_cancellation_requested()
+                and integer_encoding_first_input_state_of_batch < n_states_to_generate
+            ):
+                self._wait_on_cancellation_or_input_data()
+                for integer_encoding_input_state in range(
+                    integer_encoding_first_input_state_of_batch,
+                    min(integer_encoding_first_input_state_of_batch + self.send_queue_batch_size, n_states_to_generate),
+                ):
+                    if self.is_cancellation_requested():
                         break
 
-                    batch_data[batch_idx] = AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
-                        self.expected_input_state_size, integer_encoding_input_state
+                    self.send_queue.put_nowait(
+                        AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
+                            self.expected_input_state_size, integer_encoding_input_state
+                        )
                     )
-                    integer_encoding_input_state += 1
-                    batch_idx += 1
 
-                if batch_idx > 0 and batch_idx != self.batch_size:
-                    del batch_data[batch_idx:]
+                if self.is_cancellation_requested():
+                    break
+
+                # The addition operation will produce the wrong integer encoding the next input state in case of an cancellation request but this is ok since
+                # the cancellation also stops the generation of further input states.
+                integer_encoding_first_input_state_of_batch += self.send_queue_batch_size
 
                 batch_timestamps = (
-                    AllInputStatesGeneratorWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                    AllInputStatesGeneratorWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(
                         batch_start_timestamp
                     )
                 )
-                self.batchCompleted.emit(batch_timestamps.duration, batch_data.copy())
-                with QtCore.QMutexLocker(self.batch_ack_mutex):
-                    if not self.is_cancellation_requested():
-                        self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
-                # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
-                # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
-                time.sleep(0.1)
-
-                for i in range(len(batch_data)):
-                    batch_data[i] = None
-                batch_idx = 0
+                self.batchCompleted.emit(batch_timestamps.duration)
+                batch_start_timestamp = batch_timestamps.end
             self.finished.emit(self.is_cancellation_requested())
         except Exception as error:
             self_raised_error_msg = f"Error in all input states generator worker! Reason: {type(error)=}, {error=}"
             log_error_to_console(self_raised_error_msg)
             self.failed.emit(error)
 
-    @staticmethod
-    def _validate_parameters(expected_input_state_size: int, batch_size: int) -> None:
-        if expected_input_state_size < 1:
-            msg = f"Expected input state size must be a positive integer but was actually {expected_input_state_size}!"
-            raise ValueError(msg)
-
-        if batch_size < 1:
-            msg = f"Batch size must be larger than 0 but was actually {batch_size}"
+    @override
+    def _assert_valid_user_provided_parameter_values(self) -> None:
+        super()._assert_valid_user_provided_parameter_values()
+        if self.expected_input_state_size < 1:
+            msg = f"Expected input state size must be a positive integer but was actually {self.expected_input_state_size}!"
             raise ValueError(msg)
 
     @staticmethod

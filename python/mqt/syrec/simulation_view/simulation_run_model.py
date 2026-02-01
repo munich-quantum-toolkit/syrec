@@ -290,19 +290,20 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
     def get_all_simulation_run_models(self) -> Iterable[SimulationRunModel]:
         yield from self.simulation_run_models
 
-    def add_simulation_run_model(self, simulation_run_model: SimulationRunModel) -> bool:
-        n_simulation_runs: int = len(self.simulation_run_models)
+    def add_simulation_run_model(self, simulation_run_model: SimulationRunModel) -> None:
+        n_simulation_runs: Final[int] = self.rowCount(QtCore.QModelIndex())
         self.beginInsertRows(QtCore.QModelIndex(), n_simulation_runs, n_simulation_runs)
         self.simulation_run_models.append(simulation_run_model)
         self.endInsertRows()
-        return True
 
     def add_simulation_run_models(self, to_be_added_simulation_run_models: list[SimulationRunModel]) -> None:
         if len(to_be_added_simulation_run_models) == 0:
             return
 
-        idx_of_first_new_sim_run_model: int = len(self.simulation_run_models)
-        idx_of_last_new_sim_run_model: int = idx_of_first_new_sim_run_model + len(to_be_added_simulation_run_models) - 1
+        idx_of_first_new_sim_run_model: Final[int] = self.rowCount(QtCore.QModelIndex())
+        idx_of_last_new_sim_run_model: Final[int] = (
+            idx_of_first_new_sim_run_model + len(to_be_added_simulation_run_models) - 1
+        )
         self.beginInsertRows(QtCore.QModelIndex(), idx_of_first_new_sim_run_model, idx_of_last_new_sim_run_model)
         self.simulation_run_models.extend(to_be_added_simulation_run_models)
         self.endInsertRows()

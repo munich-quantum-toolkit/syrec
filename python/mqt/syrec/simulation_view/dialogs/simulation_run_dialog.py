@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from mqt import syrec
 
     from ..simulation_run_model import QtSimulationRunModel, SimulationRunModel
-    from ..workers.simulation_run_worker_rework import SimulationRunResult
+    from ..workers.simulation_run_worker import SimulationRunResult
 
 from ...logger_utils import log_info_to_console
 from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
@@ -34,10 +34,7 @@ from ..styled_item_delegates.simulation_run_execution_styled_item_delegate impor
 )
 from ..workers.cancellable_worker_variants import QueueConfig
 from ..workers.simulation_run_worker import SimulationRunWorker
-from ..workers.simulation_run_worker_rework import SimulationRunWorkerRework
-from .base_progress_dialog import BaseProgressDialog
-
-DEFAULT_SMALL_QUEUE_SIZE: Final[int] = 500
+from .base_progress_dialog import DEFAULT_SMALL_QUEUE_SIZE, DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, BaseProgressDialog
 
 MODEL_UPDATE_RUNTIME_FORMAT: Final[str] = (
     "Total model update runtime [in seconds]: {total_model_update_runtime_in_seconds:f}"
@@ -57,7 +54,6 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             create_default_layout=False,
             user_provided_dialog_size=SimulationRunDialog.get_default_big_dialog_size(),
         )
-        self.worker_instance: SimulationRunWorkerRework | None = None
         self.annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
         self.shared_simulation_runs_model: QtSimulationRunModel | None = None
         self.stop_at_first_output_state_mismatch: bool = False
@@ -124,11 +120,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
     ) -> None:
         self.annotatable_quantum_computation = annotatable_quantum_computation
         expected_input_state_size: Final[int] = self.annotatable_quantum_computation.num_data_qubits
-        if (
-            sim_run_model_queue_batch_size <= 0
-            or sim_run_result_queue_batch_size <= 0
-            or expected_input_state_size <= 0
-        ):
+        if sim_run_model_queue_batch_size < 1 or sim_run_result_queue_batch_size < 1 or expected_input_state_size < 1:
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
@@ -136,7 +128,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
                 message_box_content=f"Expected simulation run model queue batch size (value={sim_run_model_queue_batch_size}), simulation run result queue batch size (value={sim_run_result_queue_batch_size}) as well as the expected input state size (value={expected_input_state_size}) to be positive integers!",
                 is_cancellable=False,
             )
-            self.reject()
+            super().reject()
             return
 
         self.sim_run_model_queue_batch_size = sim_run_model_queue_batch_size
@@ -175,7 +167,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             return
 
         # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
-        self.worker_instance = SimulationRunWorkerRework(
+        self.worker = SimulationRunWorker(
             self.annotatable_quantum_computation,
             expected_input_state_size,
             self.stop_at_first_output_state_mismatch,
@@ -188,22 +180,18 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         )
 
         self.worker_thread = QtCore.QThread()
-        self.worker_instance.moveToThread(self.worker_thread)
-        self.worker_thread.started.connect(
-            self.worker_instance.start_simulations, QtCore.Qt.ConnectionType.QueuedConnection
-        )
-        self.worker_instance.finished.connect(
+        self.worker.moveToThread(self.worker_thread)
+        self.worker_thread.started.connect(self.worker.start_simulations, QtCore.Qt.ConnectionType.QueuedConnection)
+        self.worker.finished.connect(
             self._handle_all_simulation_run_executions_done, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        self.worker_instance.batchCompleted.connect(
+        self.worker.batchCompleted.connect(
             self._handle_simulation_run_execution_batch_done, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        self.worker_instance.requestingData.connect(
+        self.worker.requestingData.connect(
             self._enqueue_next_simulation_runs, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        self.worker_instance.failed.connect(
-            self._handle_simulation_runs_failure, QtCore.Qt.ConnectionType.QueuedConnection
-        )
+        self.worker.failed.connect(self._handle_simulation_runs_failure, QtCore.Qt.ConnectionType.QueuedConnection)
 
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.finished.connect(self._reset_workers)
@@ -254,7 +242,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _handle_simulation_runs_cancel_button_click(self) -> bool:
-        if self.worker_instance is None:
+        if self.worker is None:
             return True
 
         if show_and_request_ok_in_optionally_cancellable_notification(
@@ -278,7 +266,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         n_received_sim_run_execution_results: int = 0
         to_be_updated_sim_run_number: int = -1
 
-        batch_results_processing_start_timestamp: Final[float] = SimulationRunWorkerRework.get_timestamp()
+        batch_results_processing_start_timestamp: Final[float] = SimulationRunWorker.get_timestamp()
         try:
             assert self.shared_simulation_runs_model is not None
             for _ in range(self.sim_run_result_queue_batch_size):
@@ -300,7 +288,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             return
 
         batch_results_processing_duration_in_seconds: Final[float] = (
-            SimulationRunWorkerRework.calc_batch_duration_and_return_end_timestamp_in_seconds(
+            SimulationRunWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(
                 batch_results_processing_start_timestamp
             ).duration
         )
@@ -332,23 +320,10 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             # After having enqueued a new batch for the worker add a small delay before allowing the worker to produce new items
             # which should improve the responsiveness of the UI due to the delay being enqueued into the UI threads event-queue thus
             # given other events (mouse-clicks, resizes, etc.) to execute before the delayed functor is called
-            delay_in_ms: Final[int] = 250
-            QtCore.QTimer.singleShot(delay_in_ms, self._allow_worker_to_produce_new_items)
+            QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
         except Exception as err:
             self._handle_non_recoverable_error(
                 f"Error during enqueue of new simulation runs, reason: {SimulationRunDialog._stringify_error(err)}"
-            )
-
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
-    def _allow_worker_to_produce_new_items(self) -> None:
-        if self.worker_instance is None:
-            return
-
-        try:
-            self.worker_instance.notify_to_continue_processing()
-        except Exception as err:
-            self._handle_non_recoverable_error(
-                f"Error while trying to notify simulation run execution worker about new batch data being available, reason: {SimulationRunDialog._stringify_error(err)}"
             )
 
     def _update_total_model_runtime_and_label(self, batch_model_update_runtime_in_seconds: float) -> None:

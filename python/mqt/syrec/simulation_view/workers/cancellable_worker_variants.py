@@ -31,9 +31,9 @@ QueueElemType = TypeVar("QueueElemType")
 
 @dataclass(frozen=True)
 class BatchTimestamps:
-    start: float
-    end: float
-    duration: float
+    start: float = 0
+    end: float = 0
+    duration: float = 0
 
 
 @dataclass(frozen=True)
@@ -68,10 +68,16 @@ class CancellableProducerWorker(QtCore.QObject, Generic[SendQueueElemType]):  # 
         """Check whether cancellation of the long running operation is requested in a thread-safe manner."""
         return self.cancellation_requested_flag.is_set()
 
+    def _can_continue_processing_or_is_cancellation_requested(self) -> bool:
+        """Check whether the consumer has dequeued all elements from the producer queue (i.e. this worker) or if cancellation was requested"""
+        return self.send_queue.empty() or self.is_cancellation_requested()
+
     def _wait_on_cancellation_or_input_data(self) -> None:
-        """Block the caller of this function until either cancellation is requested or one can continue producing new elements"""
+        """Block the caller of this function until either cancellation is requested or when the consumer has dequeued all items from the producer queue (i.e. this worker)"""
         with self.cancelled_or_continue_processing_condition:
-            self.cancelled_or_continue_processing_condition.wait()
+            self.cancelled_or_continue_processing_condition.wait_for(
+                self._can_continue_processing_or_is_cancellation_requested
+            )
 
     def _assert_valid_user_provided_parameter_values(self) -> None:
         if self.send_queue_batch_size < 1:
@@ -103,6 +109,7 @@ class CancellableProducerConsumerWorker(
         self.recv_queue: queue.SimpleQueue[RecvQueueElemType | None] = worker_recv_queue_config.queue_instance
         self.recv_queue_batch_size: int = worker_recv_queue_config.queue_batch_size
 
+    @override
     def _can_continue_processing_or_is_cancellation_requested(self) -> bool:
         """Check whether elements in the receive queue exist or if cancellation was requested"""
         return not self.recv_queue.empty() or self.is_cancellation_requested()
