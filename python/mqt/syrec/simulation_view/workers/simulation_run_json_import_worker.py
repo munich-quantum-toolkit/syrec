@@ -16,14 +16,23 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 
-# The fastest of the supported parser backends according to the documentation (https://pypi.org/project/ijson/#toc-entry-15)
-# TODO: Try catch and fallback incase that import fails
-import ijson.backends.yajl2_c as ijson
+from ...logger_utils import configure_default_console_logger, log_error_to_console, log_info_to_console
+
+try:
+    # The fastest of the supported parser backends according to the documentation (https://pypi.org/project/ijson/#toc-entry-15)
+    # Requires that the pre-built python wheel for the yajl c-extension exists for the platform that executed this python script.
+    # This should be the case for the majority of all platforms.
+    import ijson.backends.yajl2_c as ijson
+except ImportError:
+    configure_default_console_logger()
+    log_error_to_console("yajl2 C-extension not available, falling back to pure-Python parser!")
+    # pure-Python fallback is always present but might not be the fastest
+    import ijson
+
 from PyQt6 import QtCore
 
 from mqt import syrec
 
-from ...logger_utils import log_error_to_console, log_info_to_console
 from ..simulation_run_model import SimulationRunModel
 from .cancellable_worker_variants import CancellableProducerWorker
 
