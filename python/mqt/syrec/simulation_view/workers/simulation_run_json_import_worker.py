@@ -8,8 +8,13 @@
 
 from __future__ import annotations
 
-import time
+import sys
 from typing import TYPE_CHECKING, Any, Final
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 # The fastest of the supported parser backends according to the documentation (https://pypi.org/project/ijson/#toc-entry-15)
 # TODO: Try catch and fallback incase that import fails
@@ -20,54 +25,46 @@ from mqt import syrec
 
 from ...logger_utils import log_error_to_console, log_info_to_console
 from ..simulation_run_model import SimulationRunModel
-from .cancellable_base_worker import CancellableBaseWorker
+from .cancellable_worker_variants import CancellableProducerWorker
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from .cancellable_base_worker import BatchTimestamps
+    from .cancellable_worker_variants import BatchTimestamps, QueueConfig
 
 SIMULATION_RUNS_JSON_KEY: Final[str] = "simulationRuns"
 INPUT_STATE_JSON_KEY: Final[str] = "in"
 EXPECTED_OUTPUT_STATE_JSON_KEY: Final[str] = "out"
 
 
-class SimulationRunJsonImportWorker(CancellableBaseWorker):
-    def __init__(self, path_to_json_file: Path, expected_input_state_size: int, batch_size: int) -> None:
-        super().__init__(do_batches_require_ack=True)
-
+class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel]):
+    def __init__(
+        self,
+        path_to_json_file: Path,
+        expected_input_state_size: int,
+        worker_send_queue_config: QueueConfig[SimulationRunModel],
+    ) -> None:
+        super().__init__(worker_send_queue_config)
         self.path_to_json_file = path_to_json_file
         self.expected_input_state_size = expected_input_state_size
-        self.batch_size = batch_size
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_import(self) -> None:
+        batch_start_timestamp: float = SimulationRunJsonImportWorker.get_timestamp()
+        batch_timestamps: BatchTimestamps | None = None
+
         try:
-            SimulationRunJsonImportWorker._validate_parameters(self.expected_input_state_size, self.batch_size)
-            self_raised_error_msg: str | None = None
+            self._assert_valid_user_provided_parameter_values()
 
-            if self.wait_on_batch_processed_acknowledgement_condition is None:
-                self_raised_error_msg = "Internal batch processed acknowledgement condition was not initialized"
-                log_error_to_console(self_raised_error_msg)
-                self.failed.emit(ValueError(self_raised_error_msg))
-                return
-
-            batch_idx: int = 0
-            batch_data: list[SimulationRunModel | None] = [None for _ in range(self.batch_size)]
-
+            n_remaining_input_states_to_import_in_batch: int = self.send_queue_batch_size
             # Reading bytes instead of strings leads to better parser performance
             with self.path_to_json_file.open("rb") as file:
-                batch_start_timestamp: float = SimulationRunJsonImportWorker._get_timestamp()
-                batch_timestamps: BatchTimestamps | None = None
                 # The json parser starts at the first element matching the prefix which in our case starts at an element with key 'simulationRuns' that is expected
                 # to be a property of the top level element (i.e. the path to the 'simulationRuns' element is relative to the top level element).
                 # Additionally, with the postfix '.item', only the entries of a JSON array are processed. If the 'simulationRuns' entry value is no
                 # array then no objects will be parsed.
                 parser = ijson.items(file, prefix=f"{SIMULATION_RUNS_JSON_KEY}.item")
                 for arr_elem in parser:
-                    if self.is_cancellation_requested():
-                        break
-
                     # the ison.items(...) function converts JSON objects to python dictionaries (https://pypi.org/project/ijson/#options). However, we
                     # need to discard any other type of JSON elements (integers, strings, array, etc.) by checking whether we are actually processing a
                     # python dictionary.
@@ -77,54 +74,49 @@ class SimulationRunJsonImportWorker(CancellableBaseWorker):
                         )
                         continue
 
-                    batch_data[batch_idx] = SimulationRunJsonImportWorker._try_deserialize_simulation_run(
-                        self.expected_input_state_size, arr_elem
+                    self.send_queue.put_nowait(
+                        SimulationRunJsonImportWorker._try_deserialize_simulation_run(
+                            self.expected_input_state_size, arr_elem
+                        )
                     )
-                    batch_idx += 1
-                    if batch_idx < self.batch_size:
+                    n_remaining_input_states_to_import_in_batch -= 1
+                    if self.is_cancellation_requested():
+                        break
+
+                    if n_remaining_input_states_to_import_in_batch > 0:
                         continue
 
                     batch_timestamps = (
-                        SimulationRunJsonImportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                        SimulationRunJsonImportWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(
                             batch_start_timestamp
                         )
                     )
+                    self.batchCompleted.emit(batch_timestamps.duration)
                     batch_start_timestamp = batch_timestamps.end
-                    self.batchCompleted.emit(batch_timestamps.duration, batch_data.copy())
 
-                    with QtCore.QMutexLocker(self.batch_ack_mutex):
-                        if not self.is_cancellation_requested():
-                            self.wait_on_batch_processed_acknowledgement_condition.wait(self.batch_ack_mutex)
-                    # An artificial delay improves the responsiveness of the UI but does not seem like the best solution. However, using
-                    # a delayed acknowledgement in the UI thread would increase the complexity of the implementation of the UI.
-                    time.sleep(0.1)
+                    n_remaining_input_states_to_import_in_batch = self.send_queue_batch_size
+                    self._wait_on_cancellation_or_input_data()
 
-                    for i in range(self.batch_size):
-                        batch_data[i] = None
-                    batch_idx = 0
-
-                if batch_idx != 0 and not self.is_cancellation_requested():
-                    del batch_data[batch_idx:]
+                # If we reached the end of the input .json file without reaching our batch threshold
+                # emit the current enqueued elements to the consumer.
+                if n_remaining_input_states_to_import_in_batch < self.send_queue_batch_size:
                     batch_timestamps = (
-                        SimulationRunJsonImportWorker._calc_batch_duration_and_return_end_timestamp_in_seconds(
+                        SimulationRunJsonImportWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(
                             batch_start_timestamp
                         )
                     )
-                    self.batchCompleted.emit(batch_timestamps.duration, batch_data.copy())
-            self.finished.emit(self.is_cancellation_requested())
+                    self.batchCompleted.emit(batch_timestamps.duration)
+                self.finished.emit(self.is_cancellation_requested())
         except Exception as error:
             self_raised_error_msg = f"Error in simulaton run import worker! Reason: {type(error)=}, {error=}"
             log_error_to_console(self_raised_error_msg)
             self.failed.emit(error)
 
-    @staticmethod
-    def _validate_parameters(expected_input_state_size: int, batch_size: int) -> None:
-        if expected_input_state_size < 1:
-            msg = f"Expected input state size must be a positive integer but was actually {expected_input_state_size}!"
-            raise ValueError(msg)
-
-        if batch_size < 1:
-            msg = f"Batch size must be larger than 0 but was actually {batch_size}"
+    @override
+    def _assert_valid_user_provided_parameter_values(self) -> None:
+        super()._assert_valid_user_provided_parameter_values()
+        if self.expected_input_state_size < 1:
+            msg = f"Expected input state size must be a positive integer but was actually {self.expected_input_state_size}!"
             raise ValueError(msg)
 
     @staticmethod

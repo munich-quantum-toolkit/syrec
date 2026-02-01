@@ -55,6 +55,17 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         self.shared_simulation_runs_model = shared_simulation_runs_model
         self.title_lbl.setText(f"Generating simulation runs with batch size {worker_send_queue_batch_size}!")
 
+        if worker_send_queue_batch_size < 1 or expected_input_state_size < 1:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Invalid input parameters detected",
+                message_box_content=f"Expected worker send queue batch size (value={worker_send_queue_batch_size}) and expected input state size(value={expected_input_state_size}) to be a positive integer!",
+                is_cancellable=False,
+            )
+            super().reject()
+            return
+
         # Since the operands of the exponentiation operator are casted to floats, the result (a float) could exceed the maximum storable value in an integer so we need to check this error case since
         # otherwise setting the maximum value of the QtWidgets.QProgressBar would raise an exception/no matching overload will be found since said function expects an integer parameter.
         n_expected_sim_runs_to_generate: Final[float] = 2**expected_input_state_size
@@ -75,17 +86,6 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
                 message_box_content="Input states generator was initialized without a progress bar! This should not happen.",
                 is_cancellable=False,
             )
-
-        if worker_send_queue_batch_size < 1:
-            show_and_request_ok_in_optionally_cancellable_notification(
-                message_box_type=MessageBoxType.ERROR,
-                message_box_parent=self,
-                message_box_title="Invalid input parameters detected",
-                message_box_content=f"Expected worker send queue batch size (value={worker_send_queue_batch_size}) to be a positive integer!",
-                is_cancellable=False,
-            )
-            super().reject()
-            return
 
         # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
         self.worker_send_queue_batch_size = worker_send_queue_batch_size
@@ -148,8 +148,8 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
                 n_dequeued_batch_elems += 1
         except queue.Empty:
             pass
-        except Exception as sim_run_model_err:
-            self._handle_non_recoverable_error(sim_run_model_err)
+        except Exception as sim_run_model_addition_err:
+            self._handle_non_recoverable_error(sim_run_model_addition_err)
             return
 
         self._update_progress_text_with_batch_info(n_dequeued_batch_elems, batch_generation_duration_in_seconds)

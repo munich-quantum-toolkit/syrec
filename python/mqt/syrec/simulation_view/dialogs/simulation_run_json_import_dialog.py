@@ -8,8 +8,9 @@
 
 from __future__ import annotations
 
+import queue
 import sys
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -23,13 +24,13 @@ if TYPE_CHECKING:
 
     from PyQt6 import QtGui
 
-    from ..simulation_run_model import QtSimulationRunModel
+    from ..simulation_run_model import QtSimulationRunModel, SimulationRunModel
 
-from ...logger_utils import log_error_to_console, log_info_to_console
+from ...logger_utils import log_info_to_console
 from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
-from ..simulation_run_model import SimulationRunModel
+from ..workers.cancellable_worker_variants import QueueConfig
 from ..workers.simulation_run_json_import_worker import SimulationRunJsonImportWorker
-from .base_progress_dialog import BaseProgressDialog
+from .base_progress_dialog import DEFAULT_MEDIUM_QUEUE_SIZE, DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, BaseProgressDialog
 
 
 class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWorker]):
@@ -42,6 +43,9 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         )
         self.num_imported_simulation_runs: int = 0
         self.shared_simulation_runs_model: QtSimulationRunModel | None = None
+
+        self.worker_send_queue_batch_size: int = 0
+        self.worker_send_queue: queue.SimpleQueue[SimulationRunModel] = queue.SimpleQueue()
 
         self.dialog_button_box.accepted.connect(self.accept)
         self.dialog_button_box.rejected.connect(self._handle_import_from_file_cancel_button_click)
@@ -72,19 +76,39 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         path_to_json_file: Path,
         shared_simulation_runs_model: QtSimulationRunModel,
         expected_input_state_size: int,
-        batch_size: int = 1000,
+        worker_send_queue_batch_size: int = DEFAULT_MEDIUM_QUEUE_SIZE,
     ) -> None:
         self.shared_simulation_runs_model = shared_simulation_runs_model
-        self.title_lbl.setText(f"Importing simulation runs from .json file with batch size {batch_size}!")
+        self.title_lbl.setText(
+            f"Importing simulation runs from .json file with batch size {worker_send_queue_batch_size}!"
+        )
         self.import_origin_info_lbl.setText(f"Import source: {path_to_json_file!s}")
 
+        if worker_send_queue_batch_size < 1 or expected_input_state_size < 1:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Invalid input parameters detected",
+                message_box_content=f"Expected worker send queue batch size (value={worker_send_queue_batch_size}) and expected input state size(value={expected_input_state_size}) to be a positive integer!",
+                is_cancellable=False,
+            )
+            super().reject()
+            return
+
+        self.worker_send_queue_batch_size = worker_send_queue_batch_size
         # Some helpful links are the official QThread documentation but some helpful explanaitions were also found in:
         # - https://www.haccks.com/posts/how-to-use-qthread-correctly-p1/
         # We are creating a worker object that will perform a long running operation in the future with the worker
         # instance being a member of the dialog class/object. Since the worker will define slots for the cancellation of
         # the long running operation that it executes but also emits signals, said worker needs to be implemented as a QObject that will run its own event loop
         # instead of subclassing QThread which executes its slots in the thread in which the QThread was created and might not execute its own event loop.
-        self.worker = SimulationRunJsonImportWorker(path_to_json_file, expected_input_state_size, batch_size)
+        self.worker = SimulationRunJsonImportWorker(
+            path_to_json_file,
+            expected_input_state_size,
+            worker_send_queue_config=QueueConfig(
+                queue_instance=self.worker_send_queue, queue_batch_size=self.worker_send_queue_batch_size
+            ),
+        )
         # Create a new QThread that manages one system thread WITHOUT BEING AN ACTUAL THREAD (see: https://doc.qt.io/qtforpython-6/PySide6/QtCore/QThread.html#detailed-description)
         self.worker_thread = QtCore.QThread()
         # We are now modifying the thread affinity (https://doc.qt.io/qt-6/qobject.html#thread-affinity) of the worker object to the worker thread.
@@ -143,42 +167,34 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
     def _handle_importer_failure(self, err: Exception) -> None:
         self._handle_non_recoverable_error(err)
 
-    @QtCore.pyqtSlot(float, object)  # type: ignore[untyped-decorator]
-    def _handle_imported_sim_run_batch(self, batch_generation_duration_in_seconds: float, batch_data: object) -> None:
+    @QtCore.pyqtSlot(float)  # type: ignore[untyped-decorator]
+    def _handle_imported_sim_run_batch(self, batch_generation_duration_in_seconds: float) -> None:
         if self.stop_processing_recv_batches:
             return
 
-        if not SimulationRunJsonImportWorker.is_batch_data_list_of_expected_type(
-            batch_data, SimulationRunModel, parent_widget_for_error_notification=self
-        ):
-            if self.worker is not None:
-                self.worker.ack_batch_processed()
-            return
-
-        generated_simulation_run_models: Final[list[SimulationRunModel]] = batch_data  # type: ignore[assignment]
-        self._update_progress_text_with_batch_info(
-            len(generated_simulation_run_models), batch_generation_duration_in_seconds
-        )
-
-        if self.shared_simulation_runs_model is None:
-            log_error_to_console("Shared simulation runs model was not initialized during handling of batch!")
-            self._handle_non_recoverable_error(None)
-            return
-
+        n_dequeued_batch_elems: int = 0
         try:
-            self.shared_simulation_runs_model.add_simulation_run_models(generated_simulation_run_models)
-        except Exception as sim_run_model_err:
-            self._handle_non_recoverable_error(sim_run_model_err)
+            assert self.shared_simulation_runs_model is not None
+            for _ in range(self.worker_send_queue_batch_size):
+                self.shared_simulation_runs_model.add_simulation_run_model(self.worker_send_queue.get_nowait())
+                n_dequeued_batch_elems += 1
+        except queue.Empty:
+            pass
+        except Exception as sim_run_model_addition_err:
+            self._handle_non_recoverable_error(sim_run_model_addition_err)
             return
 
-        if self.worker is not None:
-            self.worker.ack_batch_processed()
-
+        self._update_progress_text_with_batch_info(n_dequeued_batch_elems, batch_generation_duration_in_seconds)
         self._accumulate_and_update_total_runtime(batch_generation_duration_in_seconds)
-        self.num_imported_simulation_runs += len(generated_simulation_run_models)
+        self.num_imported_simulation_runs += n_dequeued_batch_elems
         self.num_imported_simulation_runs_info_lbl.setText(
             f"Num. imported simulation runs: {self.num_imported_simulation_runs}"
         )
+
+        if self.progress_bar is not None:
+            self.progress_bar.setValue(self.num_generated_input_states)
+        self.progress_info_text_lbl.setText("")
+        QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
 
     @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
     def _handle_import_completion(self, was_cancellation_requested: bool) -> None:
