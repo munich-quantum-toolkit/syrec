@@ -76,46 +76,46 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
                     ):
                         break
 
+                    dequeued_sim_run_model: SimulationRunModel | None = None
                     try:
-                        dequeued_sim_run_model: SimulationRunModel | None = self.recv_queue.get(
-                            block=False, timeout=0.2
-                        )
-                        has_reached_end_sentinel = dequeued_sim_run_model is None
-                        # We use an element that is None as the sentinel value of the receive queue (i.e. dequeueing None means that we have reached processed the last enqueued element from the sender)
-                        if has_reached_end_sentinel:
-                            break
-
-                        if (
-                            not one_time_request_new_data_flag
-                            and self.recv_queue.qsize() < request_more_queue_size_threshold
-                        ):
-                            self.requestingData.emit()
-                            # The sender could take some time to produce new data so we do not want to repeatedly trigger this process by emitting the associated signal
-                            # but only notify the sender once in the current loop. This can still trigger multiple signal emits depending on how fast the sender enqueues elements
-                            # in the receive queue but will at least limit the signal emits for the current number of remaining queue elements.
-                            one_time_request_new_data_flag = True
-
-                        # The mypy type-checker does not seem to infer that the dequeued simulation run model should be not None at this point since we already covered
-                        # the None case in our check for the sentinel value
-                        assert dequeued_sim_run_model is not None
-                        sim_run_execution_result: SimulationRunResult = (
-                            SimulationRunWorker._perform_single_sim_run_execution(
-                                self.annotatable_quantum_computation,
-                                curr_sim_run_num,
-                                dequeued_sim_run_model.input_state,
-                                dequeued_sim_run_model.expected_output_state,
-                            )
-                        )
-                        self.send_queue.put_nowait(sim_run_execution_result)
-                        found_outputs_mismatch |= (
-                            sim_run_execution_result.do_expected_and_actual_outputs_match is not None
-                            and not sim_run_execution_result.do_expected_and_actual_outputs_match
-                        )
-                        n_remaining_batch_elems_to_generate -= 1
-                        curr_sim_run_num += 1
+                        dequeued_sim_run_model = self.recv_queue.get(block=False, timeout=0.2)
                     except queue.Empty:
                         self.requestingData.emit()
                         break
+
+                    has_reached_end_sentinel = dequeued_sim_run_model is None
+                    # We use an element that is None as the sentinel value of the receive queue (i.e. dequeueing None means that we have reached processed the last enqueued element from the sender)
+                    if has_reached_end_sentinel:
+                        break
+
+                    if (
+                        not one_time_request_new_data_flag
+                        and self.recv_queue.qsize() < request_more_queue_size_threshold
+                    ):
+                        self.requestingData.emit()
+                        # The sender could take some time to produce new data so we do not want to repeatedly trigger this process by emitting the associated signal
+                        # but only notify the sender once in the current loop. This can still trigger multiple signal emits depending on how fast the sender enqueues elements
+                        # in the receive queue but will at least limit the signal emits for the current number of remaining queue elements.
+                        one_time_request_new_data_flag = True
+
+                    # The mypy type-checker does not seem to infer that the dequeued simulation run model should be not None at this point since we already covered
+                    # the None case in our check for the sentinel value
+                    assert dequeued_sim_run_model is not None
+                    sim_run_execution_result: SimulationRunResult = (
+                        SimulationRunWorker._perform_single_sim_run_execution(
+                            self.annotatable_quantum_computation,
+                            curr_sim_run_num,
+                            dequeued_sim_run_model.input_state,
+                            dequeued_sim_run_model.expected_output_state,
+                        )
+                    )
+                    self.send_queue.put_nowait(sim_run_execution_result)
+                    found_outputs_mismatch |= (
+                        sim_run_execution_result.do_expected_and_actual_outputs_match is not None
+                        and not sim_run_execution_result.do_expected_and_actual_outputs_match
+                    )
+                    n_remaining_batch_elems_to_generate -= 1
+                    curr_sim_run_num += 1
 
                 if self.is_cancellation_requested():
                     break

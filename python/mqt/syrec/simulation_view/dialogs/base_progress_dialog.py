@@ -8,13 +8,16 @@
 
 from __future__ import annotations
 
-from typing import Any, Final, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Generic, TypeVar
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from ...logger_utils import log_error_to_console, log_info_to_console
 from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 from ..workers.cancellable_worker_variants import CancellableProducerConsumerWorker, CancellableProducerWorker
+
+if TYPE_CHECKING:
+    from ..simulation_run_model import QtSimulationRunModel
 
 DEFAULT_TOTAL_RUNTIME_INFO_TEXT_FORMAT: Final[str] = (
     "Total runtime [in seconds] (excluding model updates, internal waits): {total_runtime_in_seconds:f}"
@@ -42,6 +45,7 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
     def __init__(
         self,
         parent: QtWidgets.QWidget,
+        shared_simulation_runs_model: QtSimulationRunModel,
         dialog_title: str,
         optional_progress_bar_text_format: str | None = None,
         create_default_layout: bool = True,
@@ -52,6 +56,8 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
 
         self.worker_thread: QtCore.QThread | None = None
         self.worker: WorkerType | None = None
+        self.shared_simulation_runs_model: QtSimulationRunModel = shared_simulation_runs_model
+
         self.stop_processing_recv_batches: bool = False
         self.total_runtime_in_seconds: float = 0
 

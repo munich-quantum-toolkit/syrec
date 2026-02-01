@@ -50,6 +50,8 @@ class CancellableProducerWorker(QtCore.QObject, Generic[SendQueueElemType]):  # 
     def __init__(self, worker_send_queue_config: QueueConfig[SendQueueElemType]) -> None:
         super().__init__()
         self.cancellation_requested_flag: threading.Event = threading.Event()
+        # The requirement to cancel the long running operation performed by the worker "forces" us to use the non-blocking get_nowait(...) and put_nowait(...) functions of the unbounded
+        # queue.SimpleQueue container. Correctly handling the expected batch sizes is the responsibility of the user of this unbounded queue.
         self.send_queue: queue.SimpleQueue[SendQueueElemType] = worker_send_queue_config.queue_instance
         self.send_queue_batch_size: int = worker_send_queue_config.queue_batch_size
         self.cancelled_or_continue_processing_condition: threading.Condition = threading.Condition()
@@ -106,6 +108,8 @@ class CancellableProducerConsumerWorker(
         worker_recv_queue_config: QueueConfig[RecvQueueElemType | None],
     ) -> None:
         super().__init__(worker_send_queue_config)
+        # The requirement to cancel the long running operation performed by the worker "forces" us to use the non-blocking get_nowait(...) and put_nowait(...) functions of the unbounded
+        # queue.SimpleQueue container. Correctly handling the expected batch sizes is the responsibility of the user of this unbounded queue.
         self.recv_queue: queue.SimpleQueue[RecvQueueElemType | None] = worker_recv_queue_config.queue_instance
         self.recv_queue_batch_size: int = worker_recv_queue_config.queue_batch_size
 

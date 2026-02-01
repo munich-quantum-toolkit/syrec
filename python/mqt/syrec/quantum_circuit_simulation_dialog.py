@@ -475,12 +475,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         if not filename:
             return
 
-        self.simulation_run_export_to_file_dialog = SimulationRunJsonExportDialog(self)
+        self.simulation_run_export_to_file_dialog = SimulationRunJsonExportDialog(
+            parent=self, shared_simulation_runs_model=self.simulation_runs_model
+        )
         self.simulation_run_export_to_file_dialog.finished.connect(self.handle_sim_run_export_to_file_dialog_close)
         self.simulation_run_export_to_file_dialog.start_export(
             Path(filename),
             self.associated_stringified_syrec_program,
-            self.simulation_runs_model,
             self.simulation_runs_model.rowCount(QtCore.QModelIndex()),
         )
         self.simulation_run_export_to_file_dialog.show()
@@ -502,10 +503,12 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
             return
 
-        self.all_input_states_generator_dialog = AllInputStatesGeneratorDialog(self)
+        self.all_input_states_generator_dialog = AllInputStatesGeneratorDialog(
+            parent=self, shared_simulation_runs_model=self.simulation_runs_model
+        )
         self.all_input_states_generator_dialog.finished.connect(self.handle_input_states_generator_dialog_close)
         self.all_input_states_generator_dialog.show()
-        self.all_input_states_generator_dialog.start_generation(self.simulation_runs_model, input_state_size)
+        self.all_input_states_generator_dialog.start_generation(input_state_size)
 
     @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_input_states_generator_dialog_close(self, result: int) -> None:
@@ -707,12 +710,14 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
             return
 
-        self.simulation_run_dialog = SimulationRunDialog(self)
+        self.simulation_run_dialog = SimulationRunDialog(
+            parent=self,
+            shared_simulation_runs_model=self.simulation_runs_model,
+            annotatable_quantum_computation=self.annotatable_quantum_computation,
+        )
         self.simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
         self.simulation_run_dialog.show()
-        self.simulation_run_dialog.start_simulations(
-            self.annotatable_quantum_computation, self.simulation_runs_model, stop_at_first_output_state_mismatch
-        )
+        self.simulation_run_dialog.start_simulations(stop_at_first_output_state_mismatch)
 
     @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_simulation_runs_dialog_close(self, _: int) -> None:
@@ -800,12 +805,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 return
             self.simulation_runs_model.delete_all_simulation_run_models()
 
-        self.simulation_run_import_from_file_dialog = SimulationRunJsonImportDialog(self)
+        self.simulation_run_import_from_file_dialog = SimulationRunJsonImportDialog(
+            parent=self, shared_simulation_runs_model=self.simulation_runs_model
+        )
         self.simulation_run_import_from_file_dialog.finished.connect(self.handle_import_from_file_dialog_close)
         self.simulation_run_import_from_file_dialog.show()
         self.simulation_run_import_from_file_dialog.start_import(
             Path(selected_filename_lbl.text()),
-            self.simulation_runs_model,
             expected_input_state_size=self.annotatable_quantum_computation.num_data_qubits,
         )
 

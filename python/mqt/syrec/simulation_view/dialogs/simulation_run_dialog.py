@@ -41,34 +41,31 @@ MODEL_UPDATE_RUNTIME_FORMAT: Final[str] = (
 )
 
 
-# TODO: Update base progress dialog to use new cancellable worker
-# TODO: Rename cancellable worker to producer-consumer worker?
-# TODO: Rework all other dialogs to use refactored base classes
-# TODO: Move clarifying comments to all input state generator dialog/worker?
 class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
-    def __init__(self, parent: QtWidgets.QWidget) -> None:
+    def __init__(
+        self,
+        parent: QtWidgets.QWidget,
+        shared_simulation_runs_model: QtSimulationRunModel,
+        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
+    ) -> None:
         super().__init__(
             parent,
+            shared_simulation_runs_model,
             dialog_title="Executing simulation runs...",
             optional_progress_bar_text_format="Executed simulation run %v of %m",
             create_default_layout=False,
             user_provided_dialog_size=SimulationRunDialog.get_default_big_dialog_size(),
         )
-        self.annotatable_quantum_computation: syrec.annotatable_quantum_computation | None = None
-        self.shared_simulation_runs_model: QtSimulationRunModel | None = None
+        self.annotatable_quantum_computation: syrec.annotatable_quantum_computation = annotatable_quantum_computation
         self.stop_at_first_output_state_mismatch: bool = False
         self.num_executed_simulation_runs: int = 0
         self.last_fetched_simulation_run_idx: int = 0
         self.total_model_update_runtime_in_seconds: float = 0
 
         self.sim_run_model_queue_batch_size: int = 0
-        # Since we want to be able to prematurely cancel the long running operation blocking operations like get() or put() of the threading.queue
-        # cannot be used thus we do not need to constrain the size of the queue.
         self.sim_run_model_queue: queue.SimpleQueue[SimulationRunModel | None] = queue.SimpleQueue()
 
         self.sim_run_result_queue_batch_size: int = 0
-        # Since we want to be able to prematurely cancel the long running operation blocking operations like get() or put() of the threading.queue
-        # cannot be used thus we do not need to constrain the size of the queue.
         self.sim_run_result_queue: queue.SimpleQueue[SimulationRunResult] = queue.SimpleQueue()
 
         self.dialog_button_box.accepted.connect(self.accept)
@@ -106,19 +103,15 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self.total_model_update_runtime_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.total_model_update_runtime_lbl)
 
-        # layout.addStretch()
         layout.addWidget(self.dialog_button_box)
         self.setLayout(layout)
 
     def start_simulations(
         self,
-        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
-        shared_simulation_run_model: QtSimulationRunModel,
         stop_at_first_output_state_mismatch: bool,
         sim_run_model_queue_batch_size: int = DEFAULT_SMALL_QUEUE_SIZE,
         sim_run_result_queue_batch_size: int = DEFAULT_SMALL_QUEUE_SIZE,
     ) -> None:
-        self.annotatable_quantum_computation = annotatable_quantum_computation
         expected_input_state_size: Final[int] = self.annotatable_quantum_computation.num_data_qubits
         if sim_run_model_queue_batch_size < 1 or sim_run_result_queue_batch_size < 1 or expected_input_state_size < 1:
             show_and_request_ok_in_optionally_cancellable_notification(
@@ -134,14 +127,15 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self.sim_run_model_queue_batch_size = sim_run_model_queue_batch_size
         self.sim_run_result_queue_batch_size = sim_run_result_queue_batch_size
 
-        self.shared_simulation_runs_model = shared_simulation_run_model
         self.simulation_runs_list_view.setModel(self.shared_simulation_runs_model)
         self.stop_at_first_output_state_mismatch = stop_at_first_output_state_mismatch
         log_info_to_console(
             f"Starting execution of simulation runs, stopping after first output mismatch flag is set to {self.stop_at_first_output_state_mismatch}"
         )
 
-        expected_total_num_simulation_runs: Final[int] = shared_simulation_run_model.rowCount(QtCore.QModelIndex())
+        expected_total_num_simulation_runs: Final[int] = self.shared_simulation_runs_model.rowCount(
+            QtCore.QModelIndex()
+        )
         self.title_lbl.setText(
             f"Executing {expected_total_num_simulation_runs} simulation runs with batch sizes (Sim. run model queue={sim_run_model_queue_batch_size}, Sim. run result queue={sim_run_result_queue_batch_size})!"
         )
@@ -268,7 +262,6 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
 
         batch_results_processing_start_timestamp: Final[float] = SimulationRunWorker.get_timestamp()
         try:
-            assert self.shared_simulation_runs_model is not None
             for _ in range(self.sim_run_result_queue_batch_size):
                 simulation_run_result: SimulationRunResult = self.sim_run_result_queue.get_nowait()
                 to_be_updated_sim_run_number = simulation_run_result.simulation_run_number
@@ -280,6 +273,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
                 )
                 n_received_sim_run_execution_results += 1
         except queue.Empty:
+            # The last batch generated by the worker could contain less than the expected batch size elements thus an empty queue should not be treated as an error
             pass
         except Exception as err:
             self._handle_non_recoverable_error(
@@ -305,7 +299,6 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _enqueue_next_simulation_runs(self) -> None:
         try:
-            assert self.shared_simulation_runs_model is not None
             for i in range(
                 self.last_fetched_simulation_run_idx,
                 self.last_fetched_simulation_run_idx + self.sim_run_model_queue_batch_size,

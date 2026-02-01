@@ -37,9 +37,10 @@ EXPORTED_SIM_RUNS_DATA_LABEL: Final[str] = (
 
 
 class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWorker]):
-    def __init__(self, parent: QtWidgets.QWidget) -> None:
+    def __init__(self, parent: QtWidgets.QWidget, shared_simulation_runs_model: QtSimulationRunModel) -> None:
         super().__init__(
             parent,
+            shared_simulation_runs_model,
             dialog_title="Exporting simulation runs...",
             optional_progress_bar_text_format="Processed simulation run %v of %m",
             create_default_layout=False,
@@ -52,7 +53,6 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         self.worker_recv_queue_batch_size: int = 0
         self.worker_send_queue: queue.SimpleQueue[ExportedBatchData] = queue.SimpleQueue()
         self.worker_recv_queue: queue.SimpleQueue[SimulationRunModel | None] = queue.SimpleQueue()
-        self.shared_simulation_runs_model: QtSimulationRunModel | None = None
 
         self.dialog_button_box.accepted.connect(self.accept)
         self.dialog_button_box.rejected.connect(self._handle_export_to_file_cancel_button_click)
@@ -80,7 +80,6 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         self,
         export_location: Path,
         associated_stringified_syrec_program: str,
-        shared_simulation_run_model: QtSimulationRunModel,
         num_sim_runs_to_export: int,
         worker_recv_queue_batch_size: int = DEFAULT_SMALL_QUEUE_SIZE,
     ) -> None:
@@ -116,7 +115,6 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
                 is_cancellable=False,
             )
 
-        self.shared_simulation_runs_model = shared_simulation_run_model
         self.worker_recv_queue_batch_size = worker_recv_queue_batch_size
         # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
         self.worker = SimulationRunJsonExportWorker(
@@ -174,7 +172,14 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         try:
             batch_data = self.worker_send_queue.get_nowait()
         except queue.Empty:
-            # TODO: This should not happen
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.WARNING,
+                message_box_parent=self,
+                message_box_title="Encountered empty queue!",
+                message_box_content="The send queue of the simulation run export worker should at least contain one element (since only a single entry per batch is created) but the queue was empty.",
+                is_cancellable=False,
+                log_contents=True,
+            )
             QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
             return
         except Exception as err:
@@ -202,7 +207,6 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _enqueue_next_simulation_runs_to_export(self) -> None:
         try:
-            assert self.shared_simulation_runs_model is not None
             for i in range(
                 self.last_exported_sim_run_num, self.last_exported_sim_run_num + self.worker_recv_queue_batch_size
             ):
@@ -215,11 +219,8 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
                     break
             QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
         except Exception as err:
-            # TODO: Better error
             self._handle_non_recoverable_error(
-                ValueError(
-                    f"Error during enqueue of new simulation runs, reason: {SimulationRunJsonExportDialog._stringify_error(err)}"
-                )
+                f"Error during enqueue of new simulation runs, reason: {SimulationRunJsonExportDialog._stringify_error(err)}"
             )
 
     @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
@@ -258,7 +259,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
             return True
         return False
 
-    def _handle_non_recoverable_error(self, err: Exception | None) -> None:
+    def _handle_non_recoverable_error(self, err: Exception | str | None) -> None:
         self.progress_info_text_lbl.setText("")
         if err is not None:
             self._update_displayed_error_text(err, num_additionally_skipped_stack_frames_starting_from_this_function=2)
