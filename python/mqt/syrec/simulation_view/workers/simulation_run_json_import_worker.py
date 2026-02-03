@@ -65,7 +65,7 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
         try:
             self._assert_valid_user_provided_parameter_values()
 
-            n_remaining_input_states_to_import_in_batch: int = self.send_queue_batch_size
+            n_remaining_input_states_to_import_in_batch: int = self._send_queue_batch_size
             # Reading bytes instead of strings leads to better parser performance
             with self.path_to_json_file.open("rb") as file:
                 # The json parser starts at the first element matching the prefix which in our case starts at an element with key 'simulationRuns' that is expected
@@ -103,12 +103,12 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
                     self.batchCompleted.emit(batch_timestamps.duration)
                     batch_start_timestamp = batch_timestamps.end
 
-                    n_remaining_input_states_to_import_in_batch = self.send_queue_batch_size
+                    n_remaining_input_states_to_import_in_batch = self._send_queue_batch_size
                     self._wait_on_cancellation_or_input_data()
 
                 # If we reached the end of the input .json file without reaching our batch threshold
                 # emit the current enqueued elements to the consumer.
-                if n_remaining_input_states_to_import_in_batch < self.send_queue_batch_size:
+                if n_remaining_input_states_to_import_in_batch < self._send_queue_batch_size:
                     batch_timestamps = (
                         SimulationRunJsonImportWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(
                             batch_start_timestamp

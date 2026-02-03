@@ -50,12 +50,12 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_export(self) -> None:
-        request_more_queue_size_threshold: Final[int] = int(self.recv_queue_batch_size * 0.2)
+        request_more_queue_size_threshold: Final[int] = int(self._recv_queue_batch_size * 0.2)
 
         batch_start_timestamp: float = 0
         batch_timestamps: BatchTimestamps | None = None
 
-        n_remaining_sim_runs_in_batch_to_process: int = self.recv_queue_batch_size
+        n_remaining_sim_runs_in_batch_to_process: int = self._recv_queue_batch_size
         n_skipped_sim_runs_in_batch: int = 0
         n_exported_sim_runs_in_batch: int = 0
         has_exported_first_batch: bool = False
@@ -78,7 +78,7 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
                     self._wait_on_cancellation_or_input_data()
 
                     one_time_request_new_data_flag: bool = False
-                    for _ in range(self.recv_queue_batch_size):
+                    for _ in range(self._recv_queue_batch_size):
                         if self.is_cancellation_requested() or n_remaining_sim_runs_in_batch_to_process < 0:
                             break
 
@@ -144,7 +144,7 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
                     n_skipped_sim_runs_in_batch = 0
                     n_exported_sim_runs_in_batch = 0
                     has_exported_first_batch = True
-                    n_remaining_sim_runs_in_batch_to_process = self.recv_queue_batch_size
+                    n_remaining_sim_runs_in_batch_to_process = self._recv_queue_batch_size
 
                 # An error during during the serialization of the simulation runs to their .json representation will cause the content of the
                 # exported to .json file to be invalid .json due to the simulation runs JSON array as well as the top level JSON object missing

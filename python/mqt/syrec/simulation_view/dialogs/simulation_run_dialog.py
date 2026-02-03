@@ -88,7 +88,6 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self.simulation_runs_list_view.setVerticalScrollMode(QtWidgets.QAbstractItemView.ScrollMode.ScrollPerPixel)
         # Select with click on item, unselect with Ctrl+Click on already selected item (see https://doc.qt.io/qt-6/qabstractitemview.html#SelectionMode-enum)
         self.simulation_runs_list_view.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        # self.simulation_runs_list_view.selectionModel().selectionChanged.connect(self.handle_simulation_run_selection_change)
 
         simulation_runs_list_scrollarea = QtWidgets.QScrollArea()
         simulation_runs_list_scrollarea.setAutoFillBackground(False)

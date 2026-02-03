@@ -55,14 +55,12 @@ class SimulationRunModel:
         actual_output_state: syrec.n_bit_values_container | None = None,
         create_new_n_bit_values_container_instances: bool = False,
     ) -> None:
-        if expected_output_state is not None and input_state.size() != expected_output_state.size():
-            msg = f"Expected output state size (n_qubits = {expected_output_state.size()}) did not match input state size (n_qubits = {input_state.size()})"
-            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
-            raise ValueError(msg)
-        if actual_output_state is not None and input_state.size() != actual_output_state.size():
-            msg = f"Actual output state size (n_qubits = {actual_output_state.size()}) did not match input state size (n_qubits = {input_state.size()})"
-            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
-            raise ValueError(msg)
+        SimulationRunModel._assert_n_bit_value_container_sizes_match(
+            input_state, "input state", expected_output_state, "expected output state"
+        )
+        SimulationRunModel._assert_n_bit_value_container_sizes_match(
+            input_state, "input state", actual_output_state, "actual output state"
+        )
 
         if not create_new_n_bit_values_container_instances:
             self.input_state = input_state
@@ -102,10 +100,9 @@ class SimulationRunModel:
         do_expected_and_actual_output_states_match: bool | None,
         execution_runtime_in_ms: float,
     ) -> None:
-        if actual_output_state.size() != self.input_state.size():
-            msg = f"Actual output state size (n_qubits = {actual_output_state.size()}) did not match input state size (n_qubits = {self.input_state.size()})"
-            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
-            raise ValueError(msg)
+        SimulationRunModel._assert_n_bit_value_container_sizes_match(
+            self.input_state, "input state", actual_output_state, "actual output state"
+        )
         if execution_runtime_in_ms < 0:
             msg = f"Invalid execution runtime value {execution_runtime_in_ms}"
             log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
@@ -136,15 +133,12 @@ class SimulationRunModel:
         edited_input_state: syrec.n_bit_values_container,
         edited_expected_output_state: syrec.n_bit_values_container | None,
     ) -> None:
-        if self.input_state.size() != edited_input_state.size():
-            msg = f"Updated input state size state size (n_qubits = {edited_input_state.size()}) did not match current input state size (n_qubits = {self.input_state.size()})"
-            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
-            raise ValueError(msg)
-
-        if edited_expected_output_state is not None and edited_expected_output_state.size() != self.input_state.size():
-            msg = f"Expected output state size (n_qubits = {edited_expected_output_state.size()}) did not match input state size (n_qubits = {self.input_state.size()})"
-            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
-            raise ValueError(msg)
+        SimulationRunModel._assert_n_bit_value_container_sizes_match(
+            self.input_state, "input state", edited_input_state, "edited input state"
+        )
+        SimulationRunModel._assert_n_bit_value_container_sizes_match(
+            self.input_state, "input state", edited_expected_output_state, "edited expected output state"
+        )
 
         did_input_state_change: bool = False
         for i in range(self.input_state.size()):
@@ -175,11 +169,9 @@ class SimulationRunModel:
         if expected_output_state is None:
             return None
 
-        if expected_output_state.size() != actual_output_state.size():
-            msg = f"Expected output state to have {expected_output_state.size()} qubits but actual output state contained {actual_output_state.size()} qubits!"
-            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
-            raise ValueError(msg)
-
+        SimulationRunModel._assert_n_bit_value_container_sizes_match(
+            expected_output_state, "expected output state", actual_output_state, "actual output state"
+        )
         return all(
             actual_output_state.test(i) == expected_output_state.test(i) for i in range(actual_output_state.size())
         )
@@ -193,6 +185,21 @@ class SimulationRunModel:
 
         n_bit_values_container.set(qubit, new_qubit_value)
         return True
+
+    @staticmethod
+    def _assert_n_bit_value_container_sizes_match(
+        expected_container: syrec.n_bit_values_container,
+        expected_container_name: str,
+        optional_actual_container: syrec.n_bit_values_container | None,
+        actual_container_name: str,
+    ) -> None:
+        if optional_actual_container is None:
+            return
+
+        if expected_container.size() != optional_actual_container.size():
+            msg = f"{expected_container_name} to have {expected_container.size()} qubits but {actual_container_name} contained {optional_actual_container.size()} qubits!"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=2)
+            raise ValueError(msg)
 
 
 # Example delegate: https://stackoverflow.com/questions/53105343/is-it-possible-to-add-a-custom-widget-into-a-qlistview
@@ -284,7 +291,6 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             return self.simulation_run_models[index]
         return None
 
-    # TODO: Should we perform a validation here?
     def add_simulation_run_model(self, simulation_run_model: SimulationRunModel) -> None:
         n_simulation_runs: Final[int] = self.rowCount(QtCore.QModelIndex())
         self.beginInsertRows(QtCore.QModelIndex(), n_simulation_runs, n_simulation_runs)

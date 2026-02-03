@@ -54,7 +54,9 @@ class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel
                 self._wait_on_cancellation_or_input_data()
                 for integer_encoding_input_state in range(
                     integer_encoding_first_input_state_of_batch,
-                    min(integer_encoding_first_input_state_of_batch + self.send_queue_batch_size, n_states_to_generate),
+                    min(
+                        integer_encoding_first_input_state_of_batch + self._send_queue_batch_size, n_states_to_generate
+                    ),
                 ):
                     if self.is_cancellation_requested():
                         break
@@ -70,7 +72,7 @@ class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel
 
                 # The addition operation will produce the wrong integer encoding the next input state in case of an cancellation request but this is ok since
                 # the cancellation also stops the generation of further input states.
-                integer_encoding_first_input_state_of_batch += self.send_queue_batch_size
+                integer_encoding_first_input_state_of_batch += self._send_queue_batch_size
 
                 batch_timestamps = (
                     AllInputStatesGeneratorWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(

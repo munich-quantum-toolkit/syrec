@@ -36,10 +36,22 @@ WorkerType = TypeVar("WorkerType", bound=CancellableProducerWorker[Any] | Cancel
 
 
 class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignore[misc]
-    """Base class for progress dialogs with worker thread management.
+    """
+    Base class for progress dialogs with worker thread management.
 
     Note: Instances of this dialog are designed to be used only once.
     Create a new instance for each operation rather than reusing the same dialog.
+
+    If not specified, the dialog will be opened as a modal dialog that is centered over the parent window with a default widget layout defined as (read from top to bottom):
+            <TITLE>
+        <PROGRESS_INFO>
+          <ERROR_TEXT>
+      <OPTIONAL_PROGRESS_BAR>
+       <TOTAL_RUNTIME_INFO>
+    <OPEN_BTN>  <CLOSE_BTN>
+
+    Inputs:
+        WorkerType: Defines the type of worker employed by the dialog to perform its long running operation.
     """
 
     def __init__(

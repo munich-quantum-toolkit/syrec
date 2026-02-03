@@ -52,7 +52,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_simulations(self) -> None:
         curr_sim_run_num: int = 0
-        request_more_queue_size_threshold: Final[int] = int(self.recv_queue_batch_size * 0.2)
+        request_more_queue_size_threshold: Final[int] = int(self._recv_queue_batch_size * 0.2)
 
         batch_start_timestamp: float = 0
         batch_timestamps: BatchTimestamps | None = None
@@ -63,13 +63,13 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
         try:
             self._assert_valid_user_provided_parameter_values()
             batch_start_timestamp = SimulationRunWorker.get_timestamp()
-            n_remaining_batch_elems_to_generate: int = self.send_queue_batch_size
+            n_remaining_batch_elems_to_generate: int = self._send_queue_batch_size
 
             while self._should_continue_processing(found_outputs_mismatch, has_reached_end_sentinel):
                 self._wait_on_cancellation_or_input_data()
 
                 one_time_request_new_data_flag: bool = False
-                for _ in range(self.send_queue_batch_size):
+                for _ in range(self._send_queue_batch_size):
                     if (
                         not self._should_continue_processing(found_outputs_mismatch, has_reached_end_sentinel)
                         or n_remaining_batch_elems_to_generate < 0
@@ -126,7 +126,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
                     # in the processing queue
                     continue
 
-                n_remaining_batch_elems_to_generate = self.send_queue_batch_size
+                n_remaining_batch_elems_to_generate = self._send_queue_batch_size
                 batch_timestamps = SimulationRunWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(
                     batch_start_timestamp
                 )
