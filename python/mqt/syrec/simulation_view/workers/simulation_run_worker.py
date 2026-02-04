@@ -36,7 +36,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
     def __init__(
         self,
         annotatable_quantum_computation: syrec.annotatable_quantum_computation,
-        expected_input_state_size: int,
+        _expected_input_state_size: int,
         stop_at_first_output_state_mismatch: bool,
         worker_recv_queue_config: QueueConfig[SimulationRunModel | None],
         worker_send_queue_config: QueueConfig[SimulationRunResult],
@@ -45,9 +45,9 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
             worker_send_queue_config=worker_send_queue_config,
             worker_recv_queue_config=worker_recv_queue_config,
         )
-        self.expected_input_state_size = expected_input_state_size
-        self.annotatable_quantum_computation = annotatable_quantum_computation
-        self.should_stop_at_first_output_state_mismatch: bool = stop_at_first_output_state_mismatch
+        self._expected_input_state_size = _expected_input_state_size
+        self._annotatable_quantum_computation = annotatable_quantum_computation
+        self._should_stop_at_first_output_state_mismatch: bool = stop_at_first_output_state_mismatch
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_simulations(self) -> None:
@@ -102,8 +102,8 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
                     # the None case in our check for the sentinel value
                     assert dequeued_sim_run_model is not None
                     sim_run_execution_result: SimulationRunResult = (
-                        SimulationRunWorker._perform_single_sim_run_execution(
-                            self.annotatable_quantum_computation,
+                        SimulationRunWorker.perform_single_sim_run_execution(
+                            self._annotatable_quantum_computation,
                             curr_sim_run_num,
                             dequeued_sim_run_model.input_state,
                             dequeued_sim_run_model.expected_output_state,
@@ -120,7 +120,11 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
                 if self.is_cancellation_requested():
                     break
 
-                if n_remaining_batch_elems_to_generate > 0 and not has_reached_end_sentinel:
+                if (
+                    not (self._should_stop_at_first_output_state_mismatch and found_outputs_mismatch)
+                    and n_remaining_batch_elems_to_generate > 0
+                    and not has_reached_end_sentinel
+                ):
                     # We dequeued all elements of the receive queue but have not reached the required batch size in the send queue to emit a new batch.
                     # Since we are expecting more elements from the sender due to not having reached the sentinel value of the receive queue we simply continue
                     # in the processing queue
@@ -141,12 +145,12 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
     def _should_continue_processing(self, output_state_mismatch_flag: bool, reached_end_sentinel_flag: bool) -> bool:
         return (
             not self.is_cancellation_requested()
-            and (not self.should_stop_at_first_output_state_mismatch or not output_state_mismatch_flag)
+            and (not self._should_stop_at_first_output_state_mismatch or not output_state_mismatch_flag)
             and not reached_end_sentinel_flag
         )
 
     @staticmethod
-    def _perform_single_sim_run_execution(
+    def perform_single_sim_run_execution(
         annotatable_quantum_computation: syrec.annotatable_quantum_computation,
         sim_run_num: int,
         input_state: syrec.n_bit_values_container,

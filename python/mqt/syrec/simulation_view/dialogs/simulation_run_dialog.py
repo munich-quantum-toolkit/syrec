@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 
 from ...logger_utils import log_info_to_console
 from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
+from ..simulation_run_model import SIMULATION_RUN_IO_STATE_QT_ROLE
 from ..styled_item_delegates.simulation_run_execution_styled_item_delegate import (
     SimulationRunExecutionStyledItemDelegate,
 )
@@ -39,6 +40,22 @@ from .base_progress_dialog import DEFAULT_SMALL_QUEUE_SIZE, DEFAULT_WORKER_CONTI
 MODEL_UPDATE_RUNTIME_FORMAT: Final[str] = (
     "Total model update runtime [in seconds]: {total_model_update_runtime_in_seconds:f}"
 )
+
+
+# Instead of iterating through all rows of a QAbstractItemView (in our case the QListView displaying all simulation run models) and setting them hidden, implement a proxy model for the
+# QAbstractItemView that does only display the simulation run model of interest.
+class SimulationRunFilterModel(QtCore.QSortFilterProxyModel):  # type: ignore[misc]
+    def __init__(self, parent: QtCore.QObject, idx_of_sim_run_model_of_interest: QtCore.QModelIndex) -> None:
+        super().__init__(parent)
+        self._idx_of_sim_run_model_of_interest: QtCore.QModelIndex = idx_of_sim_run_model_of_interest
+
+    @override
+    def filterAcceptsRow(self, source_row: int, _: QtCore.QModelIndex) -> bool:
+        return (
+            source_row == self._idx_of_sim_run_model_of_interest.row()
+            if self._idx_of_sim_run_model_of_interest.isValid()
+            else False
+        )
 
 
 class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
@@ -57,6 +74,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             user_provided_dialog_size=SimulationRunDialog.get_default_big_dialog_size(),
         )
         self.annotatable_quantum_computation: syrec.annotatable_quantum_computation = annotatable_quantum_computation
+        self.optional_filtered_shared_sim_run_model: SimulationRunFilterModel | None = None
         self.stop_at_first_output_state_mismatch: bool = False
         self.num_executed_simulation_runs: int = 0
         self.last_fetched_simulation_run_idx: int = 0
@@ -104,6 +122,22 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
 
         layout.addWidget(self.dialog_button_box)
         self.setLayout(layout)
+
+    def start_simulation(self, idx_of_sim_run_to_execute: QtCore.QModelIndex) -> None:
+        self.sim_run_model_queue_batch_size = 1
+        self.sim_run_result_queue_batch_size = 1
+
+        if self.progress_bar is not None:
+            self.progress_bar.setVisible(False)
+
+        self.optional_filtered_shared_sim_run_model = SimulationRunFilterModel(self, idx_of_sim_run_to_execute)
+        self.optional_filtered_shared_sim_run_model.setSourceModel(self.shared_simulation_runs_model)
+        # self.simulation_runs_list_view.setModel(self.shared_simulation_runs_model)
+        self.simulation_runs_list_view.setModel(self.optional_filtered_shared_sim_run_model)
+        log_info_to_console(f"Starting execution of simulation run (index: {idx_of_sim_run_to_execute.row()})")
+        self.title_lbl.setText(f"Executing simulation run {idx_of_sim_run_to_execute.row()}!")
+        self._perform_single_sim_run_execution(idx_of_sim_run_to_execute)
+        self._change_dialog_ok_button_enable_state(True)
 
     def start_simulations(
         self,
@@ -332,7 +366,6 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         log_info_to_console(progress_info_msg)
 
         try:
-            assert self.shared_simulation_runs_model is not None
             self.shared_simulation_runs_model.reset_prev_simulation_run_execution_results()
         except Exception as err:
             self._handle_non_recoverable_error(
@@ -352,3 +385,37 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
 
         self._request_worker_cancellation()
         self._shutdown_worker_thread_and_await_completion()
+
+    def _perform_single_sim_run_execution(self, idx_of_sim_run_to_execute: QtCore.QModelIndex) -> None:
+        try:
+            self.shared_simulation_runs_model.reset_prev_simulation_run_execution_result(idx_of_sim_run_to_execute)
+
+            sim_run_for_idx: Final[SimulationRunModel | None] = self.shared_simulation_runs_model.data(
+                idx_of_sim_run_to_execute, SIMULATION_RUN_IO_STATE_QT_ROLE
+            )
+            if sim_run_for_idx is None:
+                err_msg = f"Failed to fetch mode for simulation run {idx_of_sim_run_to_execute.row()}"
+                self._update_displayed_error_text(
+                    err_msg, num_additionally_skipped_stack_frames_starting_from_this_function=1
+                )
+                return
+
+            result: Final[SimulationRunResult] = SimulationRunWorker.perform_single_sim_run_execution(
+                self.annotatable_quantum_computation,
+                idx_of_sim_run_to_execute.row(),
+                sim_run_for_idx.input_state,
+                sim_run_for_idx.expected_output_state,
+            )
+            self.shared_simulation_runs_model.update_model_using_simulation_run_result(
+                idx_of_sim_run_to_execute,
+                result.actual_output_state,
+                result.do_expected_and_actual_outputs_match,
+                result.sim_runtime_in_ms,
+            )
+
+            self._update_total_model_runtime_and_label(result.sim_runtime_in_ms)
+            self._accumulate_and_update_total_runtime(result.sim_runtime_in_ms)
+        except Exception as err:
+            self._handle_non_recoverable_error(
+                f"Error during reset of previous simulation run execution result of simulation run {idx_of_sim_run_to_execute.row()}, reason: {SimulationRunDialog._stringify_error(err)}"
+            )

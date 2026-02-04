@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from typing import Final
+from typing import Any, Final
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -259,7 +259,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         return 0 if parent.isValid() else len(self.simulation_run_models)
 
     @override
-    def data(self, index: QtCore.QModelIndex, role: int) -> object:
+    def data(self, index: QtCore.QModelIndex, role: int) -> Any | None:
         if not index.isValid():
             return None
 
@@ -318,6 +318,15 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         for sim_run_model in self.simulation_run_models:
             sim_run_model.reset_result_of_execution()
         self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(len(self.simulation_run_models) - 1, 0))
+
+    def reset_prev_simulation_run_execution_result(self, idx_of_sim_run_to_reset: QtCore.QModelIndex) -> None:
+        if not self.is_model_index_valid(idx_of_sim_run_to_reset):
+            msg = "Invalid model index!"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
+            raise ValueError(msg)
+
+        self.simulation_run_models[idx_of_sim_run_to_reset.row()].reset_result_of_execution()
+        self.dataChanged.emit(idx_of_sim_run_to_reset, idx_of_sim_run_to_reset)
 
     def update_edited_simulation_run_model(
         self, index: QtCore.QModelIndex, updated_simulation_run_data: SimulationRunModel

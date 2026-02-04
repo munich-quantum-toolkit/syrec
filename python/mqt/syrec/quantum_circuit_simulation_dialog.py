@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import sys
+from enum import Enum
 from pathlib import Path
 from typing import Final, cast
 
@@ -17,6 +18,11 @@ if sys.version_info >= (3, 12):
     from typing import override
 else:
     from typing_extensions import override
+
+if sys.version_info >= (3, 11):
+    from typing import assert_never
+else:
+    from typing_extensions import assert_never
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
@@ -45,11 +51,20 @@ ADD_SIM_RUN_BTN_NAME: Final[str] = "add_sim_run_btn"
 EDIT_SIM_RUN_BTN_NAME: Final[str] = "edit_sim_run_btn"
 DELETE_SIM_RUN_BTN_NAME: Final[str] = "delete_sim_run_btn"
 SAVE_SIM_RUNS_TO_FILE_BTN_NAME: Final[str] = "save_sims_to_file_btn"
-RUN_SIM_RUNS_BTN_NAME: Final[str] = "run_sims_btn"
-RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME: Final[str] = "run_sims_stop_first_failure_btn"
 SIMULATION_RUNS_LIST_VIEW_NAME: Final[str] = "sim_runs_list_view"
+SIM_RUN_EXECUTION_TRIGGER_BTN_NAME: Final[str] = "sim_run_exec_trigger_btn"
+SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME: Final[str] = "sim_run_exec_mode_dropbown"
 
 IMPORT_FROM_FILE_NO_FILE_SELECTED_PLACEHOLDER_TEXT: Final[str] = "<NONE>"
+
+
+# TODO: Add simulation runs button is sometimes not enabled?
+# TODO: Mark private variables of workers with underscore prefix
+# TODO: Structural pattern matching might only be supported in python >= 3.10 but project also supports 3.9
+class SimulationRunExecutionMode(Enum):
+    RUN_ALL = 0
+    RUN_ALL_STOP_AT_FIRST_FAILURE = 1
+    RUN_SINGLE = 2
 
 
 class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
@@ -97,6 +112,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.expected_input_output_state_size: Final[int] = annotatable_quantum_computation.num_data_qubits
         self.simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
         self.simulation_run_dialog: SimulationRunDialog | None = None
+        self.shared_selected_sim_run_execution_mode_dropdown_index: int = 0
 
         self.prev_active_simulation_runs_tab_idx: int = 0
         self.simulation_runs_tab_widget = QtWidgets.QTabWidget(self)
@@ -223,6 +239,39 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_runs_execution_buttons_layout = QtWidgets.QHBoxLayout()
         simulation_runs_execution_buttons_layout.addStretch()
 
+        sim_run_execution_mode_controls_layout = QtWidgets.QGridLayout()
+        simulation_runs_execution_buttons_layout.addLayout(sim_run_execution_mode_controls_layout)
+
+        sim_run_execution_mode_dropdown_lbl = QtWidgets.QLabel("Simulation run execution mode:")
+        sim_run_execution_mode_dropdown = QtWidgets.QComboBox(objectName=SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME)
+        sim_run_execution_mode_dropdown.insertItem(0, "Run all simulation runs", SimulationRunExecutionMode.RUN_ALL)
+        sim_run_execution_mode_dropdown.insertItem(
+            1,
+            "Run all simulation runs (stop at first output qubit value mismatch)",
+            SimulationRunExecutionMode.RUN_ALL_STOP_AT_FIRST_FAILURE,
+        )
+        sim_run_execution_mode_dropdown.insertItem(
+            2, "Run selected simulation run", SimulationRunExecutionMode.RUN_SINGLE
+        )
+        sim_run_execution_mode_dropdown.setPlaceholderText("<UNKNOWN EXECUTION MODE>")
+        sim_run_execution_mode_dropdown.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContents)
+        sim_run_execution_mode_dropdown.setEnabled(False)
+        sim_run_execution_mode_dropdown.currentIndexChanged.connect(
+            self.handle_simulation_run_execution_mode_selection_change
+        )
+
+        sim_run_execution_mode_controls_layout.addWidget(sim_run_execution_mode_dropdown_lbl, 0, 0)
+        sim_run_execution_mode_controls_layout.addWidget(sim_run_execution_mode_dropdown, 1, 0)
+
+        sim_run_execution_trigger_btn = QtWidgets.QPushButton(
+            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.MediaPlaybackStart),
+            "Execute simulation runs",
+            objectName=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
+        )
+        sim_run_execution_trigger_btn.clicked.connect(self._open_simulation_runs_execution_dialog)
+        sim_run_execution_trigger_btn.setEnabled(False)
+        sim_run_execution_mode_controls_layout.addWidget(sim_run_execution_trigger_btn, 0, 1)
+
         save_simulation_runs_to_file_button = QtWidgets.QPushButton(
             QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave),
             "Save simulation runs to file",
@@ -233,31 +282,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         save_simulation_runs_to_file_button.setToolTip(
             "Save the defined simulation runs to a .json file (only the input and expected output qubit values of simulation runs in which both input and output qubit values are known are exported)"
         )
-        simulation_runs_execution_buttons_layout.addWidget(save_simulation_runs_to_file_button)
-
-        run_simulation_runs_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.MediaPlaybackStart),
-            "Run simulation runs",
-            objectName=RUN_SIM_RUNS_BTN_NAME,
-        )
-        run_simulation_runs_button.setEnabled(False)
-        run_simulation_runs_button.clicked.connect(self.handle_run_all_simulation_runs_button_click)
-        simulation_runs_execution_buttons_layout.addWidget(run_simulation_runs_button)
-
-        run_simulation_runs_stop_at_first_failure_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.MediaPlaybackStart),
-            "Run simulation runs (stop at first output qubit values mismatch)",
-            objectName=RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME,
-        )
-        run_simulation_runs_stop_at_first_failure_button.setEnabled(False)
-        run_simulation_runs_stop_at_first_failure_button.clicked.connect(
-            self.handle_run_all_simulation_runs_stop_at_first_failure_button_click
-        )
-        run_simulation_runs_stop_at_first_failure_button.setToolTip(
-            "Perform a simulation of all defined simulation runs until a mismatch between the expected and actual output state qubit values is detected (the value of both output states needs to be known)"
-        )
-        simulation_runs_execution_buttons_layout.addWidget(run_simulation_runs_stop_at_first_failure_button)
-
+        sim_run_execution_mode_controls_layout.addWidget(save_simulation_runs_to_file_button, 1, 1)
         simulation_runs_execution_buttons_layout.addStretch()
 
         tab_wrapper_widget_layout.addSpacing(manual_y_space_size)
@@ -340,9 +365,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         add_simulation_run_btn.setEnabled(not is_list_item_selected)
         edit_simulation_run_btn.setEnabled(is_list_item_selected)
         delete_simulation_run_btn.setEnabled(is_list_item_selected)
-        self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            curr_active_tab_widget,
-            not is_list_item_selected and (self.simulation_runs_model.rowCount(QtCore.QModelIndex()) < sys.maxsize),
+        self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget_based_on_sim_run_selection_status(
+            curr_active_tab_widget, is_list_item_selected
         )
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
@@ -641,10 +665,20 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         optional_to_be_switched_to_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
             switched_to_tab_index
         )
+        optional_sim_run_exec_mode_dropdown_in_switched_to_tab: QtWidgets.QComboBox | None = (
+            optional_to_be_switched_to_tab_widget.findChild(QtWidgets.QComboBox, SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME)
+            if optional_to_be_switched_to_tab_widget is not None
+            else None
+        )
+
         if not assert_all_required_widgets_found_or_close_dialog(
             error_notification_parent_widget=self,
-            required_widgets=[optional_prev_active_tab_widget, optional_to_be_switched_to_tab_widget],
-            error_dialog_content="Failed to locate previous/current active tab widget during simulation run tab change handler",
+            required_widgets=[
+                optional_prev_active_tab_widget,
+                optional_to_be_switched_to_tab_widget,
+                optional_sim_run_exec_mode_dropdown_in_switched_to_tab,
+            ],
+            error_dialog_content="Failed to locate previous/current active tab widget in simulation run tab change handler",
         ):
             if optional_to_be_switched_to_tab_widget is None:
                 self.simulation_runs_tab_widget.setCurrentIndex(self.prev_active_simulation_runs_tab_idx)
@@ -687,18 +721,18 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             self.handle_open_and_start_all_input_states_generator_dialog(
                 self.annotatable_quantum_computation.num_data_qubits
             )
+
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
+            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown_in_switched_to_tab
+        )
+        # TODO: Error handling
+        sim_run_exec_mode_dropdown.setCurrentIndex(self.shared_selected_sim_run_execution_mode_dropdown_index)
+
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(prev_active_tab_widget, False)
         self.prev_active_simulation_runs_tab_idx = switched_to_tab_index
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
-    def handle_run_all_simulation_runs_button_click(self) -> None:
-        self.open_simulation_runs_execution_dialog(stop_at_first_output_state_mismatch=False)
-
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
-    def handle_run_all_simulation_runs_stop_at_first_failure_button_click(self) -> None:
-        self.open_simulation_runs_execution_dialog(stop_at_first_output_state_mismatch=True)
-
-    def open_simulation_runs_execution_dialog(self, stop_at_first_output_state_mismatch: bool) -> None:
+    def _open_simulation_runs_execution_dialog(self) -> None:
         if self.simulation_run_dialog is not None:
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
@@ -710,6 +744,60 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
             return
 
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            self.simulation_runs_tab_widget.currentIndex()
+        )
+
+        optional_simulation_runs_list_view: QtWidgets.QWidget | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+
+        optional_sim_run_exec_mode_dropdown: QtWidgets.QComboBox | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QComboBox, SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[
+                optional_curr_active_tab_widget,
+                optional_simulation_runs_list_view,
+                optional_sim_run_exec_mode_dropdown,
+            ],
+            error_dialog_content="Failed to locate all required QtWidgets in open simulation run execution dialog handler",
+        ):
+            return
+
+        cast("QtWidgets.QTabWidget", optional_curr_active_tab_widget)
+        simulation_runs_list_view: Final[QtWidgets.QListView] = cast(
+            "QtWidgets.QListView", optional_simulation_runs_list_view
+        )
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
+            "QtWidgets.QListView", optional_sim_run_exec_mode_dropdown
+        )
+
+        selected_sim_run_model_idx: QtCore.QModelIndex | None = None
+        curr_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = sim_run_exec_mode_dropdown.currentData()
+        # TODO:
+        assert curr_sim_run_exec_mode is not None
+        if curr_sim_run_exec_mode == SimulationRunExecutionMode.RUN_SINGLE:
+            curr_num_selected_simulation_runs: Final[int] = len(simulation_runs_list_view.selectedIndexes())
+            # We are assuming that the QListView only supports single item selection but QListView only offers fetch of all selected indices
+            if curr_num_selected_simulation_runs > 0:
+                selected_sim_run_model_idx = simulation_runs_list_view.selectedIndexes()[0]
+            else:
+                show_and_request_ok_in_optionally_cancellable_notification(
+                    message_box_type=MessageBoxType.ERROR,
+                    message_box_parent=self,
+                    message_box_title="Failed to determine selected simulation run!",
+                    message_box_content=f"Tried to find the selected simulation run in the list of simulation runs but {curr_num_selected_simulation_runs} where selected!",
+                    is_cancellable=False,
+                )
+                return
+
         self.simulation_run_dialog = SimulationRunDialog(
             parent=self,
             shared_simulation_runs_model=self.simulation_runs_model,
@@ -717,7 +805,17 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self.simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
         self.simulation_run_dialog.show()
-        self.simulation_run_dialog.start_simulations(stop_at_first_output_state_mismatch)
+
+        match curr_sim_run_exec_mode:
+            case SimulationRunExecutionMode.RUN_SINGLE:
+                assert selected_sim_run_model_idx is not None
+                self.simulation_run_dialog.start_simulation(selected_sim_run_model_idx)
+            case SimulationRunExecutionMode.RUN_ALL | SimulationRunExecutionMode.RUN_ALL_STOP_AT_FIRST_FAILURE:
+                self.simulation_run_dialog.start_simulations(
+                    curr_sim_run_exec_mode == SimulationRunExecutionMode.RUN_ALL_STOP_AT_FIRST_FAILURE
+                )
+            case _:
+                assert_never(curr_sim_run_exec_mode)
 
     @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_simulation_runs_dialog_close(self, _: int) -> None:
@@ -851,10 +949,11 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self, tab_widget: QtWidgets.QWidget, should_controls_be_enabled: bool
     ) -> None:
         optional_run_simulation_runs_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
-            QtWidgets.QPushButton, RUN_SIM_RUNS_BTN_NAME
+            QtWidgets.QPushButton, SIM_RUN_EXECUTION_TRIGGER_BTN_NAME
         )
-        optional_run_simulation_runs_stop_at_first_failure_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
-            QtWidgets.QPushButton, RUN_SIM_RUNS_BTN_STOP_AT_FIRST_FAILURE_NAME
+
+        optional_sim_run_exec_mode_dropdown: QtWidgets.QComboBox | None = tab_widget.findChild(
+            QtWidgets.QComboBox, SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME
         )
         optional_save_simulation_runs_to_file_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
             QtWidgets.QPushButton, SAVE_SIM_RUNS_TO_FILE_BTN_NAME
@@ -864,7 +963,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             error_notification_parent_widget=self,
             required_widgets=[
                 optional_run_simulation_runs_btn,
-                optional_run_simulation_runs_stop_at_first_failure_btn,
+                optional_sim_run_exec_mode_dropdown,
                 optional_save_simulation_runs_to_file_btn,
             ],
             error_dialog_content="Failed to locate required QtWidgets during change of enabled state of simulation run execution controls",
@@ -874,18 +973,70 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         run_simulation_runs_btn: Final[QtWidgets.QPushButton] = cast(
             "QtWidgets.QPushButton", optional_run_simulation_runs_btn
         )
-        run_simulation_runs_stop_at_first_failure_btn: Final[QtWidgets.QPushButton] = cast(
-            "QtWidgets.QPushButton", optional_run_simulation_runs_stop_at_first_failure_btn
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
+            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
         )
         save_simulation_runs_to_file_btn: Final[QtWidgets.QPushButton] = cast(
             "QtWidgets.QPushButton", optional_save_simulation_runs_to_file_btn
         )
 
         run_simulation_runs_btn.setEnabled(should_controls_be_enabled)
-        run_simulation_runs_stop_at_first_failure_btn.setEnabled(should_controls_be_enabled)
-        save_simulation_runs_to_file_btn.setEnabled(
-            should_controls_be_enabled and not self.did_syrec_program_contain_comments
+        sim_run_exec_mode_dropdown.setEnabled(should_controls_be_enabled)
+        save_simulation_runs_to_file_btn.setEnabled(should_controls_be_enabled)
+
+    def set_enabled_state_of_simulation_run_execution_controls_in_tab_widget_based_on_sim_run_selection_status(
+        self, tab_widget: QtWidgets.QWidget, is_simulation_run_selected: bool
+    ) -> None:
+        optional_run_simulation_runs_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
+            QtWidgets.QPushButton, SIM_RUN_EXECUTION_TRIGGER_BTN_NAME
         )
+
+        optional_sim_run_exec_mode_dropdown: QtWidgets.QComboBox | None = tab_widget.findChild(
+            QtWidgets.QComboBox, SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME
+        )
+        optional_save_simulation_runs_to_file_btn: QtWidgets.QPushButton | None = tab_widget.findChild(
+            QtWidgets.QPushButton, SAVE_SIM_RUNS_TO_FILE_BTN_NAME
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[
+                optional_run_simulation_runs_btn,
+                optional_sim_run_exec_mode_dropdown,
+                optional_save_simulation_runs_to_file_btn,
+            ],
+            error_dialog_content="Failed to locate required QtWidgets during change of enabled state of simulation run execution controls",
+        ):
+            return
+
+        run_simulation_runs_btn: Final[QtWidgets.QPushButton] = cast(
+            "QtWidgets.QPushButton", optional_run_simulation_runs_btn
+        )
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
+            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
+        )
+        cast("QtWidgets.QPushButton", optional_save_simulation_runs_to_file_btn)
+
+        curr_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = sim_run_exec_mode_dropdown.currentData()
+        if curr_sim_run_exec_mode is None:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Failed to determine simulation run execution mode",
+                message_box_content="Failed to determine simulation run execution mode while changing anbled state of simulation run execution controls.",
+                is_cancellable=True,
+                log_contents=False,
+            )
+            return
+
+        match curr_sim_run_exec_mode:
+            case SimulationRunExecutionMode.RUN_ALL | SimulationRunExecutionMode.RUN_ALL_STOP_AT_FIRST_FAILURE:
+                run_simulation_runs_btn.setEnabled(not is_simulation_run_selected)
+            case SimulationRunExecutionMode.RUN_SINGLE:
+                run_simulation_runs_btn.setEnabled(is_simulation_run_selected)
+            case _:
+                # Added guard to handle new simulation run execution modes
+                assert_never(curr_sim_run_exec_mode)
 
     def set_default_simulation_run_modification_buttons_enabled_state(self) -> None:
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
@@ -929,3 +1080,31 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         add_sim_run_btn.setEnabled(True)
         edit_sim_run_btn.setEnabled(False)
         delete_sim_run_btn.setEnabled(False)
+
+    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    def handle_simulation_run_execution_mode_selection_change(self, selected_sim_run_index: int) -> None:
+        self.shared_selected_sim_run_execution_mode_dropdown_index = selected_sim_run_index
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self.simulation_runs_tab_widget.widget(
+            self.simulation_runs_tab_widget.currentIndex()
+        )
+
+        optional_simulation_runs_list_view: QtWidgets.QWidget | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_curr_active_tab_widget, optional_simulation_runs_list_view],
+            error_dialog_content="Failed to locate all required QtWidgets in simulation run execution mode selection change handler",
+        ):
+            return
+
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        simulation_runs_list_view: Final[QtWidgets.QListView] = cast(
+            "QtWidgets.QListView", optional_simulation_runs_list_view
+        )
+        self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget_based_on_sim_run_selection_status(
+            curr_active_tab_widget, len(simulation_runs_list_view.selectedIndexes()) == 1
+        )
