@@ -54,8 +54,8 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
         worker_send_queue_config: QueueConfig[SimulationRunModel],
     ) -> None:
         super().__init__(worker_send_queue_config)
-        self.path_to_json_file = path_to_json_file
-        self.expected_input_state_size = expected_input_state_size
+        self._path_to_json_file: Final[Path] = path_to_json_file
+        self._expected_input_state_size: Final[int] = expected_input_state_size
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_import(self) -> None:
@@ -67,7 +67,7 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
 
             n_remaining_input_states_to_import_in_batch: int = self._send_queue_batch_size
             # Reading bytes instead of strings leads to better parser performance
-            with self.path_to_json_file.open("rb") as file:
+            with self._path_to_json_file.open("rb") as file:
                 # The json parser starts at the first element matching the prefix which in our case starts at an element with key 'simulationRuns' that is expected
                 # to be a property of the top level element (i.e. the path to the 'simulationRuns' element is relative to the top level element).
                 # Additionally, with the postfix '.item', only the entries of a JSON array are processed. If the 'simulationRuns' entry value is no
@@ -85,7 +85,7 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
 
                     self.send_queue.put_nowait(
                         SimulationRunJsonImportWorker._try_deserialize_simulation_run(
-                            self.expected_input_state_size, arr_elem
+                            self._expected_input_state_size, arr_elem
                         )
                     )
                     n_remaining_input_states_to_import_in_batch -= 1
@@ -124,8 +124,8 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
     @override
     def _assert_valid_user_provided_parameter_values(self) -> None:
         super()._assert_valid_user_provided_parameter_values()
-        if self.expected_input_state_size < 1:
-            msg = f"Expected input state size must be a positive integer but was actually {self.expected_input_state_size}!"
+        if self._expected_input_state_size < 1:
+            msg = f"Expected input state size must be a positive integer but was actually {self._expected_input_state_size}!"
             raise ValueError(msg)
 
     @staticmethod

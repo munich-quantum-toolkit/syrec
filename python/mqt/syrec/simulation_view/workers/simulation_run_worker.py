@@ -45,9 +45,11 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
             worker_send_queue_config=worker_send_queue_config,
             worker_recv_queue_config=worker_recv_queue_config,
         )
-        self._expected_input_state_size = _expected_input_state_size
-        self._annotatable_quantum_computation = annotatable_quantum_computation
-        self._should_stop_at_first_output_state_mismatch: bool = stop_at_first_output_state_mismatch
+        self._expected_input_state_size: Final[int] = _expected_input_state_size
+        self._annotatable_quantum_computation: Final[syrec.annotatable_quantum_computation] = (
+            annotatable_quantum_computation
+        )
+        self._should_stop_at_first_output_state_mismatch: Final[bool] = stop_at_first_output_state_mismatch
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_simulations(self) -> None:

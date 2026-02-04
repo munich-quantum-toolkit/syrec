@@ -208,27 +208,26 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self, annotatable_quantum_computation: syrec.annotatable_quantum_computation, parent: QtCore.QObject = None
     ) -> None:
         super().__init__(parent)
-        self.n_data_qubits: int = annotatable_quantum_computation.num_data_qubits
-        self.simulation_run_models: list[SimulationRunModel] = []
-        self.quantum_register_layouts: list[QuantumRegisterLayout] = (
+        self._simulation_run_models: list[SimulationRunModel] = []
+        self._quantum_register_layouts: list[QuantumRegisterLayout] = (
             QtSimulationRunModel._record_quantum_register_layouts(annotatable_quantum_computation)
         )
-        self.longest_quantum_register_name: str = ""
-        self.largest_quantum_register_size: int = 0
-        self.largest_first_qubit_of_quantum_registers: int = 0
-        self.annotatable_quantum_computation = annotatable_quantum_computation
+        self._longest_quantum_register_name: str = ""
+        self._largest_quantum_register_size: int = 0
+        self._largest_first_qubit_of_quantum_registers: int = 0
+        self._annotatable_quantum_computation = annotatable_quantum_computation
 
-        for qreg_layout in self.quantum_register_layouts:
-            self.longest_quantum_register_name = (
+        for qreg_layout in self._quantum_register_layouts:
+            self._longest_quantum_register_name = (
                 qreg_layout.qreg_name
-                if len(qreg_layout.qreg_name) > len(self.longest_quantum_register_name)
-                else self.longest_quantum_register_name
+                if len(qreg_layout.qreg_name) > len(self._longest_quantum_register_name)
+                else self._longest_quantum_register_name
             )
-            self.largest_quantum_register_size = max(qreg_layout.qreg_size, self.largest_quantum_register_size)
+            self._largest_quantum_register_size = max(qreg_layout.qreg_size, self._largest_quantum_register_size)
 
-        if len(self.quantum_register_layouts) > 0:
-            self.largest_first_qubit_of_quantum_registers = self.quantum_register_layouts[
-                len(self.quantum_register_layouts) - 1
+        if len(self._quantum_register_layouts) > 0:
+            self._largest_first_qubit_of_quantum_registers = self._quantum_register_layouts[
+                len(self._quantum_register_layouts) - 1
             ].first_qubit_of_qreg
 
     @staticmethod
@@ -256,7 +255,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
 
     @override
     def rowCount(self, parent: QtCore.QModelIndex) -> int:
-        return 0 if parent.isValid() else len(self.simulation_run_models)
+        return 0 if parent.isValid() else len(self._simulation_run_models)
 
     @override
     def data(self, index: QtCore.QModelIndex, role: int) -> Any | None:
@@ -264,22 +263,22 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             return None
 
         if role == SIMULATION_RUN_IO_STATE_QT_ROLE:
-            return self.simulation_run_models[index.row()]
+            return self._simulation_run_models[index.row()]
 
         if role == QUANTUM_REGISTER_LAYOUT_QT_ROLE:
-            return self.quantum_register_layouts
+            return self._quantum_register_layouts
 
         if role == LONGEST_QUANTUM_REGISTER_NAME_QT_ROLE:
-            return self.longest_quantum_register_name
+            return self._longest_quantum_register_name
 
         if role == LARGEST_QUANTUM_REGISTER_SIZE_QT_ROLE:
-            return self.largest_quantum_register_size
+            return self._largest_quantum_register_size
 
         if role == LARGEST_FIRST_QUBIT_OF_QUANTUM_REGISTER_QT_ROLE:
-            return self.largest_first_qubit_of_quantum_registers
+            return self._largest_first_qubit_of_quantum_registers
 
         if role == ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE:
-            return self.annotatable_quantum_computation
+            return self._annotatable_quantum_computation
 
         if role == LARGEST_SIM_RUN_NUMBER_QT_ROLE:
             return self.rowCount(QtCore.QModelIndex())
@@ -287,14 +286,14 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         return None
 
     def get_simulation_run_model(self, index: int) -> SimulationRunModel | None:
-        if 0 <= index < len(self.simulation_run_models):
-            return self.simulation_run_models[index]
+        if 0 <= index < len(self._simulation_run_models):
+            return self._simulation_run_models[index]
         return None
 
     def add_simulation_run_model(self, simulation_run_model: SimulationRunModel) -> None:
         n_simulation_runs: Final[int] = self.rowCount(QtCore.QModelIndex())
         self.beginInsertRows(QtCore.QModelIndex(), n_simulation_runs, n_simulation_runs)
-        self.simulation_run_models.append(simulation_run_model)
+        self._simulation_run_models.append(simulation_run_model)
         self.endInsertRows()
 
     def delete_simulation_run_model(self, index: QtCore.QModelIndex) -> bool:
@@ -302,22 +301,22 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             return False
 
         self.beginRemoveRows(QtCore.QModelIndex(), index.row(), index.row())
-        self.simulation_run_models.pop(index.row())
+        self._simulation_run_models.pop(index.row())
         self.endRemoveRows()
         return True
 
     def delete_all_simulation_run_models(self) -> None:
         self.beginResetModel()
-        self.simulation_run_models.clear()
+        self._simulation_run_models.clear()
         self.endResetModel()
 
     def reset_prev_simulation_run_execution_results(self) -> None:
         if self.rowCount(QtCore.QModelIndex()) == 0:
             return
 
-        for sim_run_model in self.simulation_run_models:
+        for sim_run_model in self._simulation_run_models:
             sim_run_model.reset_result_of_execution()
-        self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(len(self.simulation_run_models) - 1, 0))
+        self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(len(self._simulation_run_models) - 1, 0))
 
     def reset_prev_simulation_run_execution_result(self, idx_of_sim_run_to_reset: QtCore.QModelIndex) -> None:
         if not self.is_model_index_valid(idx_of_sim_run_to_reset):
@@ -325,7 +324,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
 
-        self.simulation_run_models[idx_of_sim_run_to_reset.row()].reset_result_of_execution()
+        self._simulation_run_models[idx_of_sim_run_to_reset.row()].reset_result_of_execution()
         self.dataChanged.emit(idx_of_sim_run_to_reset, idx_of_sim_run_to_reset)
 
     def update_edited_simulation_run_model(
@@ -336,7 +335,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
 
-        self.simulation_run_models[index.row()].update_user_editable_data(
+        self._simulation_run_models[index.row()].update_user_editable_data(
             updated_simulation_run_data.input_state, updated_simulation_run_data.expected_output_state
         )
         self.dataChanged.emit(index, index)
@@ -353,10 +352,10 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=1)
             raise ValueError(msg)
 
-        self.simulation_run_models[index.row()].set_result_of_simulation_execution(
+        self._simulation_run_models[index.row()].set_result_of_simulation_execution(
             actual_output_state, do_expected_and_actual_output_states_match, execution_runtime_in_ms
         )
         self.dataChanged.emit(index, index)
 
     def is_model_index_valid(self, index: QtCore.QModelIndex) -> bool:
-        return index.isValid() and index.row() >= 0 and index.row() < len(self.simulation_run_models)  # type: ignore[no-any-return]
+        return index.isValid() and index.row() >= 0 and index.row() < len(self._simulation_run_models)  # type: ignore[no-any-return]

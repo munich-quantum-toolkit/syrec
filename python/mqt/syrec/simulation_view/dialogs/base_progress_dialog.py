@@ -66,12 +66,12 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
     ) -> None:
         super().__init__(parent)
 
-        self.worker_thread: QtCore.QThread | None = None
-        self.worker: WorkerType | None = None
-        self.shared_simulation_runs_model: QtSimulationRunModel = shared_simulation_runs_model
+        self._worker_thread: QtCore.QThread | None = None
+        self._worker: WorkerType | None = None
+        self._shared_simulation_runs_model: QtSimulationRunModel = shared_simulation_runs_model
 
-        self.stop_processing_recv_batches: bool = False
-        self.total_runtime_in_seconds: float = 0
+        self._stop_processing_recv_batches: bool = False
+        self._total_runtime_in_seconds: float = 0
 
         # Ensure the dialog is deleted when closed this may not be strictly necessary but seems to be a good cleanup practice
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -96,45 +96,46 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
         self.setGeometry(dialog_x_pos, dialog_y_pos, to_be_used_dialog_size.width(), to_be_used_dialog_size.height())
 
         layout = QtWidgets.QVBoxLayout()
-        self.title_lbl = QtWidgets.QLabel()
-        self.title_lbl.setStyleSheet("QLabel { font-size : 16px; font-weight: bold; }")
-        self.title_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self._title_lbl = QtWidgets.QLabel()
+        self._title_lbl.setStyleSheet("QLabel { font-size : 16px; font-weight: bold; }")
+        self._title_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self.progress_info_text_lbl = QtWidgets.QLabel()
-        self.progress_info_text_lbl.setStyleSheet("QLabel { color : gray; }")
-        self.progress_info_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self._progress_info_text_lbl = QtWidgets.QLabel()
+        self._progress_info_text_lbl.setStyleSheet("QLabel { color : gray; }")
+        self._progress_info_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self.error_text_lbl = QtWidgets.QLabel()
-        self.error_text_lbl.setStyleSheet("QLabel { color : red; }")
-        self.error_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self._error_text_lbl = QtWidgets.QLabel()
+        self._error_text_lbl.setStyleSheet("QLabel { color : red; }")
+        self._error_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self.progress_bar: QtWidgets.QProgressBar | None = None
+        self._progress_bar: QtWidgets.QProgressBar | None = None
         if optional_progress_bar_text_format is not None:
-            self.progress_bar = QtWidgets.QProgressBar()
+            self._progress_bar = QtWidgets.QProgressBar()
             # For placeholder values see: https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QProgressBar.html#PySide6.QtWidgets.QProgressBar.format
-            # self.progress_bar.setFormat("Generated %v out of %m input states")
-            self.progress_bar.setFormat(optional_progress_bar_text_format)
-            self.progress_bar.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            # self._progress_bar.setFormat("Generated %v out of %m input states")
+            # An invalid pattern (e.g. unknown placeholders, etc.) will not cause an error.
+            self._progress_bar.setFormat(optional_progress_bar_text_format)
+            self._progress_bar.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self.total_runtime_info_text_lbl = QtWidgets.QLabel()
-        self.total_runtime_info_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self._total_runtime_info_text_lbl = QtWidgets.QLabel()
+        self._total_runtime_info_text_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self.dialog_button_box = QtWidgets.QDialogButtonBox(
+        self._dialog_button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
-        self.dialog_button_box.setCenterButtons(True)
+        self._dialog_button_box.setCenterButtons(True)
         self._change_dialog_ok_button_enable_state(False)
         self._change_dialog_cancel_button_enable_state(False)
 
         if create_default_layout:
-            layout.addWidget(self.title_lbl)
-            layout.addWidget(self.progress_info_text_lbl)
-            layout.addWidget(self.error_text_lbl)
+            layout.addWidget(self._title_lbl)
+            layout.addWidget(self._progress_info_text_lbl)
+            layout.addWidget(self._error_text_lbl)
             layout.addStretch()
             if optional_progress_bar_text_format is not None:
-                layout.addWidget(self.progress_bar)
-            layout.addWidget(self.total_runtime_info_text_lbl)
-            layout.addWidget(self.dialog_button_box)
+                layout.addWidget(self._progress_bar)
+            layout.addWidget(self._total_runtime_info_text_lbl)
+            layout.addWidget(self._dialog_button_box)
             self.setLayout(layout)
 
     @staticmethod
@@ -165,18 +166,19 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _allow_worker_to_continue(self) -> None:
-        if self.worker is None:
+        """Signal to the worker that it can continue with its long running operation."""
+        if self._worker is None:
             return
 
         try:
-            self.worker.notify_to_continue_processing()
+            self._worker.notify_to_continue_processing()
         except Exception as err:
             self._handle_non_recoverable_error(
                 f"Error while trying to notify simulation run execution worker about new batch data being available, reason: {BaseProgressDialog._stringify_error(err)}"
             )
 
     def _update_progress_text_with_batch_info(self, n_batch_elements: int, batch_duration_in_seconds: float) -> None:
-        self.progress_info_text_lbl.setText(
+        self._progress_info_text_lbl.setText(
             DEFAULT_BATCH_RUNTIME_INFO_TEXT_FORMAT.format(
                 n_batch_elements=n_batch_elements, batch_duration_in_ms=batch_duration_in_seconds * 1000
             )
@@ -186,45 +188,57 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
         if batch_runtime_in_seconds < 0:
             return
 
-        self.total_runtime_in_seconds += batch_runtime_in_seconds
-        self.total_runtime_info_text_lbl.setText(
-            DEFAULT_TOTAL_RUNTIME_INFO_TEXT_FORMAT.format(total_runtime_in_seconds=self.total_runtime_in_seconds)
+        self._total_runtime_in_seconds += batch_runtime_in_seconds
+        self._total_runtime_info_text_lbl.setText(
+            DEFAULT_TOTAL_RUNTIME_INFO_TEXT_FORMAT.format(total_runtime_in_seconds=self._total_runtime_in_seconds)
         )
 
     def _shutdown_worker_thread_and_await_completion(self) -> None:
-        if self.worker_thread is None:
+        """
+        Stop the work threads event queue (QThread) and await the completion of the associated system thread of the worker.
+
+        Note: This call will block until the system thread of the worker finishes execution.
+        """
+        if self._worker_thread is None:
             return
 
         log_info_to_console(
             "Shutting down worker thread!", num_additionally_skipped_stack_frames_starting_from_caller_function=1
         )
-        self.worker_thread.quit()
+        self._worker_thread.quit()
         log_info_to_console(
             "Waiting on worker thread completion...",
             num_additionally_skipped_stack_frames_starting_from_caller_function=1,
         )
-        self.worker_thread.wait()
+        self._worker_thread.wait()
         log_info_to_console(
             "Worker thread finished!", num_additionally_skipped_stack_frames_starting_from_caller_function=1
         )
-        self.progress_info_text_lbl.setText("Worker thread finished!")
+        self._progress_info_text_lbl.setText("Worker thread finished!")
 
     def _request_worker_cancellation(self) -> None:
-        if self.worker is None:
+        """
+        Request the cancellation of the long running operation of the worker.
+
+        Note: It is the responsibility of the worker to support cooperative cancellation with this function giving
+        no guarantee whether the worker supports such behaviour. Depending on the implementation of the worker, this call might block
+        the calling thread.
+        """
+        if self._worker is None:
             return
 
-        self.stop_processing_recv_batches = True
-        self.progress_info_text_lbl.setText("Requesting cancellation of long running worker!")
+        self._stop_processing_recv_batches = True
+        self._progress_info_text_lbl.setText("Requesting cancellation of long running worker!")
         log_info_to_console(
             "Requesting cancellation of long running worker",
             num_additionally_skipped_stack_frames_starting_from_caller_function=1,
         )
-        self.worker.request_cancellation()
+        self._worker.request_cancellation()
         self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
 
     def _change_dialog_cancel_button_enable_state(self, should_button_be_enabled: bool) -> None:
         BaseProgressDialog._change_dialog_button_enable_state(
-            self.dialog_button_box,
+            self._dialog_button_box,
             QtWidgets.QDialogButtonBox.StandardButton.Cancel,
             should_button_be_enabled,
             btn_not_found_notification_parent=self,
@@ -232,7 +246,7 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
 
     def _change_dialog_ok_button_enable_state(self, should_button_be_enabled: bool) -> None:
         BaseProgressDialog._change_dialog_button_enable_state(
-            self.dialog_button_box,
+            self._dialog_button_box,
             QtWidgets.QDialogButtonBox.StandardButton.Ok,
             should_button_be_enabled,
             btn_not_found_notification_parent=self,
@@ -250,11 +264,12 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
                 err_msg,
                 num_additionally_skipped_stack_frames_starting_from_caller_function=num_additionally_skipped_stack_frames_starting_from_this_function,
             )
-        self.error_text_lbl.setText(err_msg)
+        self._error_text_lbl.setText(err_msg)
 
     def _reset_workers(self) -> None:
-        self.worker_thread = None
-        self.worker = None
+        """Reset the worker and worker thread instances by setting them to None."""
+        self._worker_thread = None
+        self._worker = None
 
     @staticmethod
     def _change_dialog_button_enable_state(

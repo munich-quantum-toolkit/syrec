@@ -45,8 +45,8 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
             worker_recv_queue_config=worker_recv_queue_config,
         )
 
-        self.associated_stringified_syrec_program = associated_stringified_syrec_program
-        self.path_to_json_file: Final[Path] = path_to_json_file
+        self._associated_stringified_syrec_program: Final[str] = associated_stringified_syrec_program
+        self._path_to_json_file: Final[Path] = path_to_json_file
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_export(self) -> None:
@@ -65,9 +65,9 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
             self._assert_valid_user_provided_parameter_values()
 
             batch_start_timestamp = SimulationRunJsonExportWorker.get_timestamp()
-            with self.path_to_json_file.open("w") as file:
+            with self._path_to_json_file.open("w") as file:
                 file.write(
-                    f'{{"inputCircuit":"{SimulationRunJsonExportWorker.convert_to_single_line_string(self.associated_stringified_syrec_program)}", "simulationRuns":['
+                    f'{{"inputCircuit":"{SimulationRunJsonExportWorker.convert_to_single_line_string(self._associated_stringified_syrec_program)}", "simulationRuns":['
                 )
 
                 while (

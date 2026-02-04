@@ -33,7 +33,7 @@ class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel
         self, expected_input_state_size: int, worker_send_queue_config: QueueConfig[SimulationRunModel]
     ) -> None:
         super().__init__(worker_send_queue_config)
-        self.expected_input_state_size: Final[int] = expected_input_state_size
+        self._expected_input_state_size: Final[int] = expected_input_state_size
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_generation(self) -> None:
@@ -45,7 +45,7 @@ class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel
             self._assert_valid_user_provided_parameter_values()
 
             # We are assuming that the caller has validated that the 2^x operation will not overflow the maximum value of a 32 bit integer.
-            n_states_to_generate: Final[int] = 2**self.expected_input_state_size
+            n_states_to_generate: Final[int] = 2**self._expected_input_state_size
             batch_start_timestamp = AllInputStatesGeneratorWorker.get_timestamp()
             while (
                 not self.is_cancellation_requested()
@@ -63,7 +63,7 @@ class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel
 
                     self.send_queue.put_nowait(
                         AllInputStatesGeneratorWorker._generate_sim_run_model_for_input_state(
-                            self.expected_input_state_size, integer_encoding_input_state
+                            self._expected_input_state_size, integer_encoding_input_state
                         )
                     )
 
@@ -90,8 +90,8 @@ class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel
     @override
     def _assert_valid_user_provided_parameter_values(self) -> None:
         super()._assert_valid_user_provided_parameter_values()
-        if self.expected_input_state_size < 1:
-            msg = f"Expected input state size must be a positive integer but was actually {self.expected_input_state_size}!"
+        if self._expected_input_state_size < 1:
+            msg = f"Expected input state size must be a positive integer but was actually {self._expected_input_state_size}!"
             raise ValueError(msg)
 
     @staticmethod

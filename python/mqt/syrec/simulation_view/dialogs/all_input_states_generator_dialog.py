@@ -39,12 +39,12 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
             dialog_title="Generating simulation runs...",
             optional_progress_bar_text_format="Generated %v out of %m input states",
         )
-        self.worker_send_queue: queue.SimpleQueue[SimulationRunModel] = queue.SimpleQueue()
-        self.worker_send_queue_batch_size: int = 0
-        self.num_generated_input_states: int = 0
+        self._worker_send_queue: queue.SimpleQueue[SimulationRunModel] = queue.SimpleQueue()
+        self._worker_send_queue_batch_size: int = 0
+        self._num_generated_input_states: int = 0
 
-        self.dialog_button_box.accepted.connect(self.accept)
-        self.dialog_button_box.rejected.connect(self._handle_input_state_generation_cancel_button_click)
+        self._dialog_button_box.accepted.connect(self.accept)
+        self._dialog_button_box.rejected.connect(self._handle_input_state_generation_cancel_button_click)
 
     def start_generation(
         self,
@@ -65,15 +65,15 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         # Since the operands of the exponentiation operator are casted to floats, the result (a float) could exceed the maximum storable value in an integer so we need to check this error case since
         # otherwise setting the maximum value of the QtWidgets.QProgressBar would raise an exception/no matching overload will be found since said function expects an integer parameter.
         n_expected_sim_runs_to_generate: Final[float] = 2**expected_input_state_size
-        if self.progress_bar is not None:
+        if self._progress_bar is not None:
             if not self._can_value_can_be_used_as_progress_bar_max_value(int(n_expected_sim_runs_to_generate)):
                 # We do not ask for confirmation to close the dialog since we faulted before the input state generation started.
                 super().reject()
                 return
 
-            self.progress_bar.setMinimum(0)
-            self.progress_bar.setMaximum(int(n_expected_sim_runs_to_generate))
-            self.progress_bar.setValue(0)
+            self._progress_bar.setMinimum(0)
+            self._progress_bar.setMaximum(int(n_expected_sim_runs_to_generate))
+            self._progress_bar.setValue(0)
         else:
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
@@ -83,39 +83,39 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
                 is_cancellable=False,
             )
 
-        self.title_lbl.setText(f"Generating simulation runs with batch size {worker_send_queue_batch_size}!")
+        self._title_lbl.setText(f"Generating simulation runs with batch size {worker_send_queue_batch_size}!")
 
         # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
-        self.worker_send_queue_batch_size = worker_send_queue_batch_size
-        self.worker = AllInputStatesGeneratorWorker(
+        self._worker_send_queue_batch_size = worker_send_queue_batch_size
+        self._worker = AllInputStatesGeneratorWorker(
             expected_input_state_size,
             worker_send_queue_config=QueueConfig(
-                queue_instance=self.worker_send_queue, queue_batch_size=self.worker_send_queue_batch_size
+                queue_instance=self._worker_send_queue, queue_batch_size=self._worker_send_queue_batch_size
             ),
         )
-        self.worker_thread = QtCore.QThread()
-        self.worker.moveToThread(self.worker_thread)
-        self.worker.batchCompleted.connect(
+        self._worker_thread = QtCore.QThread()
+        self._worker.moveToThread(self._worker_thread)
+        self._worker.batchCompleted.connect(
             self._handle_generated_input_state_batch, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        self.worker.finished.connect(
+        self._worker.finished.connect(
             self._handle_input_state_generator_finished, QtCore.Qt.ConnectionType.QueuedConnection
         )
-        self.worker.failed.connect(
+        self._worker.failed.connect(
             self._handle_input_state_generator_failure, QtCore.Qt.ConnectionType.QueuedConnection
         )
 
-        self.worker_thread.started.connect(self.worker.start_generation, QtCore.Qt.ConnectionType.QueuedConnection)
-        self.worker_thread.finished.connect(self.worker_thread.deleteLater)
-        self.worker_thread.finished.connect(self._reset_workers)
-        self.worker_thread.start(QtCore.QThread.Priority.LowPriority)
+        self._worker_thread.started.connect(self._worker.start_generation, QtCore.Qt.ConnectionType.QueuedConnection)
+        self._worker_thread.finished.connect(self._worker_thread.deleteLater)
+        self._worker_thread.finished.connect(self._reset_workers)
+        self._worker_thread.start(QtCore.QThread.Priority.LowPriority)
         self._change_dialog_cancel_button_enable_state(True)
 
     @override
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         # Ask for confirmation before closing
         if self._handle_input_state_generation_cancel_button_click():
-            if not self.error_text_lbl.text():
+            if not self._error_text_lbl.text():
                 self.accept()
             else:
                 # Avoid requiring duplicate confirmation of close operation by calling reject() function of super class instead of overridden reject function.
@@ -135,13 +135,13 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
 
     @QtCore.pyqtSlot(float)  # type: ignore[untyped-decorator]
     def _handle_generated_input_state_batch(self, batch_generation_duration_in_seconds: float) -> None:
-        if self.stop_processing_recv_batches:
+        if self._stop_processing_recv_batches:
             return
 
         n_dequeued_batch_elems: int = 0
         try:
-            for _ in range(self.worker_send_queue_batch_size):
-                self.shared_simulation_runs_model.add_simulation_run_model(self.worker_send_queue.get_nowait())
+            for _ in range(self._worker_send_queue_batch_size):
+                self._shared_simulation_runs_model.add_simulation_run_model(self._worker_send_queue.get_nowait())
                 n_dequeued_batch_elems += 1
         except queue.Empty:
             # The last batch generated by the worker could contain less than the expected batch size elements thus an empty queue should not be treated as an error
@@ -152,20 +152,20 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
 
         self._update_progress_text_with_batch_info(n_dequeued_batch_elems, batch_generation_duration_in_seconds)
         self._accumulate_and_update_total_runtime(batch_generation_duration_in_seconds)
-        self.num_generated_input_states += n_dequeued_batch_elems
-        if self.progress_bar is not None:
-            self.progress_bar.setValue(self.num_generated_input_states)
-        self.progress_info_text_lbl.setText("")
+        self._num_generated_input_states += n_dequeued_batch_elems
+        if self._progress_bar is not None:
+            self._progress_bar.setValue(self._num_generated_input_states)
+        self._progress_info_text_lbl.setText("")
 
         QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
 
     @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
     def _handle_input_state_generator_finished(self, was_cancellation_requested: bool) -> None:
         info_msg: Final[str] = "Input state generator finished!"
-        self.progress_info_text_lbl.setText(info_msg)
+        self._progress_info_text_lbl.setText(info_msg)
         log_info_to_console(info_msg)
-        if self.progress_bar is not None:
-            self.progress_bar.setVisible(False)
+        if self._progress_bar is not None:
+            self._progress_bar.setVisible(False)
 
         # Cancelling the long running operation through a click on the cancel button of the dialog will already request a shutdown of the worker
         # and its associated thread but the same operation also needs to be execute when the worker completes successfully. However, when cancellation
@@ -179,7 +179,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _handle_input_state_generation_cancel_button_click(self) -> bool:
-        if self.worker is None:
+        if self._worker is None:
             return True
 
         if show_and_request_ok_in_optionally_cancellable_notification(
@@ -196,7 +196,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         return False
 
     def _handle_non_recoverable_error(self, err: Exception | str | None) -> None:
-        self.progress_info_text_lbl.setText("")
+        self._progress_info_text_lbl.setText("")
         if err is not None:
             # We want to log the source of the error as close as possible to the origin of the actual error thus we need to skip a few stack frames
             # to determine the "source" stack frame. The skip stack frames would be (read from left to right with the leftmost stackframe being at the
@@ -204,7 +204,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
             self._update_displayed_error_text(err, num_additionally_skipped_stack_frames_starting_from_this_function=2)
 
         try:
-            self.shared_simulation_runs_model.delete_all_simulation_run_models()
+            self._shared_simulation_runs_model.delete_all_simulation_run_models()
         except Exception:
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
