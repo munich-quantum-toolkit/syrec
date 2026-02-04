@@ -59,7 +59,7 @@ IMPORT_FROM_FILE_NO_FILE_SELECTED_PLACEHOLDER_TEXT: Final[str] = "<NONE>"
 
 SOME_SIM_RUNS_TAB_WIDGET_NAME: Final[str] = "some_sim_runs_tab"
 ALL_SIM_RUNS_TAB_WIDGET_NAME: Final[str] = "all_sim_runs_tab"
-LOAD_SIM_RUNS_FROM_FILE_TAB_WIDGET_NAME: Final[str] = "LOAD_SIM_RUNS_FROM_FILE_TAB"
+LOAD_SIM_RUNS_FROM_FILE_TAB_WIDGET_NAME: Final[str] = "load_sim_runs_from_file_tab"
 
 
 # TODO: Add simulation runs button is sometimes not enabled?
@@ -313,14 +313,21 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     @QtCore.pyqtSlot(QtCore.QItemSelection, QtCore.QItemSelection)  # type: ignore[untyped-decorator]
     def handle_simulation_run_selection_change(
-        self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection
+        self,
+        selected: QtCore.QItemSelection,
+        deselected: QtCore.QItemSelection,
+        optional_tab_widget_to_apply_selection_change_to: QtWidgets.QTabWidget | None = None,
     ) -> None:
         # We want to only update the simulation run execution controls in case that a selected simulation run was deselected without selecting a new simulation run or vice versa.
         # In all other cases leave the enabled state of the simulation run controls the same by simply returning from this function.
         if selected.isEmpty() == deselected.isEmpty():
             return
 
-        optional_curr_active_tab_widget: QtWidgets.QWidget | None = self._simulation_runs_tab_widget.currentWidget()
+        optional_curr_active_tab_widget: QtWidgets.QWidget | None = (
+            self._simulation_runs_tab_widget.currentWidget()
+            if optional_tab_widget_to_apply_selection_change_to is None
+            else optional_tab_widget_to_apply_selection_change_to
+        )
         if not assert_all_required_widgets_found_or_close_dialog(
             error_notification_parent_widget=self,
             required_widgets=[optional_curr_active_tab_widget],
@@ -700,8 +707,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             ):
                 self._simulation_runs_tab_widget.setCurrentIndex(self._prev_active_simulation_runs_tab_idx)
                 return
-            self._simulation_runs_model.delete_all_simulation_run_models()
-
+            self._clear_simulation_run_list_and_backing_model(prev_active_tab_widget)
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(to_be_switched_to_tab_widget, False)
 
         if to_be_switched_to_tab_widget.objectName() == ALL_SIM_RUNS_TAB_WIDGET_NAME:
@@ -715,7 +721,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 log_contents=False,
             ):
                 self._simulation_runs_tab_widget.setCurrentIndex(self._prev_active_simulation_runs_tab_idx)
-                self.set_default_simulation_run_modification_buttons_enabled_state()
+                self.set_default_simulation_run_modification_buttons_enabled_state(prev_active_tab_widget)
                 return
 
             self.handle_open_and_start_all_input_states_generator_dialog(
@@ -727,7 +733,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         # TODO: Error handling
         sim_run_exec_mode_dropdown.setCurrentIndex(self._shared_selected_sim_run_execution_mode_dropdown_index)
-
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(prev_active_tab_widget, False)
         self._prev_active_simulation_runs_tab_idx = switched_to_tab_index
 
@@ -776,7 +781,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             "QtWidgets.QListView", optional_simulation_runs_list_view
         )
         sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
-            "QtWidgets.QListView", optional_sim_run_exec_mode_dropdown
+            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
         )
 
         selected_sim_run_model_idx: QtCore.QModelIndex | None = None
@@ -891,6 +896,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             return
 
         selected_filename_lbl: Final[QtWidgets.QLabel] = cast("QtWidgets.QLabel", optional_selected_filename_lbl)
+        curr_active_tab_widget: Final[QtWidgets.QTabWidget] = cast(
+            "QtWidgets.QTabWidget", optional_curr_active_tab_widget
+        )
         if self._simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0:
             if not show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.WARNING,
@@ -901,7 +909,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 log_contents=False,
             ):
                 return
-            self._simulation_runs_model.delete_all_simulation_run_models()
+            self._clear_simulation_run_list_and_backing_model(curr_active_tab_widget)
 
         self._simulation_run_import_from_file_dialog = SimulationRunJsonImportDialog(
             parent=self, shared_simulation_runs_model=self._simulation_runs_model
@@ -982,7 +990,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         run_simulation_runs_btn.setEnabled(should_controls_be_enabled)
         sim_run_exec_mode_dropdown.setEnabled(should_controls_be_enabled)
-        save_simulation_runs_to_file_btn.setEnabled(should_controls_be_enabled)
+        save_simulation_runs_to_file_btn.setEnabled(
+            should_controls_be_enabled and not self._did_syrec_program_contain_comments
+        )
 
     def set_enabled_state_of_simulation_run_execution_controls_in_tab_widget_based_on_sim_run_selection_status(
         self, tab_widget: QtWidgets.QWidget, is_simulation_run_selected: bool
@@ -1015,7 +1025,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
             "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
         )
-        cast("QtWidgets.QPushButton", optional_save_simulation_runs_to_file_btn)
+        save_simulation_runs_to_file_btn: Final[QtWidgets.QPushButton] = cast(
+            "QtWidgets.QPushButton", optional_save_simulation_runs_to_file_btn
+        )
 
         curr_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = sim_run_exec_mode_dropdown.currentData()
         if curr_sim_run_exec_mode is None:
@@ -1038,7 +1050,14 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 # Added guard to handle new simulation run execution modes
                 assert_never(curr_sim_run_exec_mode)
 
-    def set_default_simulation_run_modification_buttons_enabled_state(self) -> None:
+        sim_run_exec_mode_dropdown.setEnabled(not is_simulation_run_selected)
+        save_simulation_runs_to_file_btn.setEnabled(
+            not self._did_syrec_program_contain_comments and not is_simulation_run_selected
+        )
+
+    def set_default_simulation_run_modification_buttons_enabled_state(
+        self, associated_tab_widget: QtWidgets.QTabWidget
+    ) -> None:
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self._simulation_runs_tab_widget.widget(
             self._simulation_runs_tab_widget.currentIndex()
         )
@@ -1077,7 +1096,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         edit_sim_run_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_edit_sim_run_btn)
         delete_sim_run_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_delete_sim_run_btn)
 
-        add_sim_run_btn.setEnabled(True)
+        add_sim_run_btn.setEnabled(associated_tab_widget.objectName() != LOAD_SIM_RUNS_FROM_FILE_TAB_WIDGET_NAME)
         edit_sim_run_btn.setEnabled(False)
         delete_sim_run_btn.setEnabled(False)
 
@@ -1107,4 +1126,43 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget_based_on_sim_run_selection_status(
             curr_active_tab_widget, len(simulation_runs_list_view.selectedIndexes()) == 1
+        )
+
+    def _clear_simulation_run_list_and_backing_model(
+        self, tab_widget_containing_list_view: QtWidgets.QTabWidget
+    ) -> None:
+        optional_simulation_runs_list_view: QtWidgets.QWidget | None = tab_widget_containing_list_view.findChild(
+            QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=self,
+            required_widgets=[optional_simulation_runs_list_view],
+            error_dialog_content="Failed to locate all required simulation run list view widget during reset of simulation run list model",
+        ):
+            return
+
+        simulation_runs_list_view: Final[QtWidgets.QListView] = cast(
+            "QtWidgets.QListView", optional_simulation_runs_list_view
+        )
+        selection_prior_to_model_reset: Final[QtCore.QItemSelection] = (
+            simulation_runs_list_view.selectionModel().selection()
+        )
+
+        # During the model reset the beginModelReset emitted by the simulation runs model will disconnect the associated QListView from the selection model,
+        # after which all elements in the model will be deleted followed by a reconnect of the QListView to the selection model (by the endModelReset signal of the model).
+        # When the model is reset, the views selection model throws away every index that became invalid (see https://doc.qt.io/qt-6/qabstractitemmodel.html#modelReset), so after endResetModel() the selection is already empty;
+        # Since the selection is already empty, manually resetting the selection of the QListView (via clearSelection() and setCurrentIndex(QtCore.QModelIndex())) will be silently ignored since the selection is already empty thus
+        # the connected slot for the selectionChanged signal of the QListView is not invoked and must be invoked manually.
+        self._simulation_runs_model.delete_all_simulation_run_models()
+
+        selection_after_model_reset: Final[QtCore.QItemSelection] = (
+            simulation_runs_list_view.selectionModel().selection()
+        )
+        # To tab changed signal is emitted after the tab already changed thus the QTabWidget.currentWidget() will return the already switched to tab widget while we want to reset the selection
+        # in the switched from tab widget.
+        self.handle_simulation_run_selection_change(
+            selection_after_model_reset,
+            selection_prior_to_model_reset,
+            optional_tab_widget_to_apply_selection_change_to=tab_widget_containing_list_view,
         )
