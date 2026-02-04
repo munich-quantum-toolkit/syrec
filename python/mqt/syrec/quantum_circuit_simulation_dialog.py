@@ -951,16 +951,33 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self._simulation_runs_tab_widget.widget(
             self._simulation_runs_tab_widget.currentIndex()
         )
+
+        optional_sim_run_exec_mode_dropdown: QtWidgets.QComboBox | None = (
+            optional_curr_active_tab_widget.findChild(QtWidgets.QComboBox, SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME)
+            if optional_curr_active_tab_widget is not None
+            else None
+        )
+
         if not assert_all_required_widgets_found_or_close_dialog(
             error_notification_parent_widget=self,
-            required_widgets=[optional_curr_active_tab_widget],
-            error_dialog_content="Failed to locate active tab widget in import simulation runs from file dialog close handler",
+            required_widgets=[optional_curr_active_tab_widget, optional_sim_run_exec_mode_dropdown],
+            error_dialog_content="Failed to locate required QtWidgets in import simulation runs from file dialog close handler",
         ):
             return
 
         curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
+            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
+        )
+        curr_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = sim_run_exec_mode_dropdown.currentData()
+        should_simulation_run_execution_controls_be_enabled: Final[bool] = (
+            result == QtWidgets.QDialog.DialogCode.Accepted
+            and curr_sim_run_exec_mode is not None
+            and curr_sim_run_exec_mode != SimulationRunExecutionMode.RUN_SINGLE
+        )
+
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
-            curr_active_tab_widget, result == QtWidgets.QDialog.DialogCode.Accepted
+            curr_active_tab_widget, should_simulation_run_execution_controls_be_enabled
         )
 
         optional_add_sim_run_btn: QtWidgets.QWidget | None = curr_active_tab_widget.findChild(
