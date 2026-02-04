@@ -62,7 +62,6 @@ ALL_SIM_RUNS_TAB_WIDGET_NAME: Final[str] = "all_sim_runs_tab"
 LOAD_SIM_RUNS_FROM_FILE_TAB_WIDGET_NAME: Final[str] = "load_sim_runs_from_file_tab"
 
 
-# TODO: Add simulation runs button is sometimes not enabled?
 class SimulationRunExecutionMode(Enum):
     RUN_ALL = 0
     RUN_ALL_STOP_AT_FIRST_FAILURE = 1
@@ -181,7 +180,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             tab_wrapper_widget_layout.addSpacing(manual_y_space_size)
 
         # BEGIN: Create simulation runs list view Qt elements
-        simulation_runs_list_view: QtWidgets.QListView = QtWidgets.QListView(objectName=SIMULATION_RUNS_LIST_VIEW_NAME)
+        simulation_runs_list_view = QtWidgets.QListView(objectName=SIMULATION_RUNS_LIST_VIEW_NAME)
         simulation_runs_list_view.setModel(shared_simulation_runs_model)
         simulation_runs_list_view.setItemDelegate(SimulationRunOverviewStyledItemDelegate())
         simulation_runs_list_view.setUniformItemSizes(True)
@@ -200,6 +199,16 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_runs_list_scrollarea.setWidget(simulation_runs_list_view)
         simulation_runs_list_scrollarea.setWidgetResizable(True)
         tab_wrapper_widget_layout.addWidget(simulation_runs_list_scrollarea)
+
+        simulation_runs_list_selection_info_layout = QtWidgets.QHBoxLayout()
+        simulation_runs_list_selection_info_lbl: QtWidgets.QLabel = QtWidgets.QLabel(
+            "Select simulation runs with a left click while unselecting them with CTRL+left click"
+        )
+        simulation_runs_list_selection_info_lbl.setStyleSheet("QLabel { color : gray; }")
+        simulation_runs_list_selection_info_layout.addStretch()
+        simulation_runs_list_selection_info_layout.addWidget(simulation_runs_list_selection_info_lbl)
+        simulation_runs_list_selection_info_layout.addStretch()
+        tab_wrapper_widget_layout.addLayout(simulation_runs_list_selection_info_layout)
         # END: Create simulation runs list view Qt elements
 
         # BEGIN: Create simulation runs list modification Qt elements
@@ -731,7 +740,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
             "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown_in_switched_to_tab
         )
-        # TODO: Error handling
+        # Setting an invalid current index will not throw an error but sets the current index to -1.
+        # With the assumption that the selectable simulation run execution modes in the ComboBox do not change at runtime
+        # and our override of the selection change slot of the ComboBox not changing the selected index then invalid dropdown indices
+        # can only stem from this setter call (assuming that no other sets are added to this class in the future).
         sim_run_exec_mode_dropdown.setCurrentIndex(self._shared_selected_sim_run_execution_mode_dropdown_index)
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(prev_active_tab_widget, False)
         self._prev_active_simulation_runs_tab_idx = switched_to_tab_index
@@ -786,8 +798,16 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         selected_sim_run_model_idx: QtCore.QModelIndex | None = None
         curr_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = sim_run_exec_mode_dropdown.currentData()
-        # TODO:
-        assert curr_sim_run_exec_mode is not None
+        if curr_sim_run_exec_mode is None:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Unknown selected simulation run execution mode!",
+                message_box_content="Failed to determine selected simulation run execution mode while initializing simulation run execution dialog!",
+                is_cancellable=False,
+            )
+            return
+
         if curr_sim_run_exec_mode == SimulationRunExecutionMode.RUN_SINGLE:
             curr_num_selected_simulation_runs: Final[int] = len(simulation_runs_list_view.selectedIndexes())
             # We are assuming that the QListView only supports single item selection but QListView only offers fetch of all selected indices
@@ -1035,7 +1055,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Failed to determine simulation run execution mode",
-                message_box_content="Failed to determine simulation run execution mode while changing anbled state of simulation run execution controls.",
+                message_box_content="Failed to determine simulation run execution mode while changing enabled state of simulation run execution controls.",
                 is_cancellable=True,
                 log_contents=False,
             )
@@ -1052,7 +1072,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         sim_run_exec_mode_dropdown.setEnabled(not is_simulation_run_selected)
         save_simulation_runs_to_file_btn.setEnabled(
-            not self._did_syrec_program_contain_comments and not is_simulation_run_selected
+            not self._did_syrec_program_contain_comments
+            and not is_simulation_run_selected
+            and self._simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0
         )
 
     def set_default_simulation_run_modification_buttons_enabled_state(

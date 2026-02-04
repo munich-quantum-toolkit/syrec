@@ -130,8 +130,10 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         parent: QtWidgets.QWidget,
     ) -> None:
         super().__init__(parent)
+        self.simulation_run_model_index: Final[QtCore.QModelIndex] = simulation_run_model_index
+
         self._failed_due_to_internal_error: bool = False
-        self._edited_simulation_run_model: SimulationRunModel = copy_of_reference_edit_sim_run_model
+        self.edited_simulation_run_model: SimulationRunModel = copy_of_reference_edit_sim_run_model
 
         self._qreg_layouts: list[QuantumRegisterLayout] = simulation_run_model_index.data(
             QUANTUM_REGISTER_LAYOUT_QT_ROLE
@@ -140,12 +142,12 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE
         )
 
-        initial_input_state: syrec.n_bit_values_container = self._edited_simulation_run_model.input_state
+        initial_input_state: syrec.n_bit_values_container = self.edited_simulation_run_model.input_state
         initial_expected_output_state: syrec.n_bit_values_container | None = (
-            self._edited_simulation_run_model.expected_output_state
+            self.edited_simulation_run_model.expected_output_state
         )
         initial_actual_output_state: syrec.n_bit_values_container | None = (
-            self._edited_simulation_run_model.actual_output_state
+            self.edited_simulation_run_model.actual_output_state
         )
 
         # Ensure the dialog is deleted when closed this may not be strictly necessary but seems to be a good cleanup practice
@@ -176,7 +178,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
         init_expected_output_state_button = QtWidgets.QPushButton(
             "Init output state"
-            if self._edited_simulation_run_model.expected_output_state is None
+            if self.edited_simulation_run_model.expected_output_state is None
             else "Clear output state",
             objectName=QREG_EXPECTED_OUTPUT_STATE_VALUE_INIT_TOGGLE_NAME,
         )
@@ -482,7 +484,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             updated_qubit_value, return_as_high_low_state=True
         )
 
-        if not self._edited_simulation_run_model.update_input_state_qubit_value(associated_qubit, updated_qubit_value):
+        if not self.edited_simulation_run_model.update_input_state_qubit_value(associated_qubit, updated_qubit_value):
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
@@ -543,7 +545,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             updated_qubit_value, return_as_high_low_state=True
         )
 
-        if self._edited_simulation_run_model.expected_output_state is None:
+        if self.edited_simulation_run_model.expected_output_state is None:
             stringified_updated_qubit_value = SimulationRunEditorDialog._stringify_qubit_value(
                 None, return_as_high_low_state=True
             )
@@ -552,7 +554,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
             return
 
-        if not self._edited_simulation_run_model.update_expected_output_state_qubit_value(
+        if not self.edited_simulation_run_model.update_expected_output_state_qubit_value(
             associated_qubit, updated_qubit_value
         ):
             show_and_request_ok_in_optionally_cancellable_notification(
@@ -1151,12 +1153,12 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             "QtWidgets.QPushButton", optional_expected_output_state_value_toggle_button
         )
 
-        should_reset_output_state: bool = self._edited_simulation_run_model.expected_output_state is not None
+        should_reset_output_state: bool = self.edited_simulation_run_model.expected_output_state is not None
         if should_reset_output_state:
-            self._edited_simulation_run_model.expected_output_state = None
+            self.edited_simulation_run_model.expected_output_state = None
             expected_output_state_value_toggle_button.setText("Init output state")
         else:
-            self._edited_simulation_run_model.initialize_expected_output_state_as_copy_of_input_state()
+            self.edited_simulation_run_model.initialize_expected_output_state_as_copy_of_input_state()
             expected_output_state_value_toggle_button.setText("Clear output state")
 
         for qreg_layout in self._qreg_layouts:
@@ -1190,7 +1192,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 # and since no reset is requested, i.e. we initialized the expected output state member variable which in turn means it is not None at this point.
                 qreg_output_state_input_field.setText(
                     SimulationRunEditorDialog._stringify_some_qubits_of_n_bit_values_container(
-                        self._edited_simulation_run_model.expected_output_state,  # type: ignore[arg-type]
+                        self.edited_simulation_run_model.expected_output_state,  # type: ignore[arg-type]
                         qreg_layout.first_qubit_of_qreg,
                         qreg_layout.qreg_size,
                     )
@@ -1214,7 +1216,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
                 associated_qubit_value_checkbox = cast("QtWidgets.QCheckBox", optional_associated_qubit_value_checkbox)
                 qubit_value: bool | None = (
-                    self._edited_simulation_run_model.expected_output_state.test(qubit)  # type: ignore[union-attr]
+                    self.edited_simulation_run_model.expected_output_state.test(qubit)  # type: ignore[union-attr]
                     if not should_reset_output_state
                     else None
                 )
@@ -1316,7 +1318,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         curr_not_edited_input_text_field.setEnabled(
             are_stringified_qreg_contents_valid
-            and (self._edited_simulation_run_model.expected_output_state is not None or not is_editing_input_state)
+            and (self.edited_simulation_run_model.expected_output_state is not None or not is_editing_input_state)
         )
 
         if are_stringified_qreg_contents_valid:
@@ -1449,7 +1451,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 not_edited_input_state_text_field.setEnabled(should_state_controls_be_visible)
                 not_edited_output_state_text_field.setEnabled(
                     should_state_controls_be_visible
-                    and self._edited_simulation_run_model.expected_output_state is not None
+                    and self.edited_simulation_run_model.expected_output_state is not None
                 )
                 not_edited_qreg_qubit_values_edit_toggle_button.setEnabled(should_state_controls_be_visible)
 
@@ -1488,7 +1490,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 not_edited_input_state_qubit_checkbox.setEnabled(are_stringified_qreg_contents_valid)
                 not_edited_output_state_qubit_checkbox.setEnabled(
                     are_stringified_qreg_contents_valid
-                    and self._edited_simulation_run_model.expected_output_state is not None
+                    and self.edited_simulation_run_model.expected_output_state is not None
                 )
 
     @staticmethod
