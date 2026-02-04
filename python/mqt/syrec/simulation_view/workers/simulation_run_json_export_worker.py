@@ -134,12 +134,12 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
                         )
                     )
                     batch_start_timestamp = batch_timestamps.end
-                    self.batchCompleted.emit(batch_timestamps.duration)
                     self.send_queue.put_nowait(
                         ExportedBatchData(
                             exported_sim_runs=n_exported_sim_runs_in_batch, skipped_sim_runs=n_skipped_sim_runs_in_batch
                         )
                     )
+                    self.batchCompleted.emit(batch_timestamps.duration)
 
                     n_skipped_sim_runs_in_batch = 0
                     n_exported_sim_runs_in_batch = 0
