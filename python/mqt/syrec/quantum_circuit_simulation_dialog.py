@@ -791,7 +791,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        cast("QtWidgets.QTabWidget", optional_curr_active_tab_widget)
         simulation_runs_list_view: Final[QtWidgets.QListView] = cast(
             "QtWidgets.QListView", optional_simulation_runs_list_view
         )
@@ -1198,7 +1197,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def _determine_num_non_ancillary_qubits(
         annotatable_quantum_computation: AnnotatableQuantumComputation, potential_error_dialog_parent: QtWidgets.QWidget
     ) -> int:
-        num_ancillary_qubits: int = 0
+        num_non_ancillary_qubits: int = 0
         for qubit in range(annotatable_quantum_computation.num_data_qubits):
             fetched_qubit_label: str | None = annotatable_quantum_computation.get_qubit_label(
                 qubit, QubitLabelType.internal
@@ -1212,12 +1211,12 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                     is_cancellable=False,
                 )
                 return 0
-            num_ancillary_qubits += int(
+            num_non_ancillary_qubits += int(
                 not QuantumCircuitSimulationDialog._does_qubit_label_start_with_internal_qubit_label_prefix(
                     fetched_qubit_label
                 )
             )
-        return num_ancillary_qubits
+        return num_non_ancillary_qubits
 
     # This method is only a temporary workaround for the quantum registers created for ancillary qubits not being marked as ancillary in the annotatable quantum computation (Date of comment 04.02.2026)
     @staticmethod

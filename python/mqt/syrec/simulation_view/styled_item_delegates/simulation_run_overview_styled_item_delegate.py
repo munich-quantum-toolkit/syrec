@@ -318,6 +318,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         simulation_run_number: int,
         card_content_rect: QtCore.QRect,
         available_header_width: int,
+        *,
         draw_rect_corners: bool = False,
     ) -> QtCore.QPoint:
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
@@ -353,6 +354,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         index: QtCore.QModelIndex,
         header_text_bottom_left_point: QtCore.QPoint,
         available_content_width: int,
+        *,
         draw_rect_corners: bool = False,
     ) -> list[QtCore.QRect]:
         qreg_name_and_layout_info_column_width: int = (

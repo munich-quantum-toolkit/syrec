@@ -14,12 +14,19 @@ DEFAULT_LOGGER_NAME: Final[str] = "syrec-console-logger"
 
 def configure_default_console_logger() -> None:
     # For supported log message formats (see https://docs.python.org/3/library/logging.html#formatter-objects)
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s-%(levelname)s-[%(filename)s:%(lineno)s - %(funcName)20s()]-%(message)s",
-        datefmt="%H:%M:%S",
-        force=True,
+    logger = logging.getLogger(DEFAULT_LOGGER_NAME)
+    if logger.handlers:
+        return
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        logging.Formatter(
+            "%(asctime)s-%(levelname)s-[%(filename)s:%(lineno)s - %(funcName)20s()]-%(message)s",
+            datefmt="%H:%M:%S",
+        )
     )
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
 
 
 def log_debug_to_console(
@@ -27,7 +34,7 @@ def log_debug_to_console(
 ) -> None:
     logger = logging.getLogger(DEFAULT_LOGGER_NAME)
     # We do not want to log the origin of the helper function but of the caller of the function itself.
-    # The origin of the log entry is set to the stack frame of the caller but can be advances further up in the stack trace
+    # The origin of the log entry is set to the stack frame of the caller but can be advanced further up in the stack trace
     logger.debug(msg=info_msg, stacklevel=(2 + num_additionally_skipped_stack_frames_starting_from_caller_function))
 
 
@@ -36,7 +43,7 @@ def log_info_to_console(
 ) -> None:
     logger = logging.getLogger(DEFAULT_LOGGER_NAME)
     # We do not want to log the origin of the helper function but of the caller of the function itself.
-    # The origin of the log entry is set to the stack frame of the caller but can be advances further up in the stack trace
+    # The origin of the log entry is set to the stack frame of the caller but can be advanced further up in the stack trace
     logger.info(msg=info_msg, stacklevel=(2 + num_additionally_skipped_stack_frames_starting_from_caller_function))
 
 
@@ -45,7 +52,7 @@ def log_warning_to_console(
 ) -> None:
     logger = logging.getLogger(DEFAULT_LOGGER_NAME)
     # We do not want to log the origin of the helper function but of the caller of the function itself.
-    # The origin of the log entry is set to the stack frame of the caller but can be advances further up in the stack trace
+    # The origin of the log entry is set to the stack frame of the caller but can be advanced further up in the stack trace
     logger.warning(msg=warn_msg, stacklevel=(2 + num_additionally_skipped_stack_frames_starting_from_caller_function))
 
 
@@ -54,5 +61,5 @@ def log_error_to_console(
 ) -> None:
     logger = logging.getLogger(DEFAULT_LOGGER_NAME)
     # We do not want to log the origin of the helper function but of the caller of the function itself.
-    # The origin of the log entry is set to the stack frame of the caller but can be advances further up in the stack trace
+    # The origin of the log entry is set to the stack frame of the caller but can be advanced further up in the stack trace
     logger.error(msg=err_msg, stacklevel=(2 + num_additionally_skipped_stack_frames_starting_from_caller_function))

@@ -80,7 +80,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
 
                     dequeued_sim_run_model: SimulationRunModel | None = None
                     try:
-                        dequeued_sim_run_model = self.recv_queue.get(block=False, timeout=0.2)
+                        dequeued_sim_run_model = self.recv_queue.get(block=False)
                     except queue.Empty:
                         self.requestingData.emit()
                         break

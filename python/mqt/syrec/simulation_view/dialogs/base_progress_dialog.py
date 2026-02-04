@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Final, Generic, TypeVar
 
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -163,6 +164,11 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
             (optional_primary_screen.availableSize().height() // 2)
             - ((dialog_size.height() // 2) if dialog_size.height() > 0 else 0),
         )
+
+    @abstractmethod
+    def _handle_non_recoverable_error(self, err: Exception | str | None) -> None:
+        """Handle non-recoverable errors. Must be implemented by subclasses."""
+        return
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _allow_worker_to_continue(self) -> None:

@@ -418,8 +418,11 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
                 result.sim_runtime_in_ms,
             )
 
-            self._update_total_model_runtime_and_label(result.sim_runtime_in_ms)
-            self._accumulate_and_update_total_runtime(result.sim_runtime_in_ms)
+            sim_runtime_in_seconds: Final[float] = (
+                result.sim_runtime_in_ms / 1000 if result.sim_runtime_in_ms != 0 else 0
+            )
+            self._update_total_model_runtime_and_label(sim_runtime_in_seconds)
+            self._accumulate_and_update_total_runtime(sim_runtime_in_seconds)
         except Exception as err:
             self._handle_non_recoverable_error(
                 f"Error during reset of previous simulation run execution result of simulation run {idx_of_sim_run_to_execute.row()}, reason: {SimulationRunDialog._stringify_error(err)}"

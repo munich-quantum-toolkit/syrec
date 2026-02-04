@@ -361,4 +361,4 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self.dataChanged.emit(index, index)
 
     def is_model_index_valid(self, index: QtCore.QModelIndex) -> bool:
-        return index.isValid() and index.row() >= 0 and index.row() < len(self._simulation_run_models)  # type: ignore[no-any-return]
+        return index.isValid() and index.row() < len(self._simulation_run_models)  # type: ignore[no-any-return]

@@ -16,7 +16,7 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 
-from ...logger_utils import configure_default_console_logger, log_error_to_console, log_info_to_console
+from ...logger_utils import log_error_to_console, log_info_to_console
 
 try:
     # The fastest of the supported parser backends according to the documentation (https://pypi.org/project/ijson/#toc-entry-15)
@@ -24,7 +24,6 @@ try:
     # This should be the case for the majority of all platforms.
     import ijson.backends.yajl2_c as ijson
 except ImportError:
-    configure_default_console_logger()
     log_error_to_console("yajl2 C-extension not available, falling back to pure-Python parser!")
     # pure-Python fallback is always present but might not be the fastest
     import ijson

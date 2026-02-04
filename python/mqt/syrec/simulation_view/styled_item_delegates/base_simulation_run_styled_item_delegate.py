@@ -85,6 +85,7 @@ class BaseSimulationRunStyledItemDelegate:
         option: QtWidgets.QStyleOptionViewItem,
         largest_quantum_register_size_in_qubits: int,
         font_size: int,
+        *,
         does_content_include_prefix: bool = False,
         prefix_and_content_x_spacing: int = QREG_CONTENT_X_SPACING,
     ) -> int:
@@ -136,6 +137,7 @@ class BaseSimulationRunStyledItemDelegate:
         text: str,
         text_rect: QtCore.QRect,
         font_size: int,
+        *,
         draw_bold_text: bool = False,
         text_alignment: QtCore.Qt.AlignmentFlag = QtCore.Qt.AlignmentFlag.AlignTop
         | QtCore.Qt.AlignmentFlag.AlignCenter,
