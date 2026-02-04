@@ -290,22 +290,20 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
 
 class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
-    widget: CodeEditor | None = None
-    annotatable_quantum_computation: AnnotatableQuantumComputation | None = None
-    build_successful: Callable[[AnnotatableQuantumComputation], None] | None = None
-    build_failed: Callable[[str], None] | None = None
-    before_build: Callable[[], None] | None = None
-    parser_failed: Callable[[str], None] | None = None
-    synthesis_failed: Callable[[str], None] | None = None
-
-    cost_aware_synthesis = 0
-    line_aware_synthesis = 0
-
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__()
 
-        self.parent = parent
-        self.code_editor_widget: CodeEditor = CodeEditor(self.parent)
+        self.annotatable_quantum_computation: AnnotatableQuantumComputation | None = None
+        self.build_successful: Callable[[AnnotatableQuantumComputation], None] | None = None
+        self.build_failed: Callable[[str], None] | None = None
+        self.before_build: Callable[[], None] | None = None
+        self.parser_failed: Callable[[str], None] | None = None
+        self.synthesis_failed: Callable[[str], None] | None = None
+
+        self.cost_aware_synthesis = 0
+        self.line_aware_synthesis = 0
+
+        self.code_editor_widget: CodeEditor = CodeEditor(parent)
         self.code_editor_widget.setFont(QtGui.QFont("Monospace", 10, QtGui.QFont.Weight.Normal))
         self.code_editor_widget.highlighter = SyReCHighlighter(self.code_editor_widget.document())
         self.quantum_circuit_sim_runs_dialog: QuantumCircuitSimulationDialog | None = None
@@ -329,12 +327,10 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         self.setLayout(self.layout)
 
     def setup_actions(self) -> None:
-        self.open_action = QtGui.QAction(QtGui.QIcon.fromTheme("document-open"), "&Open...", self.parent)
-        self.build_action = QtGui.QAction(QtGui.QIcon.fromTheme("media-playback-start"), "&Build...", self.parent)
-        self.sim_action = QtGui.QAction(
-            QtGui.QIcon.fromTheme("x-office-spreadsheet"), "&Sim...", self.parent
-        )  # system-run
-        self.stat_action = QtGui.QAction(QtGui.QIcon.fromTheme("applications-other"), "&Stats...", self.parent)
+        self.open_action = QtGui.QAction(QtGui.QIcon.fromTheme("document-open"), "&Open...", self)
+        self.build_action = QtGui.QAction(QtGui.QIcon.fromTheme("media-playback-start"), "&Build...", self)
+        self.sim_action = QtGui.QAction(QtGui.QIcon.fromTheme("x-office-spreadsheet"), "&Sim...", self)  # system-run
+        self.stat_action = QtGui.QAction(QtGui.QIcon.fromTheme("applications-other"), "&Stats...", self)
 
         self.buttonCostAware = QtWidgets.QRadioButton("Cost-aware synthesis", self)
         self.buttonCostAware.toggled.connect(self.item_selected)
