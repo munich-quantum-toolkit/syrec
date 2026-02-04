@@ -64,6 +64,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         parent: QtWidgets.QWidget,
         shared_simulation_runs_model: QtSimulationRunModel,
         annotatable_quantum_computation: AnnotatableQuantumComputation,
+        expected_input_output_state_size: int,
     ) -> None:
         super().__init__(
             parent,
@@ -74,6 +75,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             user_provided_dialog_size=SimulationRunDialog.get_default_big_dialog_size(),
         )
         self._annotatable_quantum_computation: Final[AnnotatableQuantumComputation] = annotatable_quantum_computation
+        self._expected_input_state_size: Final[int] = expected_input_output_state_size
         self._optional_filtered_shared_sim_run_model: SimulationRunFilterModel | None = None
         self._stop_at_first_output_state_mismatch: bool = False
         self._num_executed_simulation_runs: int = 0
@@ -145,13 +147,16 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         sim_run_model_queue_batch_size: int = DEFAULT_SMALL_QUEUE_SIZE,
         sim_run_result_queue_batch_size: int = DEFAULT_SMALL_QUEUE_SIZE,
     ) -> None:
-        expected_input_state_size: Final[int] = self._annotatable_quantum_computation.num_data_qubits
-        if sim_run_model_queue_batch_size < 1 or sim_run_result_queue_batch_size < 1 or expected_input_state_size < 1:
+        if (
+            sim_run_model_queue_batch_size < 1
+            or sim_run_result_queue_batch_size < 1
+            or self._expected_input_state_size < 1
+        ):
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Invalid input parameters detected",
-                message_box_content=f"Expected simulation run model queue batch size (value={sim_run_model_queue_batch_size}), simulation run result queue batch size (value={sim_run_result_queue_batch_size}) as well as the expected input state size (value={expected_input_state_size}) to be positive integers!",
+                message_box_content=f"Expected simulation run model queue batch size (value={sim_run_model_queue_batch_size}), simulation run result queue batch size (value={sim_run_result_queue_batch_size}) as well as the expected input state size (value={self._expected_input_state_size}) to be positive integers!",
                 is_cancellable=False,
             )
             super().reject()
@@ -196,7 +201,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
         self._worker = SimulationRunWorker(
             self._annotatable_quantum_computation,
-            expected_input_state_size,
+            self._expected_input_state_size,
             self._stop_at_first_output_state_mismatch,
             worker_recv_queue_config=QueueConfig(
                 queue_instance=self._sim_run_model_queue, queue_batch_size=sim_run_model_queue_batch_size
