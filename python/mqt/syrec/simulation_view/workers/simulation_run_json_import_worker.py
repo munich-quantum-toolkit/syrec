@@ -31,7 +31,7 @@ except ImportError:
 
 from PyQt6 import QtCore
 
-from mqt import syrec
+from mqt.syrec import NBitValuesContainer
 
 from ..simulation_run_model import SimulationRunModel
 from .cancellable_worker_variants import CancellableProducerWorker
@@ -157,9 +157,9 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
                 msg = f"Qubit values of expected output state must be defined as an enumeration of '0' and '1' literals combined without any delimiter (i.e. a 4 qubit state must be defined as '0101') but was actually {stringified_expected_output_state}"
                 raise ValueError(msg)
 
-        input_state: syrec.n_bit_values_container = syrec.n_bit_values_container(expected_state_size)
-        expected_output_state: syrec.n_bit_values_container | None = (
-            syrec.n_bit_values_container(expected_state_size) if stringified_expected_output_state is not None else None
+        input_state: NBitValuesContainer = NBitValuesContainer(expected_state_size)
+        expected_output_state: NBitValuesContainer | None = (
+            NBitValuesContainer(expected_state_size) if stringified_expected_output_state is not None else None
         )
         for i in range(expected_state_size):
             input_state.set(i, stringified_input_state[i] != "0")

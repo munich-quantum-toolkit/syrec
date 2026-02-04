@@ -1,9 +1,9 @@
 [build-system]
 requires = [
-    "nanobind>=2.10.2",
+    "nanobind~=2.11.0",
     "scikit-build-core>=0.11.6",
     "setuptools-scm>=9.2.2",
-    "mqt.core~=3.4.0",
+    "mqt.core~=3.4.1",
 ]
 build-backend = "scikit_build_core.build"
 
@@ -40,7 +40,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "mqt.core~=3.4.0",
+    "mqt.core~=3.4.1",
     "PyQt6>=6.8",
     "ijson>=3.4.0",
     "typing-extensions>=4.1.0; python_version < '3.11'"
@@ -231,7 +231,7 @@ known-first-party = ["mqt.syrec"]
 "docs/**" = ["T20"]
 "python/mqt/syrec/syrec_editor.py" = ["T20"]
 "noxfile.py" = ["T20", "TID251"]
-"*.pyi" = ["D418", "E501", "N801", "PYI021"]
+"*.pyi" = ["D418", "E501", "PYI021"]
 "*.ipynb" = [
     "D",    # pydocstyle
     "E402", # Allow imports to appear anywhere in Jupyter notebooks
@@ -260,6 +260,7 @@ setp = "setp"
 ignore = [
   "GH200", # We use Renovate instead of Dependabot
   "PC160", # We use a mirror of crate-ci/typos
+  "PC170", # We do not use rST files anymore
 ]
 
 
@@ -328,10 +329,10 @@ mqt-syrec = { workspace = true }
 
 [dependency-groups]
 build = [
-    "nanobind>=2.10.2",
+    "nanobind~=2.11.0",
     "scikit-build-core>=0.11.6",
     "setuptools-scm>=9.2.2",
-    "mqt.core~=3.4.0",
+    "mqt.core~=3.4.1",
 ]
 docs = [
     "furo>=2025.9.25",

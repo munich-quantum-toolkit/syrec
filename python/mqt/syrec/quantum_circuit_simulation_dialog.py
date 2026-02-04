@@ -12,7 +12,7 @@ import re
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Final, cast
+from typing import TYPE_CHECKING, Final, cast
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -26,7 +26,7 @@ else:
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-from mqt import syrec
+from mqt.syrec import NBitValuesContainer
 
 from .message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 from .simulation_view.dialogs.all_input_states_generator_dialog import AllInputStatesGeneratorDialog
@@ -44,6 +44,9 @@ from .simulation_view.styled_item_delegates.simulation_run_overview_styled_item_
     SimulationRunOverviewStyledItemDelegate,
 )
 from .widget_check_utils import assert_all_required_widgets_found_or_close_dialog
+
+if TYPE_CHECKING:
+    from mqt.syrec import AnnotatableQuantumComputation
 
 LOADED_FROM_FILE_INPUT_FIELD_NAME: Final[str] = "load_from_file_input_field"
 IMPORT_FROM_FILE_BUTTON_NAME: Final[str] = "import_from_file_btn"
@@ -76,7 +79,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def __init__(
         self,
         associated_stringified_syrec_program: str,
-        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
+        annotatable_quantum_computation: AnnotatableQuantumComputation,
         parent: QtWidgets.QWidget,
     ) -> None:
         super().__init__(parent)
@@ -87,9 +90,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             associated_stringified_syrec_program if not self._did_syrec_program_contain_comments else ""
         )
 
-        self._annotatable_quantum_computation: Final[syrec.annotatable_quantum_computation] = (
-            annotatable_quantum_computation
-        )
+        self._annotatable_quantum_computation: Final[AnnotatableQuantumComputation] = annotatable_quantum_computation
         self.setWindowTitle("Define simulation runs for quantum computation")
         # Ensure the dialog is deleted when closed this may not be strictly necessary but seems to be a good cleanup practice
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -389,7 +390,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def handle_simulation_run_add_btn_click(self) -> None:
         self._simulation_runs_model.add_simulation_run_model(
             SimulationRunModel(
-                input_state=syrec.n_bit_values_container(self._expected_input_output_state_size),
+                input_state=NBitValuesContainer(self._expected_input_output_state_size),
                 expected_output_state=None,
             )
         )

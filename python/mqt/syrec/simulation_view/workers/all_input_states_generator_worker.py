@@ -18,7 +18,7 @@ else:
 
 from PyQt6 import QtCore
 
-from mqt import syrec
+from mqt.syrec import NBitValuesContainer
 
 from ...logger_utils import log_error_to_console
 from ..simulation_run_model import SimulationRunModel
@@ -98,7 +98,6 @@ class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel
     def _generate_sim_run_model_for_input_state(
         expected_input_state_size: int, integer_defining_input_state: int
     ) -> SimulationRunModel:
-        input_state = syrec.n_bit_values_container(expected_input_state_size)
-        for qubit in range(expected_input_state_size):
-            input_state.set(qubit, bool((integer_defining_input_state >> qubit) & 1))
-        return SimulationRunModel(input_state, expected_output_state=None)
+        return SimulationRunModel(
+            NBitValuesContainer(expected_input_state_size, integer_defining_input_state), expected_output_state=None
+        )

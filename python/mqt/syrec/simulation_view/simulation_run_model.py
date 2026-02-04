@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -19,9 +19,12 @@ else:
 
 from PyQt6 import QtCore
 
-from mqt import syrec
+from mqt.syrec import NBitValuesContainer, QubitLabelType
 
 from ..logger_utils import log_error_to_console
+
+if TYPE_CHECKING:
+    from mqt.syrec import AnnotatableQuantumComputation
 
 # Some debugging tips: https://www.eso.org/~eltmgr/ECS/documents-latest/CUT/sphinx_doc/latest/docs/500_gui_development.html#gdb
 # First custom item data role usable according to: https://doc.qt.io/qt-6/qt.html#ItemDataRole-enum
@@ -42,17 +45,17 @@ class QuantumRegisterLayout:
 
 
 class SimulationRunModel:
-    input_state: syrec.n_bit_values_container
-    expected_output_state: syrec.n_bit_values_container | None = None
-    actual_output_state: syrec.n_bit_values_container | None = None
+    input_state: NBitValuesContainer
+    expected_output_state: NBitValuesContainer | None = None
+    actual_output_state: NBitValuesContainer | None = None
     do_expected_and_actual_outputs_match: bool | None = None
     execution_runtime_in_ms: float | None = None
 
     def __init__(
         self,
-        input_state: syrec.n_bit_values_container,
-        expected_output_state: syrec.n_bit_values_container | None = None,
-        actual_output_state: syrec.n_bit_values_container | None = None,
+        input_state: NBitValuesContainer,
+        expected_output_state: NBitValuesContainer | None = None,
+        actual_output_state: NBitValuesContainer | None = None,
         create_new_n_bit_values_container_instances: bool = False,
     ) -> None:
         SimulationRunModel._assert_n_bit_value_container_sizes_match(
@@ -67,15 +70,15 @@ class SimulationRunModel:
             self.expected_output_state = expected_output_state
             self.actual_output_state = actual_output_state
         else:
-            self.input_state = syrec.n_bit_values_container(input_state.size())
+            self.input_state = NBitValuesContainer(input_state.size())
             for qubit in range(input_state.size()):
                 self.input_state.set(qubit, input_state.test(qubit))  # type: ignore[arg-type]
             if expected_output_state is not None:
-                self.expected_output_state = syrec.n_bit_values_container(expected_output_state.size())
+                self.expected_output_state = NBitValuesContainer(expected_output_state.size())
                 for qubit in range(expected_output_state.size()):
                     self.expected_output_state.set(qubit, expected_output_state.test(qubit))  # type: ignore[arg-type]
             if actual_output_state is not None:
-                self.actual_output_state = syrec.n_bit_values_container(actual_output_state.size())
+                self.actual_output_state = NBitValuesContainer(actual_output_state.size())
                 for qubit in range(actual_output_state.size()):
                     self.actual_output_state.set(qubit, actual_output_state.test(qubit))  # type: ignore[arg-type]
 
@@ -83,7 +86,7 @@ class SimulationRunModel:
         if self.expected_output_state is not None:
             return
 
-        self.expected_output_state = syrec.n_bit_values_container(self.input_state.size())
+        self.expected_output_state = NBitValuesContainer(self.input_state.size())
         for i in range(self.expected_output_state.size()):
             self.expected_output_state.set(i, self.input_state.test(i))  # type: ignore[arg-type]
 
@@ -96,7 +99,7 @@ class SimulationRunModel:
 
     def set_result_of_simulation_execution(
         self,
-        actual_output_state: syrec.n_bit_values_container,
+        actual_output_state: NBitValuesContainer,
         do_expected_and_actual_output_states_match: bool | None,
         execution_runtime_in_ms: float,
     ) -> None:
@@ -109,7 +112,7 @@ class SimulationRunModel:
             raise ValueError(msg)
 
         if self.actual_output_state is None:
-            self.actual_output_state = syrec.n_bit_values_container(self.input_state.size())
+            self.actual_output_state = NBitValuesContainer(self.input_state.size())
 
         for i in range(self.actual_output_state.size()):
             self.actual_output_state.set(i, actual_output_state.test(i))  # type: ignore[arg-type]
@@ -130,8 +133,8 @@ class SimulationRunModel:
 
     def update_user_editable_data(
         self,
-        edited_input_state: syrec.n_bit_values_container,
-        edited_expected_output_state: syrec.n_bit_values_container | None,
+        edited_input_state: NBitValuesContainer,
+        edited_expected_output_state: NBitValuesContainer | None,
     ) -> None:
         SimulationRunModel._assert_n_bit_value_container_sizes_match(
             self.input_state, "input state", edited_input_state, "edited input state"
@@ -156,7 +159,7 @@ class SimulationRunModel:
             self.reset_result_of_execution(reset_actual_output_state=False)
         else:
             if self.expected_output_state is None:
-                self.expected_output_state = syrec.n_bit_values_container(self.input_state.size())
+                self.expected_output_state = NBitValuesContainer(self.input_state.size())
             for i in range(self.expected_output_state.size()):
                 self.expected_output_state.set(i, edited_expected_output_state.test(i))  # type: ignore[arg-type]
             # We do not need to reset the actual output state since its value depends only on the input state
@@ -164,7 +167,7 @@ class SimulationRunModel:
 
     @staticmethod
     def do_output_states_match(
-        expected_output_state: syrec.n_bit_values_container | None, actual_output_state: syrec.n_bit_values_container
+        expected_output_state: NBitValuesContainer | None, actual_output_state: NBitValuesContainer
     ) -> bool | None:
         if expected_output_state is None:
             return None
@@ -178,7 +181,7 @@ class SimulationRunModel:
 
     @staticmethod
     def _update_n_bit_values_container_qubit_value(
-        n_bit_values_container: syrec.n_bit_values_container, qubit: int, new_qubit_value: bool
+        n_bit_values_container: NBitValuesContainer, qubit: int, new_qubit_value: bool
     ) -> bool:
         if qubit < 0 or qubit >= n_bit_values_container.size():
             return False
@@ -188,9 +191,9 @@ class SimulationRunModel:
 
     @staticmethod
     def _assert_n_bit_value_container_sizes_match(
-        expected_container: syrec.n_bit_values_container,
+        expected_container: NBitValuesContainer,
         expected_container_name: str,
-        optional_actual_container: syrec.n_bit_values_container | None,
+        optional_actual_container: NBitValuesContainer | None,
         actual_container_name: str,
     ) -> None:
         if optional_actual_container is None:
@@ -205,7 +208,7 @@ class SimulationRunModel:
 # Example delegate: https://stackoverflow.com/questions/53105343/is-it-possible-to-add-a-custom-widget-into-a-qlistview
 class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
     def __init__(
-        self, annotatable_quantum_computation: syrec.annotatable_quantum_computation, parent: QtCore.QObject = None
+        self, annotatable_quantum_computation: AnnotatableQuantumComputation, parent: QtCore.QObject = None
     ) -> None:
         super().__init__(parent)
         self._simulation_run_models: list[SimulationRunModel] = []
@@ -236,12 +239,12 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
 
     @staticmethod
     def _record_quantum_register_layouts(
-        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
+        annotatable_quantum_computation: AnnotatableQuantumComputation,
     ) -> list[QuantumRegisterLayout]:
         quantum_register_layouts: list[QuantumRegisterLayout] = []
         for qreg in annotatable_quantum_computation.qregs.values():
             internal_qubit_label: str | None = annotatable_quantum_computation.get_qubit_label(
-                qreg.start, syrec.qubit_label_type.internal
+                qreg.start, QubitLabelType.internal
             )
             if qreg.size == 0 or QtSimulationRunModel._does_qubit_label_start_with_internal_qubit_label_prefix(
                 internal_qubit_label if internal_qubit_label is not None else ""
@@ -343,7 +346,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
     def update_model_using_simulation_run_result(
         self,
         index: QtCore.QModelIndex,
-        actual_output_state: syrec.n_bit_values_container,
+        actual_output_state: NBitValuesContainer,
         do_expected_and_actual_output_states_match: bool | None,
         execution_runtime_in_ms: float,
     ) -> None:

@@ -15,7 +15,7 @@ from PyQt6 import QtCore, QtGui
 if TYPE_CHECKING:
     from PyQt6 import QtWidgets
 
-    from mqt import syrec
+    from mqt.syrec import NBitValuesContainer
 
 DEFAULT_QREG_NAME_COLUMN_HEADER: Final[str] = "Quantum register"
 DEFAULT_QREG_LAYOUT_TEXT_FORMAT: Final[str] = "(First qubit: {first_qubit:d} - Num. qubits: {n_qubits:d})"
@@ -70,7 +70,7 @@ class BaseSimulationRunStyledItemDelegate:
 
     @staticmethod
     def _stringify_some_qubits_of_n_bit_values_container(
-        n_bit_values_container: syrec.n_bit_values_container, first_qubit: int, n_qubits: int
+        n_bit_values_container: NBitValuesContainer, first_qubit: int, n_qubits: int
     ) -> str:
         last_qubit_of_qreg: Final[int] = first_qubit + (n_qubits - 1)
 

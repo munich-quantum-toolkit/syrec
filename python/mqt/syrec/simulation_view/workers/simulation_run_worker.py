@@ -14,20 +14,22 @@ from typing import TYPE_CHECKING, Final
 
 from PyQt6 import QtCore
 
-from mqt import syrec
+from mqt.syrec import NBitValuesContainer, simple_simulation
 
 from ...logger_utils import log_error_to_console
 from ..simulation_run_model import SimulationRunModel
 from .cancellable_worker_variants import CancellableProducerConsumerWorker
 
 if TYPE_CHECKING:
+    from mqt.syrec import AnnotatableQuantumComputation
+
     from .cancellable_worker_variants import BatchTimestamps, QueueConfig
 
 
 @dataclass(frozen=True)
 class SimulationRunResult:
     simulation_run_number: int
-    actual_output_state: syrec.n_bit_values_container
+    actual_output_state: NBitValuesContainer
     do_expected_and_actual_outputs_match: bool | None
     sim_runtime_in_ms: float
 
@@ -35,7 +37,7 @@ class SimulationRunResult:
 class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, SimulationRunResult]):
     def __init__(
         self,
-        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
+        annotatable_quantum_computation: AnnotatableQuantumComputation,
         _expected_input_state_size: int,
         stop_at_first_output_state_mismatch: bool,
         worker_recv_queue_config: QueueConfig[SimulationRunModel | None],
@@ -46,9 +48,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
             worker_recv_queue_config=worker_recv_queue_config,
         )
         self._expected_input_state_size: Final[int] = _expected_input_state_size
-        self._annotatable_quantum_computation: Final[syrec.annotatable_quantum_computation] = (
-            annotatable_quantum_computation
-        )
+        self._annotatable_quantum_computation: Final[AnnotatableQuantumComputation] = annotatable_quantum_computation
         self._should_stop_at_first_output_state_mismatch: Final[bool] = stop_at_first_output_state_mismatch
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
@@ -153,15 +153,15 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
 
     @staticmethod
     def perform_single_sim_run_execution(
-        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
+        annotatable_quantum_computation: AnnotatableQuantumComputation,
         sim_run_num: int,
-        input_state: syrec.n_bit_values_container,
-        expected_output_state: syrec.n_bit_values_container | None,
+        input_state: NBitValuesContainer,
+        expected_output_state: NBitValuesContainer | None,
     ) -> SimulationRunResult:
-        actual_output_state = syrec.n_bit_values_container(input_state.size())
+        actual_output_state = NBitValuesContainer(input_state.size())
 
         sim_start_timestamp: Final[float] = SimulationRunWorker.get_timestamp()
-        syrec.simple_simulation(actual_output_state, annotatable_quantum_computation, input_state)
+        simple_simulation(actual_output_state, annotatable_quantum_computation, input_state)
         do_output_states_match: Final[bool | None] = SimulationRunModel.do_output_states_match(
             expected_output_state, actual_output_state
         )

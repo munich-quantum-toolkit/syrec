@@ -25,7 +25,7 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import assert_never
 
-from mqt import syrec
+from mqt.syrec import QubitLabelType
 
 from ...logger_utils import log_error_to_console
 from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
@@ -38,6 +38,8 @@ from .base_progress_dialog import BaseProgressDialog
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+    from mqt.syrec import AnnotatableQuantumComputation, NBitValuesContainer
 
     from ..simulation_run_model import (
         QuantumRegisterLayout,
@@ -138,17 +140,15 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._qreg_layouts: list[QuantumRegisterLayout] = simulation_run_model_index.data(
             QUANTUM_REGISTER_LAYOUT_QT_ROLE
         )
-        self._annotatable_quantum_computation: syrec.annotatable_quantum_computation = simulation_run_model_index.data(
+        self._annotatable_quantum_computation: AnnotatableQuantumComputation = simulation_run_model_index.data(
             ANNOTATABLE_QUANTUM_COMPUTATION_QT_ROLE
         )
 
-        initial_input_state: syrec.n_bit_values_container = self.edited_simulation_run_model.input_state
-        initial_expected_output_state: syrec.n_bit_values_container | None = (
+        initial_input_state: NBitValuesContainer = self.edited_simulation_run_model.input_state
+        initial_expected_output_state: NBitValuesContainer | None = (
             self.edited_simulation_run_model.expected_output_state
         )
-        initial_actual_output_state: syrec.n_bit_values_container | None = (
-            self.edited_simulation_run_model.actual_output_state
-        )
+        initial_actual_output_state: NBitValuesContainer | None = self.edited_simulation_run_model.actual_output_state
 
         # Ensure the dialog is deleted when closed this may not be strictly necessary but seems to be a good cleanup practice
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -606,7 +606,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def _create_in_or_out_state_edit_field(
         self,
         qreg_layout: QuantumRegisterLayout,
-        optional_qreg_qubit_values: syrec.n_bit_values_container | None,
+        optional_qreg_qubit_values: NBitValuesContainer | None,
         qubit_location: QubitLocation,
     ) -> QRegContentsLabelAndCheckbox:
 
@@ -688,7 +688,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def _create_in_or_out_state_qubit_value_checkbox(
         self,
         associated_qreg_name: str,
-        optional_qreg_qubit_values: syrec.n_bit_values_container | None,
+        optional_qreg_qubit_values: NBitValuesContainer | None,
         associated_qubit: int,
         relative_qubit_index_in_qreg: int,
         qubit_location: QubitLocation,
@@ -800,9 +800,9 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def _create_qubit_controls_groupbox(
         self,
         associated_qreg_layout: QuantumRegisterLayout,
-        initial_input_state: syrec.n_bit_values_container,
-        initial_expected_output_state: syrec.n_bit_values_container | None,
-        initial_actual_output_state: syrec.n_bit_values_container | None,
+        initial_input_state: NBitValuesContainer,
+        initial_expected_output_state: NBitValuesContainer | None,
+        initial_actual_output_state: NBitValuesContainer | None,
     ) -> QtWidgets.QWidget:
         input_output_qubits_value_controls_groupbox_layout = QtWidgets.QGridLayout()
         # The inability to use named parameters for the addWidget(...) or addLayout(...) calls makes the code a bit more harder read (https://forum.qt.io/topic/160589/pyside6-unsupported-keyword-on-grid-layout/2)
@@ -821,7 +821,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             # Due to first row (idx=0) of group box containing the qubit searc controls, the qubit value controls start in row 1.
             relative_qubit_index_in_qreg: int = qubit - first_qubit_of_qreg
             fetched_internal_qubit_label: str | None = self._annotatable_quantum_computation.get_qubit_label(
-                qubit, syrec.qubit_label_type.internal
+                qubit, QubitLabelType.internal
             )
             qubit_label = QtWidgets.QLabel(
                 "Qubit: " + fetched_internal_qubit_label if fetched_internal_qubit_label is not None else "<UNKNOWN>",
@@ -1010,7 +1010,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             )
 
             matched_with_qubit_label: str | None = self._annotatable_quantum_computation.get_qubit_label(
-                qubit, syrec.qubit_label_type.internal
+                qubit, QubitLabelType.internal
             )
             does_qubit_label_match_search_text: bool = (
                 matched_with_qubit_label.startswith(qubit_search_input_field.text())
@@ -1495,7 +1495,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     @staticmethod
     def _stringify_some_qubits_of_n_bit_values_container(
-        n_bit_values_container: syrec.n_bit_values_container, first_qubit: int, n_qubits: int
+        n_bit_values_container: NBitValuesContainer, first_qubit: int, n_qubits: int
     ) -> str:
         last_qubit_of_qreg: Final[int] = first_qubit + (n_qubits - 1)
 
@@ -1507,14 +1507,14 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     @staticmethod
     def _get_internal_qubit_labels_for_qreg(
-        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
+        annotatable_quantum_computation: AnnotatableQuantumComputation,
         first_qubit_of_qreg: int,
         n_qubits_in_qreg: int,
     ) -> list[str]:
         internal_qubit_labels: list[str] = []
         for qubit in range(first_qubit_of_qreg, first_qubit_of_qreg + n_qubits_in_qreg):
             fetched_internal_qubit_label: str | None = annotatable_quantum_computation.get_qubit_label(
-                qubit, syrec.qubit_label_type.internal
+                qubit, QubitLabelType.internal
             )
             if fetched_internal_qubit_label is None:
                 continue

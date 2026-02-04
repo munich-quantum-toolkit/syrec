@@ -48,7 +48,7 @@ from .base_simulation_run_styled_item_delegate import (
 )
 
 if TYPE_CHECKING:
-    from mqt import syrec
+    from mqt.syrec import NBitValuesContainer
 
     from ..simulation_run_model import (
         SimulationRunModel,
@@ -464,7 +464,7 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionViewItem,
         qreg_contents_prefix: str,
-        qreg_contents_container: syrec.n_bit_values_container | None,
+        qreg_contents_container: NBitValuesContainer | None,
         first_qubit_of_qreg: int,
         qreg_size: int,
         largest_qreg_size: int,

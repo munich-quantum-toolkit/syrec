@@ -22,7 +22,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 if TYPE_CHECKING:
     from PyQt6 import QtGui
 
-    from mqt import syrec
+    from mqt.syrec import AnnotatableQuantumComputation
 
     from ..simulation_run_model import QtSimulationRunModel, SimulationRunModel
     from ..workers.simulation_run_worker import SimulationRunResult
@@ -63,7 +63,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self,
         parent: QtWidgets.QWidget,
         shared_simulation_runs_model: QtSimulationRunModel,
-        annotatable_quantum_computation: syrec.annotatable_quantum_computation,
+        annotatable_quantum_computation: AnnotatableQuantumComputation,
     ) -> None:
         super().__init__(
             parent,
@@ -73,9 +73,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             create_default_layout=False,
             user_provided_dialog_size=SimulationRunDialog.get_default_big_dialog_size(),
         )
-        self._annotatable_quantum_computation: Final[syrec.annotatable_quantum_computation] = (
-            annotatable_quantum_computation
-        )
+        self._annotatable_quantum_computation: Final[AnnotatableQuantumComputation] = annotatable_quantum_computation
         self._optional_filtered_shared_sim_run_model: SimulationRunFilterModel | None = None
         self._stop_at_first_output_state_mismatch: bool = False
         self._num_executed_simulation_runs: int = 0
