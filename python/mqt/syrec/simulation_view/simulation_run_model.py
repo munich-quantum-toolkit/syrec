@@ -56,6 +56,7 @@ class SimulationRunModel:
         input_state: NBitValuesContainer,
         expected_output_state: NBitValuesContainer | None = None,
         actual_output_state: NBitValuesContainer | None = None,
+        *,
         create_new_n_bit_values_container_instances: bool = False,
     ) -> None:
         SimulationRunModel._assert_n_bit_value_container_sizes_match(
@@ -100,6 +101,7 @@ class SimulationRunModel:
     def set_result_of_simulation_execution(
         self,
         actual_output_state: NBitValuesContainer,
+        *,
         do_expected_and_actual_output_states_match: bool | None,
         execution_runtime_in_ms: float,
     ) -> None:
@@ -123,7 +125,7 @@ class SimulationRunModel:
     def update_input_state_qubit_value(self, qubit: int, new_qubit_value: bool) -> bool:
         return SimulationRunModel._update_n_bit_values_container_qubit_value(self.input_state, qubit, new_qubit_value)
 
-    def update_expected_output_state_qubit_value(self, qubit: int, new_qubit_value: bool) -> bool:
+    def update_expected_output_state_qubit_value(self, qubit: int, *, new_qubit_value: bool) -> bool:
         if self.expected_output_state is None:
             return False
 
@@ -347,6 +349,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self,
         index: QtCore.QModelIndex,
         actual_output_state: NBitValuesContainer,
+        *,
         do_expected_and_actual_output_states_match: bool | None,
         execution_runtime_in_ms: float,
     ) -> None:
@@ -356,7 +359,9 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             raise ValueError(msg)
 
         self._simulation_run_models[index.row()].set_result_of_simulation_execution(
-            actual_output_state, do_expected_and_actual_output_states_match, execution_runtime_in_ms
+            actual_output_state,
+            do_expected_and_actual_output_states_match=do_expected_and_actual_output_states_match,
+            execution_runtime_in_ms=execution_runtime_in_ms,
         )
         self.dataChanged.emit(index, index)
 

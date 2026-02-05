@@ -202,13 +202,13 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self._worker = SimulationRunWorker(
             self._annotatable_quantum_computation,
             self._expected_input_state_size,
-            self._stop_at_first_output_state_mismatch,
             worker_recv_queue_config=QueueConfig(
                 queue_instance=self._sim_run_model_queue, queue_batch_size=sim_run_model_queue_batch_size
             ),
             worker_send_queue_config=QueueConfig(
                 queue_instance=self._sim_run_result_queue, queue_batch_size=sim_run_result_queue_batch_size
             ),
+            stop_at_first_output_state_mismatch=self._stop_at_first_output_state_mismatch,
         )
 
         self._worker_thread = QtCore.QThread()
@@ -306,8 +306,8 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
                 self._shared_simulation_runs_model.update_model_using_simulation_run_result(
                     self._shared_simulation_runs_model.index(to_be_updated_sim_run_number),
                     simulation_run_result.actual_output_state,
-                    simulation_run_result.do_expected_and_actual_outputs_match,
-                    simulation_run_result.sim_runtime_in_ms,
+                    do_expected_and_actual_output_states_match=simulation_run_result.do_expected_and_actual_outputs_match,
+                    execution_runtime_in_ms=simulation_run_result.sim_runtime_in_ms,
                 )
                 n_received_sim_run_execution_results += 1
         except queue.Empty:
@@ -414,8 +414,8 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             self._shared_simulation_runs_model.update_model_using_simulation_run_result(
                 idx_of_sim_run_to_execute,
                 result.actual_output_state,
-                result.do_expected_and_actual_outputs_match,
-                result.sim_runtime_in_ms,
+                do_expected_and_actual_output_states_match=result.do_expected_and_actual_outputs_match,
+                execution_runtime_in_ms=result.sim_runtime_in_ms,
             )
 
             sim_runtime_in_seconds: Final[float] = (

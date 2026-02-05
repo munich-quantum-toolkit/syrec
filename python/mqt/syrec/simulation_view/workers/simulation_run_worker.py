@@ -38,16 +38,17 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
     def __init__(
         self,
         annotatable_quantum_computation: AnnotatableQuantumComputation,
-        _expected_input_state_size: int,
-        stop_at_first_output_state_mismatch: bool,
+        expected_input_state_size: int,
         worker_recv_queue_config: QueueConfig[SimulationRunModel | None],
         worker_send_queue_config: QueueConfig[SimulationRunResult],
+        *,
+        stop_at_first_output_state_mismatch: bool,
     ) -> None:
         super().__init__(
             worker_send_queue_config=worker_send_queue_config,
             worker_recv_queue_config=worker_recv_queue_config,
         )
-        self._expected_input_state_size: Final[int] = _expected_input_state_size
+        self._expected_input_state_size: Final[int] = expected_input_state_size
         self._annotatable_quantum_computation: Final[AnnotatableQuantumComputation] = annotatable_quantum_computation
         self._should_stop_at_first_output_state_mismatch: Final[bool] = stop_at_first_output_state_mismatch
 

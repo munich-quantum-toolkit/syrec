@@ -170,6 +170,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self,
         shared_simulation_runs_model: QtSimulationRunModel,
         tab_widget_object_name: str,
+        *,
         create_load_from_file_controls: bool = False,
     ) -> QtWidgets.QWidget:
         tab_wrapper_widget = QtWidgets.QFrame(objectName=tab_widget_object_name)
@@ -396,6 +397,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             SimulationRunModel(
                 input_state=NBitValuesContainer(self._expected_input_output_state_size),
                 expected_output_state=None,
+                actual_output_state=None,
+                create_new_n_bit_values_container_instances=False,
             )
         )
 

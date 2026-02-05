@@ -135,36 +135,44 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
             msg = f"Values of input state (expected json key '{INPUT_STATE_JSON_KEY}') was not defined in json object!"
             raise ValueError(msg)
 
-        stringified_input_state: Final[str] = parsed_json_elem_values_dict[INPUT_STATE_JSON_KEY]
-        if len(stringified_input_state) != expected_state_size:
-            msg = f"Parsed input state size (n={len(stringified_input_state)}) did not match expected input state size (n={expected_state_size})!"
+        raw_input_state_json_value: Final[Any] = parsed_json_elem_values_dict[INPUT_STATE_JSON_KEY]
+        if not isinstance(raw_input_state_json_value, str):
+            msg = f"Expected input state (expected json key '{INPUT_STATE_JSON_KEY}') to be defined as a string but was actually {type(raw_input_state_json_value)}"
+            raise TypeError(msg)
+
+        if len(raw_input_state_json_value) != expected_state_size:
+            msg = f"Parsed input state size (n={len(raw_input_state_json_value)}) did not match expected input state size (n={expected_state_size})!"
             raise ValueError(msg)
 
-        if any(qubit_value not in {"0", "1"} for qubit_value in stringified_input_state):
-            msg = f"Qubit values of input state must be defined as an enumeration of '0' and '1' literals combined without any delimiter (i.e. a 4 qubit state must be defined as '0101') but was actually {stringified_input_state}"
+        if any(qubit_value not in {"0", "1"} for qubit_value in raw_input_state_json_value):
+            msg = f"Qubit values of input state must be defined as an enumeration of '0' and '1' literals combined without any delimiter (i.e. a 4 qubit state must be defined as '0101') but was actually {raw_input_state_json_value}"
             raise ValueError(msg)
 
-        stringified_expected_output_state: Final[str | None] = parsed_json_elem_values_dict.get(
-            EXPECTED_OUTPUT_STATE_JSON_KEY
-        )
+        expected_output_state: NBitValuesContainer | None = None
+        raw_expected_output_state: Final[Any | None] = parsed_json_elem_values_dict.get(EXPECTED_OUTPUT_STATE_JSON_KEY)
+        if raw_expected_output_state is not None:
+            if not isinstance(raw_expected_output_state, str):
+                msg = f"Expected output state (expected json key '{EXPECTED_OUTPUT_STATE_JSON_KEY}') to be defined as a string but was actually {type(raw_expected_output_state)}"
+                raise TypeError(msg)
 
-        if stringified_expected_output_state is not None:
-            if len(stringified_expected_output_state) != expected_state_size:
-                msg = f"Parsed expected output state size (n={len(stringified_expected_output_state)}) did not match expected input state size (n={expected_state_size})!"
+            if len(raw_expected_output_state) != expected_state_size:
+                msg = f"Parsed expected output state size (n={len(raw_expected_output_state)}) did not match expected input state size (n={expected_state_size})!"
                 raise ValueError(msg)
-            if any(qubit_value not in {"0", "1"} for qubit_value in stringified_expected_output_state):
-                msg = f"Qubit values of expected output state must be defined as an enumeration of '0' and '1' literals combined without any delimiter (i.e. a 4 qubit state must be defined as '0101') but was actually {stringified_expected_output_state}"
+            if any(qubit_value not in {"0", "1"} for qubit_value in raw_expected_output_state):
+                msg = f"Qubit values of expected output state must be defined as an enumeration of '0' and '1' literals combined without any delimiter (i.e. a 4 qubit state must be defined as '0101') but was actually {raw_expected_output_state}"
                 raise ValueError(msg)
+
+            expected_output_state = NBitValuesContainer(expected_state_size)
+            for i in range(expected_state_size):
+                expected_output_state.set(i, raw_expected_output_state[i] != "0")
 
         input_state: NBitValuesContainer = NBitValuesContainer(expected_state_size)
-        expected_output_state: NBitValuesContainer | None = (
-            NBitValuesContainer(expected_state_size) if stringified_expected_output_state is not None else None
-        )
         for i in range(expected_state_size):
-            input_state.set(i, stringified_input_state[i] != "0")
+            input_state.set(i, raw_input_state_json_value[i] != "0")
 
-        if expected_output_state is not None:
-            for i in range(expected_state_size):
-                expected_output_state.set(i, stringified_expected_output_state[i] != "0")  # type: ignore[index]
-
-        return SimulationRunModel(input_state, expected_output_state)
+        return SimulationRunModel(
+            input_state,
+            expected_output_state,
+            actual_output_state=None,
+            create_new_n_bit_values_container_instances=False,
+        )

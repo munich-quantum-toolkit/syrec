@@ -261,6 +261,7 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
     def _update_displayed_error_text(
         self,
         error: Exception | str,
+        *,
         log_error: bool = True,
         num_additionally_skipped_stack_frames_starting_from_this_function: int = 0,
     ) -> None:

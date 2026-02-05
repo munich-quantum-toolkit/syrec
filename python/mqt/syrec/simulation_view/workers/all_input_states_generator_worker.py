@@ -101,5 +101,8 @@ class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel
         expected_input_state_size: int, integer_defining_input_state: int
     ) -> SimulationRunModel:
         return SimulationRunModel(
-            NBitValuesContainer(expected_input_state_size, integer_defining_input_state), expected_output_state=None
+            NBitValuesContainer(expected_input_state_size, integer_defining_input_state),
+            expected_output_state=None,
+            actual_output_state=None,
+            create_new_n_bit_values_container_instances=False,
         )

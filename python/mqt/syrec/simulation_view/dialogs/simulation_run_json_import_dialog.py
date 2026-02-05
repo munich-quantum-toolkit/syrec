@@ -191,7 +191,6 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
 
         if self._progress_bar is not None:
             self._progress_bar.setValue(self._num_imported_simulation_runs)
-        self._progress_info_text_lbl.setText("")
         QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
 
     @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]

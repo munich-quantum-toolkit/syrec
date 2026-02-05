@@ -484,7 +484,9 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             updated_qubit_value, return_as_high_low_state=True
         )
 
-        if not self.edited_simulation_run_model.update_input_state_qubit_value(associated_qubit, updated_qubit_value):
+        if not self.edited_simulation_run_model.update_input_state_qubit_value(
+            associated_qubit, new_qubit_value=updated_qubit_value
+        ):
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
@@ -555,7 +557,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             return
 
         if not self.edited_simulation_run_model.update_expected_output_state_qubit_value(
-            associated_qubit, updated_qubit_value
+            associated_qubit, new_qubit_value=updated_qubit_value
         ):
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,

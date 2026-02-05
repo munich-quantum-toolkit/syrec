@@ -58,9 +58,8 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
         n_remaining_sim_runs_in_batch_to_process: int = self._recv_queue_batch_size
         n_skipped_sim_runs_in_batch: int = 0
         n_exported_sim_runs_in_batch: int = 0
-        has_exported_first_batch: bool = False
         has_reached_end_sentinel: bool = False
-
+        has_exported_any_sim_run: bool = False
         try:
             self._assert_valid_user_provided_parameter_values()
 
@@ -84,7 +83,7 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
 
                         dequeued_sim_run_model: SimulationRunModel | None = None
                         try:
-                            dequeued_sim_run_model = self.recv_queue.get(block=False, timeout=0.2)
+                            dequeued_sim_run_model = self.recv_queue.get(block=False)
                         except queue.Empty:
                             self.requestingData.emit()
                             break
@@ -112,14 +111,13 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
                             n_skipped_sim_runs_in_batch += 1
                             continue
 
-                        if SimulationRunJsonExportWorker._should_sim_run_export_delimiter_be_serialized(
-                            has_exported_first_batch, n_exported_sim_runs_in_batch
-                        ):
+                        if has_exported_any_sim_run:
                             file.write(",")
 
                         file.write(
                             json.dumps(dequeued_sim_run_model, default=SimulationRunJsonExportWorker.serialize_to_json)
                         )
+                        has_exported_any_sim_run = True
                         n_exported_sim_runs_in_batch += 1
 
                     if self.is_cancellation_requested():
@@ -143,7 +141,6 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
 
                     n_skipped_sim_runs_in_batch = 0
                     n_exported_sim_runs_in_batch = 0
-                    has_exported_first_batch = True
                     n_remaining_sim_runs_in_batch_to_process = self._recv_queue_batch_size
 
                 # An error during during the serialization of the simulation runs to their .json representation will cause the content of the
@@ -157,12 +154,6 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
             )
             log_error_to_console(error_msg)
             self.failed.emit(error)
-
-    @staticmethod
-    def _should_sim_run_export_delimiter_be_serialized(
-        has_exported_first_batch: bool, num_exported_elements_in_current_batch: int
-    ) -> bool:
-        return num_exported_elements_in_current_batch > 0 or has_exported_first_batch
 
     @staticmethod
     def _validate_parameters(batch_size: int) -> None:
