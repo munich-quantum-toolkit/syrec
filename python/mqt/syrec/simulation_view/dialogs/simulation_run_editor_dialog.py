@@ -438,7 +438,8 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             qreg_edit_qubit_values_toggle_button = cast(
                 "QtWidgets.QPushButton", optional_qreg_edit_qubit_values_toggle_button
             )
-            should_control_be_visible: bool = qreg_name_search_input_field.text() is None or qreg_name.startswith(
+
+            should_control_be_visible: bool = not qreg_name_search_input_field.text() or qreg_name.startswith(
                 qreg_name_search_input_field.text()
             )
             qreg_name_label.setVisible(should_control_be_visible)
@@ -1355,8 +1356,6 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 f"Failed to find required group box for edited quantum register '{associated_qreg_name}' QtWidgets during handling of input/output state edit!",
             ):
                 return
-
-            cast("QtWidgets.QGroupBox", optional_effected_qreg_qubit_values_groupbox)
 
             first_qubit_of_edited_qreg: Final[int] = edited_qreg_layout.first_qubit_of_qreg
             n_qubits_of_edited_qreg: Final[int] = edited_qreg_layout.qreg_size
