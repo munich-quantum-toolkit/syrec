@@ -68,13 +68,18 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
             batch_start_timestamp = SimulationRunWorker.get_timestamp()
             n_remaining_batch_elems_to_generate: int = self._send_queue_batch_size
 
-            while self._should_continue_processing(found_outputs_mismatch, has_reached_end_sentinel):
+            while self._should_continue_processing(
+                output_state_mismatch_flag=found_outputs_mismatch, reached_end_sentinel_flag=has_reached_end_sentinel
+            ):
                 self._wait_on_cancellation_or_input_data()
 
                 one_time_request_new_data_flag: bool = False
                 for _ in range(self._send_queue_batch_size):
                     if (
-                        not self._should_continue_processing(found_outputs_mismatch, has_reached_end_sentinel)
+                        not self._should_continue_processing(
+                            output_state_mismatch_flag=found_outputs_mismatch,
+                            reached_end_sentinel_flag=has_reached_end_sentinel,
+                        )
                         or n_remaining_batch_elems_to_generate < 0
                     ):
                         break
@@ -145,7 +150,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
             log_error_to_console(error_msg)
             self.failed.emit(error)
 
-    def _should_continue_processing(self, output_state_mismatch_flag: bool, reached_end_sentinel_flag: bool) -> bool:
+    def _should_continue_processing(self, *, output_state_mismatch_flag: bool, reached_end_sentinel_flag: bool) -> bool:
         return (
             not self.is_cancellation_requested()
             and (not self._should_stop_at_first_output_state_mismatch or not output_state_mismatch_flag)

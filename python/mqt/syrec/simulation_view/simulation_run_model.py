@@ -122,15 +122,17 @@ class SimulationRunModel:
         self.do_expected_and_actual_outputs_match = do_expected_and_actual_output_states_match
         self.execution_runtime_in_ms = execution_runtime_in_ms
 
-    def update_input_state_qubit_value(self, qubit: int, new_qubit_value: bool) -> bool:
-        return SimulationRunModel._update_n_bit_values_container_qubit_value(self.input_state, qubit, new_qubit_value)
+    def update_input_state_qubit_value(self, qubit: int, *, new_qubit_value: bool) -> bool:
+        return SimulationRunModel._update_n_bit_values_container_qubit_value(
+            self.input_state, qubit, new_qubit_value=new_qubit_value
+        )
 
-    def update_expected_output_state_qubit_value(self, qubit: int, new_qubit_value: bool) -> bool:
+    def update_expected_output_state_qubit_value(self, qubit: int, *, new_qubit_value: bool) -> bool:
         if self.expected_output_state is None:
             return False
 
         return SimulationRunModel._update_n_bit_values_container_qubit_value(
-            self.expected_output_state, qubit, new_qubit_value
+            self.expected_output_state, qubit, new_qubit_value=new_qubit_value
         )
 
     def update_user_editable_data(
@@ -183,7 +185,7 @@ class SimulationRunModel:
 
     @staticmethod
     def _update_n_bit_values_container_qubit_value(
-        n_bit_values_container: NBitValuesContainer, qubit: int, new_qubit_value: bool
+        n_bit_values_container: NBitValuesContainer, qubit: int, *, new_qubit_value: bool
     ) -> bool:
         if qubit < 0 or qubit >= n_bit_values_container.size():
             return False
