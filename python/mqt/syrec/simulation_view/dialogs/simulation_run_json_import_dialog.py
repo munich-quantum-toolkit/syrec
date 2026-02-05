@@ -141,7 +141,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         self._worker_thread.finished.connect(self._reset_workers)
         # Only this call will actually start a new thread
         self._worker_thread.start(QtCore.QThread.Priority.LowPriority)
-        self._change_dialog_cancel_button_enable_state(True)
+        self._change_dialog_cancel_button_enable_state(should_button_be_enabled=True)
 
     # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
     @override
@@ -205,8 +205,8 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
             self._request_worker_cancellation()
             self._shutdown_worker_thread_and_await_completion()
 
-        self._change_dialog_cancel_button_enable_state(False)
-        self._change_dialog_ok_button_enable_state(True)
+        self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
+        self._change_dialog_ok_button_enable_state(should_button_be_enabled=True)
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _handle_import_from_file_cancel_button_click(self) -> bool:

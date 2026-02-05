@@ -33,6 +33,7 @@ def show_and_request_ok_in_optionally_cancellable_notification(
     message_box_parent: QtWidgets.QWidget,
     message_box_title: str,
     message_box_content: str,
+    *,
     is_cancellable: bool,
     log_contents: bool = True,
 ) -> bool:
@@ -49,8 +50,8 @@ def show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_parent,
                 message_box_title,
                 message_box_content,
-                buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable),
-                defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable),
+                buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable=is_cancellable),
+                defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable=is_cancellable),
             )
             return _check_whether_message_ok_was_clicked(message_box_type, clicked_message_box_button)
         case MessageBoxType.INFO:
@@ -64,8 +65,8 @@ def show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_parent,
                 message_box_title,
                 message_box_content,
-                buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable),
-                defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable),
+                buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable=is_cancellable),
+                defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable=is_cancellable),
             )
             return _check_whether_message_ok_was_clicked(message_box_type, clicked_message_box_button)
         case MessageBoxType.WARNING:
@@ -79,8 +80,8 @@ def show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_parent,
                 message_box_title,
                 message_box_content,
-                buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable),
-                defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable),
+                buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable=is_cancellable),
+                defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable=is_cancellable),
             )
             return _check_whether_message_ok_was_clicked(message_box_type, clicked_message_box_button)
         case MessageBoxType.ERROR:
@@ -94,8 +95,8 @@ def show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_parent,
                 message_box_title,
                 message_box_content,
-                buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable),
-                defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable),
+                buttons=_get_buttons_for_message_box_type(message_box_type, is_cancellable=is_cancellable),
+                defaultButton=_get_default_button_for_message_box_type(message_box_type, is_cancellable=is_cancellable),
             )
             return _check_whether_message_ok_was_clicked(message_box_type, clicked_message_box_button)
         case _:
@@ -104,7 +105,7 @@ def show_and_request_ok_in_optionally_cancellable_notification(
 
 
 def _get_buttons_for_message_box_type(
-    message_box_type: MessageBoxType, is_cancellable: bool
+    message_box_type: MessageBoxType, *, is_cancellable: bool
 ) -> QtWidgets.QMessageBox.StandardButton:
     if message_box_type == MessageBoxType.QUESTION:
         return (
@@ -121,7 +122,7 @@ def _get_buttons_for_message_box_type(
 
 # Get the default button that will be pressed if the user presses ENTER in the open message box
 def _get_default_button_for_message_box_type(
-    message_box_type: MessageBoxType, is_cancellable: bool
+    message_box_type: MessageBoxType, *, is_cancellable: bool
 ) -> QtWidgets.QMessageBox.StandardButton:
     if message_box_type == MessageBoxType.QUESTION:
         return QtWidgets.QMessageBox.StandardButton.No if is_cancellable else QtWidgets.QMessageBox.StandardButton.Yes

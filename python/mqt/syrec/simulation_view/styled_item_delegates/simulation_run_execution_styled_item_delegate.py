@@ -514,6 +514,7 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
         simulation_run_number: int,
         card_content_rect: QtCore.QRect,
         available_header_width: int,
+        *,
         draw_rect_corners: bool = False,
     ) -> QtCore.QPoint:
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)

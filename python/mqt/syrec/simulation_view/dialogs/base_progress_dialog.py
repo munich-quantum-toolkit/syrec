@@ -61,6 +61,7 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
         shared_simulation_runs_model: QtSimulationRunModel,
         dialog_title: str,
         optional_progress_bar_text_format: str | None = None,
+        *,
         create_default_layout: bool = True,
         user_provided_dialog_size: QtCore.QSize | None = None,
         center_dialog: bool = True,
@@ -125,8 +126,8 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
             QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
         self._dialog_button_box.setCenterButtons(True)
-        self._change_dialog_ok_button_enable_state(False)
-        self._change_dialog_cancel_button_enable_state(False)
+        self._change_dialog_ok_button_enable_state(should_button_be_enabled=False)
+        self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
 
         if create_default_layout:
             layout.addWidget(self._title_lbl)
@@ -242,20 +243,20 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
         self._worker.request_cancellation()
         self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
 
-    def _change_dialog_cancel_button_enable_state(self, should_button_be_enabled: bool) -> None:
+    def _change_dialog_cancel_button_enable_state(self, *, should_button_be_enabled: bool) -> None:
         BaseProgressDialog._change_dialog_button_enable_state(
             self._dialog_button_box,
             QtWidgets.QDialogButtonBox.StandardButton.Cancel,
-            should_button_be_enabled,
             btn_not_found_notification_parent=self,
+            should_button_be_enabled=should_button_be_enabled,
         )
 
-    def _change_dialog_ok_button_enable_state(self, should_button_be_enabled: bool) -> None:
+    def _change_dialog_ok_button_enable_state(self, *, should_button_be_enabled: bool) -> None:
         BaseProgressDialog._change_dialog_button_enable_state(
             self._dialog_button_box,
             QtWidgets.QDialogButtonBox.StandardButton.Ok,
-            should_button_be_enabled,
             btn_not_found_notification_parent=self,
+            should_button_be_enabled=should_button_be_enabled,
         )
 
     def _update_displayed_error_text(
@@ -282,8 +283,9 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
     def _change_dialog_button_enable_state(
         dialog_button_box: QtWidgets.QDialogButtonBox,
         to_be_modified_button: QtWidgets.QDialogButtonBox.StandardButton,
-        should_button_be_enabled: bool,
         btn_not_found_notification_parent: QtWidgets.QWidget,
+        *,
+        should_button_be_enabled: bool,
     ) -> None:
         dialog_button: QtWidgets.QPushButton | None = dialog_button_box.button(to_be_modified_button)
 

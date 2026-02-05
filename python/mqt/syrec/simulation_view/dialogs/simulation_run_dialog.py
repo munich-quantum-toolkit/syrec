@@ -139,10 +139,11 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         log_info_to_console(f"Starting execution of simulation run (index: {idx_of_sim_run_to_execute.row()})")
         self._title_lbl.setText(f"Executing simulation run {idx_of_sim_run_to_execute.row()}!")
         self._perform_single_sim_run_execution(idx_of_sim_run_to_execute)
-        self._change_dialog_ok_button_enable_state(True)
+        self._change_dialog_ok_button_enable_state(should_button_be_enabled=True)
 
     def start_simulations(
         self,
+        *,
         stop_at_first_output_state_mismatch: bool,
         sim_run_model_queue_batch_size: int = DEFAULT_SMALL_QUEUE_SIZE,
         sim_run_result_queue_batch_size: int = DEFAULT_SMALL_QUEUE_SIZE,
@@ -229,7 +230,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self._worker_thread.finished.connect(self._reset_workers)
 
         self._worker_thread.start(QtCore.QThread.Priority.LowPriority)
-        self._change_dialog_cancel_button_enable_state(True)
+        self._change_dialog_cancel_button_enable_state(should_button_be_enabled=True)
         self._enqueue_next_simulation_runs()
 
     # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.

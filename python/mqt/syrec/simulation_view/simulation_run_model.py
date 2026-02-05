@@ -91,7 +91,7 @@ class SimulationRunModel:
         for i in range(self.expected_output_state.size()):
             self.expected_output_state.set(i, self.input_state.test(i))  # type: ignore[arg-type]
 
-    def reset_result_of_execution(self, reset_actual_output_state: bool = True) -> None:
+    def reset_result_of_execution(self, *, reset_actual_output_state: bool = True) -> None:
         if reset_actual_output_state:
             self.actual_output_state = None
 
@@ -125,7 +125,7 @@ class SimulationRunModel:
     def update_input_state_qubit_value(self, qubit: int, new_qubit_value: bool) -> bool:
         return SimulationRunModel._update_n_bit_values_container_qubit_value(self.input_state, qubit, new_qubit_value)
 
-    def update_expected_output_state_qubit_value(self, qubit: int, *, new_qubit_value: bool) -> bool:
+    def update_expected_output_state_qubit_value(self, qubit: int, new_qubit_value: bool) -> bool:
         if self.expected_output_state is None:
             return False
 

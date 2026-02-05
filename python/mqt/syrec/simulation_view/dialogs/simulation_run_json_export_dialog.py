@@ -141,7 +141,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         self._worker_thread.finished.connect(self._worker_thread.deleteLater)
         self._worker_thread.finished.connect(self._reset_workers)
         self._worker_thread.start(QtCore.QThread.Priority.LowPriority)
-        self._change_dialog_cancel_button_enable_state(True)
+        self._change_dialog_cancel_button_enable_state(should_button_be_enabled=True)
         self._enqueue_next_simulation_runs_to_export()
 
     # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
@@ -239,8 +239,8 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
             self._request_worker_cancellation()
             self._shutdown_worker_thread_and_await_completion()
 
-        self._change_dialog_cancel_button_enable_state(False)
-        self._change_dialog_ok_button_enable_state(True)
+        self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
+        self._change_dialog_ok_button_enable_state(should_button_be_enabled=True)
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def _handle_export_to_file_cancel_button_click(self) -> bool:

@@ -457,6 +457,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         associated_qreg_name: str,
         associated_qubit: int,
         relative_qubit_index_in_quantum_register: int,
+        *,
         update_associated_state_input_field: bool = False,
     ) -> None:
         optional_associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = (
@@ -519,6 +520,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         associated_qreg_name: str,
         associated_qubit: int,
         relative_qubit_index_in_quantum_register: int,
+        *,
         update_associated_state_input_field: bool,
     ) -> None:
         optional_associated_qubit_value_checkbox: QtWidgets.QCheckBox | None = (
@@ -557,7 +559,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
             return
 
         if not self.edited_simulation_run_model.update_expected_output_state_qubit_value(
-            associated_qubit, new_qubit_value=updated_qubit_value
+            associated_qubit, updated_qubit_value
         ):
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
@@ -674,14 +676,14 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
         in_or_out_state_edit_field.editingFinished.connect(
             lambda associated_qreg_name=qreg_layout.qreg_name, expected_text_length=qreg_layout.qreg_size, is_editing_input_state=is_control_created_for_input_state: (
                 self._handle_input_or_output_state_text_change(
-                    associated_qreg_name, expected_text_length, is_editing_input_state
+                    associated_qreg_name, expected_text_length, is_editing_input_state=is_editing_input_state
                 )
             )
         )
         in_or_out_state_edit_field.focusOut.connect(
             lambda associated_qreg_name=qreg_layout.qreg_name, expected_text_length=qreg_layout.qreg_size, is_editing_input_state=is_control_created_for_input_state: (
                 self._handle_input_or_output_state_text_change(
-                    associated_qreg_name, expected_text_length, is_editing_input_state
+                    associated_qreg_name, expected_text_length, is_editing_input_state=is_editing_input_state
                 )
             )
         )
@@ -1234,7 +1236,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
     @QtCore.pyqtSlot(str, int, bool)  # type: ignore[untyped-decorator]
     def _handle_input_or_output_state_text_change(
-        self, associated_qreg_name: str, expected_qreg_size: int, is_editing_input_state: bool
+        self, associated_qreg_name: str, expected_qreg_size: int, *, is_editing_input_state: bool
     ) -> None:
         optional_input_state_text_field: QtWidgets.QLineEdit | None = self._simulation_run_wrapper_box.findChild(
             QtWidgets.QLineEdit,

@@ -109,7 +109,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         self._worker_thread.finished.connect(self._worker_thread.deleteLater)
         self._worker_thread.finished.connect(self._reset_workers)
         self._worker_thread.start(QtCore.QThread.Priority.LowPriority)
-        self._change_dialog_cancel_button_enable_state(True)
+        self._change_dialog_cancel_button_enable_state(should_button_be_enabled=True)
 
     @override
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
