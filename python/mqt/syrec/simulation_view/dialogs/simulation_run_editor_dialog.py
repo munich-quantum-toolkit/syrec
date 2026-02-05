@@ -62,7 +62,7 @@ class QubitValueLabelAndCheckbox:
 class LineEditWithDynamicWidth(QtWidgets.QLineEdit):  # type: ignore[misc]
     focusOut = QtCore.pyqtSignal()  # noqa: N815
 
-    def __init__(self, expected_max_num_characters: int, parent: QtWidgets.QWidget | None = None):
+    def __init__(self, expected_max_num_characters: int, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self._expected_max_num_characters = expected_max_num_characters
         self.setMaxLength(expected_max_num_characters)
