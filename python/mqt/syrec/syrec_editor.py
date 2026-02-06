@@ -22,13 +22,17 @@ from mqt.syrec import (
     AnnotatableQuantumComputation,
     ConfigurableOptions,
     IntegerConstantTruncationOperation,
-    NBitValuesContainer,
     Program,
     QubitLabelType,
     cost_aware_synthesis,
     line_aware_synthesis,
-    simple_simulation,
 )
+
+from .logger_utils import configure_default_console_logger
+from .message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
+
+# We are using a relative import here: https://stackoverflow.com/questions/43728431/relative-imports-modulenotfounderror-no-module-named-x
+from .quantum_circuit_simulation_dialog import QuantumCircuitSimulationDialog
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -143,7 +147,7 @@ class GateItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
 
 
 class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
-    qubit_label_clicked = QtCore.pyqtSignal(str, name="qubitLabelClicked")
+    qubitLabelClicked = QtCore.pyqtSignal(str)  # noqa: N815
 
     def __init__(
         self,
@@ -192,7 +196,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
                     + "\nto internal DTO. This should not happen!",
                 )
             elif destringified_qubit_label.associated_qubit not in self.non_ancillary_or_garbage_qubits_lookup:
-                self.qubit_label_clicked.emit(str(destringified_qubit_label))
+                self.qubitLabelClicked.emit(str(destringified_qubit_label))
 
         super().mousePressEvent(event)
 
@@ -286,21 +290,24 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
 
 
 class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
-    widget: CodeEditor | None = None
-    annotatable_quantum_computation: AnnotatableQuantumComputation | None = None
-    build_successful: Callable[[AnnotatableQuantumComputation], None] | None = None
-    build_failed: Callable[[str], None] | None = None
-    before_build: Callable[[], None] | None = None
-    parser_failed: Callable[[str], None] | None = None
-    synthesis_failed: Callable[[str], None] | None = None
-
-    cost_aware_synthesis = 0
-    line_aware_synthesis = 0
-
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__()
 
-        self.parent = parent
+        self.annotatable_quantum_computation: AnnotatableQuantumComputation | None = None
+        self.build_successful: Callable[[AnnotatableQuantumComputation], None] | None = None
+        self.build_failed: Callable[[str], None] | None = None
+        self.before_build: Callable[[], None] | None = None
+        self.parser_failed: Callable[[str], None] | None = None
+        self.synthesis_failed: Callable[[str], None] | None = None
+
+        self.cost_aware_synthesis = 0
+        self.line_aware_synthesis = 0
+
+        self.code_editor_widget: CodeEditor = CodeEditor(parent)
+        self.code_editor_widget.setFont(QtGui.QFont("Monospace", 10, QtGui.QFont.Weight.Normal))
+        self.code_editor_widget.highlighter = SyReCHighlighter(self.code_editor_widget.document())
+        self.quantum_circuit_sim_runs_dialog: QuantumCircuitSimulationDialog | None = None
+
         self.setup_actions()
 
         self.filename: str
@@ -320,12 +327,10 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         self.setLayout(self.layout)
 
     def setup_actions(self) -> None:
-        self.open_action = QtGui.QAction(QtGui.QIcon.fromTheme("document-open"), "&Open...", self.parent)
-        self.build_action = QtGui.QAction(QtGui.QIcon.fromTheme("media-playback-start"), "&Build...", self.parent)
-        self.sim_action = QtGui.QAction(
-            QtGui.QIcon.fromTheme("x-office-spreadsheet"), "&Sim...", self.parent
-        )  # system-run
-        self.stat_action = QtGui.QAction(QtGui.QIcon.fromTheme("applications-other"), "&Stats...", self.parent)
+        self.open_action = QtGui.QAction(QtGui.QIcon.fromTheme("document-open"), "&Open...", self)
+        self.build_action = QtGui.QAction(QtGui.QIcon.fromTheme("media-playback-start"), "&Build...", self)
+        self.sim_action = QtGui.QAction(QtGui.QIcon.fromTheme("x-office-spreadsheet"), "&Sim...", self)  # system-run
+        self.stat_action = QtGui.QAction(QtGui.QIcon.fromTheme("applications-other"), "&Stats...", self)
 
         self.buttonCostAware = QtWidgets.QRadioButton("Cost-aware synthesis", self)
         self.buttonCostAware.toggled.connect(self.item_selected)
@@ -353,6 +358,12 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
             "Update configurable options", self
         )
         self.configurable_parser_and_synthesis_options_update_button.clicked.connect(self.update_configurable_options)
+
+    def setText(self, text):  # noqa: N802
+        self.code_editor_widget.setPlainText(text)
+
+    def getText(self) -> str:  # noqa: N802
+        return self.code_editor_widget.toPlainText()  # type: ignore[no-any-return]
 
     def update_configurable_options(self) -> None:
         update_configurable_options_modal = ConfigurableOptionsUpdateDialog(
@@ -400,8 +411,8 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
             options=QtWidgets.QFileDialog.Option.ReadOnly,
         )
 
-        if len(selected_file_name) > 0 and self.widget is not None:
-            self.widget.load(selected_file_name)
+        if len(selected_file_name) > 0 and self.code_editor_widget is not None:
+            self.code_editor_widget.load(selected_file_name)
             if self.before_build is not None:
                 self.before_build()
 
@@ -496,126 +507,31 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
         msg.exec()
 
+    def handle_quantum_circuit_sim_runs_dialog_finished(self, _: int) -> None:
+        self.quantum_circuit_sim_runs_dialog = None
+
     def sim(self) -> None:
         if self.annotatable_quantum_computation is None:
             msg = "Set annotatable_quantum_computation before calling sim()"
             raise RuntimeError(msg)
 
-        bit1_mask = 0
-
-        no_of_bits = self.annotatable_quantum_computation.num_qubits
-        all_inputs_bit_mask = 2**self.annotatable_quantum_computation.num_data_qubits - 1
-        input_list = [all_inputs_bit_mask & x for x in range(2**self.annotatable_quantum_computation.num_data_qubits)]
-
-        n_ancilla_qubits = self.annotatable_quantum_computation.num_ancilla_qubits
-        n_data_qubits = self.annotatable_quantum_computation.num_data_qubits
-        ancilla_qubit_values = [False] * n_ancilla_qubits
-
-        # Ancilla qubits are assumed to be defined immediately after the data qubits in the quantum computation thus the first ancillary qubit has the index n_data_qubits + 1
-        ancillary_qubit_index = self.annotatable_quantum_computation.num_data_qubits
-        ancilla_qubit_indices = set()
-        ancilla_qubit_indices.update([ancillary_qubit_index + i for i in range(n_ancilla_qubits)])
-
-        if n_ancilla_qubits > 0:
-            for quantum_operation_index in range(self.annotatable_quantum_computation.num_ops):
-                quantum_operation = self.annotatable_quantum_computation[quantum_operation_index]
-
-                # We assume that the value of the ancillary qubits is set at the start of the quantum computation with the help of X gates operating only on the ancillary qubits
-                # The initial state of the ancilla is assumed to be set if any of the following conditions is not met
-                if (
-                    quantum_operation.type_ != OpType.x
-                    or len(quantum_operation.controls) > 0
-                    or len(quantum_operation.targets) != 1
-                    or quantum_operation.targets[0] not in ancilla_qubit_indices
-                ):
-                    break
-
-                # There should only be one X gate per ancillary qubit (if its initial state should be 1 instead of the default state of 0) but for now we allow multiple
-                ancilla_qubit_values[quantum_operation.targets[0] - ancillary_qubit_index] = not ancilla_qubit_values[
-                    quantum_operation.targets[0] - ancillary_qubit_index
-                ]
-
-            for i in range(no_of_bits):
-                if (
-                    self.annotatable_quantum_computation.is_circuit_qubit_ancillary(i) is True
-                    and ancilla_qubit_values[i - n_data_qubits]
-                ):
-                    bit1_mask += 2**i
-
-        input_list_len = len(input_list)
-
-        combination_inp = []
-        combination_out = []
-
-        final_inp = []
-        final_out = []
-
-        for i in input_list:
-            my_inp_bitset = NBitValuesContainer(no_of_bits, i)
-            my_out_bitset = NBitValuesContainer(no_of_bits)
-            simple_simulation(my_out_bitset, self.annotatable_quantum_computation, my_inp_bitset)
-
-            inp_bitset_with_ancillaes_set = NBitValuesContainer(no_of_bits, i + bit1_mask)
-            combination_inp.append(str(inp_bitset_with_ancillaes_set))
-            combination_out.append(str(my_out_bitset))
-
-        sorted_ind = sorted(range(len(combination_inp)), key=lambda k: int(combination_inp[k], 2))
-
-        for i in sorted_ind:
-            final_inp.append(combination_inp[i])
-            final_out.append(combination_out[i])
-
-        # Initiate table
-        self.table.clear()
-        self.table.setRowCount(0)
-        self.table.setColumnCount(0)
-        self.table.setRowCount(input_list_len + 2)
-        self.table.setColumnCount(2 * no_of_bits)
-
-        self.table.setSpan(0, 0, 1, no_of_bits)
-        header1 = QtWidgets.QTableWidgetItem("INPUTS")
-        header1.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.table.setItem(0, 0, header1)
-
-        self.table.setSpan(0, no_of_bits, 1, no_of_bits)
-        header2 = QtWidgets.QTableWidgetItem("OUTPUTS")
-        header2.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.table.setItem(0, no_of_bits, header2)
-
-        self.table.horizontalHeader().setVisible(False)
-        self.table.verticalHeader().setVisible(False)
-
-        for i in range(no_of_bits):
-            # One could display the user declared qubit label for the qubits of the local variables of a module but since these variable identifiers could be identical to ones from a different module, we display the internal qubit label instead.
-            io_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
-                i, QubitLabelType.internal
+        if self.quantum_circuit_sim_runs_dialog is not None:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=self,
+                message_box_title="Internal error",
+                message_box_content="Single use simulation run dialog was not correctly reset, expected no instance to exist!",
+                is_cancellable=False,
             )
-            # Fetching the matching label for a qubit of the annotatable quantum computation should not fail but in case it does, assume a default qubit label <UNKNOWN>.
-            # We still display the column in any case because otherwise the user would be shown a different number of qubits than the number of qubits that actual exist in the annotatable quantum computation.
-            if io_qubit_label is None:
-                io_qubit_label = "<UNKNOWN>"
+            return
 
-            input_signal = QtWidgets.QTableWidgetItem(io_qubit_label)
-            input_signal.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            self.table.setItem(1, i, QtWidgets.QTableWidgetItem(input_signal))
-
-            output_signal = QtWidgets.QTableWidgetItem(io_qubit_label)
-            output_signal.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            self.table.setItem(1, i + no_of_bits, QtWidgets.QTableWidgetItem(output_signal))
-
-        for i in range(input_list_len):
-            for j in range(no_of_bits):
-                input_cell = QtWidgets.QTableWidgetItem(final_inp[i][j])
-                input_cell.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                self.table.setItem(i + 2, j, QtWidgets.QTableWidgetItem(input_cell))
-
-                output_cell = QtWidgets.QTableWidgetItem(final_out[i][j])
-                output_cell.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                self.table.setItem(i + 2, j + no_of_bits, QtWidgets.QTableWidgetItem(output_cell))
-
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
-        self.show()
+        self.quantum_circuit_sim_runs_dialog = QuantumCircuitSimulationDialog(
+            self.getText(), self.annotatable_quantum_computation, parent=self
+        )
+        self.quantum_circuit_sim_runs_dialog.finished.connect(self.handle_quantum_circuit_sim_runs_dialog_finished)
+        self.quantum_circuit_sim_runs_dialog.open()
+        self.quantum_circuit_sim_runs_dialog.show_save_changes_reminder()
+        self.quantum_circuit_sim_runs_dialog.show_optional_comments_in_syrec_program_not_supported_notification()
 
 
 class SyReCHighlighter(QtGui.QSyntaxHighlighter):  # type: ignore[misc]
@@ -668,21 +584,6 @@ class SyReCHighlighter(QtGui.QSyntaxHighlighter):  # type: ignore[misc]
                 length = match.capturedLength()
                 self.setFormat(index, length, rule[1])
                 match = expression.match(text, offset=index + length)
-
-
-class QtSyReCEditor(SyReCEditor):
-    def __init__(self, parent: Any | None = None) -> None:
-        SyReCEditor.__init__(self, parent)
-
-        self.widget: CodeEditor = CodeEditor(parent)
-        self.widget.setFont(QtGui.QFont("Monospace", 10, QtGui.QFont.Weight.Normal))
-        self.widget.highlighter = SyReCHighlighter(self.widget.document())
-
-    def setText(self, text):  # noqa: N802
-        self.widget.setPlainText(text)
-
-    def getText(self):  # noqa: N802
-        return self.widget.toPlainText()
 
 
 class LineNumberArea(QtWidgets.QWidget):  # type: ignore[misc]
@@ -1291,7 +1192,6 @@ class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):  # type: ignore[misc]
 class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         QtWidgets.QWidget.__init__(self, parent)
-
         self.setWindowTitle("SyReC Editor")
 
         self.setup_widgets()
@@ -1300,7 +1200,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         self.setup_toolbar()
 
     def setup_widgets(self) -> None:
-        self.editor = QtSyReCEditor(self)
+        self.editor = SyReCEditor(self)
         self.viewer = CircuitView(parent=self)
         self.qubits_information_lookup = CircuitQubitsInformationLookup(parent=self)
 
@@ -1312,7 +1212,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
         variable_info_search_circuit_view_splitter.setStretchFactor(1, 10)
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical, self)
-        splitter.addWidget(self.editor.widget)
+        splitter.addWidget(self.editor.code_editor_widget)
         splitter.addWidget(variable_info_search_circuit_view_splitter)
 
         self.setCentralWidget(splitter)
@@ -1386,6 +1286,7 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
 
 
 def main() -> int:
+    configure_default_console_logger()
     a = QtWidgets.QApplication([])
 
     w = MainWindow()
