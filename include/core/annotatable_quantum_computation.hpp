@@ -183,12 +183,14 @@ namespace syrec {
         [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(QubitType typeOfQubitsGeneratedForVariable, const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
 
         /**
-         * Add a quantum register for a number of preliminary ancillary qubits in the quantum computation.
+         * Add a quantum register for a number of preliminary ancillary qubits in the quantum computation or resize an already existing quantum register.
          * @param quantumRegisterLabel The label for the created quantum register. A new quantum register is only created if the ancillary qubits could not be appended to an adjacent ancillary qubit register.
          * @param initialStateOfAncillaryQubits A collection defining how many ancillary qubits should be added but also their initial values (each ancillary qubit initialized with '1' will cause the addition of a controlled X gate to the quantum computation). Cannot be empty.
          * @param sharedInliningInformation The inline information recorded for all ancillary qubits generated with this call.
          * @return The index of the first generated ancillary qubits. If more than one ancillary qubits was added then their indices are adjacent to the returned index.
          * @remark If no more qubits are to be added to the quantum computation then the preliminary ancillary qubits need to be promoted to actual ancillary qubits with a call to AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits().
+         * @remark The to be created qubits are only appended to a quantum register Q storing ancillary qubits of intermediate results (i.e. in a quantum register created by a previous call of this function) if the "first" qubit of Q is larger than the "last" qubit stored in all other quantum registers. In other words, the qubits are only appended to Q iff Q was the last added quantum register in the quantum computation. Otherwise, a new quantum register will be created.
+         *
          */
         [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation);
 
@@ -408,8 +410,6 @@ namespace syrec {
             std::string     quantumRegisterLabel;
         };
 
-        // TODO: Add tests that check correct quantum registers for SyReC programs thus the tests should not be added to the tests of the annotatable quantum computation but the synthesis algorithms themselves?
-        // TODO: Should be used to store qubits of non-intermediate SyReC variables thus the struct needs to be renamed.
         /**
          * A container for the layout of a syrec::Variable in a quantum register with the qubits of the latter assumed to not be ancillary qubits.
          */
@@ -448,7 +448,6 @@ namespace syrec {
             std::optional<InlinedQubitInformation> optionalSharedInlinedQubitInformation;
         };
 
-        // TODO: Should only be used for ancillary qubits created for intermediate results thus the struct needs to be renamed
         /**
          * A container for the layout of an ancillary quantum register.
          */
