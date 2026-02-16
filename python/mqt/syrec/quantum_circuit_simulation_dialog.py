@@ -26,7 +26,7 @@ else:
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-from mqt.syrec import NBitValuesContainer, QubitLabelType
+from mqt.syrec import NBitValuesContainer
 
 from .message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 from .simulation_view.dialogs.all_input_states_generator_dialog import AllInputStatesGeneratorDialog
@@ -110,11 +110,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._simulation_run_export_to_file_dialog: SimulationRunJsonExportDialog | None = None
         self._simulation_run_dialog: SimulationRunDialog | None = None
 
-        self._expected_input_output_state_size: Final[int] = (
-            QuantumCircuitSimulationDialog._determine_num_non_ancillary_qubits(
-                self._annotatable_quantum_computation, potential_error_dialog_parent=self
-            )
-        )
+        self._expected_input_output_state_size: Final[int] = self._annotatable_quantum_computation.num_data_qubits
         self._simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
         self._shared_selected_sim_run_execution_mode_dropdown_index: int = 0
         self._prev_active_simulation_runs_tab_idx: int = 0
@@ -1223,34 +1219,3 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             selection_prior_to_model_reset,
             optional_tab_widget_to_apply_selection_change_to=tab_widget_containing_list_view,
         )
-
-    # This method is only a temporary workaround for the quantum registers created for ancillary qubits not being marked as ancillary in the annotatable quantum computation (Date of comment 04.02.2026)
-    @staticmethod
-    def _determine_num_non_ancillary_qubits(
-        annotatable_quantum_computation: AnnotatableQuantumComputation, potential_error_dialog_parent: QtWidgets.QWidget
-    ) -> int:
-        num_non_ancillary_qubits: int = 0
-        for qubit in range(annotatable_quantum_computation.num_data_qubits):
-            fetched_qubit_label: str | None = annotatable_quantum_computation.get_qubit_label(
-                qubit, QubitLabelType.internal
-            )
-            if fetched_qubit_label is None:
-                show_and_request_ok_in_optionally_cancellable_notification(
-                    message_box_type=MessageBoxType.ERROR,
-                    message_box_parent=potential_error_dialog_parent,
-                    message_box_title="Failed to determine qubit label",
-                    message_box_content=f"Failed to determine internal qubit label for qubit {qubit}!",
-                    is_cancellable=False,
-                )
-                return 0
-            num_non_ancillary_qubits += int(
-                not QuantumCircuitSimulationDialog._does_qubit_label_start_with_internal_qubit_label_prefix(
-                    fetched_qubit_label
-                )
-            )
-        return num_non_ancillary_qubits
-
-    # This method is only a temporary workaround for the quantum registers created for ancillary qubits not being marked as ancillary in the annotatable quantum computation (Date of comment 04.02.2026)
-    @staticmethod
-    def _does_qubit_label_start_with_internal_qubit_label_prefix(qubit_label: str) -> bool:
-        return qubit_label.startswith("__q")
