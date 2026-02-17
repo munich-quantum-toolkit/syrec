@@ -192,7 +192,7 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyr
     const auto addedQuantumRegister = addQubitRegister(totalNumberOfQubitsOfVariable, quantumRegisterLabel);
     assert(addedQuantumRegister.getStartIndex() == qubitRangeOfTemporaryQuantumRegister.firstQubitIndex && addedQuantumRegister.getEndIndex() == qubitRangeOfTemporaryQuantumRegister.lastQubitIndex);
 
-    if (typeOfQubitsGeneratedForVariable == Garbage) {
+    if (typeOfQubitsGeneratedForVariable == Garbage || typeOfQubitsGeneratedForVariable == Ancillary) {
         setLogicalQubitsGarbage(addedQuantumRegister.getStartIndex(), addedQuantumRegister.getEndIndex());
     }
 
@@ -242,9 +242,11 @@ std::optional<qc::Qubit> AnnotatableQuantumComputation::addPreliminaryAncillaryR
             // At this point we have deleted the temporary quantum register in the quantum computation (only the quantum register object but not the qubits) but also need to update the covered qubit range of the appended to adjacent quantum register in the quantum computation (the base class).
             // This 'work around' is required since no quantum register can be deleted or modified using the public functions of the base quantum computation interface.
             quantumRegisters.at(lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel) = qc::QuantumRegister(qubitRangeOfMergedQuantumRegisters.firstQubitIndex, newAncillaryRegisterSize, lastAddedQuantumRegisterAsAncillaryOne->quantumRegisterLabel);
+            setLogicalQubitsGarbage(firstQubitOfNewQuantumRegister, lastQubitOfNewQuantumRegister);
         }
     } else {
         quantumRegisterAssociatedVariableLayouts.emplace_back(std::make_unique<AggregateAncillaryQubitsQuantumRegisterLayout>(QubitIndexRange{.firstQubitIndex = addedQuantumRegister.getStartIndex(), .lastQubitIndex = addedQuantumRegister.getEndIndex()}, quantumRegisterLabel, sharedInliningInformation));
+        setLogicalQubitsGarbage(addedQuantumRegister.getStartIndex(), addedQuantumRegister.getEndIndex());
     }
 
     for (std::size_t ancillaryQubitOffsetInQuantumRegister = 0; ancillaryQubitOffsetInQuantumRegister < initialStateOfAncillaryQubits.size(); ++ancillaryQubitOffsetInQuantumRegister) {

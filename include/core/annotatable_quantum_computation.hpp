@@ -180,6 +180,7 @@ namespace syrec {
          * @param optionalInliningInformation Optional debug information to determine the origin of the qubits in the associated SyReC program.
          * @param forceRecordingOfInlinedQubitInformation Force the recording of the provided qubit inline information when attempting to create a quantum register storing data qubits. Otherwise, the value of this flag is ignored. The purpose of this flag is to be able to force a recording of the qubit inline information for the qubits of a SyReC variable of type 'state' whose qubits are considered as data qubits for which the inline information is normally not recorded.
          * @return The index of the first generated non-ancillary qubit for the \p variable in the quantum computation, std::nullopt if the validation of the \p quantumRegisterLabel or \p variable failed, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid or empty inline stack).
+         * @remark Adding a quantum register storing ancillary qubits will cause the associated qubits to be marked as garbage as well as ancillary.
          */
         [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(QubitType typeOfQubitsGeneratedForVariable, const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt, bool forceRecordingOfInlinedQubitInformation = false);
 
@@ -191,7 +192,7 @@ namespace syrec {
          * @return The index of the first generated ancillary qubits. If more than one ancillary qubits was added then their indices are adjacent to the returned index.
          * @remark If no more qubits are to be added to the quantum computation then the preliminary ancillary qubits need to be promoted to actual ancillary qubits with a call to AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits().
          * @remark The to be created qubits are only appended to a quantum register Q storing ancillary qubits of intermediate results (i.e. in a quantum register created by a previous call of this function) if the "first" qubit of Q is larger than the "last" qubit stored in all other quantum registers. In other words, the qubits are only appended to Q iff Q was the last added quantum register in the quantum computation. Otherwise, a new quantum register will be created.
-         *
+         * @remark The qubits added via this call will be marked as both garbage as well as ancillary.
          */
         [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation);
 

@@ -76,7 +76,7 @@ public:
         const bool shouldQubitsBeMarkedAsAncillary = expectedQubitType == AnnotatableQuantumComputation::QubitType::Ancillary;
 
         for (qc::Qubit qubit = qubitIndexRangeToCheck.firstQubitIndex; qubit <= qubitIndexRangeToCheck.lastQubitIndex; ++qubit) {
-            ASSERT_EQ(shouldQubitsBeMarkedAsGarbage, annotatableQuantumComputation.logicalQubitIsGarbage(qubit)) << "Expected is garbage classification of qubit: " << shouldQubitsBeMarkedAsGarbage << " but was actually: " << annotatableQuantumComputation.logicalQubitIsGarbage(qubit);
+            ASSERT_EQ(shouldQubitsBeMarkedAsAncillary | shouldQubitsBeMarkedAsGarbage, annotatableQuantumComputation.logicalQubitIsGarbage(qubit)) << "Expected is garbage classification of qubit: " << shouldQubitsBeMarkedAsGarbage << " but was actually: " << annotatableQuantumComputation.logicalQubitIsGarbage(qubit);
             ASSERT_EQ(shouldQubitsBeMarkedAsAncillary, annotatableQuantumComputation.logicalQubitIsAncillary(qubit)) << "Expected is ancillary classification of qubit: " << shouldQubitsBeMarkedAsAncillary << " but was actually: " << annotatableQuantumComputation.logicalQubitIsAncillary(qubit);
         }
     }

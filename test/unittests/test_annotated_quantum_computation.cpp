@@ -20,7 +20,9 @@
 #include "ir/operations/StandardOperation.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <memory>
@@ -62,6 +64,21 @@ protected:
 
     void SetUp() override {
         annotatedQuantumComputation = std::make_unique<AnnotatableQuantumComputation>(true);
+    }
+
+    [[nodiscard]] static constexpr ExpectedQubitFlags getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(const AnnotatableQuantumComputation::QubitType qubitType) {
+        switch (qubitType) {
+            case AnnotatableQuantumComputation::QubitType::Data:
+                return QubitShouldBeDataQubit;
+            case AnnotatableQuantumComputation::QubitType::Ancillary:
+            case AnnotatableQuantumComputation::QubitType::Garbage:
+                return QubitShouldBeGarbage;
+            default:
+                // This assert should help to catch unhandled qubit types (in debug builds) but will not be triggered in release builds.
+                assert(false && "Unhandled qubit type detected");
+                // We add a return value so that the compiler is happy.
+                return QubitShouldBeDataQubit;
+        }
     }
 
     static void assertExpectedQubitFlagsMatchForQubitRange(const AnnotatableQuantumComputation& annotatedQuantumComputation, const AnnotatableQuantumComputation::QubitIndexRange qubitIndexRangeToCheck, const ExpectedQubitFlags expectedSharedQubitFlags) {
@@ -106,7 +123,7 @@ protected:
         }
     }
 
-    static void assertAdditionOfQuantumRegisterForSyrecVariableIsSuccessful(AnnotatableQuantumComputation& annotatableQuantumComputation, const AnnotatableQuantumComputation::QubitType typeOfQubitsToBeGeneratedForVariable, const std::string& expectedQuantumRegisterLabel, const AnnotatableQuantumComputation::QubitIndexRange expectedQubitRangeOfRegister, const AnnotatableQuantumComputation::AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& optionalSharedInlinedQubitInformation = std::nullopt) {
+    static void assertAdditionOfQuantumRegisterForSyrecVariableIsSuccessful(AnnotatableQuantumComputation& annotatableQuantumComputation, const AnnotatableQuantumComputation::QubitType typeOfQubitsToBeGeneratedForVariable, const std::string& expectedQuantumRegisterLabel, const AnnotatableQuantumComputation::QubitIndexRange expectedQubitRangeOfRegister, const AnnotatableQuantumComputation::AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& optionalSharedInlinedQubitInformation = std::nullopt, const bool forceRecordingOfQubitInlineInformation = false) {
         ASSERT_NE(expectedQuantumRegisterLabel, DEFAULT_QUANTUM_REGISTER_LABEL) << "Please do not use the default quantum register label set in the annotatable quantum computation tests";
 
         const auto numQubitsPriorToAdditionOfQuantumRegister       = annotatableQuantumComputation.getNqubits();
@@ -114,7 +131,7 @@ protected:
         const auto expectedNumQubitsAfterAdditionOfQuantumRegister = numQubitsPriorToAdditionOfQuantumRegister + numQubitsInFutureQuantumComputation;
 
         std::optional<qc::Qubit> actualFirstQubitOfQuantumRegister;
-        ASSERT_NO_FATAL_FAILURE(actualFirstQubitOfQuantumRegister = annotatableQuantumComputation.addQuantumRegisterForSyrecVariable(typeOfQubitsToBeGeneratedForVariable, expectedQuantumRegisterLabel, associatedVariableLayoutInformation, optionalSharedInlinedQubitInformation));
+        ASSERT_NO_FATAL_FAILURE(actualFirstQubitOfQuantumRegister = annotatableQuantumComputation.addQuantumRegisterForSyrecVariable(typeOfQubitsToBeGeneratedForVariable, expectedQuantumRegisterLabel, associatedVariableLayoutInformation, optionalSharedInlinedQubitInformation, forceRecordingOfQubitInlineInformation));
         ASSERT_TRUE(actualFirstQubitOfQuantumRegister.has_value()) << "Failed to create quantum register " << expectedQuantumRegisterLabel << " for variable";
         ASSERT_EQ(expectedQubitRangeOfRegister.firstQubitIndex, actualFirstQubitOfQuantumRegister.value()) << "Expected first qubit of quantum register " << expectedQuantumRegisterLabel << " should be equal to " << std::to_string(expectedQubitRangeOfRegister.firstQubitIndex) << " but was actually " << std::to_string(actualFirstQubitOfQuantumRegister.value());
 
@@ -362,15 +379,13 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    ExpectedQubitFlags expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlags = QubitShouldBeDataQubit;
     switch (GetParam()) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
-            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
-            break;
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlags = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
@@ -384,13 +399,13 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
         ASSERT_THAT(*optionalSharedInlinedQubitInformation->inlineStack, testing::NotNull());
 
         constexpr auto qubitRangeOfFirstValueOfDimension = AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 3U});
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, qubitRangeOfFirstValueOfDimension, *optionalSharedInlinedQubitInformation->userDeclaredQubitLabel, {0U}, *optionalSharedInlinedQubitInformation->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, qubitRangeOfFirstValueOfDimension, optionalSharedInlinedQubitInformation->userDeclaredQubitLabel, {0U}, *optionalSharedInlinedQubitInformation->inlineStack));
 
         constexpr auto qubitRangeOfSecondValueOfDimension = AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 7U});
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, qubitRangeOfSecondValueOfDimension, *optionalSharedInlinedQubitInformation->userDeclaredQubitLabel, {1U}, *optionalSharedInlinedQubitInformation->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, qubitRangeOfSecondValueOfDimension, optionalSharedInlinedQubitInformation->userDeclaredQubitLabel, {1U}, *optionalSharedInlinedQubitInformation->inlineStack));
 
         constexpr auto qubitRangeOfThirdValueOfDimension = AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 8U, .lastQubitIndex = 11U});
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, qubitRangeOfThirdValueOfDimension, *optionalSharedInlinedQubitInformation->userDeclaredQubitLabel, {2U}, *optionalSharedInlinedQubitInformation->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, qubitRangeOfThirdValueOfDimension, optionalSharedInlinedQubitInformation->userDeclaredQubitLabel, {2U}, *optionalSharedInlinedQubitInformation->inlineStack));
     }
 }
 
@@ -414,15 +429,13 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInVariable);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    ExpectedQubitFlags expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlags = QubitShouldBeDataQubit;
     switch (GetParam()) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
-            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
-            break;
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlags = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
@@ -443,7 +456,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
                 accessedValuePerDimension[1] = secDimIdx;
                 for (unsigned thirdDimIdx = 0; thirdDimIdx < 3; ++thirdDimIdx) {
                     accessedValuePerDimension[2] = thirdDimIdx;
-                    ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, qubitRangeOfAccessedValueOfDimension, *optionalSharedInlinedQubitInformation->userDeclaredQubitLabel, accessedValuePerDimension, *optionalSharedInlinedQubitInformation->inlineStack));
+                    ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, qubitRangeOfAccessedValueOfDimension, optionalSharedInlinedQubitInformation->userDeclaredQubitLabel, accessedValuePerDimension, *optionalSharedInlinedQubitInformation->inlineStack));
                     qubitRangeOfAccessedValueOfDimension.lastQubitIndex = qubitRangeOfAccessedValueOfDimension.firstQubitIndex;
                     qubitRangeOfAccessedValueOfDimension.firstQubitIndex += associatedVariableLayoutOfQuantumRegister.bitwidth;
                 }
@@ -463,7 +476,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    const ExpectedQubitFlags expectedSharedQubitFlags = (GetParam() == AnnotatableQuantumComputation::QubitType::Garbage ? QubitShouldBeGarbage : QubitShouldBeDataQubit);
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam());
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
@@ -478,7 +491,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInVariable);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    const ExpectedQubitFlags expectedSharedQubitFlags = GetParam() == AnnotatableQuantumComputation::QubitType::Garbage ? QubitShouldBeGarbage : QubitShouldBeDataQubit;
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam());
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
@@ -516,55 +529,51 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInExistingQReg + expectedNumQubitsInToBeAddedQReg);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    ExpectedQubitFlags expectedSharedQubitFlagsOfExistingQReg = ExpectedQubitFlags::QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlagsOfExistingQReg = QubitShouldBeDataQubit;
     switch (qubitTypeOfExistingQReg) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
-            expectedSharedQubitFlagsOfExistingQReg = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
-            break;
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlagsOfExistingQReg = ExpectedQubitFlags::QubitShouldBeDataQubit | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlagsOfExistingQReg = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
     }
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfExistingQReg, expectedSharedQubitFlagsOfExistingQReg));
-    if (expectedSharedQubitFlagsOfExistingQReg & ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable) {
+    if (expectedSharedQubitFlagsOfExistingQReg & InlineQubitInformationShouldBeFetchable) {
         ASSERT_TRUE(optionalinlineInformationOfExistingQReg.has_value());
         ASSERT_TRUE(optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel.has_value());
         ASSERT_TRUE(optionalinlineInformationOfExistingQReg->inlineStack.has_value());
         ASSERT_THAT(*optionalinlineInformationOfExistingQReg->inlineStack, testing::NotNull());
 
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 1U}), *optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel, {0U, 0U}, *optionalinlineInformationOfExistingQReg->inlineStack));
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 2U, .lastQubitIndex = 3U}), *optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel, {0U, 1U}, *optionalinlineInformationOfExistingQReg->inlineStack));
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 5U}), *optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel, {0U, 2U}, *optionalinlineInformationOfExistingQReg->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 1U}), optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel, {0U, 0U}, *optionalinlineInformationOfExistingQReg->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 2U, .lastQubitIndex = 3U}), optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel, {0U, 1U}, *optionalinlineInformationOfExistingQReg->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 5U}), optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel, {0U, 2U}, *optionalinlineInformationOfExistingQReg->inlineStack));
     }
 
-    ExpectedQubitFlags expectedSharedQubitFlagsOfToBeAddedQReg = ExpectedQubitFlags::QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlagsOfToBeAddedQReg = QubitShouldBeDataQubit;
     switch (qubitTypeOfToBeAddedQReg) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
-            expectedSharedQubitFlagsOfToBeAddedQReg = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
-            break;
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlagsOfToBeAddedQReg = ExpectedQubitFlags::QubitShouldBeDataQubit | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlagsOfToBeAddedQReg = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
     }
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfToBeAddedQReg, expectedSharedQubitFlagsOfToBeAddedQReg));
-    if (expectedSharedQubitFlagsOfToBeAddedQReg & ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable) {
+    if (expectedSharedQubitFlagsOfToBeAddedQReg & InlineQubitInformationShouldBeFetchable) {
         ASSERT_TRUE(optionalInlineInformationOfToBeAddedQReg.has_value());
         ASSERT_TRUE(optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel.has_value());
         ASSERT_TRUE(optionalInlineInformationOfToBeAddedQReg->inlineStack.has_value());
         ASSERT_THAT(*optionalInlineInformationOfToBeAddedQReg->inlineStack, testing::NotNull());
 
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 6U, .lastQubitIndex = 9U}), *optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel, {0U, 0U}, *optionalInlineInformationOfToBeAddedQReg->inlineStack));
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 10U, .lastQubitIndex = 13U}), *optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel, {0U, 1U}, *optionalInlineInformationOfToBeAddedQReg->inlineStack));
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 14U, .lastQubitIndex = 17U}), *optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel, {1U, 0U}, *optionalInlineInformationOfToBeAddedQReg->inlineStack));
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 18U, .lastQubitIndex = 21U}), *optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel, {1U, 1U}, *optionalInlineInformationOfToBeAddedQReg->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 6U, .lastQubitIndex = 9U}), optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel, {0U, 0U}, *optionalInlineInformationOfToBeAddedQReg->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 10U, .lastQubitIndex = 13U}), optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel, {0U, 1U}, *optionalInlineInformationOfToBeAddedQReg->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 14U, .lastQubitIndex = 17U}), optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel, {1U, 0U}, *optionalInlineInformationOfToBeAddedQReg->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 18U, .lastQubitIndex = 21U}), optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel, {1U, 1U}, *optionalInlineInformationOfToBeAddedQReg->inlineStack));
     }
 }
 
@@ -595,18 +604,16 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 2U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInAggregateAncillaryQubitsQReg + expectedNumQubitsInQRegOfVariable);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAggregateAncillaryQubitsQReg, ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAggregateAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
     ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 4U}), std::nullopt, {0U}, aggregatedAncillaryQubitsInlineStack));
 
-    ExpectedQubitFlags expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlags = QubitShouldBeDataQubit;
     switch (GetParam()) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
-            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
-            break;
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlags = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
@@ -619,10 +626,10 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
         ASSERT_TRUE(optionalSharedInlinedQubitInformationOfQregOfVariable->inlineStack.has_value());
         ASSERT_THAT(*optionalSharedInlinedQubitInformationOfQregOfVariable->inlineStack, testing::NotNull());
 
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 5U, .lastQubitIndex = 7U}), *optionalSharedInlinedQubitInformationOfQregOfVariable->userDeclaredQubitLabel, {0U}, *optionalSharedInlinedQubitInformationOfQregOfVariable->inlineStack));
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 8U, .lastQubitIndex = 10U}), *optionalSharedInlinedQubitInformationOfQregOfVariable->userDeclaredQubitLabel, {1U}, *optionalSharedInlinedQubitInformationOfQregOfVariable->inlineStack));
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 11U, .lastQubitIndex = 13U}), *optionalSharedInlinedQubitInformationOfQregOfVariable->userDeclaredQubitLabel, {2U}, *optionalSharedInlinedQubitInformationOfQregOfVariable->inlineStack));
-        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 14U, .lastQubitIndex = 16U}), *optionalSharedInlinedQubitInformationOfQregOfVariable->userDeclaredQubitLabel, {3U}, *optionalSharedInlinedQubitInformationOfQregOfVariable->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 5U, .lastQubitIndex = 7U}), optionalSharedInlinedQubitInformationOfQregOfVariable->userDeclaredQubitLabel, {0U}, *optionalSharedInlinedQubitInformationOfQregOfVariable->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 8U, .lastQubitIndex = 10U}), optionalSharedInlinedQubitInformationOfQregOfVariable->userDeclaredQubitLabel, {1U}, *optionalSharedInlinedQubitInformationOfQregOfVariable->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 11U, .lastQubitIndex = 13U}), optionalSharedInlinedQubitInformationOfQregOfVariable->userDeclaredQubitLabel, {2U}, *optionalSharedInlinedQubitInformationOfQregOfVariable->inlineStack));
+        ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 14U, .lastQubitIndex = 16U}), optionalSharedInlinedQubitInformationOfQregOfVariable->userDeclaredQubitLabel, {3U}, *optionalSharedInlinedQubitInformationOfQregOfVariable->inlineStack));
     }
 }
 
@@ -639,7 +646,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
-    const ExpectedQubitFlags expectedSharedQubitFlags = GetParam() == AnnotatableQuantumComputation::QubitType::Garbage ? QubitShouldBeGarbage : QubitShouldBeDataQubit;
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam());
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
@@ -656,7 +663,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
-    const ExpectedQubitFlags expectedSharedQubitFlags = GetParam() == AnnotatableQuantumComputation::QubitType::Garbage ? QubitShouldBeGarbage : QubitShouldBeDataQubit;
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam());
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
@@ -673,7 +680,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
-    const ExpectedQubitFlags expectedSharedQubitFlags = GetParam() == AnnotatableQuantumComputation::QubitType::Garbage ? QubitShouldBeGarbage : QubitShouldBeDataQubit;
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam());
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
@@ -688,7 +695,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
-    const ExpectedQubitFlags expectedSharedQubitFlags = GetParam() == AnnotatableQuantumComputation::QubitType::Garbage ? QubitShouldBeGarbage : QubitShouldBeDataQubit;
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam());
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
@@ -703,7 +710,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
-    const ExpectedQubitFlags expectedSharedQubitFlags = GetParam() == AnnotatableQuantumComputation::QubitType::Garbage ? QubitShouldBeGarbage : QubitShouldBeDataQubit;
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam());
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
@@ -722,7 +729,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 4U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 2U);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedAncillaryQuantumRegisterQubitRange, ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedAncillaryQuantumRegisterQubitRange, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
 }
 
 TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQRegForSyrecVariableWithInvalidQubitStackInInlinedQubitInformationNotPossible) {
@@ -750,17 +757,11 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
-    const ExpectedQubitFlags expectedSharedQubitFlags = GetParam() == AnnotatableQuantumComputation::QubitType::Garbage ? QubitShouldBeGarbage : QubitShouldBeDataQubit;
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam());
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
 TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQRegForSyrecVariableWithInvalidUserDeclaredQubitLabelInInlinedQubitInformationNotPossible) {
-    // Qubit inline information is not stored for data qubits thus we need to skip this test in that case.
-    if (GetParam() == AnnotatableQuantumComputation::QubitType::Data) {
-        GTEST_SKIP();
-        return;
-    }
-
     const auto associatedVariableLayoutOfQuantumRegister = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = {3U}, .bitwidth = 4U});
 
     const std::string expectedQuantumRegisterLabel      = "qReg";
@@ -770,18 +771,18 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_TRUE(inlineStack->push(QubitInliningStack::QubitInliningStackEntry({.lineNumberOfCallOfTargetModule = std::nullopt, .isTargetModuleAccessedViaCallStmt = std::nullopt, .targetModule = std::make_shared<Module>("test")})));
 
     const auto validInlineQubitInformation = AnnotatableQuantumComputation::InlinedQubitInformation({.userDeclaredQubitLabel = "test", .inlineStack = inlineStack});
-    ASSERT_NO_FATAL_FAILURE(assertAdditionOfQuantumRegisterForSyrecVariableIsSuccessful(*annotatedQuantumComputation, GetParam(), expectedQuantumRegisterLabel, expectedQuantumRegisterQubitRange, associatedVariableLayoutOfQuantumRegister, validInlineQubitInformation));
+    ASSERT_NO_FATAL_FAILURE(assertAdditionOfQuantumRegisterForSyrecVariableIsSuccessful(*annotatedQuantumComputation, GetParam(), expectedQuantumRegisterLabel, expectedQuantumRegisterQubitRange, associatedVariableLayoutOfQuantumRegister, validInlineQubitInformation, true));
 
     const auto inlineQubitInformationWithNotSetUserDeclaredQubitLabel = AnnotatableQuantumComputation::InlinedQubitInformation({.userDeclaredQubitLabel = std::nullopt, .inlineStack = inlineStack});
-    ASSERT_FALSE(annotatedQuantumComputation->addQuantumRegisterForSyrecVariable(GetParam(), expectedQuantumRegisterLabel, associatedVariableLayoutOfQuantumRegister, inlineQubitInformationWithNotSetUserDeclaredQubitLabel).has_value());
+    ASSERT_FALSE(annotatedQuantumComputation->addQuantumRegisterForSyrecVariable(GetParam(), expectedQuantumRegisterLabel, associatedVariableLayoutOfQuantumRegister, inlineQubitInformationWithNotSetUserDeclaredQubitLabel, true).has_value());
 
     const auto inlineQubitInformationWithEmptyUserDeclaredQubitLabel = AnnotatableQuantumComputation::InlinedQubitInformation({.userDeclaredQubitLabel = "", .inlineStack = inlineStack});
-    ASSERT_FALSE(annotatedQuantumComputation->addQuantumRegisterForSyrecVariable(GetParam(), expectedQuantumRegisterLabel, associatedVariableLayoutOfQuantumRegister, inlineQubitInformationWithEmptyUserDeclaredQubitLabel).has_value());
+    ASSERT_FALSE(annotatedQuantumComputation->addQuantumRegisterForSyrecVariable(GetParam(), expectedQuantumRegisterLabel, associatedVariableLayoutOfQuantumRegister, inlineQubitInformationWithEmptyUserDeclaredQubitLabel, true).has_value());
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
-    const ExpectedQubitFlags expectedSharedQubitFlags = (GetParam() == AnnotatableQuantumComputation::QubitType::Garbage ? QubitShouldBeGarbage : QubitShouldBeDataQubit) | InlineQubitInformationShouldBeFetchable;
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam()) | InlineQubitInformationShouldBeFetchable;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
@@ -805,7 +806,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
             ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, ExpectedQubitFlags::QubitShouldBeGarbage));
             break;
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, ExpectedQubitFlags::QubitShouldBeAncillary));
+            ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary));
             break;
         default:
             FAIL();
@@ -913,9 +914,9 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddA
     constexpr unsigned expectedTotalNumQubits = 42;
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 2U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedTotalNumQubits);
-    const ExpectedQubitFlags expectedQubitFlagsSharedByQubitsOfNonAggregateQReg = GetParam() == AnnotatableQuantumComputation::Garbage ? QubitShouldBeGarbage : QubitShouldBeDataQubit;
+    const ExpectedQubitFlags expectedQubitFlagsSharedByQubitsOfNonAggregateQReg = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam());
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, nonAggregateQRegCoveredQubitIndexRange, expectedQubitFlagsSharedByQubitsOfNonAggregateQReg));
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAggregateOfAncillaryQubitsQReg, ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAggregateOfAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -926,7 +927,7 @@ INSTANTIATE_TEST_SUITE_P(
                 AnnotatableQuantumComputation::QubitType::Garbage,
                 AnnotatableQuantumComputation::QubitType::Ancillary));
 
-// // BEGIN Add preliminary ancillary quantum register tests
+// BEGIN Add preliminary ancillary quantum register tests
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQRegOfLengthOne) {
     const auto targetModule = std::make_shared<Module>("firstModule");
     const auto inlineStack  = std::make_shared<QubitInliningStack>();
@@ -940,7 +941,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQ
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 1U);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
     ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, 0U, sharedInlineQubitInformation));
 }
 
@@ -957,7 +958,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQ
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 6U);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
     for (qc::Qubit qubit = 0U; qubit <= 5U; ++qubit) {
         ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, qubit, sharedInlineQubitInformation));
     }
@@ -986,7 +987,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQ
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 9U);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedFinalQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedFinalQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
     ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 5U}), std::nullopt, {0U}, firstInlineStack));
     ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 6U, .lastQubitIndex = 8U}), std::nullopt, {0U}, secondInlineStack));
 }
@@ -1001,7 +1002,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQ
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 6U);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQRegWithQuantumRegisterLabelMatchingExistingQuantumRegisterLabelNotPossible) {
@@ -1014,7 +1015,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQ
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 6U);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQRegWithEmptyAncillaryQubitInitialStatesNotPossible) {
@@ -1027,7 +1028,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQ
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 6U);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQRegWithInvalidInlineStackNotPossible) {
@@ -1054,7 +1055,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQ
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 6U);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQRegWithUserDeclaredQubitLabelInInlinedInformationNotPossible) {
@@ -1073,7 +1074,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQ
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 6U);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQRegAfterPromotionOfPreliminaryAncillaryQubitsNotPossible) {
@@ -1087,7 +1088,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddAggregateOfAncillaryQubitsQ
 
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 6U);
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQuantumRegister, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, AddMixtureOfDifferentQuantumRegisters) {
@@ -1174,10 +1175,10 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddMixtureOfDifferentQuantumRe
     constexpr ExpectedQubitFlags expectedQubitFlagsOfFirstQRegForVariable = QubitShouldBeDataQubit;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfFirstQRegOfVariable, expectedQubitFlagsOfFirstQRegForVariable));
 
-    constexpr ExpectedQubitFlags expectedQubitFlagsOfSecondQRegForVariable = QubitShouldBeAncillary;
+    constexpr ExpectedQubitFlags expectedQubitFlagsOfSecondQRegForVariable = QubitShouldBeGarbage | QubitShouldBeAncillary;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfSecondQRegOfVariable, expectedQubitFlagsOfSecondQRegForVariable));
 
-    constexpr ExpectedQubitFlags expectedQubitFlagsOfMergeAggregateOfAncillaryQubitsQReg = QubitShouldBeAncillary | InlineQubitInformationShouldBeFetchable;
+    constexpr ExpectedQubitFlags expectedQubitFlagsOfMergeAggregateOfAncillaryQubitsQReg = QubitShouldBeGarbage | QubitShouldBeAncillary | InlineQubitInformationShouldBeFetchable;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAggregateOfAncillaryQubitsQRegAfterSecondMerge, expectedQubitFlagsOfMergeAggregateOfAncillaryQubitsQReg));
 
     constexpr ExpectedQubitFlags expectedQubitFlagsOfThirdQRegForVariable = QubitShouldBeGarbage;
@@ -1335,7 +1336,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddedAncillaryQRegForSyrecVari
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInExistingQReg + expectedNumQubitsInToBeAddedQReg);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    constexpr ExpectedQubitFlags sharedQubitFlagsOfPreliminaryAncillaryQRegs = QubitShouldBeDataQubit | InlineQubitInformationShouldBeFetchable;
+    constexpr ExpectedQubitFlags sharedQubitFlagsOfPreliminaryAncillaryQRegs = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfExistingQReg, sharedQubitFlagsOfPreliminaryAncillaryQRegs));
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfToBeAddedQReg, sharedQubitFlagsOfPreliminaryAncillaryQRegs));
 }
@@ -1370,10 +1371,10 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, PromotionOfAggregateQRegsOrQRe
     ASSERT_EQ(5U, annotatedQuantumComputation->getQuantumRegisters().size());
     ASSERT_EQ(21U, annotatedQuantumComputation->getNqubits());
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfGarbageQubitsQReg, ExpectedQubitFlags::QubitShouldBeGarbage));
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeAncillary));
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfFirstAggregateOfAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfFirstAggregateOfAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfDataQubitsQReg, ExpectedQubitFlags::QubitShouldBeDataQubit));
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfSecondAggregateOfAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfSecondAggregateOfAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, AggregateOfAncillaryQubitsQRegIsAppendedToLastAdjacentAggregateOfAncillaryQubitsQRegIfNoSubsequentQRegExists) {
@@ -1405,10 +1406,10 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AggregateOfAncillaryQubitsQReg
 
     ASSERT_EQ(4U, annotatedQuantumComputation->getQuantumRegisters().size());
     ASSERT_EQ(13U, annotatedQuantumComputation->getNqubits());
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeAncillary));
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfSkippedAggregateQReg, ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfSkippedAggregateQReg, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfDataQubitsQReg, ExpectedQubitFlags::QubitShouldBeDataQubit));
-    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAppendedToQRegAfterMerge, ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
+    ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAppendedToQRegAfterMerge, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
 }
 
 TEST_F(AnnotatableQuantumComputationTestsFixture, UserDeclaredQubitLabelFetchableForDataQubitsIfRecordingOfInlinedQubitInformationWasForced) {
