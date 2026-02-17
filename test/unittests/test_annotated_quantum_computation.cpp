@@ -30,7 +30,7 @@
 #include <utility>
 #include <vector>
 
-// The current tests do not cover the functionality:
+// The current tests do not cover the following functionality:
 // * set- and get constant/garbage/input/output lines
 // * adding and getting lines of the circuit
 // * the stringification of the supported gate types
@@ -343,8 +343,6 @@ public:
     }
 };
 
-// TODO: Check inline stack of aggregate qregs and qregs of local module variables.
-// TODO: Check inline information after aggregate qreg merge?
 TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQregFor1DSyrecVariable) {
     const auto associatedVariableLayoutOfQuantumRegister = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = {3U}, .bitwidth = 4U});
 

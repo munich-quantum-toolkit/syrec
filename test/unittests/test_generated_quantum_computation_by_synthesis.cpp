@@ -23,18 +23,12 @@
 
 using namespace syrec;
 
-// TODO: clang-tidy on all changes files
-// TODO: error when synthesizing SyReC program with state variables
-/*
-module incr(inout a(4)) wire t(4)
-++= a
+// The current tests do not cover the following functionality (when referring to all generated qubits we include the qubits generated for intermediate results and assume that tests requiring ancillary qubits for intermediate results exist):
+// - Fetching the internal qubit labels of all generated qubits of the synthesized circuit
+// - Fetching the user declared qubit labels of all generated qubits of the synthesized circuit
+// - Fetching the inlined qubit information of all generated qubits of the synthesized circuit
+// - Fetching the inlined qubit information of all generated qubits of the synthesized circuit if the required flag in the configurable options is not enabled
 
-module test(in a(4)) wire b(4), c(4)
- call incr(b)
-
-module main(inout a(4), in b(4), out c(4)) wire d(4), e(4) state f(4) wire g(4)
- call test(b)
-*/
 template<typename T>
 class GeneratedQuantumComputationBySynthesisTestFixture: public testing::Test {
 public:
@@ -197,6 +191,11 @@ TYPED_TEST_P(GeneratedQuantumComputationBySynthesisTestFixture, CheckGeneratedQu
     const auto expectedQRegDataOfParameterOperandL             = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg("operandL", AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 7U}), AnnotatableQuantumComputation::QubitType::Garbage);
     const auto expectedQRegDataOfParameterOperandR             = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg("operandR", AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 8U, .lastQubitIndex = 11U}), AnnotatableQuantumComputation::QubitType::Garbage);
     const auto expectedQRegDataOfQRegStoringIntermediateResult = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg(InternalQubitLabelBuilder::buildAncillaryQubitLabel(3), AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 12U, .lastQubitIndex = 23U}), AnnotatableQuantumComputation::QubitType::Ancillary);
+
+    ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfParameterResult));
+    ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfParameterOperandL));
+    ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfParameterOperandR));
+    ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfQRegStoringIntermediateResult));
 }
 
 TYPED_TEST_P(GeneratedQuantumComputationBySynthesisTestFixture, CheckGeneratedQuantumRegistersForSyrecProgramContainingModuleUncallWithUncalledModuleRequiringAncillaryQubitsForIntermediateResults) {
@@ -208,6 +207,11 @@ TYPED_TEST_P(GeneratedQuantumComputationBySynthesisTestFixture, CheckGeneratedQu
     const auto expectedQRegDataOfParameterOperandL             = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg("operandL", AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 7U}), AnnotatableQuantumComputation::QubitType::Garbage);
     const auto expectedQRegDataOfParameterOperandR             = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg("operandR", AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 8U, .lastQubitIndex = 11U}), AnnotatableQuantumComputation::QubitType::Garbage);
     const auto expectedQRegDataOfQRegStoringIntermediateResult = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg(InternalQubitLabelBuilder::buildAncillaryQubitLabel(3), AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 12U, .lastQubitIndex = 23U}), AnnotatableQuantumComputation::QubitType::Ancillary);
+
+    ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfParameterResult));
+    ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfParameterOperandL));
+    ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfParameterOperandR));
+    ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfQRegStoringIntermediateResult));
 }
 
 REGISTER_TYPED_TEST_SUITE_P(GeneratedQuantumComputationBySynthesisTestFixture,
