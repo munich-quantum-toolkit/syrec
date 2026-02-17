@@ -59,6 +59,7 @@ repos:
     rev: v1.43.4
     hooks:
       - id: typos
+        exclude: ^(\.clang-tidy)$
         priority: 0
 
   ## Check best practices for scientific Python code
