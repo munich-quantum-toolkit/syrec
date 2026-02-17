@@ -178,9 +178,10 @@ namespace syrec {
          * @param quantumRegisterLabel The label for the to be added quantum register. Must not be empty and no other qubit or quantum register with the same name must exist in the quantum computation.
          * @param associatedVariableLayoutInformation Layout information about the associated SyReC variable that is used to determine the number of qubits to generate. Total number of elements stored in variable must be larger than zero. Bitwidth of variable must be larger than 0.
          * @param optionalInliningInformation Optional debug information to determine the origin of the qubits in the associated SyReC program.
+         * @param forceRecordingOfInlinedQubitInformation Force the recording of the provided qubit inline information when attempting to create a quantum register storing data qubits. Otherwise, the value of this flag is ignored. The purpose of this flag is to be able to force a recording of the qubit inline information for the qubits of a SyReC variable of type 'state' whose qubits are considered as data qubits for which the inline information is normally not recorded.
          * @return The index of the first generated non-ancillary qubit for the \p variable in the quantum computation, std::nullopt if the validation of the \p quantumRegisterLabel or \p variable failed, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid or empty inline stack).
          */
-        [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(QubitType typeOfQubitsGeneratedForVariable, const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
+        [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(QubitType typeOfQubitsGeneratedForVariable, const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt, bool forceRecordingOfInlinedQubitInformation = false);
 
         /**
          * Add a quantum register for a number of preliminary ancillary qubits in the quantum computation or resize an already existing quantum register.
@@ -434,7 +435,7 @@ namespace syrec {
              * @param coveredQubitIndicesOfQuantumRegister The covered qubit index range of the quantum register. The first qubit index is assumed to be less than or equal to the last qubit index.
              * @param quantumRegisterLabel The label of the quantum register. Must not be empty.
              * @param numValuesPerDimensionOfVariable Defines the number of values stored in each dimension of the associated variable.
-             * @param elementQubitSize The qubit size of the values stored in the dimension of the associated variable.
+             * @param elementQubitSize The qubit size of the elements stored in the variable.
              * @param optionalSharedInlinedQubitInformation The optional inline qubit information shared by all qubits of the quantum register.
              *
              * @note A SyReC variable declared as 'in a[2][3][4](6)' will cause the generation of the following quantum register:

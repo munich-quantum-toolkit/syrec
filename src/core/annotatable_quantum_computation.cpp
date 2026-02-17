@@ -174,8 +174,8 @@ bool AnnotatableQuantumComputation::addOperationsImplementingFredkinGate(const q
     return currNumQuantumOperations > prevNumQuantumOperations && (!generateQuantumOperationAnnotations || annotateAllQuantumOperationsAtPositions(prevNumQuantumOperations, currNumQuantumOperations - 1U, {}));
 }
 
-std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyrecVariable(QubitType typeOfQubitsGeneratedForVariable, const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<InlinedQubitInformation>& optionalInliningInformation) {
-    if (!canQubitsBeAddedToQuantumComputation || (typeOfQubitsGeneratedForVariable == QubitType::Data && optionalInliningInformation.has_value()) || !canQuantumRegisterLabelBeUsed(quantumRegisterLabel, getQuantumRegisters()) || !validateVariableLayoutForSyrecVariable(associatedVariableLayoutInformation, optionalInliningInformation)) {
+std::optional<qc::Qubit> AnnotatableQuantumComputation::addQuantumRegisterForSyrecVariable(QubitType typeOfQubitsGeneratedForVariable, const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<InlinedQubitInformation>& optionalInliningInformation, const bool forceRecordingOfInlinedQubitInformation) {
+    if (!canQubitsBeAddedToQuantumComputation || (typeOfQubitsGeneratedForVariable == Data && optionalInliningInformation.has_value() && !forceRecordingOfInlinedQubitInformation) || !canQuantumRegisterLabelBeUsed(quantumRegisterLabel, getQuantumRegisters()) || !validateVariableLayoutForSyrecVariable(associatedVariableLayoutInformation, optionalInliningInformation)) {
         return std::nullopt;
     }
 
@@ -278,16 +278,14 @@ std::optional<std::string> AnnotatableQuantumComputation::getQubitLabel(const qc
         return std::nullopt;
     }
 
-    const bool                                                                        isInlineInformationAvailableBasedOnStoredQubitTypeOfQReg = quantumRegisterAssociatedVariableLayouts.at(*indexOfQuantumRegisterStoringQubit)->typeOfQubitsStoredInQuantumRegister != QubitType::Data;
-    const std::optional<BaseQuantumRegisterVariableLayout::QubitInVariableLayoutData> qubitInformationFromQuantumRegister                      = indexOfQuantumRegisterStoringQubit.has_value() ? quantumRegisterAssociatedVariableLayouts.at(*indexOfQuantumRegisterStoringQubit)->determineQubitInVariableLayoutData(qubit) : std::nullopt;
+    const std::optional<BaseQuantumRegisterVariableLayout::QubitInVariableLayoutData> qubitInformationFromQuantumRegister = indexOfQuantumRegisterStoringQubit.has_value() ? quantumRegisterAssociatedVariableLayouts.at(*indexOfQuantumRegisterStoringQubit)->determineQubitInVariableLayoutData(qubit) : std::nullopt;
     if (!qubitInformationFromQuantumRegister.has_value()) {
         return std::nullopt;
     }
 
     std::string inheritedQubitIdentifierFromQuantumRegister;
     if (qubitLabelType == UserDeclared) {
-        // The qubit inline information is only recorded for non-data qubits and when the associated flag of the annotatable quantum computation is set in the constructor of the latter.
-        if (!isInlineInformationAvailableBasedOnStoredQubitTypeOfQReg || !qubitInformationFromQuantumRegister->inlinedQubitInformation.has_value() || !qubitInformationFromQuantumRegister->inlinedQubitInformation->userDeclaredQubitLabel.has_value()) {
+        if (!qubitInformationFromQuantumRegister->inlinedQubitInformation.has_value() || !qubitInformationFromQuantumRegister->inlinedQubitInformation->userDeclaredQubitLabel.has_value()) {
             return std::nullopt;
         }
         inheritedQubitIdentifierFromQuantumRegister = *qubitInformationFromQuantumRegister->inlinedQubitInformation->userDeclaredQubitLabel;
@@ -571,8 +569,8 @@ bool AnnotatableQuantumComputation::annotateAllQuantumOperationsAtPositions(cons
 }
 
 // BEGIN Quantum register variable layout functionality
-AnnotatableQuantumComputation::QuantumRegisterForVariableLayout::QuantumRegisterForVariableLayout(const QubitType typeOfQubitsGeneratedForVariable, const QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, const unsigned qubitSizeOfElementInVariable, const std::optional<InlinedQubitInformation>& optionalSharedInlinedQubitInformation):
-    BaseQuantumRegisterVariableLayout(typeOfQubitsGeneratedForVariable, coveredQubitIndicesOfQuantumRegister, quantumRegisterLabel), elementQubitSize(qubitSizeOfElementInVariable), numValuesPerDimensionOfVariable(numValuesPerDimensionOfVariable), optionalSharedInlinedQubitInformation(optionalSharedInlinedQubitInformation) {
+AnnotatableQuantumComputation::QuantumRegisterForVariableLayout::QuantumRegisterForVariableLayout(const QubitType typeOfQubitsGeneratedForVariable, const QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, const unsigned elementQubitSize, const std::optional<InlinedQubitInformation>& optionalSharedInlinedQubitInformation):
+    BaseQuantumRegisterVariableLayout(typeOfQubitsGeneratedForVariable, coveredQubitIndicesOfQuantumRegister, quantumRegisterLabel), elementQubitSize(elementQubitSize), numValuesPerDimensionOfVariable(numValuesPerDimensionOfVariable), optionalSharedInlinedQubitInformation(optionalSharedInlinedQubitInformation) {
     // Calculates the offset to the next element per dimension measured in the number of variable bitwidths starting with the second to last dimension, for the last dimension this value is always 1.
     // E.g., for a SyReC variable with dimensions [2][3][4] the calculated offsets are [12, 4, 1].
     offsetToNextElementInDimensionMeasuredInNumberOfVariableBitwidths = std::vector(numValuesPerDimensionOfVariable.size(), 1U);

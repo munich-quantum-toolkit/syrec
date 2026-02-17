@@ -140,14 +140,14 @@ namespace {
     }
 
     [[nodiscard]] constexpr std::optional<syrec::AnnotatableQuantumComputation::QubitType> getQubitTypeAssociatedWithSyrecVariableType(const syrec::Variable::Type variableType) noexcept {
+        // Conversion is based on table define in section 2.1 of the RevLib SyReC specification (see https://www.revlib.org/doc/docu/revlib_2_0_1.pdf)
         switch (variableType) {
             case syrec::Variable::Type::In:
                 return syrec::AnnotatableQuantumComputation::QubitType::Garbage;
             case syrec::Variable::Type::Inout:
+            case syrec::Variable::Type::Out:
             case syrec::Variable::Type::State:
                 return syrec::AnnotatableQuantumComputation::QubitType::Data;
-            case syrec::Variable::Type::Out:
-                return syrec::AnnotatableQuantumComputation::QubitType::Garbage;
             case syrec::Variable::Type::Wire:
                 return syrec::AnnotatableQuantumComputation::QubitType::Ancillary;
             default:
@@ -1456,8 +1456,11 @@ namespace syrec {
                 optionalQubitInliningInformation->inlineStack            = getLastCreatedModuleCallStackInstance();
             }
 
-            const auto                     variableLayoutInformation          = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = variable->dimensions, .bitwidth = variable->bitwidth});
-            const std::optional<qc::Qubit> indexToFirstQubitOfQuantumRegister = annotatableQuantumComputation.addQuantumRegisterForSyrecVariable(*typeOfQubitsToBeGeneratedForVariable, quantumRegisterLabel, variableLayoutInformation, optionalQubitInliningInformation);
+            // While variables of type 'state' are declared as local variables of a SyReC module, the associated qubits generated for said variables are considered as data qubits for which no inline information is recorded by default.
+            // Thus we need to force the inline information to be recorded when attempting to create the quantum register storing the data qubits for a variable of type 'state'.
+            const bool                     forceRecordingOfQubitInlineInformation = optionalQubitInliningInformation.has_value() && variable->type == Variable::Type::State;
+            const auto                     variableLayoutInformation              = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = variable->dimensions, .bitwidth = variable->bitwidth});
+            const std::optional<qc::Qubit> indexToFirstQubitOfQuantumRegister     = annotatableQuantumComputation.addQuantumRegisterForSyrecVariable(*typeOfQubitsToBeGeneratedForVariable, quantumRegisterLabel, variableLayoutInformation, optionalQubitInliningInformation, forceRecordingOfQubitInlineInformation);
             if (!indexToFirstQubitOfQuantumRegister.has_value()) {
                 std::cerr << "Failed to add quantum register for SyReC variable '" << variable->name << "'\n";
                 return false;
