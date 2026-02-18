@@ -24,6 +24,8 @@ from PyQt6 import QtCore
 if TYPE_CHECKING:
     import queue
 
+    from ..simulation_run_model import DataQubitsLookup
+
 RecvQueueElemType = TypeVar("RecvQueueElemType")
 SendQueueElemType = TypeVar("SendQueueElemType")
 QueueElemType = TypeVar("QueueElemType")
@@ -109,6 +111,30 @@ class CancellableProducerWorker(QtCore.QObject, Generic[SendQueueElemType]):  # 
         if self._send_queue_batch_size < 1:
             msg = f"Send queue batch size must be larger than 0 but was actually {self._send_queue_batch_size}!"
             raise ValueError(msg)
+
+    @staticmethod
+    def _assert_valid_data_qubits_lookup_values(data_qubits_lookup: DataQubitsLookup, n_qubits: int) -> None:
+        if (
+            len(data_qubits_lookup.ascendingly_ordered_data_qubits_lookup)
+            and data_qubits_lookup.ascendingly_ordered_data_qubits_lookup[0] != 0
+        ):
+            msg = "First data qubit index must start at qubit 0"
+            raise ValueError(msg)
+
+        if len(data_qubits_lookup.ascendingly_ordered_data_qubits_lookup) > n_qubits:
+            msg = f"Number of data qubits ({len(data_qubits_lookup.ascendingly_ordered_data_qubits_lookup)}) cannot be larger than the number of qubits per generated state ({n_qubits})!"
+            raise ValueError(msg)
+
+        if len(set(data_qubits_lookup.ascendingly_ordered_data_qubits_lookup)) != len(
+            data_qubits_lookup.ascendingly_ordered_data_qubits_lookup
+        ):
+            msg = f"Duplicate data qubits defined in data qubits lookup ({data_qubits_lookup.ascendingly_ordered_data_qubits_lookup})"
+            raise ValueError(msg)
+
+        for data_qubit_idx in data_qubits_lookup.ascendingly_ordered_data_qubits_lookup:
+            if data_qubit_idx < 0 or data_qubit_idx >= n_qubits:
+                msg = f"Out of range data qubit index (value={data_qubit_idx}) detected, valid value range is [0, {n_qubits})"
+                raise ValueError(msg)
 
     @staticmethod
     def get_timestamp() -> float:

@@ -22,7 +22,7 @@ from PyQt6 import QtCore
 if TYPE_CHECKING:
     from PyQt6 import QtGui, QtWidgets
 
-    from ..simulation_run_model import QtSimulationRunModel, SimulationRunModel
+    from ..simulation_run_model import DataQubitsLookup, QtSimulationRunModel, SimulationRunModel
 
 from ...logger_utils import log_info_to_console
 from ...message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
@@ -39,6 +39,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
             dialog_title="Generating simulation runs...",
             optional_progress_bar_text_format="Generated %v out of %m input states",
         )
+        self._data_qubits_lookup: Final[DataQubitsLookup] = self._shared_simulation_runs_model.get_data_qubits_lookup()
         self._worker_send_queue: queue.SimpleQueue[SimulationRunModel] = queue.SimpleQueue()
         self._worker_send_queue_batch_size: int = 0
         self._num_generated_input_states: int = 0
@@ -48,15 +49,15 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
 
     def start_generation(
         self,
-        expected_input_state_size: int,
+        num_qubits_per_generated_state: int,
         worker_send_queue_batch_size: int = DEFAULT_MEDIUM_QUEUE_SIZE,
     ) -> None:
-        if worker_send_queue_batch_size < 1 or expected_input_state_size < 1:
+        if worker_send_queue_batch_size < 1 or num_qubits_per_generated_state < 1:
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Invalid input parameters detected",
-                message_box_content=f"Expected worker send queue batch size (value={worker_send_queue_batch_size}) and expected input state size(value={expected_input_state_size}) to be positive integers!",
+                message_box_content=f"Expected worker send queue batch size (value={worker_send_queue_batch_size}) and number of qubits per generated state (value={num_qubits_per_generated_state}) to be positive integers!",
                 is_cancellable=False,
             )
             super().reject()
@@ -64,7 +65,9 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
 
         # Since the operands of the exponentiation operator are casted to floats, the result (a float) could exceed the maximum storable value in an integer so we need to check this error case since
         # otherwise setting the maximum value of the QtWidgets.QProgressBar would raise an exception/no matching overload will be found since said function expects an integer parameter.
-        n_expected_sim_runs_to_generate: Final[float] = 2**expected_input_state_size
+        n_expected_sim_runs_to_generate: Final[float] = 2 ** len(
+            self._data_qubits_lookup.ascendingly_ordered_data_qubits_lookup
+        )
         if self._progress_bar is not None:
             if not self._can_value_can_be_used_as_progress_bar_max_value(int(n_expected_sim_runs_to_generate)):
                 # We do not ask for confirmation to close the dialog since we faulted before the input state generation started.
@@ -88,7 +91,8 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         # To avoid redundant comments we refer to the SimulationRunJsonImportDialog.start_import(...) function for details regarding the worker-object to perform a long running operation
         self._worker_send_queue_batch_size = worker_send_queue_batch_size
         self._worker = AllInputStatesGeneratorWorker(
-            expected_input_state_size,
+            num_qubits_per_generated_state,
+            self._data_qubits_lookup,
             worker_send_queue_config=QueueConfig(
                 queue_instance=self._worker_send_queue, queue_batch_size=self._worker_send_queue_batch_size
             ),

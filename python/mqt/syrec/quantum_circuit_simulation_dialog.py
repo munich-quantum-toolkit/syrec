@@ -71,6 +71,7 @@ class SimulationRunExecutionMode(Enum):
     RUN_SINGLE = 2
 
 
+# TODO: Selected simulation run not being cleared bug when switching tabs (i.e. to generate all runs) is still present
 class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     # We would like to reuse the regex in multiple one-time use dialog instances. Additionally, the regex is used only once in these instances so declaring the
     # regex as an instance variable seems wasteful. Whether a compiled or non-compiled regex should be used would have to be benchmarked.
@@ -110,7 +111,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._simulation_run_export_to_file_dialog: SimulationRunJsonExportDialog | None = None
         self._simulation_run_dialog: SimulationRunDialog | None = None
 
-        self._expected_input_output_state_size: Final[int] = self._annotatable_quantum_computation.num_data_qubits
+        self._expected_input_output_state_size: Final[int] = self._annotatable_quantum_computation.num_qubits
         self._simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
         self._shared_selected_sim_run_execution_mode_dropdown_index: int = 0
         self._prev_active_simulation_runs_tab_idx: int = 0
@@ -541,7 +542,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._simulation_run_export_to_file_dialog = None
 
     @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
-    def handle_open_and_start_all_input_states_generator_dialog(self, input_state_size: int) -> None:
+    def handle_open_and_start_all_input_states_generator_dialog(self, num_qubits_per_generated_state: int) -> None:
         if self._all_input_states_generator_dialog is not None:
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
@@ -558,7 +559,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self._all_input_states_generator_dialog.finished.connect(self.handle_input_states_generator_dialog_close)
         self._all_input_states_generator_dialog.show()
-        self._all_input_states_generator_dialog.start_generation(input_state_size)
+        self._all_input_states_generator_dialog.start_generation(num_qubits_per_generated_state)
 
     @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_input_states_generator_dialog_close(self, result: int) -> None:
@@ -734,7 +735,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
 
         if to_be_switched_to_tab_widget.objectName() == ALL_SIM_RUNS_TAB_WIDGET_NAME:
-            n_input_state_combinations: int = 2**self._expected_input_output_state_size
+            n_input_state_combinations: int = 2**self._annotatable_quantum_computation.num_data_qubits
             if not show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.WARNING,
                 message_box_parent=self,
@@ -950,6 +951,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self._simulation_run_import_from_file_dialog.finished.connect(self.handle_import_from_file_dialog_close)
         self._simulation_run_import_from_file_dialog.show()
+        # TODO: Only import/export data qubits/non-ancillary qubits?
         self._simulation_run_import_from_file_dialog.start_import(
             Path(selected_filename_lbl.text()),
             expected_input_state_size=self._expected_input_output_state_size,
