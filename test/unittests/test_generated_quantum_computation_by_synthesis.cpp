@@ -47,7 +47,7 @@ public:
 
     AnnotatableQuantumComputation annotatableQuantumComputation;
 
-    static void parseInputCircuitPerformSynthesisAndAssertSuccess(const std::string_view& stringifiedSyrecProgram, AnnotatableQuantumComputation& annotatableQuantumComputation) {
+    static void parseInputCircuitPerformSynthesisAndAssertSuccess(const std::string_view stringifiedSyrecProgram, AnnotatableQuantumComputation& annotatableQuantumComputation) {
         Program syrecProgramInstance;
 
         std::string errorsOfReadInputCircuit;
@@ -72,11 +72,11 @@ public:
     }
 
     static void assertQubitsInRangeAreCorrectlyMarkedAsQubitsOfType(const AnnotatableQuantumComputation& annotatableQuantumComputation, const AnnotatableQuantumComputation::QubitIndexRange& qubitIndexRangeToCheck, const AnnotatableQuantumComputation::QubitType expectedQubitType) {
-        const bool shouldQubitsBeMarkedAsGarbage   = expectedQubitType == AnnotatableQuantumComputation::QubitType::Garbage;
+        const bool shouldQubitsBeMarkedAsGarbage   = expectedQubitType == AnnotatableQuantumComputation::QubitType::Garbage || expectedQubitType == AnnotatableQuantumComputation::QubitType::Ancillary;
         const bool shouldQubitsBeMarkedAsAncillary = expectedQubitType == AnnotatableQuantumComputation::QubitType::Ancillary;
 
         for (qc::Qubit qubit = qubitIndexRangeToCheck.firstQubitIndex; qubit <= qubitIndexRangeToCheck.lastQubitIndex; ++qubit) {
-            ASSERT_EQ(shouldQubitsBeMarkedAsAncillary | shouldQubitsBeMarkedAsGarbage, annotatableQuantumComputation.logicalQubitIsGarbage(qubit)) << "Expected is garbage classification of qubit: " << shouldQubitsBeMarkedAsGarbage << " but was actually: " << annotatableQuantumComputation.logicalQubitIsGarbage(qubit);
+            ASSERT_EQ(shouldQubitsBeMarkedAsGarbage, annotatableQuantumComputation.logicalQubitIsGarbage(qubit)) << "Expected is garbage classification of qubit: " << shouldQubitsBeMarkedAsGarbage << " but was actually: " << annotatableQuantumComputation.logicalQubitIsGarbage(qubit);
             ASSERT_EQ(shouldQubitsBeMarkedAsAncillary, annotatableQuantumComputation.logicalQubitIsAncillary(qubit)) << "Expected is ancillary classification of qubit: " << shouldQubitsBeMarkedAsAncillary << " but was actually: " << annotatableQuantumComputation.logicalQubitIsAncillary(qubit);
         }
     }
@@ -121,8 +121,8 @@ TYPED_TEST_P(GeneratedQuantumComputationBySynthesisTestFixture, CheckGeneratedQu
     ASSERT_EQ(2U, this->annotatableQuantumComputation.getQuantumRegisters().size());
     ASSERT_EQ(16U, this->annotatableQuantumComputation.getNqubits());
 
-    const auto firstLocalVariableOfTypeWireExpectedQRegData  = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg(InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(0), AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 3U}), AnnotatableQuantumComputation::QubitType::Ancillary);
-    const auto secondLocalVariableOfTypeWireExpectedQRegData = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg(InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(1), AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 15U}), AnnotatableQuantumComputation::QubitType::Ancillary);
+    const auto firstLocalVariableOfTypeWireExpectedQRegData  = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg(InternalQubitLabelBuilder::buildAncillaryQubitLabel(0), AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 3U}), AnnotatableQuantumComputation::QubitType::Ancillary);
+    const auto secondLocalVariableOfTypeWireExpectedQRegData = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg(InternalQubitLabelBuilder::buildAncillaryQubitLabel(1), AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 15U}), AnnotatableQuantumComputation::QubitType::Ancillary);
     ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, firstLocalVariableOfTypeWireExpectedQRegData));
     ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, secondLocalVariableOfTypeWireExpectedQRegData));
 }
@@ -161,7 +161,7 @@ TYPED_TEST_P(GeneratedQuantumComputationBySynthesisTestFixture, CheckGeneratedQu
 
     const auto expectedQRegDataOfParameterMod                 = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg("mod", AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 3U}), AnnotatableQuantumComputation::QubitType::Data);
     const auto expectedQRegDataOfParameterOperand             = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg("operand", AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 7U}), AnnotatableQuantumComputation::QubitType::Garbage);
-    const auto expectedQRegDataOfLocalVariableCOfCalledModule = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg(InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(2), AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 8U, .lastQubitIndex = 11U}), AnnotatableQuantumComputation::QubitType::Ancillary);
+    const auto expectedQRegDataOfLocalVariableCOfCalledModule = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg(InternalQubitLabelBuilder::buildAncillaryQubitLabel(2), AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 8U, .lastQubitIndex = 11U}), AnnotatableQuantumComputation::QubitType::Ancillary);
 
     ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfParameterMod));
     ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfParameterOperand));
@@ -175,7 +175,7 @@ TYPED_TEST_P(GeneratedQuantumComputationBySynthesisTestFixture, CheckGeneratedQu
 
     const auto expectedQRegDataOfParameterMod                   = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg("mod", AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 3U}), AnnotatableQuantumComputation::QubitType::Data);
     const auto expectedQRegDataOfParameterOperand               = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg("operand", AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 7U}), AnnotatableQuantumComputation::QubitType::Garbage);
-    const auto expectedQRegDataOfLocalVariableCOfUncalledModule = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg(InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(2), AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 8U, .lastQubitIndex = 11U}), AnnotatableQuantumComputation::QubitType::Ancillary);
+    const auto expectedQRegDataOfLocalVariableCOfUncalledModule = typename GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::ExpectedDataOfGeneratedQReg(InternalQubitLabelBuilder::buildAncillaryQubitLabel(2), AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 8U, .lastQubitIndex = 11U}), AnnotatableQuantumComputation::QubitType::Ancillary);
 
     ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfParameterMod));
     ASSERT_NO_FATAL_FAILURE(GeneratedQuantumComputationBySynthesisTestFixture<TypeParam>::assertGeneratedQuantumRegisterDataMatchesExpectedOne(this->annotatableQuantumComputation, expectedQRegDataOfParameterOperand));

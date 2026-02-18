@@ -1440,20 +1440,21 @@ namespace syrec {
 
             std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> optionalQubitInliningInformation;
             std::string                                                           quantumRegisterLabel = variable->name;
-            if (variable->type == Variable::Type::Wire || variable->type == Variable::Type::State) {
-                // To prevent name clashes between the identifiers of the local variables of a module with any active variable, a transformation of the local variable identifier to '__q<curr_num_qubits>' is performed and used
-                // to identify the variable in the quantum computation with the prefix portion <curr_num_qubits> being equal to the current number of qubits in the quantum computation.
-                // The 'original' identifier of the local variable is stored as the user declared label in the inline qubit information of the qubits of the variable.
-                // Note that assuming that the local module variable contains n qubits then instead of creating n 1-qubit quantum registers, one n-qubit quantum register will be created using the internal identifier of the local variable
-                // as its identifier.
-                //
-                // One caveat to remember is that the generated quantum computation can only be converted to its OpenQASM 3.0 representation but not the OpenQASM 2.0 due to the chosen internal variable identifier prefix '__q<curr_num_qubits>'
-                // not defining a valid OpenQASM 2.0 quantum register identifier.
-                quantumRegisterLabel = InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(annotatableQuantumComputation.getQuantumRegisters().size());
 
-                optionalQubitInliningInformation                         = AnnotatableQuantumComputation::InlinedQubitInformation();
-                optionalQubitInliningInformation->userDeclaredQubitLabel = variable->name;
-                optionalQubitInliningInformation->inlineStack            = getLastCreatedModuleCallStackInstance();
+            // To prevent name clashes between the identifier of a local variable of a module and the identifiers of already processed parameters/variables of previously processed modules
+            // the quantum register label normally chosen as the identifier of the currently processed variable identifier is replaced with the identifier '__q<curr_num_qregs>' or '__q<curr_num_qregs>_anc' for
+            // local variables of type 'state' or 'wire' respectively. The 'original' identifier of the local variable is stored as the user declared label in the inline qubit information of the qubits of the variable.
+            // Note that assuming that the local module variable contains n qubits then instead of creating n 1-qubit quantum registers, one n-qubit quantum register will be created using the internal identifier of the local variable
+            // as its identifier.
+            //
+            // One caveat to remember is that the generated quantum computation can only be converted to its OpenQASM 3.0 representation but not the OpenQASM 2.0 due to the chosen internal variable identifier prefix '__q<curr_num_qubits>'
+            // not defining a valid OpenQASM 2.0 quantum register identifier.
+            if (variable->type == Variable::Type::Wire) {
+                quantumRegisterLabel             = InternalQubitLabelBuilder::buildAncillaryQubitLabel(annotatableQuantumComputation.getQuantumRegisters().size());
+                optionalQubitInliningInformation = AnnotatableQuantumComputation::InlinedQubitInformation({.userDeclaredQubitLabel = variable->name, .inlineStack = getLastCreatedModuleCallStackInstance()});
+            } else if (variable->type == Variable::Type::State) {
+                quantumRegisterLabel             = InternalQubitLabelBuilder::buildNonAncillaryQubitLabel(annotatableQuantumComputation.getQuantumRegisters().size());
+                optionalQubitInliningInformation = AnnotatableQuantumComputation::InlinedQubitInformation({.userDeclaredQubitLabel = variable->name, .inlineStack = getLastCreatedModuleCallStackInstance()});
             }
 
             // While variables of type 'state' are declared as local variables of a SyReC module, the associated qubits generated for said variables are considered as data qubits for which no inline information is recorded by default.
@@ -1521,14 +1522,16 @@ namespace syrec {
         inliningInformation.inlineStack                                 = getLastCreatedModuleCallStackInstance();
 
         const std::optional<qc::Qubit> actualQubitIndexForFirstAddedAncillaryQubit = annotatableQuantumComputation.addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne(quantumRegisterLabel, initialValuesOfAncillaryQubits, inliningInformation);
-        const bool                     couldAncillaryQubitsBeAdded                 = actualQubitIndexForFirstAddedAncillaryQubit.has_value() && *actualQubitIndexForFirstAddedAncillaryQubit == expectedQubitIndexForFirstAddedAncillaryQubit;
+        if (!actualQubitIndexForFirstAddedAncillaryQubit.has_value() || *actualQubitIndexForFirstAddedAncillaryQubit != expectedQubitIndexForFirstAddedAncillaryQubit) {
+            return false;
+        }
 
         const qc::Qubit firstGeneratedAncillaryQubitIndex = *actualQubitIndexForFirstAddedAncillaryQubit;
         const qc::Qubit lastGeneratedAncillaryQubitIndex  = firstGeneratedAncillaryQubitIndex + (bitwidth - 1U);
         for (qc::Qubit generatedAncillaryQubitIndex = firstGeneratedAncillaryQubitIndex; generatedAncillaryQubitIndex <= lastGeneratedAncillaryQubitIndex; ++generatedAncillaryQubitIndex) {
             lines.emplace_back(generatedAncillaryQubitIndex);
         }
-        return couldAncillaryQubitsBeAdded;
+        return true;
     }
 
     std::optional<AssignStatement::AssignOperation> SyrecSynthesis::tryMapBinaryToAssignmentOperation(BinaryExpression::BinaryOperation binaryOperation) noexcept {
