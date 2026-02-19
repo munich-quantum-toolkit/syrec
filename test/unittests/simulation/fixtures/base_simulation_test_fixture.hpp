@@ -182,6 +182,14 @@ protected:
         ASSERT_EQ(actualOutputState.size(), expectedOutputState.size());
         ASSERT_LE(nonAncillaryQubitsLookup.size(), inputState.size()) << "Number of non-ancillary qubits must be less or equal than the size of the input state";
 
+        if (inputState.size() == 0 || nonAncillaryQubitsLookup.empty()) {
+            return;
+        }
+
+        const qc::Qubit largestNonAncillaryQubitIndexInLookup = *nonAncillaryQubitsLookup.rbegin();
+        const auto      largestQubitIndexInInputState         = static_cast<qc::Qubit>(inputState.size() - 1U);
+        ASSERT_LE(largestNonAncillaryQubitIndexInLookup, largestQubitIndexInInputState) << "Non-ancillary qubits lookup contained out of range qubit " << std::to_string(largestNonAncillaryQubitIndexInLookup) << ", valid qubit range in input state is [0, " << std::to_string(largestQubitIndexInInputState) << ")!";
+
         for (const qc::Qubit nonAncillaryQubit: nonAncillaryQubitsLookup) {
             ASSERT_EQ(expectedOutputState[nonAncillaryQubit], actualOutputState[nonAncillaryQubit]) << "Value mismatch during simulation at qubit " << std::to_string(nonAncillaryQubit) << ", expected: " << std::to_string(static_cast<int>(expectedOutputState[nonAncillaryQubit])) << " but was " << std::to_string(static_cast<int>(actualOutputState[nonAncillaryQubit]))
                                                                                                     << "!\nInput state: " << inputState.stringify() << " | Expected output state: " << expectedOutputState.stringify() << " | Actual output state: " << actualOutputState.stringify();
