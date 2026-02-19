@@ -246,10 +246,13 @@ convention = "google"
 extend-ignore-re = [
     '"id": ".*",',
     "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",  # ignore line
-    "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on" # ignore block
+    "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on", # ignore block
+    # Only match the sequence "clang-analyzer-optin." instead of adding the entry (optin -> "option") to the extend-words entry so that the optin typo is corrected everywhere else
+    # This will ignore the whole line containing the matched pattern, which should be OK since we expect that this identifier will only be used in the .clang-tidy file
+    "clang-analyzer-optin\\."
 ]
-extend-identifiers = { "clang-analyzer-optin.core.EnumCastOutOfRange" = "clang-analyzer-optin.core.EnumCastOutOfRange" }
-extend-words = { "wille" = "wille", "anc" = "anc", "aer" = "aer", "setp" = "setp" }
+extend-words = { wille = "wille", anc = "anc", aer = "aer", setp = "setp" }
+
 
 [tool.repo-review]
 ignore = [
