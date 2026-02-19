@@ -71,7 +71,6 @@ class SimulationRunExecutionMode(Enum):
     RUN_SINGLE = 2
 
 
-# TODO: Selected simulation run not being cleared bug when switching tabs (i.e. to generate all runs) is still present
 class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     # We would like to reuse the regex in multiple one-time use dialog instances. Additionally, the regex is used only once in these instances so declaring the
     # regex as an instance variable seems wasteful. Whether a compiled or non-compiled regex should be used would have to be benchmarked.
@@ -416,6 +415,16 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             curr_active_tab_widget, should_controls_be_enabled=True
         )
 
+        # The enabled state of the run simulation run button is dependent on the currently selected simulation run execution mode
+        # so it should only be enabled if the simulation run execution mode is not set to single simulation run execution.
+        QuantumCircuitSimulationDialog._set_enabled_state_of_simulation_run_execution_control_btn_in_tab_based_on_sim_run_execution_mode(
+            error_dialog_parent=self,
+            curr_active_tab_widget=curr_active_tab_widget,
+            object_name_identifying_targeted_btn=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
+            enabled_state_of_targeted_btn_in_single_sim_run_execution_mode=False,
+            enabled_state_of_targeted_btn_in_other_execution_modes=True,
+        )
+
         optional_simulation_runs_list_view: QtWidgets.QWidget | None = curr_active_tab_widget.findChild(
             QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME
         )
@@ -578,6 +587,19 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             curr_active_tab_widget, should_controls_be_enabled=(result == QtWidgets.QDialog.DialogCode.Accepted)
         )
 
+        # We do need to consider the case that the user set the current simulation run execution mode to 'Execute single simulation run'
+        # in another tab of the view which in turn will transfer this execution mode to the current tab thus we need to conditionally enable the
+        # the run simulation run button based on the set execution mode. Note that when switching to the current tab, which in turn triggered the launch of the
+        # AllInputStatesGeneratorDialog, no simulation run should be selected in the simulation run list view of the current tab. We can now enable the run simulation run
+        # button only when the current simulation run execution mode is not set to 'Execute single simulation run'.
+        QuantumCircuitSimulationDialog._set_enabled_state_of_simulation_run_execution_control_btn_in_tab_based_on_sim_run_execution_mode(
+            error_dialog_parent=self,
+            curr_active_tab_widget=curr_active_tab_widget,
+            object_name_identifying_targeted_btn=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
+            enabled_state_of_targeted_btn_in_single_sim_run_execution_mode=False,
+            enabled_state_of_targeted_btn_in_other_execution_modes=(result == QtWidgets.QDialog.DialogCode.Accepted),
+        )
+
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def handle_simulation_run_delete_btn_click(self) -> None:
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self._simulation_runs_tab_widget.currentWidget()
@@ -605,9 +627,22 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # Deletion of an element should only be enabled when an item in the QListView is selected. After the deletion
         # and the subsequent update of the backing model of the QListView selection will switch to the element the index
         # of the previously selected element thus the simulation run execution controls should not be enabled after an element
-        # is deleted
+        # is deleted only if the current simulation run execution mode is not set to single simulation run execution. In the single
+        # simulation run execution mode the enabled state of the run simulation runs button is dependent on whether the simulation runs
+        # list view contains elements.
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
             curr_active_tab_widget, should_controls_be_enabled=False
+        )
+
+        QuantumCircuitSimulationDialog._set_enabled_state_of_simulation_run_execution_control_btn_in_tab_based_on_sim_run_execution_mode(
+            error_dialog_parent=self,
+            curr_active_tab_widget=curr_active_tab_widget,
+            object_name_identifying_targeted_btn=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
+            enabled_state_of_targeted_btn_in_single_sim_run_execution_mode=simulation_runs_list_view.model().rowCount(
+                QtCore.QModelIndex()
+            )
+            > 0,
+            enabled_state_of_targeted_btn_in_other_execution_modes=False,
         )
 
     def initialize_load_simulation_runs_from_file_controls(self) -> QtWidgets.QLayout:
@@ -951,7 +986,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self._simulation_run_import_from_file_dialog.finished.connect(self.handle_import_from_file_dialog_close)
         self._simulation_run_import_from_file_dialog.show()
-        # TODO: Only import/export data qubits/non-ancillary qubits?
         self._simulation_run_import_from_file_dialog.start_import(
             Path(selected_filename_lbl.text()),
             expected_input_state_size=self._expected_input_output_state_size,
@@ -1221,3 +1255,51 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             selection_prior_to_model_reset,
             optional_tab_widget_to_apply_selection_change_to=tab_widget_containing_list_view,
         )
+
+    @staticmethod
+    def _set_enabled_state_of_simulation_run_execution_control_btn_in_tab_based_on_sim_run_execution_mode(
+        error_dialog_parent: QtWidgets.QWidget,
+        curr_active_tab_widget: QtWidgets.QTabWidget,
+        object_name_identifying_targeted_btn: str,
+        *,
+        enabled_state_of_targeted_btn_in_single_sim_run_execution_mode: bool,
+        enabled_state_of_targeted_btn_in_other_execution_modes: bool,
+    ) -> None:
+        """Set the enabled state of a simulation run execution control button based on the current simulation run execution mode"""
+
+        optional_targeted_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
+            QtWidgets.QPushButton, object_name_identifying_targeted_btn
+        )
+        optional_sim_run_exec_mode_dropdown: QtWidgets.QComboBox | None = curr_active_tab_widget.findChild(
+            QtWidgets.QComboBox, SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=error_dialog_parent,
+            required_widgets=[optional_targeted_btn, optional_sim_run_exec_mode_dropdown],
+            error_dialog_content=f"Failed to locate required QtWidgets during conditional enabling of simulation run execution control button named {object_name_identifying_targeted_btn}!",
+        ):
+            return
+
+        targeted_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_targeted_btn)
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
+            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
+        )
+
+        curr_selected_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = (
+            sim_run_exec_mode_dropdown.currentData()
+        )
+        if curr_selected_sim_run_exec_mode is None:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=error_dialog_parent,
+                message_box_title="Unknown selected simulation run execution mode!",
+                message_box_content=f"Failed to determine selected simulation run execution mode during conditional enabling of simulation run execution control button named {object_name_identifying_targeted_btn}!",
+                is_cancellable=False,
+            )
+            return
+
+        if curr_selected_sim_run_exec_mode != SimulationRunExecutionMode.RUN_SINGLE:
+            targeted_btn.setEnabled(enabled_state_of_targeted_btn_in_other_execution_modes)
+        else:
+            targeted_btn.setEnabled(enabled_state_of_targeted_btn_in_single_sim_run_execution_mode)

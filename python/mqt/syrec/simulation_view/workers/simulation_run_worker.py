@@ -73,7 +73,6 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
         has_reached_end_sentinel: bool = False
 
         try:
-            # TODO: Validate data qubits lookup
             self._assert_valid_user_provided_parameter_values()
             batch_start_timestamp = SimulationRunWorker.get_timestamp()
             n_remaining_batch_elems_to_generate: int = self._send_queue_batch_size

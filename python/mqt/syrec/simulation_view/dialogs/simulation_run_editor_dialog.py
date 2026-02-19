@@ -59,7 +59,6 @@ class QubitValueLabelAndCheckbox:
     checkbox: QtWidgets.QCheckBox
 
 
-# TODO: Can we use data qubits lookup in this class?
 class LineEditWithDynamicWidth(QtWidgets.QLineEdit):  # type: ignore[misc]
     focusOut = QtCore.pyqtSignal()  # noqa: N815
 
