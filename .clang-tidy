@@ -6,7 +6,7 @@ Checks: |
   -bugprone-unchecked-optional-access,
   clang-analyzer-*,
   -clang-analyzer-core.NullDereference,
-  -clang-analyzer-optin.core.EnumCastOutOfRange,
+  -clang-analyzer-option.core.EnumCastOutOfRange,
   clang-diagnostic-*,
   cppcoreguidelines-*,
   -cppcoreguidelines-non-private-member-variables-in-classes,
