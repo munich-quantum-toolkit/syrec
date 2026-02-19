@@ -696,7 +696,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 </li>
                 <li>
                     Qubit values must be defined as strings containing '0' or '1' characters with the total number of qubits in a
-                    state definition matching the number of data qubits of the synthesized quantum computation (i.e. equal to the number of non-ancillary qubits).
+                    state definition matching the total number of qubits of the synthesized quantum computation.
                 </li>
                 <li>
                     Any additional objects defined in a simulation run JSON object is skipped.
