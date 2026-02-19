@@ -93,7 +93,7 @@ namespace syrec {
              */
             Garbage,
             /**
-             * Qubit is used to store intermediate results of the quantum computation and its final state is not relevant for the computation performed by the quantum computation.
+             * An ancilla qubit always starts in the fixed state |0>.
              */
             Ancillary
         };

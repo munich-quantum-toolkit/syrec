@@ -243,18 +243,22 @@ known-first-party = ["mqt.syrec"]
 convention = "google"
 
 
-[tool.typos]
-default.extend-ignore-re = [
-    '"id": ".*",',
-    "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",  # ignore line
-    "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on" # ignore block
-]
+#[tool.typos]
+#default.extend-ignore-re = [
+#    '"id": ".*",',
+#    "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",  # ignore line
+#    "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on" # ignore block
+#]
 
-[tool.typos.default.extend-words]
-wille = "wille"
-anc = "anc"
-aer = "aer"
-setp = "setp"
+#default.extend-identifiers = { clang-analyzer-optin.core.EnumCastOutOfRange = "clang-analyzer-option.core.EnumCastOutOfRange" }
+[tool.typos.default]
+extend-identifiers = { "clang-analyzer-optin.core.EnumCastOutOfRange" = "clang-analyzer-option.core.EnumCastOutOfRange" }
+
+#[tool.typos.default.extend-words]
+#wille = "wille"
+#anc = "anc"
+#aer = "aer"
+#setp = "setp"
 
 
 [tool.repo-review]
