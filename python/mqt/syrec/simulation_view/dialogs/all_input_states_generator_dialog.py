@@ -63,19 +63,20 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
             super().reject()
             return
 
-        # Since the operands of the exponentiation operator are casted to floats, the result (a float) could exceed the maximum storable value in an integer so we need to check this error case since
-        # otherwise setting the maximum value of the QtWidgets.QProgressBar would raise an exception/no matching overload will be found since said function expects an integer parameter.
-        n_expected_sim_runs_to_generate: Final[float] = 2 ** len(
+        # During the transition from Python 2 to 3 the two python integer types int and long were unified and the latter renamed to the former by PEP 237 (https://peps.python.org/pep-0237/). However,
+        # the maximum value of a QProgressBar is capped to a 32bit integer thus we need to manually check whether our python integer fits into an 32bit integer. Otherwise, an error would be raised when
+        # attempting to set the QProgressVar maximum value.
+        n_expected_sim_runs_to_generate: Final[int] = 2 ** len(
             self._data_qubits_lookup.ascendingly_ordered_data_qubits_lookup
         )
         if self._progress_bar is not None:
-            if not self._can_value_can_be_used_as_progress_bar_max_value(int(n_expected_sim_runs_to_generate)):
+            if not self._can_value_can_be_used_as_progress_bar_max_value(n_expected_sim_runs_to_generate):
                 # We do not ask for confirmation to close the dialog since we faulted before the input state generation started.
                 super().reject()
                 return
 
             self._progress_bar.setMinimum(0)
-            self._progress_bar.setMaximum(int(n_expected_sim_runs_to_generate))
+            self._progress_bar.setMaximum(n_expected_sim_runs_to_generate)
             self._progress_bar.setValue(0)
         else:
             show_and_request_ok_in_optionally_cancellable_notification(

@@ -39,7 +39,7 @@ LARGEST_SIM_RUN_NUMBER_QT_ROLE: Final[int] = ANNOTATABLE_QUANTUM_COMPUTATION_QT_
 
 @dataclass(frozen=True)
 class DataQubitsLookup:
-    ascendingly_ordered_data_qubits_lookup: list[int]
+    ascendingly_ordered_data_qubits_lookup: tuple[int, ...]
     do_gaps_between_data_qubits_exist: bool
 
 
@@ -383,19 +383,21 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
     def _build_data_qubits_lookup(
         annotatable_quantum_computation: AnnotatableQuantumComputation,
     ) -> DataQubitsLookup:
-        data_qubit_indices: Final[list[int]] = sorted(
-            filter(
-                lambda qubit: not annotatable_quantum_computation.is_circuit_qubit_ancillary(qubit),
-                range(annotatable_quantum_computation.num_qubits),
+        data_qubit_indices: Final[tuple[int, ...]] = tuple(
+            sorted(
+                filter(
+                    lambda qubit: not annotatable_quantum_computation.is_circuit_qubit_ancillary(qubit),
+                    range(annotatable_quantum_computation.num_qubits),
+                )
             )
         )
         return DataQubitsLookup(
-            data_qubit_indices, QtSimulationRunModel._are_data_qubits_in_sequence_without_gaps(data_qubit_indices)
+            data_qubit_indices, QtSimulationRunModel._do_gaps_between_data_qubits_exist(data_qubit_indices)
         )
 
     @staticmethod
-    def _are_data_qubits_in_sequence_without_gaps(sorted_data_qubits_indices_collection: list[int]) -> bool:
-        for idx in range(1, len(sorted_data_qubits_indices_collection)):
-            if sorted_data_qubits_indices_collection[idx] != sorted_data_qubits_indices_collection[idx] + 1:
-                return True
-        return False
+    def _do_gaps_between_data_qubits_exist(sorted_data_qubits_indices_collection: tuple[int, ...]) -> bool:
+        return len(sorted_data_qubits_indices_collection) > 1 and any(
+            sorted_data_qubits_indices_collection[idx] != sorted_data_qubits_indices_collection[idx - 1] + 1
+            for idx in range(1, len(sorted_data_qubits_indices_collection))
+        )

@@ -1259,7 +1259,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     @staticmethod
     def _set_enabled_state_of_simulation_run_execution_control_btn_in_tab_based_on_sim_run_execution_mode(
         error_dialog_parent: QtWidgets.QWidget,
-        curr_active_tab_widget: QtWidgets.QTabWidget,
+        curr_active_tab_widget: QtWidgets.QWidget,
         object_name_identifying_targeted_btn: str,
         *,
         enabled_state_of_targeted_btn_in_single_sim_run_execution_mode: bool,
