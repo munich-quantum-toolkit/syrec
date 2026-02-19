@@ -1145,7 +1145,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
 
     def set_default_simulation_run_modification_buttons_enabled_state(
-        self, associated_tab_widget: QtWidgets.QTabWidget
+        self, associated_tab_widget: QtWidgets.QWidget
     ) -> None:
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self._simulation_runs_tab_widget.widget(
             self._simulation_runs_tab_widget.currentIndex()
@@ -1217,9 +1217,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             curr_active_tab_widget, is_simulation_run_selected=(len(simulation_runs_list_view.selectedIndexes()) == 1)
         )
 
-    def _clear_simulation_run_list_and_backing_model(
-        self, tab_widget_containing_list_view: QtWidgets.QTabWidget
-    ) -> None:
+    def _clear_simulation_run_list_and_backing_model(self, tab_widget_containing_list_view: QtWidgets.QWidget) -> None:
         optional_simulation_runs_list_view: QtWidgets.QWidget | None = tab_widget_containing_list_view.findChild(
             QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME
         )
@@ -1248,7 +1246,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         selection_after_model_reset: Final[QtCore.QItemSelection] = (
             simulation_runs_list_view.selectionModel().selection()
         )
-        # To tab changed signal is emitted after the tab already changed thus the QTabWidget.currentWidget() will return the already switched to tab widget while we want to reset the selection
+        # To tab changed signal is emitted after the tab already changed thus the QWidget.currentWidget() will return the already switched to tab widget while we want to reset the selection
         # in the switched from tab widget.
         self.handle_simulation_run_selection_change(
             selection_after_model_reset,

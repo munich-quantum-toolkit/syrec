@@ -413,7 +413,7 @@ namespace syrec {
         };
 
         /**
-         * A container for the layout of a syrec::Variable in a quantum register with the qubits of the latter assumed to not be ancillary qubits.
+         * A container for the layout of a syrec::Variable stored in a quantum register.
          */
         struct QuantumRegisterForVariableLayout final: BaseQuantumRegisterVariableLayout {
             /**
