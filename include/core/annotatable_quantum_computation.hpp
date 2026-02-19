@@ -431,7 +431,7 @@ namespace syrec {
             [[nodiscard]] std::optional<std::vector<unsigned>> getRequiredValuesPerDimensionToAccessQubitOfVariable(qc::Qubit qubit) const;
 
             /**
-             * Create a new variable layout for a non-ancillary quantum register storing the qubits of a syrec::Variable.
+             * Create a new variable layout for a quantum register storing the qubits of a syrec::Variable.
              * @param typeOfQubitsGeneratedForVariable The type of qubits to be generated for the variable.
              * @param coveredQubitIndicesOfQuantumRegister The covered qubit index range of the quantum register. The first qubit index is assumed to be less than or equal to the last qubit index.
              * @param quantumRegisterLabel The label of the quantum register. Must not be empty.
