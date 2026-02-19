@@ -17,6 +17,7 @@
 #include "core/n_bit_values_container.hpp"
 #include "core/statistics.hpp"
 #include "core/syrec/program.hpp"
+#include "ir/Definitions.hpp"
 #include "qasm3/Importer.hpp"
 
 #include <cstddef>
@@ -26,6 +27,8 @@
 #include <ios>
 #include <nlohmann/json.hpp>
 #include <optional>
+#include <ranges>
+#include <set>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -82,7 +85,13 @@ public:
         ASSERT_TRUE(performProgramSynthesis(syrecProgramInstance, annotatableQuantumComputation, optionalSynthesisSettings, optionalRecordedStatistics)) << "Synthesis of input circuit was not successful";
         ASSERT_NO_FATAL_FAILURE(assertExportToValidQasm3AndReimportSuccessful(annotatableQuantumComputation));
 
-        const json& jsonDataOfSimulationRuns = jsonDataOfTestCase[jsonKeyForSimulationRuns];
+        // Since the qubits generated for SyReC variables of type 'state' being "classified" as data qubits (i.e. both non-garbage as well as non-ancillary) as well as the ability to define their associated SyReC variables
+        // as local variables of a SyReC module forces us to determine the non-ancillary qubits of the quantum computation instead of assuming a sequence [0, N) of non-ancillary qubits with N being the first ancillary qubit due
+        // to the qubits generated for local variables of type 'wire' prior to the definition of a variable of type 'state' causing gaps in the previously assumed sequence of non-ancillary qubits.
+        // Furthermore, we could skip checking the value of the garbage qubits but we also want to test whether their values remains unchanged during synthesis, assuming that ancillary qubits [generated for intermediate results or variables of type 'wire'] were already filtered,
+        // due to them being associated with SyReC variables of type 'in' which are considered as read-only).
+        const std::set<qc::Qubit> nonAncillaryQubitsLookup = generateNonAncillaryQubitsLookup(annotatableQuantumComputation);
+        const json&               jsonDataOfSimulationRuns = jsonDataOfTestCase[jsonKeyForSimulationRuns];
         for (const auto& jsonDataOfSimulationRun: jsonDataOfSimulationRuns) {
             const std::size_t numQubitsToCheck = jsonDataOfSimulationRun[jsonKeyForStringifiedBinaryInputState].template get<std::string>().size();
             ASSERT_LE(numQubitsToCheck, annotatableQuantumComputation.getNqubits()) << "Expected state values cannot contain more qubits than the quantum computation itself";
@@ -92,7 +101,7 @@ public:
 
             syrec::NBitValuesContainer outputState(inputState.size());
             ASSERT_NO_FATAL_FAILURE(loadNBitValuesContainerFromString(outputState, jsonDataOfSimulationRun[jsonKeyForStringifiedBinaryOutputState]));
-            ASSERT_NO_FATAL_FAILURE(assertSimulationResultForStateMatchesExpectedOne(annotatableQuantumComputation, inputState, outputState, numQubitsToCheck));
+            ASSERT_NO_FATAL_FAILURE(assertSimulationResultForStateMatchesExpectedOne(annotatableQuantumComputation, inputState, outputState, nonAncillaryQubitsLookup));
         }
     }
 
@@ -165,25 +174,17 @@ protected:
         ASSERT_EQ(annotatableQuantumComputation.getQuantumRegisters().size(), importedQuantumComputation.getQuantumRegisters().size()) << "Number of quantum registers of imported quantum computation did not match number of quantum registers of exported annotatable quantum computation";
     }
 
-    static void assertSimulationResultForStateMatchesExpectedOne(const syrec::AnnotatableQuantumComputation& annotatableQuantumComputation, const syrec::NBitValuesContainer& inputState, const syrec::NBitValuesContainer& expectedOutputState, const std::size_t userDefinedNumQubitsToCheck) {
+    static void assertSimulationResultForStateMatchesExpectedOne(const syrec::AnnotatableQuantumComputation& annotatableQuantumComputation, const syrec::NBitValuesContainer& inputState, const syrec::NBitValuesContainer& expectedOutputState, const std::set<qc::Qubit>& nonAncillaryQubitsLookup) {
         ASSERT_EQ(inputState.size(), expectedOutputState.size());
 
         syrec::NBitValuesContainer actualOutputState(inputState.size());
         ASSERT_NO_FATAL_FAILURE(syrec::simpleSimulation(actualOutputState, annotatableQuantumComputation, inputState, nullptr));
         ASSERT_EQ(actualOutputState.size(), expectedOutputState.size());
+        ASSERT_LE(nonAncillaryQubitsLookup.size(), inputState.size()) << "Number of non-ancillary qubits must be less or equal than the size of the input state";
 
-        // We are assuming that the indices of the ancilla qubits are larger than the one of the inputs/output qubits and that the user is not interested in the value of the ancillary qubits.
-        // Since we cannot determine which garbage qubits refer to parameters of type 'out' or local variables of type 'wire', the user must define the number of qubits to check in input/output states
-        // to either include/exclude the value of the qubits of local variables/ancillary qubits from the checks.
-        std::size_t numQubitsToCheck = annotatableQuantumComputation.getNqubitsWithoutAncillae();
-        if (userDefinedNumQubitsToCheck != numQubitsToCheck) {
-            ASSERT_LE(userDefinedNumQubitsToCheck, inputState.size()) << "User defined number of qubits must be smaller or equal to the size of the input state";
-            numQubitsToCheck = userDefinedNumQubitsToCheck;
-        }
-
-        for (std::size_t i = 0; i < numQubitsToCheck; ++i) {
-            ASSERT_EQ(expectedOutputState[i], actualOutputState[i]) << "Value mismatch during simulation at qubit " << std::to_string(i) << ", expected: " << std::to_string(static_cast<int>(expectedOutputState[i])) << " but was " << std::to_string(static_cast<int>(actualOutputState[i]))
-                                                                    << "!\nInput state: " << inputState.stringify() << " | Expected output state: " << expectedOutputState.stringify() << " | Actual output state: " << actualOutputState.stringify();
+        for (const qc::Qubit nonAncillaryQubit: nonAncillaryQubitsLookup) {
+            ASSERT_EQ(expectedOutputState[nonAncillaryQubit], actualOutputState[nonAncillaryQubit]) << "Value mismatch during simulation at qubit " << std::to_string(nonAncillaryQubit) << ", expected: " << std::to_string(static_cast<int>(expectedOutputState[nonAncillaryQubit])) << " but was " << std::to_string(static_cast<int>(actualOutputState[nonAncillaryQubit]))
+                                                                                                    << "!\nInput state: " << inputState.stringify() << " | Expected output state: " << expectedOutputState.stringify() << " | Actual output state: " << actualOutputState.stringify();
         }
     }
 
@@ -198,6 +199,14 @@ protected:
                 ASSERT_EQ(stringifiedBinaryState[i], '0') << "Only the characters '0' and '1' are allowed when defining the state of an output";
             }
         }
+    }
+
+    [[nodiscard]] static std::set<qc::Qubit> generateNonAncillaryQubitsLookup(const syrec::AnnotatableQuantumComputation& annotatableQuantumComputation) {
+        auto nonAncillaryQubitsView = std::views::iota(0U, annotatableQuantumComputation.getNqubits()) | std::views::filter([&annotatableQuantumComputation](const qc::Qubit qubit) {
+                                          return !annotatableQuantumComputation.logicalQubitIsAncillary(qubit);
+                                      }) |
+                                      std::views::common;
+        return std::set<qc::Qubit>(nonAncillaryQubitsView.begin(), nonAncillaryQubitsView.end());
     }
 
     std::string jsonKeyForInputCircuit                 = "inputCircuit";
