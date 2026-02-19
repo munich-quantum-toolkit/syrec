@@ -50,8 +50,8 @@ using json = nlohmann::json; // NOLINT(misc-include-cleaner) Warning reported he
  *   }
  * }
  *
- * Note that the input and output state needs to be defined as a string containing only binary values. Additionally, only the non-ancillary qubit values
- * need to be defined in the input and output state.
+ * Note that the input and output state needs to be defined as a string containing only binary values. Additionally, due to potential gaps between the non-ancillary qubits potentially caused by the qubits generated for
+ * SyReC variables of type "state" will require the user to define the value of all qubits of the synthesized quantum computation in both the input as well as the expected output state.
  */
 template<typename T>
 class BaseSimulationTestFixture: public ::testing::Test {

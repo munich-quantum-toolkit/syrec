@@ -422,7 +422,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             curr_active_tab_widget=curr_active_tab_widget,
             object_name_identifying_targeted_btn=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
             enabled_state_of_targeted_btn_in_single_sim_run_execution_mode=False,
-            enabled_state_of_targeted_btn_in_other_execution_modes=True,
+            enabled_state_of_targeted_btn_in_other_sim_run_execution_modes=True,
         )
 
         optional_simulation_runs_list_view: QtWidgets.QWidget | None = curr_active_tab_widget.findChild(
@@ -597,7 +597,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             curr_active_tab_widget=curr_active_tab_widget,
             object_name_identifying_targeted_btn=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
             enabled_state_of_targeted_btn_in_single_sim_run_execution_mode=False,
-            enabled_state_of_targeted_btn_in_other_execution_modes=(result == QtWidgets.QDialog.DialogCode.Accepted),
+            enabled_state_of_targeted_btn_in_other_sim_run_execution_modes=(
+                result == QtWidgets.QDialog.DialogCode.Accepted
+            ),
         )
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
@@ -642,7 +644,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 QtCore.QModelIndex()
             )
             > 0,
-            enabled_state_of_targeted_btn_in_other_execution_modes=False,
+            enabled_state_of_targeted_btn_in_other_sim_run_execution_modes=False,
         )
 
     def initialize_load_simulation_runs_from_file_controls(self) -> QtWidgets.QLayout:
@@ -1246,7 +1248,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         selection_after_model_reset: Final[QtCore.QItemSelection] = (
             simulation_runs_list_view.selectionModel().selection()
         )
-        # To tab changed signal is emitted after the tab already changed thus the QWidget.currentWidget() will return the already switched to tab widget while we want to reset the selection
+        # The tab changed signal is emitted after the tab already changed thus the QWidget.currentWidget() will return the already switched to tab widget while we want to reset the selection
         # in the switched from tab widget.
         self.handle_simulation_run_selection_change(
             selection_after_model_reset,
@@ -1261,7 +1263,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         object_name_identifying_targeted_btn: str,
         *,
         enabled_state_of_targeted_btn_in_single_sim_run_execution_mode: bool,
-        enabled_state_of_targeted_btn_in_other_execution_modes: bool,
+        enabled_state_of_targeted_btn_in_other_sim_run_execution_modes: bool,
     ) -> None:
         """Set the enabled state of a simulation run execution control button based on the current simulation run execution mode"""
 
@@ -1298,6 +1300,6 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             return
 
         if curr_selected_sim_run_exec_mode != SimulationRunExecutionMode.RUN_SINGLE:
-            targeted_btn.setEnabled(enabled_state_of_targeted_btn_in_other_execution_modes)
+            targeted_btn.setEnabled(enabled_state_of_targeted_btn_in_other_sim_run_execution_modes)
         else:
             targeted_btn.setEnabled(enabled_state_of_targeted_btn_in_single_sim_run_execution_mode)
