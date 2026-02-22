@@ -182,7 +182,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
             )
             QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
             return
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             self._handle_non_recoverable_error(err)
             return
 
@@ -219,7 +219,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
                 if to_be_enqueued_sim_run_model is None:
                     break
             QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             self._handle_non_recoverable_error(
                 f"Error during enqueue of new simulation runs, reason: {SimulationRunJsonExportDialog._stringify_error(err)}"
             )
