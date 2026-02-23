@@ -84,7 +84,7 @@ class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel
                 self.batchCompleted.emit(batch_timestamps.duration)
                 batch_start_timestamp = batch_timestamps.end
             self.finished.emit(self.is_cancellation_requested())
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001
             self_raised_error_msg = f"Error in all input states generator worker! Reason: {type(error)=}, {error=}"
             log_error_to_console(self_raised_error_msg)
             self.failed.emit(error)
