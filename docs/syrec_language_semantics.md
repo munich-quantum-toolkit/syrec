@@ -283,7 +283,7 @@ A loop (_ForStatement_) defined as {math}`for \ e_1 \ to \ e_2 \ step \ s \ do \
 is inverted by inverting not only the sequence of statements in its loop body but also by inverting its value range thus the inversion of the given loop is equal to
 {math}`for \ e_2 \ to \ e_1 \ step \ s \ do \ {s_n}^{-1}, \dots, {s_2}^{-1}, {s_1}^{-1} \ rof`.
 
-The inversion result of the _ForStatement_ as well as its enclosing module `basicBitwiseIncr` is equal to the module `invrBitwiseIncr` with both modules being shown in the example below:
+The inversion result of the _ForStatement_ as well as its enclosing module `basicBitwiseIncr` is equal to the module `invrBasicBitwiseIncr` with both modules being shown in the example below:
 
 ```text
 module basicBitwiseIncr(inout a(4), inout b(4))
@@ -293,7 +293,7 @@ for $i = 0 to #a do
 rof
 
 // Inversion of basicBitwiseIncr equal to "uncall basicBitwiseIncr(a, b)"
-module invrBitwiseIncr(inout a(4), inout b(4))
+module invrBasicBitwiseIncr(inout a(4), inout b(4))
 for $i = #a to 0 do
    ++= b.$i;
    --= a.$i
@@ -302,7 +302,7 @@ rof
 module main(inout a(4), inout b(4))
  // An index-out-of-range error would be reported here due to the value range of the ForStatement of the uncalled module
  // being inverted with the loop variable $i being initialized with #a instead of 0 in the inverted ForStatement thus the assignments
- // ++b.$i and --= a.$i would both result in an index-out-of-range error.
+ // ++= b.$i and --= a.$i would both result in an index-out-of-range error.
  uncall basicBitwiseIncr(a, b)
 ```
 
