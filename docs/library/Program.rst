@@ -1,5 +1,5 @@
-Parser
-======
+Program
+=======
 
 This class is the superclass providing template functionality needed for parsing every SyReC program.
 
