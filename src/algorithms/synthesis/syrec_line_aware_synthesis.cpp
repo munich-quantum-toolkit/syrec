@@ -108,7 +108,7 @@ namespace syrec {
                 } else {
                     const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = tryMapAssignmentToBinaryOperation(assignmentStmt.assignOperation);
                     synthesisOk                                                                    = mappedToBinaryOperation.has_value() && expressionSingleOp(*mappedToBinaryOperation, expLhsVector.at(0), statLhs) &&
-                                  expressionSingleOp(expOpVector.at(0), expRhsVector.at(0), statLhs);
+                                                                                                     expressionSingleOp(expOpVector.at(0), expRhsVector.at(0), statLhs);
                 }
                 expOpVector.clear();
                 assignOpVector.clear();
@@ -126,7 +126,7 @@ namespace syrec {
             } else if (expOpVector.at(0) != BinaryExpression::BinaryOperation::Subtract || expOpVector.at(0) != BinaryExpression::BinaryOperation::Exor) {
                 const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = tryMapAssignmentToBinaryOperation(assignmentStmt.assignOperation);
                 synthesisOk                                                                    = mappedToBinaryOperation.has_value() && expressionSingleOp(*mappedToBinaryOperation, expLhsVector.at(0), statLhs) &&
-                              expressionSingleOp(expOpVector.at(0), expRhsVector.at(0), statLhs);
+                                                                                                 expressionSingleOp(expOpVector.at(0), expRhsVector.at(0), statLhs);
             }
         } else {
             synthesisOk = solver(statLhs, assignmentStmt.assignOperation, expLhsVector.at(0), expOpVector.at(0), expRhsVector.at(0));
@@ -169,7 +169,7 @@ namespace syrec {
                         } else {
                             const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = tryMapAssignmentToBinaryOperation(statAssignOp.at(j));
                             synthesisOk                                                                    = mappedToBinaryOperation.has_value() && expressionSingleOp(*mappedToBinaryOperation, expLhsVector.at(i), statLhs) &&
-                                          expressionSingleOp(expOpVector.at(i), expRhsVector.at(i), statLhs);
+                                                                                                             expressionSingleOp(expOpVector.at(i), expRhsVector.at(i), statLhs);
                             j++;
                         }
                     }
