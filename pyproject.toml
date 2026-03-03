@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "nanobind~=2.11.0",
+    "nanobind~=2.12.0",
     "scikit-build-core>=0.11.6",
     "setuptools-scm>=9.2.2",
     "mqt.core~=3.4.1",
@@ -330,7 +330,7 @@ mqt-syrec = { workspace = true }
 
 [dependency-groups]
 build = [
-    "nanobind~=2.11.0",
+    "nanobind~=2.12.0",
     "scikit-build-core>=0.11.6",
     "setuptools-scm>=9.2.2",
     "mqt.core~=3.4.1",
