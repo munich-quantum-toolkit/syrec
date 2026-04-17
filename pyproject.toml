@@ -17,7 +17,7 @@ authors = [
 ]
 keywords = ["MQT", "reversible-computing", "design-automation", "synthesis"]
 license = "MIT"
-license-files = ["LICENSE.md"]
+license-files = ["LICENSE"]
 
 classifiers = [
     "Development Status :: 4 - Beta",
