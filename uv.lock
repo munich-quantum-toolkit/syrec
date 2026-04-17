@@ -1266,7 +1266,7 @@ requires-dist = [
 build = [
     { name = "mqt-core", specifier = "~=3.4.1" },
     { name = "nanobind", specifier = "~=2.11.0" },
-    { name = "scikit-build-core", specifier = ">=0.11.6" },
+    { name = "scikit-build-core", specifier = ">=0.12.2" },
     { name = "setuptools-scm", specifier = ">=9.2.2" },
 ]
 dev = [
@@ -1277,7 +1277,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-sugar", specifier = ">=1.1.1" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "scikit-build-core", specifier = ">=0.11.6" },
+    { name = "scikit-build-core", specifier = ">=0.12.2" },
     { name = "setuptools-scm", specifier = ">=9.2.2" },
 ]
 docs = [
