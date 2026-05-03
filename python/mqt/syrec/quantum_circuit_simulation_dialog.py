@@ -110,7 +110,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._simulation_run_export_to_file_dialog: SimulationRunJsonExportDialog | None = None
         self._simulation_run_dialog: SimulationRunDialog | None = None
 
-        self._expected_input_output_state_size: Final[int] = self._annotatable_quantum_computation.num_qubits
+        self._expected_max_n_qubits_in_quantum_comp: Final[int] = self._annotatable_quantum_computation.num_qubits
+        self._expected_n_data_qubits: Final[int] = self._annotatable_quantum_computation.num_data_qubits
         self._simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
         self._shared_selected_sim_run_execution_mode_dropdown_index: int = 0
         self._prev_active_simulation_runs_tab_idx: int = 0
@@ -395,9 +396,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def handle_simulation_run_add_btn_click(self) -> None:
         self._simulation_runs_model.add_simulation_run_model(
             SimulationRunModel(
-                input_state=NBitValuesContainer(self._expected_input_output_state_size),
+                input_state=NBitValuesContainer(self._expected_max_n_qubits_in_quantum_comp),
                 expected_output_state=None,
                 actual_output_state=None,
+                n_data_qubits_in_state=self._expected_n_data_qubits,
                 create_new_n_bit_values_container_instances=False,
             )
         )
@@ -483,6 +485,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             reference_sim_run_model.input_state,
             reference_sim_run_model.expected_output_state,
             reference_sim_run_model.actual_output_state,
+            reference_sim_run_model.n_data_qubits_in_state,
             create_new_n_bit_values_container_instances=True,
         )
 
@@ -785,7 +788,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 self.set_default_simulation_run_modification_buttons_enabled_state(prev_active_tab_widget)
                 return
 
-            self.handle_open_and_start_all_input_states_generator_dialog(self._expected_input_output_state_size)
+            self.handle_open_and_start_all_input_states_generator_dialog(self._expected_max_n_qubits_in_quantum_comp)
 
         sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
             "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown_in_switched_to_tab
@@ -878,7 +881,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             parent=self,
             shared_simulation_runs_model=self._simulation_runs_model,
             annotatable_quantum_computation=self._annotatable_quantum_computation,
-            expected_input_output_state_size=self._expected_input_output_state_size,
+            expected_input_output_state_size=self._expected_n_data_qubits,
         )
         self._simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
         self._simulation_run_dialog.show()
@@ -990,7 +993,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._simulation_run_import_from_file_dialog.show()
         self._simulation_run_import_from_file_dialog.start_import(
             Path(selected_filename_lbl.text()),
-            expected_input_state_size=self._expected_input_output_state_size,
+            expected_n_data_qubits=self._expected_n_data_qubits,
+            expected_max_n_qubits=self._expected_max_n_qubits_in_quantum_comp,
         )
 
     @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]

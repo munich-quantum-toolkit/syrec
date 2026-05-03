@@ -56,12 +56,14 @@ class SimulationRunModel:
     actual_output_state: NBitValuesContainer | None = None
     do_expected_and_actual_outputs_match: bool | None = None
     execution_runtime_in_ms: float | None = None
+    n_data_qubits_in_state: int | None = None
 
     def __init__(
         self,
         input_state: NBitValuesContainer,
         expected_output_state: NBitValuesContainer | None = None,
         actual_output_state: NBitValuesContainer | None = None,
+        n_data_qubits_in_state: int | None = None,
         *,
         create_new_n_bit_values_container_instances: bool = False,
     ) -> None:
@@ -71,6 +73,12 @@ class SimulationRunModel:
         SimulationRunModel._assert_n_bit_value_container_sizes_match(
             input_state, "input state", actual_output_state, "actual output state"
         )
+
+        if n_data_qubits_in_state is not None:
+            SimulationRunModel._assert_n_data_qubits_is_valid_for_state(n_data_qubits_in_state, input_state)
+            self.n_data_qubits_in_state = n_data_qubits_in_state
+        else:
+            self.n_data_qubits_in_state = input_state.size()
 
         if not create_new_n_bit_values_container_instances:
             self.input_state = input_state
@@ -175,6 +183,9 @@ class SimulationRunModel:
             # We do not need to reset the actual output state since its value depends only on the input state
             self.reset_result_of_execution(reset_actual_output_state=False)
 
+    def stringify_data_qubits_of_value_container(self, n_bit_values_container: NBitValuesContainer) -> str:
+        return str(n_bit_values_container)[: self.n_data_qubits_in_state]
+
     @staticmethod
     def do_output_states_match(
         expected_output_state: NBitValuesContainer | None,
@@ -215,6 +226,13 @@ class SimulationRunModel:
 
         if expected_container.size() != optional_actual_container.size():
             msg = f"{expected_container_name} to have {expected_container.size()} qubits but {actual_container_name} contained {optional_actual_container.size()} qubits!"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=2)
+            raise ValueError(msg)
+
+    @staticmethod
+    def _assert_n_data_qubits_is_valid_for_state(n_data_qubits: int, state: NBitValuesContainer) -> None:
+        if n_data_qubits < 0 or n_data_qubits > state.size():
+            msg = f"The number of data qubits in the to be initialized simulation run model ({n_data_qubits}) was out of range, valid range is [0, {state.size()})"
             log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=2)
             raise ValueError(msg)
 
