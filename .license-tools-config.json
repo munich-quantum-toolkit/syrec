@@ -36,6 +36,6 @@
     "uv\\.lock",
     "py\\.typed",
     ".*build.*",
-    "syrec_patterns.txt"
+    "(^|/)LICENSE$"
   ]
 }

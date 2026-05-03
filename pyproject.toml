@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "nanobind~=2.11.0",
-    "scikit-build-core>=0.11.6",
+    "scikit-build-core>=0.12.2",
     "setuptools-scm>=9.2.2",
     "mqt.core~=3.4.1",
 ]
@@ -17,7 +17,7 @@ authors = [
 ]
 keywords = ["MQT", "reversible-computing", "design-automation", "synthesis"]
 license = "MIT"
-license-files = ["LICENSE.md"]
+license-files = ["LICENSE"]
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -169,6 +169,7 @@ show-fixes = true
 src = ["python"]
 
 [tool.ruff.format]
+preview = true
 docstring-code-format = true
 
 [tool.ruff.lint]
@@ -255,11 +256,11 @@ extend-words = { wille = "wille", anc = "anc", aer = "aer", setp = "setp" }
 
 
 [tool.repo-review]
-ignore = [
-  "GH200", # We use Renovate instead of Dependabot
-  "PC160", # We use a mirror of crate-ci/typos
-  "PC170", # We do not use rST files anymore
-]
+[tool.repo-review.ignore]
+GH200 = "We use Renovate instead of Dependabot"
+PC111 = "We use ruff instead of blacken-docs"
+PC160 = "We use a mirror of crate-ci/typos"
+PC170 = "We do not use rST files anymore"
 
 
 [tool.cibuildwheel]
@@ -269,8 +270,7 @@ skip = ["*-musllinux_*", "cp313t-*"]
 archs = "auto64"
 test-groups = ["test"]
 test-command = "pytest {project}/test/python"
-build-frontend = "build[uv]"
-enable = ["cpython-freethreading"]
+build-frontend = "uv"
 test-skip = [
   "cp3??t-*", # no freethreading qiskit wheels
   "cp*-win_arm64", # no numpy, qiskit, ... wheels
@@ -328,7 +328,7 @@ mqt-syrec = { workspace = true }
 [dependency-groups]
 build = [
     "nanobind~=2.11.0",
-    "scikit-build-core>=0.11.6",
+    "scikit-build-core>=0.12.2",
     "setuptools-scm>=9.2.2",
     "mqt.core~=3.4.1",
 ]
