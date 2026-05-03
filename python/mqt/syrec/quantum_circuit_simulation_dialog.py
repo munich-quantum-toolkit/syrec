@@ -26,7 +26,7 @@ else:
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-from mqt.syrec import NBitValuesContainer, QubitLabelType
+from mqt.syrec import NBitValuesContainer
 
 from .message_box_utils import MessageBoxType, show_and_request_ok_in_optionally_cancellable_notification
 from .simulation_view.dialogs.all_input_states_generator_dialog import AllInputStatesGeneratorDialog
@@ -110,11 +110,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._simulation_run_export_to_file_dialog: SimulationRunJsonExportDialog | None = None
         self._simulation_run_dialog: SimulationRunDialog | None = None
 
-        self._expected_input_output_state_size: Final[int] = (
-            QuantumCircuitSimulationDialog._determine_num_non_ancillary_qubits(
-                self._annotatable_quantum_computation, potential_error_dialog_parent=self
-            )
-        )
+        self._expected_max_n_qubits_in_quantum_comp: Final[int] = self._annotatable_quantum_computation.num_qubits
+        self._expected_n_data_qubits: Final[int] = self._annotatable_quantum_computation.num_data_qubits
         self._simulation_runs_model: QtSimulationRunModel = QtSimulationRunModel(annotatable_quantum_computation, self)
         self._shared_selected_sim_run_execution_mode_dropdown_index: int = 0
         self._prev_active_simulation_runs_tab_idx: int = 0
@@ -399,9 +396,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
     def handle_simulation_run_add_btn_click(self) -> None:
         self._simulation_runs_model.add_simulation_run_model(
             SimulationRunModel(
-                input_state=NBitValuesContainer(self._expected_input_output_state_size),
+                input_state=NBitValuesContainer(self._expected_max_n_qubits_in_quantum_comp),
                 expected_output_state=None,
                 actual_output_state=None,
+                n_data_qubits_in_state=self._expected_n_data_qubits,
                 create_new_n_bit_values_container_instances=False,
             )
         )
@@ -417,6 +415,16 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
             curr_active_tab_widget, should_controls_be_enabled=True
+        )
+
+        # The enabled state of the run simulation run button is dependent on the currently selected simulation run execution mode
+        # so it should only be enabled if the simulation run execution mode is not set to single simulation run execution.
+        QuantumCircuitSimulationDialog._set_enabled_state_of_simulation_run_execution_control_btn_in_tab_based_on_sim_run_execution_mode(
+            error_dialog_parent=self,
+            curr_active_tab_widget=curr_active_tab_widget,
+            object_name_identifying_targeted_btn=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
+            enabled_state_of_targeted_btn_in_single_sim_run_execution_mode=False,
+            enabled_state_of_targeted_btn_in_other_sim_run_execution_modes=True,
         )
 
         optional_simulation_runs_list_view: QtWidgets.QWidget | None = curr_active_tab_widget.findChild(
@@ -477,6 +485,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             reference_sim_run_model.input_state,
             reference_sim_run_model.expected_output_state,
             reference_sim_run_model.actual_output_state,
+            reference_sim_run_model.n_data_qubits_in_state,
             create_new_n_bit_values_container_instances=True,
         )
 
@@ -545,7 +554,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._simulation_run_export_to_file_dialog = None
 
     @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
-    def handle_open_and_start_all_input_states_generator_dialog(self, input_state_size: int) -> None:
+    def handle_open_and_start_all_input_states_generator_dialog(self, num_qubits_per_generated_state: int) -> None:
         if self._all_input_states_generator_dialog is not None:
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
@@ -562,7 +571,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self._all_input_states_generator_dialog.finished.connect(self.handle_input_states_generator_dialog_close)
         self._all_input_states_generator_dialog.show()
-        self._all_input_states_generator_dialog.start_generation(input_state_size)
+        self._all_input_states_generator_dialog.start_generation(num_qubits_per_generated_state)
 
     @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
     def handle_input_states_generator_dialog_close(self, result: int) -> None:
@@ -579,6 +588,21 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
             curr_active_tab_widget, should_controls_be_enabled=(result == QtWidgets.QDialog.DialogCode.Accepted)
+        )
+
+        # We do need to consider the case that the user set the current simulation run execution mode to 'Execute single simulation run'
+        # in another tab of the view which in turn will transfer this execution mode to the current tab thus we need to conditionally enable the
+        # the run simulation run button based on the set execution mode. Note that when switching to the current tab, which in turn triggered the launch of the
+        # AllInputStatesGeneratorDialog, no simulation run should be selected in the simulation run list view of the current tab. We can now enable the run simulation run
+        # button only when the current simulation run execution mode is not set to 'Execute single simulation run'.
+        QuantumCircuitSimulationDialog._set_enabled_state_of_simulation_run_execution_control_btn_in_tab_based_on_sim_run_execution_mode(
+            error_dialog_parent=self,
+            curr_active_tab_widget=curr_active_tab_widget,
+            object_name_identifying_targeted_btn=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
+            enabled_state_of_targeted_btn_in_single_sim_run_execution_mode=False,
+            enabled_state_of_targeted_btn_in_other_sim_run_execution_modes=(
+                result == QtWidgets.QDialog.DialogCode.Accepted
+            ),
         )
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
@@ -608,9 +632,22 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         # Deletion of an element should only be enabled when an item in the QListView is selected. After the deletion
         # and the subsequent update of the backing model of the QListView selection will switch to the element the index
         # of the previously selected element thus the simulation run execution controls should not be enabled after an element
-        # is deleted
+        # is deleted only if the current simulation run execution mode is not set to single simulation run execution. In the single
+        # simulation run execution mode the enabled state of the run simulation runs button is dependent on whether the simulation runs
+        # list view contains elements.
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
             curr_active_tab_widget, should_controls_be_enabled=False
+        )
+
+        QuantumCircuitSimulationDialog._set_enabled_state_of_simulation_run_execution_control_btn_in_tab_based_on_sim_run_execution_mode(
+            error_dialog_parent=self,
+            curr_active_tab_widget=curr_active_tab_widget,
+            object_name_identifying_targeted_btn=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
+            enabled_state_of_targeted_btn_in_single_sim_run_execution_mode=simulation_runs_list_view.model().rowCount(
+                QtCore.QModelIndex()
+            )
+            > 0,
+            enabled_state_of_targeted_btn_in_other_sim_run_execution_modes=False,
         )
 
     def initialize_load_simulation_runs_from_file_controls(self) -> QtWidgets.QLayout:
@@ -664,7 +701,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 </li>
                 <li>
                     Qubit values must be defined as strings containing '0' or '1' characters with the total number of qubits in a
-                    state definition matching the number of data qubits of the synthesized quantum computation (i.e. equal to the number of non-ancillary qubits).
+                    state definition matching the total number of qubits of the synthesized quantum computation.
                 </li>
                 <li>
                     Any additional objects defined in a simulation run JSON object is skipped.
@@ -738,7 +775,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
 
         if to_be_switched_to_tab_widget.objectName() == ALL_SIM_RUNS_TAB_WIDGET_NAME:
-            n_input_state_combinations: int = 2**self._expected_input_output_state_size
+            n_input_state_combinations: int = 2**self._annotatable_quantum_computation.num_data_qubits
             if not show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.WARNING,
                 message_box_parent=self,
@@ -751,7 +788,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 self.set_default_simulation_run_modification_buttons_enabled_state(prev_active_tab_widget)
                 return
 
-            self.handle_open_and_start_all_input_states_generator_dialog(self._expected_input_output_state_size)
+            self.handle_open_and_start_all_input_states_generator_dialog(self._expected_max_n_qubits_in_quantum_comp)
 
         sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
             "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown_in_switched_to_tab
@@ -844,7 +881,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             parent=self,
             shared_simulation_runs_model=self._simulation_runs_model,
             annotatable_quantum_computation=self._annotatable_quantum_computation,
-            expected_input_output_state_size=self._expected_input_output_state_size,
+            expected_input_output_state_size=self._expected_n_data_qubits,
         )
         self._simulation_run_dialog.finished.connect(self.handle_simulation_runs_dialog_close)
         self._simulation_run_dialog.show()
@@ -956,7 +993,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._simulation_run_import_from_file_dialog.show()
         self._simulation_run_import_from_file_dialog.start_import(
             Path(selected_filename_lbl.text()),
-            expected_input_state_size=self._expected_input_output_state_size,
+            expected_n_data_qubits=self._expected_n_data_qubits,
+            expected_max_n_qubits=self._expected_max_n_qubits_in_quantum_comp,
         )
 
     @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
@@ -1113,7 +1151,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
 
     def set_default_simulation_run_modification_buttons_enabled_state(
-        self, associated_tab_widget: QtWidgets.QTabWidget
+        self, associated_tab_widget: QtWidgets.QWidget
     ) -> None:
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self._simulation_runs_tab_widget.widget(
             self._simulation_runs_tab_widget.currentIndex()
@@ -1185,9 +1223,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             curr_active_tab_widget, is_simulation_run_selected=(len(simulation_runs_list_view.selectedIndexes()) == 1)
         )
 
-    def _clear_simulation_run_list_and_backing_model(
-        self, tab_widget_containing_list_view: QtWidgets.QTabWidget
-    ) -> None:
+    def _clear_simulation_run_list_and_backing_model(self, tab_widget_containing_list_view: QtWidgets.QWidget) -> None:
         optional_simulation_runs_list_view: QtWidgets.QWidget | None = tab_widget_containing_list_view.findChild(
             QtWidgets.QListView, SIMULATION_RUNS_LIST_VIEW_NAME
         )
@@ -1216,7 +1252,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         selection_after_model_reset: Final[QtCore.QItemSelection] = (
             simulation_runs_list_view.selectionModel().selection()
         )
-        # To tab changed signal is emitted after the tab already changed thus the QTabWidget.currentWidget() will return the already switched to tab widget while we want to reset the selection
+        # The tab changed signal is emitted after the tab already changed thus the QWidget.currentWidget() will return the already switched to tab widget while we want to reset the selection
         # in the switched from tab widget.
         self.handle_simulation_run_selection_change(
             selection_after_model_reset,
@@ -1224,33 +1260,50 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             optional_tab_widget_to_apply_selection_change_to=tab_widget_containing_list_view,
         )
 
-    # This method is only a temporary workaround for the quantum registers created for ancillary qubits not being marked as ancillary in the annotatable quantum computation (Date of comment 04.02.2026)
     @staticmethod
-    def _determine_num_non_ancillary_qubits(
-        annotatable_quantum_computation: AnnotatableQuantumComputation, potential_error_dialog_parent: QtWidgets.QWidget
-    ) -> int:
-        num_non_ancillary_qubits: int = 0
-        for qubit in range(annotatable_quantum_computation.num_data_qubits):
-            fetched_qubit_label: str | None = annotatable_quantum_computation.get_qubit_label(
-                qubit, QubitLabelType.internal
-            )
-            if fetched_qubit_label is None:
-                show_and_request_ok_in_optionally_cancellable_notification(
-                    message_box_type=MessageBoxType.ERROR,
-                    message_box_parent=potential_error_dialog_parent,
-                    message_box_title="Failed to determine qubit label",
-                    message_box_content=f"Failed to determine internal qubit label for qubit {qubit}!",
-                    is_cancellable=False,
-                )
-                return 0
-            num_non_ancillary_qubits += int(
-                not QuantumCircuitSimulationDialog._does_qubit_label_start_with_internal_qubit_label_prefix(
-                    fetched_qubit_label
-                )
-            )
-        return num_non_ancillary_qubits
+    def _set_enabled_state_of_simulation_run_execution_control_btn_in_tab_based_on_sim_run_execution_mode(
+        error_dialog_parent: QtWidgets.QWidget,
+        curr_active_tab_widget: QtWidgets.QWidget,
+        object_name_identifying_targeted_btn: str,
+        *,
+        enabled_state_of_targeted_btn_in_single_sim_run_execution_mode: bool,
+        enabled_state_of_targeted_btn_in_other_sim_run_execution_modes: bool,
+    ) -> None:
+        """Set the enabled state of a simulation run execution control button based on the current simulation run execution mode"""
 
-    # This method is only a temporary workaround for the quantum registers created for ancillary qubits not being marked as ancillary in the annotatable quantum computation (Date of comment 04.02.2026)
-    @staticmethod
-    def _does_qubit_label_start_with_internal_qubit_label_prefix(qubit_label: str) -> bool:
-        return qubit_label.startswith("__q")
+        optional_targeted_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
+            QtWidgets.QPushButton, object_name_identifying_targeted_btn
+        )
+        optional_sim_run_exec_mode_dropdown: QtWidgets.QComboBox | None = curr_active_tab_widget.findChild(
+            QtWidgets.QComboBox, SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME
+        )
+
+        if not assert_all_required_widgets_found_or_close_dialog(
+            error_notification_parent_widget=error_dialog_parent,
+            required_widgets=[optional_targeted_btn, optional_sim_run_exec_mode_dropdown],
+            error_dialog_content=f"Failed to locate required QtWidgets during conditional enabling of simulation run execution control button named {object_name_identifying_targeted_btn}!",
+        ):
+            return
+
+        targeted_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_targeted_btn)
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
+            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
+        )
+
+        curr_selected_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = (
+            sim_run_exec_mode_dropdown.currentData()
+        )
+        if curr_selected_sim_run_exec_mode is None:
+            show_and_request_ok_in_optionally_cancellable_notification(
+                message_box_type=MessageBoxType.ERROR,
+                message_box_parent=error_dialog_parent,
+                message_box_title="Unknown selected simulation run execution mode!",
+                message_box_content=f"Failed to determine selected simulation run execution mode during conditional enabling of simulation run execution control button named {object_name_identifying_targeted_btn}!",
+                is_cancellable=False,
+            )
+            return
+
+        if curr_selected_sim_run_exec_mode != SimulationRunExecutionMode.RUN_SINGLE:
+            targeted_btn.setEnabled(enabled_state_of_targeted_btn_in_other_sim_run_execution_modes)
+        else:
+            targeted_btn.setEnabled(enabled_state_of_targeted_btn_in_single_sim_run_execution_mode)

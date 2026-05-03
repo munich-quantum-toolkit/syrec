@@ -19,7 +19,7 @@ else:
 
 from PyQt6 import QtCore
 
-from mqt.syrec import NBitValuesContainer, QubitLabelType
+from mqt.syrec import NBitValuesContainer
 
 from ..logger_utils import log_error_to_console
 
@@ -38,6 +38,12 @@ LARGEST_SIM_RUN_NUMBER_QT_ROLE: Final[int] = ANNOTATABLE_QUANTUM_COMPUTATION_QT_
 
 
 @dataclass(frozen=True)
+class DataQubitsLookup:
+    ascendingly_ordered_data_qubits_lookup: tuple[int, ...]
+    do_gaps_between_data_qubits_exist: bool
+
+
+@dataclass(frozen=True)
 class QuantumRegisterLayout:
     qreg_name: str
     first_qubit_of_qreg: int
@@ -50,12 +56,14 @@ class SimulationRunModel:
     actual_output_state: NBitValuesContainer | None = None
     do_expected_and_actual_outputs_match: bool | None = None
     execution_runtime_in_ms: float | None = None
+    n_data_qubits_in_state: int | None = None
 
     def __init__(
         self,
         input_state: NBitValuesContainer,
         expected_output_state: NBitValuesContainer | None = None,
         actual_output_state: NBitValuesContainer | None = None,
+        n_data_qubits_in_state: int | None = None,
         *,
         create_new_n_bit_values_container_instances: bool = False,
     ) -> None:
@@ -65,6 +73,12 @@ class SimulationRunModel:
         SimulationRunModel._assert_n_bit_value_container_sizes_match(
             input_state, "input state", actual_output_state, "actual output state"
         )
+
+        if n_data_qubits_in_state is not None:
+            SimulationRunModel._assert_n_data_qubits_is_valid_for_state(n_data_qubits_in_state, input_state)
+            self.n_data_qubits_in_state = n_data_qubits_in_state
+        else:
+            self.n_data_qubits_in_state = input_state.size()
 
         if not create_new_n_bit_values_container_instances:
             self.input_state = input_state
@@ -169,9 +183,14 @@ class SimulationRunModel:
             # We do not need to reset the actual output state since its value depends only on the input state
             self.reset_result_of_execution(reset_actual_output_state=False)
 
+    def stringify_data_qubits_of_value_container(self, n_bit_values_container: NBitValuesContainer) -> str:
+        return str(n_bit_values_container)[: self.n_data_qubits_in_state]
+
     @staticmethod
     def do_output_states_match(
-        expected_output_state: NBitValuesContainer | None, actual_output_state: NBitValuesContainer
+        expected_output_state: NBitValuesContainer | None,
+        actual_output_state: NBitValuesContainer,
+        data_qubits_lookup: DataQubitsLookup,
     ) -> bool | None:
         if expected_output_state is None:
             return None
@@ -179,8 +198,10 @@ class SimulationRunModel:
         SimulationRunModel._assert_n_bit_value_container_sizes_match(
             expected_output_state, "expected output state", actual_output_state, "actual output state"
         )
+
         return all(
-            actual_output_state.test(i) == expected_output_state.test(i) for i in range(actual_output_state.size())
+            actual_output_state.test(data_qubit) == expected_output_state.test(data_qubit)
+            for data_qubit in data_qubits_lookup.ascendingly_ordered_data_qubits_lookup
         )
 
     @staticmethod
@@ -208,6 +229,13 @@ class SimulationRunModel:
             log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=2)
             raise ValueError(msg)
 
+    @staticmethod
+    def _assert_n_data_qubits_is_valid_for_state(n_data_qubits: int, state: NBitValuesContainer) -> None:
+        if n_data_qubits < 0 or n_data_qubits > state.size():
+            msg = f"The number of data qubits in the to be initialized simulation run model ({n_data_qubits}) was out of range, valid range is [0, {state.size()})"
+            log_error_to_console(msg, num_additionally_skipped_stack_frames_starting_from_caller_function=2)
+            raise ValueError(msg)
+
 
 # Example delegate: https://stackoverflow.com/questions/53105343/is-it-possible-to-add-a-custom-widget-into-a-qlistview
 class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
@@ -223,6 +251,9 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self._largest_quantum_register_size: int = 0
         self._largest_first_qubit_of_quantum_registers: int = 0
         self._annotatable_quantum_computation = annotatable_quantum_computation
+        self._data_qubits_lookup: Final[DataQubitsLookup] = QtSimulationRunModel._build_data_qubits_lookup(
+            self._annotatable_quantum_computation
+        )
 
         for qreg_layout in self._quantum_register_layouts:
             self._longest_quantum_register_name = (
@@ -238,27 +269,20 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             ].first_qubit_of_qreg
 
     @staticmethod
-    def _does_qubit_label_start_with_internal_qubit_label_prefix(qubit_label: str) -> bool:
-        return qubit_label.startswith("__q")
-
-    @staticmethod
     def _record_quantum_register_layouts(
         annotatable_quantum_computation: AnnotatableQuantumComputation,
     ) -> list[QuantumRegisterLayout]:
-        quantum_register_layouts: list[QuantumRegisterLayout] = []
-        for qreg in annotatable_quantum_computation.qregs.values():
-            internal_qubit_label: str | None = annotatable_quantum_computation.get_qubit_label(
-                qreg.start, QubitLabelType.internal
+        unsorted_qreg_layouts: list[QuantumRegisterLayout] = [
+            QuantumRegisterLayout(qreg.name, qreg.start, qreg.size)
+            for qreg in filter(
+                lambda qreg: (
+                    qreg.size > 0 and not annotatable_quantum_computation.is_circuit_qubit_ancillary(qreg.start)
+                ),
+                annotatable_quantum_computation.qregs.values(),
             )
-            if qreg.size == 0 or QtSimulationRunModel._does_qubit_label_start_with_internal_qubit_label_prefix(
-                internal_qubit_label if internal_qubit_label is not None else ""
-            ):
-                continue
-
-            quantum_register_layouts.append(QuantumRegisterLayout(qreg.name, qreg.start, qreg.size))
-
-        quantum_register_layouts.sort(key=lambda qreg_layout: qreg_layout.first_qubit_of_qreg)
-        return quantum_register_layouts
+        ]
+        unsorted_qreg_layouts.sort(key=lambda qreg_layout: qreg_layout.first_qubit_of_qreg)
+        return unsorted_qreg_layouts
 
     @override
     def rowCount(self, parent: QtCore.QModelIndex) -> int:
@@ -291,6 +315,9 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
             return self.rowCount(QtCore.QModelIndex())
 
         return None
+
+    def get_data_qubits_lookup(self) -> DataQubitsLookup:
+        return self._data_qubits_lookup
 
     def get_simulation_run_model(self, index: int) -> SimulationRunModel | None:
         if 0 <= index < len(self._simulation_run_models):
@@ -369,3 +396,26 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
 
     def is_model_index_valid(self, index: QtCore.QModelIndex) -> bool:
         return index.isValid() and index.row() < len(self._simulation_run_models)  # type: ignore[no-any-return]
+
+    @staticmethod
+    def _build_data_qubits_lookup(
+        annotatable_quantum_computation: AnnotatableQuantumComputation,
+    ) -> DataQubitsLookup:
+        data_qubit_indices: Final[tuple[int, ...]] = tuple(
+            sorted(
+                filter(
+                    lambda qubit: not annotatable_quantum_computation.is_circuit_qubit_ancillary(qubit),
+                    range(annotatable_quantum_computation.num_qubits),
+                )
+            )
+        )
+        return DataQubitsLookup(
+            data_qubit_indices, QtSimulationRunModel._do_gaps_between_data_qubits_exist(data_qubit_indices)
+        )
+
+    @staticmethod
+    def _do_gaps_between_data_qubits_exist(sorted_data_qubits_indices_collection: tuple[int, ...]) -> bool:
+        return len(sorted_data_qubits_indices_collection) > 1 and any(
+            sorted_data_qubits_indices_collection[idx] != sorted_data_qubits_indices_collection[idx - 1] + 1
+            for idx in range(1, len(sorted_data_qubits_indices_collection))
+        )

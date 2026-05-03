@@ -171,7 +171,10 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
             msg = "Cannot serialize simulation run with unknown expected output state"
             raise TypeError(msg)
 
-        return {"in": str(obj.input_state), "out": str(obj.expected_output_state)}
+        return {
+            "in": obj.stringify_data_qubits_of_value_container(obj.input_state),
+            "out": obj.stringify_data_qubits_of_value_container(obj.expected_output_state),
+        }
 
     @staticmethod
     def convert_to_single_line_string(stringified_syrec_program: str) -> str:

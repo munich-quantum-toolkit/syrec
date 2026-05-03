@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from mqt.syrec import AnnotatableQuantumComputation
 
-    from ..simulation_run_model import QtSimulationRunModel, SimulationRunModel
+    from ..simulation_run_model import DataQubitsLookup, QtSimulationRunModel, SimulationRunModel
     from ..workers.simulation_run_worker import SimulationRunResult
 
 from ...logger_utils import log_info_to_console
@@ -75,6 +75,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             user_provided_dialog_size=SimulationRunDialog.get_default_big_dialog_size(),
         )
         self._annotatable_quantum_computation: Final[AnnotatableQuantumComputation] = annotatable_quantum_computation
+        self._data_qubits_lookup: Final[DataQubitsLookup] = self._shared_simulation_runs_model.get_data_qubits_lookup()
         self._expected_input_state_size: Final[int] = expected_input_output_state_size
         self._optional_filtered_shared_sim_run_model: SimulationRunFilterModel | None = None
         self._stop_at_first_output_state_mismatch: bool = False
@@ -203,6 +204,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self._worker = SimulationRunWorker(
             self._annotatable_quantum_computation,
             self._expected_input_state_size,
+            self._data_qubits_lookup,
             worker_recv_queue_config=QueueConfig(
                 queue_instance=self._sim_run_model_queue, queue_batch_size=sim_run_model_queue_batch_size
             ),
@@ -411,6 +413,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
                 idx_of_sim_run_to_execute.row(),
                 sim_run_for_idx.input_state,
                 sim_run_for_idx.expected_output_state,
+                self._data_qubits_lookup,
             )
             self._shared_simulation_runs_model.update_model_using_simulation_run_result(
                 idx_of_sim_run_to_execute,

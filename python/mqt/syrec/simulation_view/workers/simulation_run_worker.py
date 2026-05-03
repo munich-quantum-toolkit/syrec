@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import queue
+import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
@@ -20,9 +21,15 @@ from ...logger_utils import log_error_to_console
 from ..simulation_run_model import SimulationRunModel
 from .cancellable_worker_variants import CancellableProducerConsumerWorker
 
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
+
 if TYPE_CHECKING:
     from mqt.syrec import AnnotatableQuantumComputation
 
+    from ..simulation_run_model import DataQubitsLookup
     from .cancellable_worker_variants import BatchTimestamps, QueueConfig
 
 
@@ -39,6 +46,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
         self,
         annotatable_quantum_computation: AnnotatableQuantumComputation,
         expected_input_state_size: int,
+        data_qubits_lookup: DataQubitsLookup,
         worker_recv_queue_config: QueueConfig[SimulationRunModel | None],
         worker_send_queue_config: QueueConfig[SimulationRunResult],
         *,
@@ -50,6 +58,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
         )
         self._expected_input_state_size: Final[int] = expected_input_state_size
         self._annotatable_quantum_computation: Final[AnnotatableQuantumComputation] = annotatable_quantum_computation
+        self._data_qubits_lookup: Final[DataQubitsLookup] = data_qubits_lookup
         self._should_stop_at_first_output_state_mismatch: Final[bool] = stop_at_first_output_state_mismatch
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
@@ -115,6 +124,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
                             curr_sim_run_num,
                             dequeued_sim_run_model.input_state,
                             dequeued_sim_run_model.expected_output_state,
+                            self._data_qubits_lookup,
                         )
                     )
                     self.send_queue.put_nowait(sim_run_execution_result)
@@ -157,19 +167,27 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
             and not reached_end_sentinel_flag
         )
 
+    @override
+    def _assert_valid_user_provided_parameter_values(self) -> None:
+        super()._assert_valid_user_provided_parameter_values()
+        SimulationRunWorker._assert_valid_data_qubits_lookup_values(
+            self._data_qubits_lookup, self._expected_input_state_size
+        )
+
     @staticmethod
     def perform_single_sim_run_execution(
         annotatable_quantum_computation: AnnotatableQuantumComputation,
         sim_run_num: int,
         input_state: NBitValuesContainer,
         expected_output_state: NBitValuesContainer | None,
+        data_qubits_lookup: DataQubitsLookup,
     ) -> SimulationRunResult:
         actual_output_state = NBitValuesContainer(input_state.size())
 
         sim_start_timestamp: Final[float] = SimulationRunWorker.get_timestamp()
         simple_simulation(actual_output_state, annotatable_quantum_computation, input_state)
         do_output_states_match: Final[bool | None] = SimulationRunModel.do_output_states_match(
-            expected_output_state, actual_output_state
+            expected_output_state, actual_output_state, data_qubits_lookup
         )
         sim_duration_in_ms: Final[float] = (
             SimulationRunWorker.calc_batch_duration_and_return_end_timestamp_in_seconds(sim_start_timestamp).duration

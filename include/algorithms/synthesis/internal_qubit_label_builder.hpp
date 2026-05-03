@@ -17,13 +17,14 @@
 namespace syrec {
     class InternalQubitLabelBuilder {
     public:
-        static constexpr std::string_view   INTERNAL_QUBIT_LABEL_PREFIX = "__q";
+        static constexpr std::string_view   INTERNAL_QUBIT_LABEL_PREFIX            = "__q";
+        static constexpr std::string_view   INTERNAL_ANCILLARY_QUBIT_LABEL_POSTFIX = "_anc";
         [[maybe_unused]] static std::string buildNonAncillaryQubitLabel(const std::size_t currNumQuantumRegistersInQuantumComputation) {
             return std::string(INTERNAL_QUBIT_LABEL_PREFIX) + std::to_string(currNumQuantumRegistersInQuantumComputation);
         }
 
         [[maybe_unused]] static std::string buildAncillaryQubitLabel(const std::size_t currNumQuantumRegistersInQuantumComputation) {
-            return buildNonAncillaryQubitLabel(currNumQuantumRegistersInQuantumComputation) + "_anc";
+            return buildNonAncillaryQubitLabel(currNumQuantumRegistersInQuantumComputation) + std::string(INTERNAL_ANCILLARY_QUBIT_LABEL_POSTFIX);
         }
     };
 } // namespace syrec

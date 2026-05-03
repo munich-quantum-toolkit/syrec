@@ -83,6 +83,21 @@ namespace syrec {
             UserDeclared
         };
 
+        enum QubitType : std::uint8_t {
+            /**
+             * Qubit stores information relevant for the computation performed by the quantum computation.
+             */
+            Data,
+            /**
+             * Following the mqt-core definition, a garbage qubit is a qubit whose final state is not relevant for the computation performed by the quantum computation.
+             */
+            Garbage,
+            /**
+             * An ancilla qubit always starts in the fixed state |0>.
+             */
+            Ancillary
+        };
+
         /**
          * A simpler container for the layout information about a SyReC variable.
          */
@@ -159,29 +174,33 @@ namespace syrec {
 
         /**
          * Add a quantum register for the qubits of a SyReC variable to the quantum computation.
+         * @param typeOfQubitsGeneratedForVariable The type of qubits to be generated for the variable.
          * @param quantumRegisterLabel The label for the to be added quantum register. Must not be empty and no other qubit or quantum register with the same name must exist in the quantum computation.
          * @param associatedVariableLayoutInformation Layout information about the associated SyReC variable that is used to determine the number of qubits to generate. Total number of elements stored in variable must be larger than zero. Bitwidth of variable must be larger than 0.
-         * @param areGeneratedQubitsGarbage Whether the generated qubits are garbage qubits.
          * @param optionalInliningInformation Optional debug information to determine the origin of the qubits in the associated SyReC program.
-         * @return The index of the first generated non-ancillary qubit for the \p variable in the quantum computation, std::nullopt if the validation of the \p quantumRegisterLabel or \p variable failed, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid or empty inline stack).
+         * @param forceRecordingOfInlinedQubitInformation Force the recording of the provided qubit inline information when attempting to create a quantum register storing data qubits. Otherwise, the value of this flag is ignored. The purpose of this flag is to be able to force a recording of the qubit inline information for the qubits of a SyReC variable of type 'state' whose qubits are considered as data qubits for which the inline information is normally not recorded.
+         * @return The index of the first generated qubit for the \p variable in the quantum computation, std::nullopt if the validation of the \p quantumRegisterLabel or \p variable failed, no further qubits can be added due to a qubit being set to be ancillary via \see AnnotatableQuantumComputation#setQubitAncillary or if the inline information is invalid (empty or no user defined qubit label or invalid or empty inline stack).
+         * @remark Adding a quantum register storing ancillary qubits will cause the associated qubits to be marked as garbage as well as ancillary.
          */
-        [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, bool areGeneratedQubitsGarbage, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt);
+        [[nodiscard]] std::optional<qc::Qubit> addQuantumRegisterForSyrecVariable(QubitType typeOfQubitsGeneratedForVariable, const std::string& quantumRegisterLabel, const AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<InlinedQubitInformation>& optionalInliningInformation = std::nullopt, bool forceRecordingOfInlinedQubitInformation = false);
 
         /**
-         * Add a quantum register for a number of preliminary ancillary qubits in the quantum computation.
+         * Add a quantum register for a number of preliminary ancillary qubits in the quantum computation or resize an already existing quantum register.
          * @param quantumRegisterLabel The label for the created quantum register. A new quantum register is only created if the ancillary qubits could not be appended to an adjacent ancillary qubit register.
          * @param initialStateOfAncillaryQubits A collection defining how many ancillary qubits should be added but also their initial values (each ancillary qubit initialized with '1' will cause the addition of a controlled X gate to the quantum computation). Cannot be empty.
          * @param sharedInliningInformation The inline information recorded for all ancillary qubits generated with this call.
          * @return The index of the first generated ancillary qubits. If more than one ancillary qubits was added then their indices are adjacent to the returned index.
-         * @remark If no more qubits are to be added to the quantum computation then the preliminary ancillary qubits need to be promoted to actual ancillary qubits with a call to AnnotatableQuantumComputation::promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits().
+         * @remark If no more qubits are to be added to the quantum computation then the preliminary ancillary qubits need to be promoted to actual ancillary qubits with a call to AnnotatableQuantumComputation::promoteQuantumRegistersPreliminaryMarkedAsStoringAncillaryQubitsToDefinitivelyStoringAncillaryQubits().
+         * @remark The to be created qubits are only appended to a quantum register Q storing ancillary qubits of intermediate results (i.e. in a quantum register created by a previous call of this function) if the "first" qubit of Q is larger than the "last" qubit stored in all other quantum registers. In other words, the qubits are only appended to Q iff Q was the last added quantum register in the quantum computation. Otherwise, a new quantum register will be created.
+         * @remark The qubits added via this call will be marked as both garbage as well as ancillary.
          */
-        [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryRegisterOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation);
+        [[nodiscard]] std::optional<qc::Qubit> addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne(const std::string& quantumRegisterLabel, const std::vector<bool>& initialStateOfAncillaryQubits, const InlinedQubitInformation& sharedInliningInformation);
 
         /**
-         * Promote the added preliminary ancillary qubits to "actual" ancillary qubits in the quantum computation.
-         * @remark After the promotion of the preliminary ancillary qubits was performed no further qubits can be added to the quantum computation.
+         * Promote all quantum registers defined to storing ancillary qubits and preliminarily marked as ancillary ones to storing "actual" ancillary qubits in the quantum computation.
+         * @remark After the successful completion of this operation no further qubits/quantum registers can be added to the quantum computation.
          */
-        void promotePreliminaryAncillaryQubitsToDefinitiveAncillaryQubits();
+        void promoteQuantumRegistersPreliminaryMarkedAsStoringAncillaryQubitsToDefinitivelyStoringAncillaryQubits();
 
         /**
          * Determine the label of a qubit based on its location and the associated variable layout of the SyReC variable stored in the quantum register that stores the qubit.
@@ -359,11 +378,12 @@ namespace syrec {
 
             /**
              * Store basic variable layout information of a quantum register as well as the quantum registers label.
+             * @param typeOfQubitsStoredInQuantumRegister The type of qubits stored in the quantum register with the latter only being allowed to store qubits of the same type.
              * @param storedQubitIndices The stored qubit range of the quantum register.
              * @param quantumRegisterLabel The label of the quantum register.
              */
-            BaseQuantumRegisterVariableLayout(const QubitIndexRange storedQubitIndices, std::string quantumRegisterLabel):
-                storedQubitIndices(storedQubitIndices), quantumRegisterLabel(std::move(quantumRegisterLabel)) {}
+            BaseQuantumRegisterVariableLayout(const QubitType typeOfQubitsStoredInQuantumRegister, const QubitIndexRange storedQubitIndices, std::string quantumRegisterLabel):
+                typeOfQubitsStoredInQuantumRegister(typeOfQubitsStoredInQuantumRegister), storedQubitIndices(storedQubitIndices), quantumRegisterLabel(std::move(quantumRegisterLabel)) {}
 
             virtual ~BaseQuantumRegisterVariableLayout() = default;
             // Prevent object slicing when trying to copy assign or copy construct base class object from derived class object.
@@ -387,14 +407,15 @@ namespace syrec {
              */
             [[nodiscard]] unsigned getNumberOfQubitsInQuantumRegister() const { return storedQubitIndices.lastQubitIndex - storedQubitIndices.firstQubitIndex + 1U; }
 
+            QubitType       typeOfQubitsStoredInQuantumRegister;
             QubitIndexRange storedQubitIndices;
             std::string     quantumRegisterLabel;
         };
 
         /**
-         * A container for the layout of a syrec::Variable in a quantum register with the qubits of the latter assumed to not be ancillary qubits.
+         * A container for the layout of a syrec::Variable stored in a quantum register.
          */
-        struct NonAncillaryQuantumRegisterVariableLayout final: BaseQuantumRegisterVariableLayout {
+        struct QuantumRegisterForVariableLayout final: BaseQuantumRegisterVariableLayout {
             /**
              * Determine various information about a given qubit in the variable layout of the quantum register.
              * @param qubit The qubit whose quantum register variable layout information should be determined.
@@ -410,14 +431,18 @@ namespace syrec {
             [[nodiscard]] std::optional<std::vector<unsigned>> getRequiredValuesPerDimensionToAccessQubitOfVariable(qc::Qubit qubit) const;
 
             /**
-             * Create a new variable layout for a non-ancillary quantum register storing the qubits of a syrec::Variable.
-             * @param coveredQubitIndicesOfQuantumRegister The covered qubit index range of the ancillary quantum register. The first qubit index is assumed to be less than or equal to the last qubit index.
-             * @param quantumRegisterLabel The label of the ancillary quantum register. Must not be empty.
-             * @param numValuesPerDimensionOfVariable The number of values per dimension of the associated syrec::Variable.
-             * @param qubitSizeOfElementInVariable The bitwidth of every element in the syrec::Variable.
+             * Create a new variable layout for a quantum register storing the qubits of a syrec::Variable.
+             * @param typeOfQubitsGeneratedForVariable The type of qubits to be generated for the variable.
+             * @param coveredQubitIndicesOfQuantumRegister The covered qubit index range of the quantum register. The first qubit index is assumed to be less than or equal to the last qubit index.
+             * @param quantumRegisterLabel The label of the quantum register. Must not be empty.
+             * @param numValuesPerDimensionOfVariable Defines the number of values stored in each dimension of the associated variable.
+             * @param elementQubitSize The qubit size of the elements stored in the variable.
              * @param optionalSharedInlinedQubitInformation The optional inline qubit information shared by all qubits of the quantum register.
+             *
+             * @note A SyReC variable declared as 'in a[2][3][4](6)' will cause the generation of the following quantum register:
+             * The total number of qubits is determined as the product sum of the \p numValuesPerDimensionOfVariable (2*3*4) multiplied with the \p elementQubitSize thus a total quantum register storing 144 qubits is created.
              */
-            NonAncillaryQuantumRegisterVariableLayout(QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, unsigned qubitSizeOfElementInVariable, const std::optional<InlinedQubitInformation>& optionalSharedInlinedQubitInformation);
+            QuantumRegisterForVariableLayout(QubitType typeOfQubitsGeneratedForVariable, QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const std::vector<unsigned>& numValuesPerDimensionOfVariable, unsigned elementQubitSize, const std::optional<InlinedQubitInformation>& optionalSharedInlinedQubitInformation);
 
             unsigned                               elementQubitSize;
             std::vector<unsigned>                  numValuesPerDimensionOfVariable;
@@ -428,7 +453,7 @@ namespace syrec {
         /**
          * A container for the layout of an ancillary quantum register.
          */
-        struct AncillaryQuantumRegisterVariableLayout final: BaseQuantumRegisterVariableLayout {
+        struct AggregateAncillaryQubitsQuantumRegisterLayout final: BaseQuantumRegisterVariableLayout {
             /**
              * Determine various information about a given qubit in the variable layout of the quantum register.
              * @param qubit The qubit whose quantum register variable layout information should be determined.
@@ -450,7 +475,7 @@ namespace syrec {
              * @param quantumRegisterLabel The label of the ancillary quantum register. Must not be empty.
              * @param sharedInlinedQubitInformation The inline qubit information of the associated qubit index range.
              */
-            AncillaryQuantumRegisterVariableLayout(QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const InlinedQubitInformation& sharedInlinedQubitInformation);
+            AggregateAncillaryQubitsQuantumRegisterLayout(QubitIndexRange coveredQubitIndicesOfQuantumRegister, const std::string& quantumRegisterLabel, const InlinedQubitInformation& sharedInlinedQubitInformation);
 
             struct SharedQubitRangeInlineInformation {
                 QubitIndexRange         coveredQubitIndexRange;

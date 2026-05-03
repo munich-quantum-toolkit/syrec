@@ -74,7 +74,8 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
     def start_import(
         self,
         path_to_json_file: Path,
-        expected_input_state_size: int,
+        expected_n_data_qubits: int,
+        expected_max_n_qubits: int,
         worker_send_queue_batch_size: int = DEFAULT_MEDIUM_QUEUE_SIZE,
     ) -> None:
         self._title_lbl.setText(
@@ -82,12 +83,12 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         )
         self._import_origin_info_lbl.setText(f"Import source: {path_to_json_file!s}")
 
-        if worker_send_queue_batch_size < 1 or expected_input_state_size < 1:
+        if worker_send_queue_batch_size < 1 or expected_n_data_qubits < 1 or expected_max_n_qubits < 1:
             show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.ERROR,
                 message_box_parent=self,
                 message_box_title="Invalid input parameters detected",
-                message_box_content=f"Expected worker send queue batch size (value={worker_send_queue_batch_size}) and expected input state size(value={expected_input_state_size}) to be a positive integers!",
+                message_box_content=f"Expected worker send queue batch size (value={worker_send_queue_batch_size}), the expected number of data qubits (value={expected_n_data_qubits}) as well as the expected maximum number of qubits (value={expected_max_n_qubits}) to be a positive integers!",
                 is_cancellable=False,
             )
             super().reject()
@@ -102,7 +103,8 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         # instead of subclassing QThread which executes its slots in the thread in which the QThread was created and might not execute its own event loop.
         self._worker = SimulationRunJsonImportWorker(
             path_to_json_file,
-            expected_input_state_size,
+            expected_n_data_qubits,
+            expected_max_n_qubits,
             worker_send_queue_config=QueueConfig(
                 queue_instance=self._worker_send_queue, queue_batch_size=self._worker_send_queue_batch_size
             ),

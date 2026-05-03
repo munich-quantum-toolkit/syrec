@@ -155,7 +155,7 @@ TEST(SimpleSimulationTests, SimulationOfSwapOperationWithOnlySomeControlQubitsSe
 
 TEST(SimpleSimulationTests, SimulationWithMoreInputValuesProvidedThanQubitsInQuantumComputation) {
     AnnotatableQuantumComputation  quantumComputation;
-    const std::optional<qc::Qubit> qubitIndex = quantumComputation.addPreliminaryAncillaryRegisterOrAppendToAdjacentOne("q0", {false}, AnnotatableQuantumComputation::InlinedQubitInformation());
+    const std::optional<qc::Qubit> qubitIndex = quantumComputation.addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne("q0", {false}, AnnotatableQuantumComputation::InlinedQubitInformation());
     ASSERT_TRUE(qubitIndex.has_value());
     ASSERT_EQ(0, *qubitIndex);
 
@@ -168,11 +168,11 @@ TEST(SimpleSimulationTests, SimulationWithMoreInputValuesProvidedThanQubitsInQua
 
 TEST(SimpleSimulationTests, SimulationWithLessInputValuesProvidedThanQubitsInQuantumComputation) {
     AnnotatableQuantumComputation  quantumComputation;
-    const std::optional<qc::Qubit> qubitOneIndex = quantumComputation.addPreliminaryAncillaryRegisterOrAppendToAdjacentOne("q0", {false}, AnnotatableQuantumComputation::InlinedQubitInformation());
+    const std::optional<qc::Qubit> qubitOneIndex = quantumComputation.addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne("q0", {false}, AnnotatableQuantumComputation::InlinedQubitInformation());
     ASSERT_TRUE(qubitOneIndex.has_value());
     ASSERT_EQ(0, *qubitOneIndex);
 
-    const std::optional<qc::Qubit> qubitTwoIndex = quantumComputation.addPreliminaryAncillaryRegisterOrAppendToAdjacentOne("q1", {false}, AnnotatableQuantumComputation::InlinedQubitInformation());
+    const std::optional<qc::Qubit> qubitTwoIndex = quantumComputation.addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne("q1", {false}, AnnotatableQuantumComputation::InlinedQubitInformation());
     ASSERT_TRUE(qubitTwoIndex.has_value());
     ASSERT_EQ(1, *qubitTwoIndex);
 
@@ -185,11 +185,11 @@ TEST(SimpleSimulationTests, SimulationWithLessInputValuesProvidedThanQubitsInQua
 
 TEST(SimpleSimulationTests, SimulationRuntimePropertySet) {
     AnnotatableQuantumComputation  quantumComputation;
-    const std::optional<qc::Qubit> qubitOneIndex = quantumComputation.addPreliminaryAncillaryRegisterOrAppendToAdjacentOne("q0", {false}, AnnotatableQuantumComputation::InlinedQubitInformation());
+    const std::optional<qc::Qubit> qubitOneIndex = quantumComputation.addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne("q0", {false}, AnnotatableQuantumComputation::InlinedQubitInformation());
     ASSERT_TRUE(qubitOneIndex.has_value());
     ASSERT_EQ(0, *qubitOneIndex);
 
-    const std::optional<qc::Qubit> qubitTwoIndex = quantumComputation.addPreliminaryAncillaryRegisterOrAppendToAdjacentOne("q1", {false}, AnnotatableQuantumComputation::InlinedQubitInformation());
+    const std::optional<qc::Qubit> qubitTwoIndex = quantumComputation.addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne("q1", {false}, AnnotatableQuantumComputation::InlinedQubitInformation());
     ASSERT_TRUE(qubitTwoIndex.has_value());
     ASSERT_EQ(1, *qubitTwoIndex);
 

@@ -49,12 +49,14 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
     def __init__(
         self,
         path_to_json_file: Path,
-        expected_input_state_size: int,
+        expected_n_data_qubits: int,
+        expected_max_n_qubits: int,
         worker_send_queue_config: QueueConfig[SimulationRunModel],
     ) -> None:
         super().__init__(worker_send_queue_config)
         self._path_to_json_file: Final[Path] = path_to_json_file
-        self._expected_input_state_size: Final[int] = expected_input_state_size
+        self._expected_n_data_qubits: Final[int] = expected_n_data_qubits
+        self._expected_max_n_qubits: Final[int] = expected_max_n_qubits
 
     @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
     def start_import(self) -> None:
@@ -84,7 +86,7 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
 
                     self.send_queue.put_nowait(
                         SimulationRunJsonImportWorker._try_deserialize_simulation_run(
-                            self._expected_input_state_size, arr_elem
+                            self._expected_n_data_qubits, self._expected_max_n_qubits, arr_elem
                         )
                     )
                     n_remaining_input_states_to_import_in_batch -= 1
@@ -123,13 +125,23 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
     @override
     def _assert_valid_user_provided_parameter_values(self) -> None:
         super()._assert_valid_user_provided_parameter_values()
-        if self._expected_input_state_size < 1:
-            msg = f"Expected input state size must be a positive integer but was actually {self._expected_input_state_size}!"
+        if self._expected_n_data_qubits < 1:
+            msg = f"Expected the number of data qubits in the quantum computation to be a positive integer but was actually {self._expected_n_data_qubits}!"
+            raise ValueError(msg)
+
+        if self._expected_max_n_qubits < 1:
+            msg = f"Expected the total number of qubits in the quantum computation to be a positive integer but was actually {self._expected_max_n_qubits}!"
+            raise ValueError(msg)
+
+        if self._expected_n_data_qubits > self._expected_max_n_qubits:
+            msg = f"Expected the number of data qubits ({self._expected_n_data_qubits}) to be smaller or equal to the number of total qubits ({self._expected_max_n_qubits}) in the quantum computation!"
             raise ValueError(msg)
 
     @staticmethod
     def _try_deserialize_simulation_run(
-        expected_state_size: int, parsed_json_elem_values_dict: dict[str, Any]
+        expected_n_data_qubits: int,
+        max_num_qubits_in_input_or_output_state: int,
+        parsed_json_elem_values_dict: dict[str, Any],
     ) -> SimulationRunModel:
         if INPUT_STATE_JSON_KEY not in parsed_json_elem_values_dict:
             msg = f"Values of input state (expected json key '{INPUT_STATE_JSON_KEY}') was not defined in json object!"
@@ -140,8 +152,9 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
             msg = f"Expected input state (expected json key '{INPUT_STATE_JSON_KEY}') to be defined as a string but was actually {type(raw_input_state_json_value)}"
             raise TypeError(msg)
 
-        if len(raw_input_state_json_value) != expected_state_size:
-            msg = f"Parsed input state size (n={len(raw_input_state_json_value)}) did not match expected input state size (n={expected_state_size})!"
+        length_of_imported_input_state: Final[int] = len(raw_input_state_json_value)
+        if length_of_imported_input_state not in {expected_n_data_qubits, max_num_qubits_in_input_or_output_state}:
+            msg = f"Parsed input state size (n={length_of_imported_input_state}) must either match the number of data qubits ({expected_n_data_qubits}) or the total number of qubits {max_num_qubits_in_input_or_output_state} in the associated quantum computation!"
             raise ValueError(msg)
 
         if any(qubit_value not in {"0", "1"} for qubit_value in raw_input_state_json_value):
@@ -155,24 +168,31 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
                 msg = f"Expected output state (expected json key '{EXPECTED_OUTPUT_STATE_JSON_KEY}') to be defined as a string but was actually {type(raw_expected_output_state)}"
                 raise TypeError(msg)
 
-            if len(raw_expected_output_state) != expected_state_size:
-                msg = f"Parsed expected output state size (n={len(raw_expected_output_state)}) did not match expected input state size (n={expected_state_size})!"
+            length_of_imported_output_state: Final[int] = len(raw_expected_output_state)
+            if length_of_imported_output_state not in {expected_n_data_qubits, max_num_qubits_in_input_or_output_state}:
+                msg = f"Parsed output state size (n={length_of_imported_output_state}) must either match the number of data qubits ({expected_n_data_qubits}) or the total number of qubits {max_num_qubits_in_input_or_output_state} in the associated quantum computation!"
                 raise ValueError(msg)
+
+            if length_of_imported_output_state != length_of_imported_input_state:
+                msg = f"Size of imported output state (n={length_of_imported_output_state}) must match the size of the imported input state (n={length_of_imported_input_state})!"
+                raise ValueError(msg)
+
             if any(qubit_value not in {"0", "1"} for qubit_value in raw_expected_output_state):
                 msg = f"Qubit values of expected output state must be defined as an enumeration of '0' and '1' literals combined without any delimiter (i.e. a 4 qubit state must be defined as '0101') but was actually {raw_expected_output_state}"
                 raise ValueError(msg)
 
-            expected_output_state = NBitValuesContainer(expected_state_size)
-            for i in range(expected_state_size):
+            expected_output_state = NBitValuesContainer(max_num_qubits_in_input_or_output_state)
+            for i in range(expected_n_data_qubits):
                 expected_output_state.set(i, raw_expected_output_state[i] != "0")
 
-        input_state: NBitValuesContainer = NBitValuesContainer(expected_state_size)
-        for i in range(expected_state_size):
+        input_state: NBitValuesContainer = NBitValuesContainer(max_num_qubits_in_input_or_output_state)
+        for i in range(expected_n_data_qubits):
             input_state.set(i, raw_input_state_json_value[i] != "0")
 
         return SimulationRunModel(
             input_state,
             expected_output_state,
             actual_output_state=None,
+            n_data_qubits_in_state=expected_n_data_qubits,
             create_new_n_bit_values_container_instances=False,
         )
