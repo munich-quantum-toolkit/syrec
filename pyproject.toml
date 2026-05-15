@@ -1,9 +1,9 @@
 [build-system]
 requires = [
-    "nanobind~=2.11.0",
+    "nanobind~=2.12.0",
     "scikit-build-core>=0.12.2",
     "setuptools-scm>=9.2.2",
-    "mqt.core~=3.4.1",
+    "mqt.core~=3.6.0",
 ]
 build-backend = "scikit_build_core.build"
 
@@ -40,7 +40,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "mqt.core~=3.4.1",
+    "mqt.core~=3.6.0",
     "PyQt6>=6.8",
     "ijson>=3.4.0",
     "typing-extensions>=4.1.0; python_version < '3.11'"
@@ -327,10 +327,10 @@ mqt-syrec = { workspace = true }
 
 [dependency-groups]
 build = [
-    "nanobind~=2.11.0",
+    "nanobind~=2.12.0",
     "scikit-build-core>=0.12.2",
     "setuptools-scm>=9.2.2",
-    "mqt.core~=3.4.1",
+    "mqt.core~=3.6.0",
 ]
 docs = [
     "furo>=2025.9.25",
