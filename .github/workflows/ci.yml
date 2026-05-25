@@ -25,16 +25,16 @@ jobs:
       matrix:
         runs-on: [ubuntu-24.04, ubuntu-24.04-arm]
         compiler: [gcc]
-        config: [Release]
+        preset: [release]
         include:
           - runs-on: ubuntu-24.04
             compiler: gcc
-            config: Debug
+            preset: debug
     uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-cpp-tests-ubuntu.yml@143bf51e7192c31e76abafe58e3732c5aff9c69b # v2.0.1
     with:
       runs-on: ${{ matrix.runs-on }}
       compiler: ${{ matrix.compiler }}
-      config: ${{ matrix.config }}
+      preset-name: ${{ matrix.preset }}
 
   cpp-tests-macos:
     name: 🇨‌ Test 🍎
@@ -45,16 +45,16 @@ jobs:
       matrix:
         runs-on: [macos-26, macos-26-intel]
         compiler: [clang]
-        config: [Release]
+        preset: [release]
         include:
           - runs-on: macos-26
             compiler: clang
-            config: Debug
+            preset: debug
     uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-cpp-tests-macos.yml@143bf51e7192c31e76abafe58e3732c5aff9c69b # v2.0.1
     with:
       runs-on: ${{ matrix.runs-on }}
       compiler: ${{ matrix.compiler }}
-      config: ${{ matrix.config }}
+      preset-name: ${{ matrix.preset }}
 
   cpp-tests-windows:
     name: 🇨‌ Test 🏁
@@ -65,12 +65,12 @@ jobs:
       matrix:
         runs-on: [windows-2025, windows-11-arm]
         compiler: [msvc]
-        config: [Release]
+        preset: [release-windows]
     uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-cpp-tests-windows.yml@143bf51e7192c31e76abafe58e3732c5aff9c69b # v2.0.1
     with:
       runs-on: ${{ matrix.runs-on }}
       compiler: ${{ matrix.compiler }}
-      config: ${{ matrix.config }}
+      preset-name: ${{ matrix.preset }}
 
   cpp-coverage:
     name: 🇨‌ Coverage
@@ -89,7 +89,6 @@ jobs:
     with:
       build-project: true
       clang-version: 20
-      cmake-args: -DBUILD_MQT_SYREC_BINDINGS=ON
       files-changed-only: true
       install-pkgs: "nanobind==2.12.0"
       setup-python: true
