@@ -20,7 +20,6 @@ else:
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 if TYPE_CHECKING:
-    from PyQt6 import QtGui
 
     from mqt.syrec import AnnotatableQuantumComputation
 
