@@ -60,7 +60,6 @@ templates_path = ["_templates"]
 
 extensions = [
     "myst_nb",
-    "sphinx_autodoc_typehints",
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx.ext.autodoc",
