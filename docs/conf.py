@@ -48,9 +48,9 @@ if TYPE_CHECKING:
 # -- Project information -----------------------------------------------------
 
 project = "MQT SyReC Synthesizer"
-author = "Chair for Design Automation, TUM & Munich Quantum Software Company"
+author = "Chair for Design Automation, TUM & Munich Quantum Software Company GmbH"
 language = "en"
-project_copyright = "2023 - 2026 Chair for Design Automation, TUM & 2025 - 2026 Munich Quantum Software Company"
+project_copyright = "2023 - 2026 Chair for Design Automation, TUM & 2025 - 2026 Munich Quantum Software Company GmbH"
 
 # -- General configuration ---------------------------------------------------
 
@@ -60,19 +60,19 @@ templates_path = ["_templates"]
 
 extensions = [
     "myst_nb",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.mathjax",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.autosectionlabel",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.githubpages",
-    "sphinxcontrib.bibtex",
+    "sphinx_autodoc_typehints",
     "sphinx_copybutton",
     "sphinx_design",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosectionlabel",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.githubpages",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinxcontrib.bibtex",
     "sphinxext.opengraph",
-    "sphinx_autodoc_typehints",
 ]
 
 source_suffix = [".rst", ".md"]
