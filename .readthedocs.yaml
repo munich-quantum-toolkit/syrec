@@ -14,7 +14,6 @@ build:
     - cmake
     - graphviz
     - inkscape
-    - libboost-all-dev
 
 python:
   install:
