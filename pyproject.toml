@@ -282,13 +282,6 @@ test-skip = [
 # excluding the shared libraries from the repair process.
 
 [tool.cibuildwheel.linux]
-before-all = [
-    "curl -L -O https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz",
-    "tar -xzf boost_1_*",
-    "cd boost_1_*/",
-    "./bootstrap.sh",
-    "./b2 install --with-system"
-]
 environment = { DEPLOY="ON" }
 # The SOVERSION needs to be updated when the shared libraries are updated.
 repair-wheel-command = """auditwheel repair -w {dest_dir} {wheel} \
