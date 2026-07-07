@@ -101,23 +101,29 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         self._worker_thread = QtCore.QThread()
         self._worker.moveToThread(self._worker_thread)
         self._worker.batchCompleted.connect(
-            self._handle_generated_input_state_batch, QtCore.Qt.ConnectionType.QueuedConnection
+            self._handle_generated_input_state_batch,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
         )
         self._worker.finished.connect(
-            self._handle_input_state_generator_finished, QtCore.Qt.ConnectionType.QueuedConnection
+            self._handle_input_state_generator_finished,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
         )
         self._worker.failed.connect(
-            self._handle_input_state_generator_failure, QtCore.Qt.ConnectionType.QueuedConnection
+            self._handle_input_state_generator_failure,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
         )
 
-        self._worker_thread.started.connect(self._worker.start_generation, QtCore.Qt.ConnectionType.QueuedConnection)
+        self._worker_thread.started.connect(
+            self._worker.start_generation,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+        )
         self._worker_thread.finished.connect(self._worker_thread.deleteLater)
         self._worker_thread.finished.connect(self._reset_workers)
         self._worker_thread.start(QtCore.QThread.Priority.LowPriority)
         self._change_dialog_cancel_button_enable_state(should_button_be_enabled=True)
 
     @override
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, a0: QtGui.QCloseEvent | None) -> None:
         # Ask for confirmation before closing
         if self._handle_input_state_generation_cancel_button_click():
             if not self._error_text_lbl.text():
@@ -125,8 +131,8 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
             else:
                 # Avoid requiring duplicate confirmation of close operation by calling reject() function of super class instead of overridden reject function.
                 super().reject()
-        else:
-            event.ignore()
+        elif a0 is not None:
+            a0.ignore()
 
     # Pressing the ESC key will only close the dialog but not close it thus no closeEvent will be triggered.
     @override
@@ -134,11 +140,11 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         if self._handle_input_state_generation_cancel_button_click():
             super().reject()
 
-    @QtCore.pyqtSlot(Exception)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(Exception)
     def _handle_input_state_generator_failure(self, err: Exception) -> None:
         self._handle_non_recoverable_error(err)
 
-    @QtCore.pyqtSlot(float)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(float)
     def _handle_generated_input_state_batch(self, batch_generation_duration_in_seconds: float) -> None:
         if self._stop_processing_recv_batches:
             return
@@ -164,7 +170,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
 
         QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
 
-    @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(bool)
     def _handle_input_state_generator_finished(self, was_cancellation_requested: bool) -> None:
         info_msg: Final[str] = "Input state generator finished!"
         self._progress_info_text_lbl.setText(info_msg)
@@ -182,7 +188,7 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         self._change_dialog_ok_button_enable_state(should_button_be_enabled=True)
         self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def _handle_input_state_generation_cancel_button_click(self) -> bool:
         if self._worker is None:
             return True

@@ -40,7 +40,7 @@ class AllInputStatesGeneratorWorker(CancellableProducerWorker[SimulationRunModel
         self._num_qubits_per_generated_state: Final[int] = num_qubits_per_generated_state
         self._data_qubits_lookup: Final[DataQubitsLookup] = data_qubits_lookup
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def start_generation(self) -> None:
         batch_start_timestamp: float = 0
         batch_timestamps: BatchTimestamps | None = None

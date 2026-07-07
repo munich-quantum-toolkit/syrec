@@ -87,15 +87,15 @@ class SimulationRunModel:
         else:
             self.input_state = NBitValuesContainer(input_state.size())
             for qubit in range(input_state.size()):
-                self.input_state.set(qubit, input_state.test(qubit))  # type: ignore[arg-type]
+                self.input_state.set(qubit, bool(input_state.test(qubit)))
             if expected_output_state is not None:
                 self.expected_output_state = NBitValuesContainer(expected_output_state.size())
                 for qubit in range(expected_output_state.size()):
-                    self.expected_output_state.set(qubit, expected_output_state.test(qubit))  # type: ignore[arg-type]
+                    self.expected_output_state.set(qubit, bool(expected_output_state.test(qubit)))
             if actual_output_state is not None:
                 self.actual_output_state = NBitValuesContainer(actual_output_state.size())
                 for qubit in range(actual_output_state.size()):
-                    self.actual_output_state.set(qubit, actual_output_state.test(qubit))  # type: ignore[arg-type]
+                    self.actual_output_state.set(qubit, bool(actual_output_state.test(qubit)))
 
     def initialize_expected_output_state_as_copy_of_input_state(self) -> None:
         if self.expected_output_state is not None:
@@ -103,7 +103,7 @@ class SimulationRunModel:
 
         self.expected_output_state = NBitValuesContainer(self.input_state.size())
         for i in range(self.expected_output_state.size()):
-            self.expected_output_state.set(i, self.input_state.test(i))  # type: ignore[arg-type]
+            self.expected_output_state.set(i, bool(self.input_state.test(i)))
 
     def reset_result_of_execution(self, *, reset_actual_output_state: bool = True) -> None:
         if reset_actual_output_state:
@@ -131,7 +131,7 @@ class SimulationRunModel:
             self.actual_output_state = NBitValuesContainer(self.input_state.size())
 
         for i in range(self.actual_output_state.size()):
-            self.actual_output_state.set(i, actual_output_state.test(i))  # type: ignore[arg-type]
+            self.actual_output_state.set(i, bool(actual_output_state.test(i)))
 
         self.do_expected_and_actual_outputs_match = do_expected_and_actual_output_states_match
         self.execution_runtime_in_ms = execution_runtime_in_ms
@@ -164,7 +164,7 @@ class SimulationRunModel:
         did_input_state_change: bool = False
         for i in range(self.input_state.size()):
             did_input_state_change |= self.input_state.test(i) != edited_input_state.test(i)
-            self.input_state.set(i, edited_input_state.test(i))  # type: ignore[arg-type]
+            self.input_state.set(i, bool(edited_input_state.test(i)))
 
         # If the edited input state does not match the current input state of this instance then reset the previously determined simulation run execution results
         # since they were based on the current input state
@@ -179,7 +179,7 @@ class SimulationRunModel:
             if self.expected_output_state is None:
                 self.expected_output_state = NBitValuesContainer(self.input_state.size())
             for i in range(self.expected_output_state.size()):
-                self.expected_output_state.set(i, edited_expected_output_state.test(i))  # type: ignore[arg-type]
+                self.expected_output_state.set(i, bool(edited_expected_output_state.test(i)))
             # We do not need to reset the actual output state since its value depends only on the input state
             self.reset_result_of_execution(reset_actual_output_state=False)
 
@@ -238,9 +238,9 @@ class SimulationRunModel:
 
 
 # Example delegate: https://stackoverflow.com/questions/53105343/is-it-possible-to-add-a-custom-widget-into-a-qlistview
-class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
+class QtSimulationRunModel(QtCore.QAbstractListModel):
     def __init__(
-        self, annotatable_quantum_computation: AnnotatableQuantumComputation, parent: QtCore.QObject = None
+        self, annotatable_quantum_computation: AnnotatableQuantumComputation, parent: QtCore.QObject | None = None
     ) -> None:
         super().__init__(parent)
         self._simulation_run_models: list[SimulationRunModel] = []
@@ -285,11 +285,11 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         return unsorted_qreg_layouts
 
     @override
-    def rowCount(self, parent: QtCore.QModelIndex) -> int:
-        return 0 if parent.isValid() else len(self._simulation_run_models)
+    def rowCount(self, parent: QtCore.QModelIndex | None = None) -> int:
+        return 0 if parent is not None and parent.isValid() else len(self._simulation_run_models)
 
     @override
-    def data(self, index: QtCore.QModelIndex, role: int) -> Any | None:
+    def data(self, index: QtCore.QModelIndex, role: int = QtCore.Qt.ItemDataRole.DisplayRole) -> Any | None:
         if not index.isValid():
             return None
 
@@ -395,7 +395,7 @@ class QtSimulationRunModel(QtCore.QAbstractListModel):  # type: ignore[misc]
         self.dataChanged.emit(index, index)
 
     def is_model_index_valid(self, index: QtCore.QModelIndex) -> bool:
-        return index.isValid() and index.row() < len(self._simulation_run_models)  # type: ignore[no-any-return]
+        return index.isValid() and index.row() < len(self._simulation_run_models)
 
     @staticmethod
     def _build_data_qubits_lookup(

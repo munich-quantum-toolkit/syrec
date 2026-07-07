@@ -44,7 +44,7 @@ class QueueConfig(Generic[QueueElemType]):
     queue_batch_size: int
 
 
-class CancellableProducerWorker(QtCore.QObject, Generic[SendQueueElemType]):  # type: ignore[misc]
+class CancellableProducerWorker(QtCore.QObject, Generic[SendQueueElemType]):
     """
     Defines a worker executing a long running operation producing batches of elements.
 

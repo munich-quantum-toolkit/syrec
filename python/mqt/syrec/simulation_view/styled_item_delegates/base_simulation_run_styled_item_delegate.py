@@ -149,7 +149,7 @@ class BaseSimulationRunStyledItemDelegate:
         painter.setFont(bold_font)
         painter.setPen(text_color)
 
-        font_metrics: QtCore.QFontMetrics = painter.fontMetrics()
+        font_metrics: QtGui.QFontMetrics = painter.fontMetrics()
         available_column_width: int = text_rect.width()
         elided_text: str = font_metrics.elidedText(text, QtCore.Qt.TextElideMode.ElideRight, available_column_width)
 
@@ -162,7 +162,11 @@ class BaseSimulationRunStyledItemDelegate:
 
     @staticmethod
     def _paint_rect_edge_points(
-        painter: QtGui.QPainter, rect: QtCore.QRect, font_size: int, color: QtGui.QColor, simulation_run_number: int
+        painter: QtGui.QPainter,
+        rect: QtCore.QRect,
+        font_size: int,
+        color: QtGui.QColor | QtCore.Qt.GlobalColor,
+        simulation_run_number: int,
     ) -> None:
         painter.save()
         custom_pen = QtGui.QPen(color)

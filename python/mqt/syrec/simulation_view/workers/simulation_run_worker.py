@@ -61,7 +61,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
         self._data_qubits_lookup: Final[DataQubitsLookup] = data_qubits_lookup
         self._should_stop_at_first_output_state_mismatch: Final[bool] = stop_at_first_output_state_mismatch
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def start_simulations(self) -> None:
         curr_sim_run_num: int = 0
         request_more_queue_size_threshold: Final[int] = int(self._recv_queue_batch_size * 0.2)

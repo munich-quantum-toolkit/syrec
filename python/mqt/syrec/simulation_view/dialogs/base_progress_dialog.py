@@ -36,7 +36,7 @@ DEFAULT_WORKER_CONTINUE_DELAY_IN_MS: Final[int] = 250
 WorkerType = TypeVar("WorkerType", bound=CancellableProducerWorker[Any] | CancellableProducerConsumerWorker[Any, Any])
 
 
-class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignore[misc]
+class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):
     """
     Base class for progress dialogs with worker thread management.
 
@@ -171,7 +171,7 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):  # type: ignor
         """Handle non-recoverable errors. Must be implemented by subclasses."""
         return
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def _allow_worker_to_continue(self) -> None:
         """Signal to the worker that it can continue with its long running operation."""
         if self._worker is None:
