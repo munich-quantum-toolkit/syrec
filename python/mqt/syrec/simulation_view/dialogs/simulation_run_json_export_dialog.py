@@ -127,16 +127,26 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         )
         self._worker_thread = QtCore.QThread()
         self._worker.moveToThread(self._worker_thread)
-        self._worker.batchCompleted.connect(self._handle_batch_exported, QtCore.Qt.ConnectionType.QueuedConnection)
-        self._worker.requestingData.connect(
-            self._enqueue_next_simulation_runs_to_export, QtCore.Qt.ConnectionType.QueuedConnection
+        self._worker.batchCompleted.connect(
+            self._handle_batch_exported,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
         )
-        self._worker.finished.connect(self._handle_export_completion, QtCore.Qt.ConnectionType.QueuedConnection)
-        self._worker.failed.connect(self._handle_export_failure, QtCore.Qt.ConnectionType.QueuedConnection)
+        self._worker.requestingData.connect(
+            self._enqueue_next_simulation_runs_to_export,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+        )
+        self._worker.finished.connect(
+            self._handle_export_completion,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+        )
+        self._worker.failed.connect(
+            self._handle_export_failure,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+        )
 
         self._worker_thread.started.connect(
             self._worker.start_export,
-            QtCore.Qt.ConnectionType.QueuedConnection,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
         )
         self._worker_thread.finished.connect(self._worker_thread.deleteLater)
         self._worker_thread.finished.connect(self._reset_workers)
@@ -151,7 +161,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
             super().reject()
 
     @override
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, a0: QtGui.QCloseEvent | None) -> None:
         # Ask for confirmation before closing
         if self._handle_export_to_file_cancel_button_click():
             if not self._error_text_lbl.text():
@@ -159,14 +169,14 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
             else:
                 # Avoid requiring duplicate confirmation of close operation by calling reject() function of super class instead of overridden reject function.
                 super().reject()
-        else:
-            event.ignore()
+        elif a0 is not None:
+            a0.ignore()
 
-    @QtCore.pyqtSlot(Exception)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(Exception)
     def _handle_export_failure(self, err: Exception) -> None:
         self._handle_non_recoverable_error(err)
 
-    @QtCore.pyqtSlot(float)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(float)
     def _handle_batch_exported(self, batch_generation_duration_in_seconds: float) -> None:
         batch_data: ExportedBatchData = ExportedBatchData(exported_sim_runs=0, skipped_sim_runs=0)
         try:
@@ -205,7 +215,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         )
         QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def _enqueue_next_simulation_runs_to_export(self) -> None:
         try:
             for i in range(
@@ -224,7 +234,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
                 f"Error during enqueue of new simulation runs, reason: {SimulationRunJsonExportDialog._stringify_error(err)}"
             )
 
-    @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(bool)
     def _handle_export_completion(self, was_cancellation_requested: bool) -> None:
         self._progress_info_text_lbl.setText("Simulation run export finished!")
         log_info_to_console("Simulation run export finished!")
@@ -242,7 +252,7 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
         self._change_dialog_ok_button_enable_state(should_button_be_enabled=True)
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def _handle_export_to_file_cancel_button_click(self) -> bool:
         if self._worker is None:
             return True

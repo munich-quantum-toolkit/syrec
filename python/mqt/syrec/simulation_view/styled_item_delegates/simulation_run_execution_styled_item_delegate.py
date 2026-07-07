@@ -62,8 +62,8 @@ OUTPUTS_MATCH_UNKNOWN_TEXT: Final[str] = "UNKNOWN"
 
 
 # Progress bar delegate C++ example: https://doc.qt.io/qt-6/qtnetwork-torrent-example.html
-class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelegate, QtWidgets.QStyledItemDelegate):  # type: ignore[misc]
-    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
+class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelegate, QtWidgets.QStyledItemDelegate):
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
 
     @staticmethod
@@ -212,8 +212,10 @@ class SimulationRunExecutionStyledItemDelegate(BaseSimulationRunStyledItemDelega
         )
 
     @override
-    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
-        if not index.isValid() or option.rect.width() == 0:
+    def paint(
+        self, painter: QtGui.QPainter | None, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex
+    ) -> None:
+        if painter is None or not index.isValid() or option.rect.width() == 0:
             return
 
         n_qregs: int = len(index.data(QUANTUM_REGISTER_LAYOUT_QT_ROLE))

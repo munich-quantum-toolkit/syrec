@@ -12,7 +12,7 @@ import re
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -71,7 +71,7 @@ class SimulationRunExecutionMode(Enum):
     RUN_SINGLE = 2
 
 
-class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
+class QuantumCircuitSimulationDialog(QtWidgets.QDialog):
     # We would like to reuse the regex in multiple one-time use dialog instances. Additionally, the regex is used only once in these instances so declaring the
     # regex as an instance variable seems wasteful. Whether a compiled or non-compiled regex should be used would have to be benchmarked.
     __syrec_program_comment_regex: re.Pattern[str] = re.compile("|".join(map(re.escape, [r"//", r"/*"])))
@@ -139,9 +139,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             "Check input-output mapping combinations from file",
         )
 
-        self.layout = QtWidgets.QVBoxLayout()
-        self.layout.addWidget(self._simulation_runs_tab_widget)
-        self.setLayout(self.layout)
+        dialog_layout = QtWidgets.QVBoxLayout()
+        dialog_layout.addWidget(self._simulation_runs_tab_widget)
+        self.setLayout(dialog_layout)
         self.setSizeGripEnabled(True)
 
     def show_save_changes_reminder(self) -> None:
@@ -174,7 +174,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         *,
         create_load_from_file_controls: bool = False,
     ) -> QtWidgets.QWidget:
-        tab_wrapper_widget = QtWidgets.QFrame(objectName=tab_widget_object_name)
+        tab_wrapper_widget = QtWidgets.QFrame()
+        tab_wrapper_widget.setObjectName(tab_widget_object_name)
         tab_wrapper_widget_layout = QtWidgets.QVBoxLayout()
         tab_wrapper_widget.setLayout(tab_wrapper_widget_layout)
         tab_wrapper_widget.setAutoFillBackground(True)
@@ -187,7 +188,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             tab_wrapper_widget_layout.addSpacing(manual_y_space_size)
 
         # BEGIN: Create simulation runs list view Qt elements
-        simulation_runs_list_view = QtWidgets.QListView(objectName=SIMULATION_RUNS_LIST_VIEW_NAME)
+        simulation_runs_list_view = QtWidgets.QListView()
+        simulation_runs_list_view.setObjectName(SIMULATION_RUNS_LIST_VIEW_NAME)
         simulation_runs_list_view.setModel(shared_simulation_runs_model)
         simulation_runs_list_view.setItemDelegate(SimulationRunOverviewStyledItemDelegate())
         simulation_runs_list_view.setUniformItemSizes(True)
@@ -199,7 +201,11 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_runs_list_view.setVerticalScrollMode(QtWidgets.QAbstractItemView.ScrollMode.ScrollPerPixel)
         # Select with click on item, unselect with Ctrl+Click on already selected item (see https://doc.qt.io/qt-6/qabstractitemview.html#SelectionMode-enum)
         simulation_runs_list_view.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        simulation_runs_list_view.selectionModel().selectionChanged.connect(self.handle_simulation_run_selection_change)
+
+        selection_model = simulation_runs_list_view.selectionModel()
+        assert selection_model is not None
+        simulation_runs_list_view_selection_model: Final[QtCore.QItemSelectionModel] = selection_model
+        simulation_runs_list_view_selection_model.selectionChanged.connect(self.handle_simulation_run_selection_change)
 
         simulation_runs_list_scrollarea = QtWidgets.QScrollArea()
         simulation_runs_list_scrollarea.setAutoFillBackground(False)
@@ -223,8 +229,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_runs_list_modification_buttons_layout.addStretch()
 
         add_simulation_run_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd), "Add simulation run", objectName=ADD_SIM_RUN_BTN_NAME
+            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd), "Add simulation run"
         )
+        add_simulation_run_button.setObjectName(ADD_SIM_RUN_BTN_NAME)
         add_simulation_run_button.setEnabled(not create_load_from_file_controls)
         add_simulation_run_button.clicked.connect(self.handle_simulation_run_add_btn_click)
         simulation_runs_list_modification_buttons_layout.addWidget(add_simulation_run_button)
@@ -232,8 +239,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         edit_simulation_run_button = QtWidgets.QPushButton(
             QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentProperties),
             "Edit simulation run",
-            objectName=EDIT_SIM_RUN_BTN_NAME,
         )
+        edit_simulation_run_button.setObjectName(EDIT_SIM_RUN_BTN_NAME)
         edit_simulation_run_button.setEnabled(False)
         edit_simulation_run_button.clicked.connect(self.handle_simulation_run_edit_btn_click)
         simulation_runs_list_modification_buttons_layout.addWidget(edit_simulation_run_button)
@@ -241,8 +248,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         delete_simulation_run_button = QtWidgets.QPushButton(
             QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditDelete),
             "Delete simulation run",
-            objectName=DELETE_SIM_RUN_BTN_NAME,
         )
+        delete_simulation_run_button.setObjectName(DELETE_SIM_RUN_BTN_NAME)
         delete_simulation_run_button.setEnabled(False)
         delete_simulation_run_button.clicked.connect(self.handle_simulation_run_delete_btn_click)
         simulation_runs_list_modification_buttons_layout.addWidget(delete_simulation_run_button)
@@ -259,7 +266,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         simulation_runs_execution_buttons_layout.addLayout(sim_run_execution_mode_controls_layout)
 
         sim_run_execution_mode_dropdown_lbl = QtWidgets.QLabel("Simulation run execution mode:")
-        sim_run_execution_mode_dropdown = QtWidgets.QComboBox(objectName=SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME)
+        sim_run_execution_mode_dropdown = QtWidgets.QComboBox()
+        sim_run_execution_mode_dropdown.setObjectName(SIM_RUN_EXECUTION_MODE_DROPDOWN_NAME)
         sim_run_execution_mode_dropdown.insertItem(0, "Run all simulation runs", SimulationRunExecutionMode.RUN_ALL)
         sim_run_execution_mode_dropdown.insertItem(
             1,
@@ -282,8 +290,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         sim_run_execution_trigger_btn = QtWidgets.QPushButton(
             QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.MediaPlaybackStart),
             "Execute simulation runs",
-            objectName=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
         )
+        sim_run_execution_trigger_btn.setObjectName(SIM_RUN_EXECUTION_TRIGGER_BTN_NAME)
         sim_run_execution_trigger_btn.clicked.connect(self._open_simulation_runs_execution_dialog)
         sim_run_execution_trigger_btn.setEnabled(False)
         sim_run_execution_mode_controls_layout.addWidget(sim_run_execution_trigger_btn, 0, 1)
@@ -291,8 +299,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         save_simulation_runs_to_file_button = QtWidgets.QPushButton(
             QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave),
             "Save simulation runs to file",
-            objectName=SAVE_SIM_RUNS_TO_FILE_BTN_NAME,
         )
+        save_simulation_runs_to_file_button.setObjectName(SAVE_SIM_RUNS_TO_FILE_BTN_NAME)
         save_simulation_runs_to_file_button.clicked.connect(self.handle_sim_run_save_to_file_btn_click)
         save_simulation_runs_to_file_button.setEnabled(False)
         save_simulation_runs_to_file_button.setToolTip(
@@ -323,16 +331,19 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             super().reject()
 
     @override
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, a0: QtGui.QCloseEvent | None) -> None:
         # Ask for confirmation before closing
-        self.accept() if self.show_close_confirmation_dialog_and_return_boolean_user_choice() else event.ignore()
+        if self.show_close_confirmation_dialog_and_return_boolean_user_choice():
+            self.accept()
+        elif a0 is not None:
+            a0.ignore()
 
-    @QtCore.pyqtSlot(QtCore.QItemSelection, QtCore.QItemSelection)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(QtCore.QItemSelection, QtCore.QItemSelection)
     def handle_simulation_run_selection_change(
         self,
         selected: QtCore.QItemSelection,
         deselected: QtCore.QItemSelection,
-        optional_tab_widget_to_apply_selection_change_to: QtWidgets.QTabWidget | None = None,
+        optional_tab_widget_to_apply_selection_change_to: QtWidgets.QWidget | None = None,
     ) -> None:
         # We want to only update the simulation run execution controls in case that a selected simulation run was deselected without selecting a new simulation run or vice versa.
         # In all other cases leave the enabled state of the simulation run controls the same by simply returning from this function.
@@ -352,7 +363,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             return
 
         is_list_item_selected: bool = not selected.isEmpty() and deselected.isEmpty()
-        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        assert optional_curr_active_tab_widget is not None
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = optional_curr_active_tab_widget
 
         optional_add_simulation_run_btn: QtWidgets.QPushButton | None = curr_active_tab_widget.findChild(
             QtWidgets.QPushButton, ADD_SIM_RUN_BTN_NAME
@@ -375,15 +387,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        add_simulation_run_btn: Final[QtWidgets.QWidget] = cast(
-            "QtWidgets.QPushButton", optional_add_simulation_run_btn
-        )
-        edit_simulation_run_btn: Final[QtWidgets.QWidget] = cast(
-            "QtWidgets.QPushButton", optional_edit_simulation_run_btn
-        )
-        delete_simulation_run_btn: Final[QtWidgets.QWidget] = cast(
-            "QtWidgets.QPushButton", optional_delete_simulation_run_btn
-        )
+        add_simulation_run_btn: Final[QtWidgets.QWidget] = optional_add_simulation_run_btn
+        edit_simulation_run_btn: Final[QtWidgets.QWidget] = optional_edit_simulation_run_btn
+        delete_simulation_run_btn: Final[QtWidgets.QWidget] = optional_delete_simulation_run_btn
 
         add_simulation_run_btn.setEnabled(not is_list_item_selected)
         edit_simulation_run_btn.setEnabled(is_list_item_selected)
@@ -392,7 +398,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             curr_active_tab_widget, is_simulation_run_selected=is_list_item_selected
         )
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def handle_simulation_run_add_btn_click(self) -> None:
         self._simulation_runs_model.add_simulation_run_model(
             SimulationRunModel(
@@ -412,7 +418,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        assert optional_curr_active_tab_widget is not None
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = optional_curr_active_tab_widget
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
             curr_active_tab_widget, should_controls_be_enabled=True
         )
@@ -437,12 +444,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        simulation_runs_list_view: Final[QtWidgets.QListView] = cast(
-            "QtWidgets.QListView", optional_simulation_runs_list_view
-        )
+        simulation_runs_list_view: Final[QtWidgets.QListView] = optional_simulation_runs_list_view
         simulation_runs_list_view.scrollToBottom()
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def handle_simulation_run_edit_btn_click(self) -> None:
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self._simulation_runs_tab_widget.currentWidget()
         optional_simulation_runs_list_view: QtWidgets.QListView | None = (
@@ -458,9 +463,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        simulation_runs_list_view: Final[QtWidgets.QWidget] = cast(
-            "QtWidgets.QListView", optional_simulation_runs_list_view
-        )
+        assert optional_simulation_runs_list_view is not None
+        simulation_runs_list_view: Final[QtWidgets.QWidget] = optional_simulation_runs_list_view
 
         reference_sim_run_model: SimulationRunModel = simulation_runs_list_view.currentIndex().data(
             SIMULATION_RUN_IO_STATE_QT_ROLE
@@ -495,7 +499,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._simulation_run_editor_dialog.finished.connect(self.handle_simulation_run_editor_dialog_close)
         self._simulation_run_editor_dialog.show()
 
-    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(int)
     def handle_simulation_run_editor_dialog_close(self, result: int) -> None:
         # This should not happen but is checked nevertheless
         if self._simulation_run_editor_dialog is None or result == QtWidgets.QDialog.DialogCode.Rejected:
@@ -518,7 +522,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         finally:
             self._simulation_run_editor_dialog = None
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def handle_sim_run_save_to_file_btn_click(self) -> None:
         if self._simulation_run_export_to_file_dialog is not None:
             show_and_request_ok_in_optionally_cancellable_notification(
@@ -549,11 +553,11 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self._simulation_run_export_to_file_dialog.show()
 
-    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(int)
     def handle_sim_run_export_to_file_dialog_close(self, _: int) -> None:
         self._simulation_run_export_to_file_dialog = None
 
-    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(int)
     def handle_open_and_start_all_input_states_generator_dialog(self, num_qubits_per_generated_state: int) -> None:
         if self._all_input_states_generator_dialog is not None:
             show_and_request_ok_in_optionally_cancellable_notification(
@@ -573,7 +577,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._all_input_states_generator_dialog.show()
         self._all_input_states_generator_dialog.start_generation(num_qubits_per_generated_state)
 
-    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(int)
     def handle_input_states_generator_dialog_close(self, result: int) -> None:
         self._all_input_states_generator_dialog = None
 
@@ -585,7 +589,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        assert optional_curr_active_tab_widget is not None
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = optional_curr_active_tab_widget
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
             curr_active_tab_widget, should_controls_be_enabled=(result == QtWidgets.QDialog.DialogCode.Accepted)
         )
@@ -605,7 +610,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             ),
         )
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def handle_simulation_run_delete_btn_click(self) -> None:
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self._simulation_runs_tab_widget.currentWidget()
         optional_simulation_runs_list_view: QtWidgets.QListView | None = (
@@ -621,10 +626,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
-        simulation_runs_list_view: Final[QtWidgets.QWidget] = cast(
-            "QtWidgets.QListView", optional_simulation_runs_list_view
-        )
+        assert optional_curr_active_tab_widget is not None
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = optional_curr_active_tab_widget
+        assert optional_simulation_runs_list_view is not None
+        simulation_runs_list_view: Final[QtWidgets.QWidget] = optional_simulation_runs_list_view
 
         if not self._simulation_runs_model.delete_simulation_run_model(simulation_runs_list_view.currentIndex()):
             return
@@ -639,13 +644,15 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             curr_active_tab_widget, should_controls_be_enabled=False
         )
 
+        simulation_runs_list_view_model = simulation_runs_list_view.model()
+        assert simulation_runs_list_view_model is not None
+        simulation_runs_list_view_model_row_count = simulation_runs_list_view_model.rowCount(QtCore.QModelIndex())
+
         QuantumCircuitSimulationDialog._set_enabled_state_of_simulation_run_execution_control_btn_in_tab_based_on_sim_run_execution_mode(
             error_dialog_parent=self,
             curr_active_tab_widget=curr_active_tab_widget,
             object_name_identifying_targeted_btn=SIM_RUN_EXECUTION_TRIGGER_BTN_NAME,
-            enabled_state_of_targeted_btn_in_single_sim_run_execution_mode=simulation_runs_list_view.model().rowCount(
-                QtCore.QModelIndex()
-            )
+            enabled_state_of_targeted_btn_in_single_sim_run_execution_mode=simulation_runs_list_view_model_row_count
             > 0,
             enabled_state_of_targeted_btn_in_other_sim_run_execution_modes=False,
         )
@@ -657,9 +664,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         info_label = QtWidgets.QLabel("File to load simulation runs from:")
         controls_layout.addWidget(info_label)
 
-        selected_file_name_label = QtWidgets.QLabel(
-            IMPORT_FROM_FILE_NO_FILE_SELECTED_PLACEHOLDER_TEXT, objectName=LOADED_FROM_FILE_INPUT_FIELD_NAME
-        )
+        selected_file_name_label = QtWidgets.QLabel(IMPORT_FROM_FILE_NO_FILE_SELECTED_PLACEHOLDER_TEXT)
+        selected_file_name_label.setObjectName(LOADED_FROM_FILE_INPUT_FIELD_NAME)
         selected_file_name_label.setEnabled(False)
         controls_layout.addWidget(selected_file_name_label)
 
@@ -670,8 +676,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         trigger_load_from_file_button = QtWidgets.QPushButton(
             QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentOpen),
             "Load from file",
-            objectName=IMPORT_FROM_FILE_BUTTON_NAME,
         )
+        trigger_load_from_file_button.setObjectName(IMPORT_FROM_FILE_BUTTON_NAME)
         trigger_load_from_file_button.clicked.connect(self.open_import_from_file_dialog)
         trigger_load_from_file_button.setEnabled(False)
         trigger_load_from_file_button.setToolTip("""
@@ -720,7 +726,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         controls_layout.addStretch()
         return controls_layout
 
-    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(int)
     def handle_simulation_runs_tab_widget_tab_changed(self, switched_to_tab_index: int) -> None:
         if switched_to_tab_index == -1:
             return
@@ -753,10 +759,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 self._simulation_runs_tab_widget.setCurrentIndex(self._prev_active_simulation_runs_tab_idx)
             return
 
-        prev_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_prev_active_tab_widget)
-        to_be_switched_to_tab_widget: Final[QtWidgets.QWidget] = cast(
-            "QtWidgets.QWidget", optional_to_be_switched_to_tab_widget
-        )
+        assert optional_prev_active_tab_widget is not None
+        prev_active_tab_widget: Final[QtWidgets.QWidget] = optional_prev_active_tab_widget
+        assert optional_to_be_switched_to_tab_widget is not None
+        to_be_switched_to_tab_widget: Final[QtWidgets.QWidget] = optional_to_be_switched_to_tab_widget
 
         if self._simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0:
             if not show_and_request_ok_in_optionally_cancellable_notification(
@@ -790,9 +796,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
 
             self.handle_open_and_start_all_input_states_generator_dialog(self._expected_max_n_qubits_in_quantum_comp)
 
-        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
-            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown_in_switched_to_tab
-        )
+        assert optional_sim_run_exec_mode_dropdown_in_switched_to_tab is not None
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = optional_sim_run_exec_mode_dropdown_in_switched_to_tab
         # Setting an invalid current index will not throw an error but sets the current index to -1.
         # With the assumption that the selectable simulation run execution modes in the ComboBox do not change at runtime
         # and our override of the selection change slot of the ComboBox not changing the selected index then invalid dropdown indices
@@ -803,7 +808,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         )
         self._prev_active_simulation_runs_tab_idx = switched_to_tab_index
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def _open_simulation_runs_execution_dialog(self) -> None:
         if self._simulation_run_dialog is not None:
             show_and_request_ok_in_optionally_cancellable_notification(
@@ -843,12 +848,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        simulation_runs_list_view: Final[QtWidgets.QListView] = cast(
-            "QtWidgets.QListView", optional_simulation_runs_list_view
-        )
-        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
-            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
-        )
+        assert optional_simulation_runs_list_view is not None
+        simulation_runs_list_view: Final[QtWidgets.QListView] = optional_simulation_runs_list_view
+        assert optional_sim_run_exec_mode_dropdown is not None
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = optional_sim_run_exec_mode_dropdown
 
         selected_sim_run_model_idx: QtCore.QModelIndex | None = None
         curr_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = sim_run_exec_mode_dropdown.currentData()
@@ -899,11 +902,11 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             case _:
                 assert_never(curr_sim_run_exec_mode)
 
-    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(int)
     def handle_simulation_runs_dialog_close(self, _: int) -> None:
         self._simulation_run_dialog = None
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def open_import_file_selector(self) -> None:
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "Select a file to import simulation runs from", str(Path.home()), "Json files (*.json)"
@@ -937,13 +940,15 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        selected_filename_lbl: Final[QtWidgets.QLabel] = cast("QtWidgets.QLabel", optional_selected_filename_lbl)
-        load_from_file_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_load_from_file_btn)
+        assert optional_selected_filename_lbl is not None
+        selected_filename_lbl: Final[QtWidgets.QLabel] = optional_selected_filename_lbl
+        assert optional_load_from_file_btn is not None
+        load_from_file_btn: Final[QtWidgets.QPushButton] = optional_load_from_file_btn
 
         selected_filename_lbl.setText(filename)
         load_from_file_btn.setEnabled(True)
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def open_import_from_file_dialog(self) -> None:
         if self._simulation_run_import_from_file_dialog is not None:
             show_and_request_ok_in_optionally_cancellable_notification(
@@ -972,8 +977,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        selected_filename_lbl: Final[QtWidgets.QLabel] = cast("QtWidgets.QLabel", optional_selected_filename_lbl)
-        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
+        assert optional_selected_filename_lbl is not None
+        selected_filename_lbl: Final[QtWidgets.QLabel] = optional_selected_filename_lbl
+        assert optional_curr_active_tab_widget is not None
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = optional_curr_active_tab_widget
         if self._simulation_runs_model.rowCount(QtCore.QModelIndex()) > 0:
             if not show_and_request_ok_in_optionally_cancellable_notification(
                 message_box_type=MessageBoxType.WARNING,
@@ -997,7 +1004,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
             expected_max_n_qubits=self._expected_max_n_qubits_in_quantum_comp,
         )
 
-    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(int)
     def handle_import_from_file_dialog_close(self, result: int) -> None:
         self._simulation_run_import_from_file_dialog = None
 
@@ -1018,10 +1025,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
-        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
-            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
-        )
+        assert optional_curr_active_tab_widget is not None
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = optional_curr_active_tab_widget
+        assert optional_sim_run_exec_mode_dropdown is not None
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = optional_sim_run_exec_mode_dropdown
         curr_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = sim_run_exec_mode_dropdown.currentData()
         should_simulation_run_execution_controls_be_enabled: Final[bool] = (
             result == QtWidgets.QDialog.DialogCode.Accepted
@@ -1043,7 +1050,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        add_sim_run_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_add_sim_run_btn)
+        add_sim_run_btn: Final[QtWidgets.QPushButton] = optional_add_sim_run_btn
         add_sim_run_btn.setEnabled(result == QtWidgets.QDialog.DialogCode.Accepted)
 
     def set_enabled_state_of_simulation_run_execution_controls_in_tab_widget(
@@ -1071,15 +1078,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        run_simulation_runs_btn: Final[QtWidgets.QPushButton] = cast(
-            "QtWidgets.QPushButton", optional_run_simulation_runs_btn
-        )
-        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
-            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
-        )
-        save_simulation_runs_to_file_btn: Final[QtWidgets.QPushButton] = cast(
-            "QtWidgets.QPushButton", optional_save_simulation_runs_to_file_btn
-        )
+        run_simulation_runs_btn: Final[QtWidgets.QPushButton] = optional_run_simulation_runs_btn
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = optional_sim_run_exec_mode_dropdown
+        save_simulation_runs_to_file_btn: Final[QtWidgets.QPushButton] = optional_save_simulation_runs_to_file_btn
 
         run_simulation_runs_btn.setEnabled(should_controls_be_enabled)
         sim_run_exec_mode_dropdown.setEnabled(should_controls_be_enabled)
@@ -1112,15 +1113,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        run_simulation_runs_btn: Final[QtWidgets.QPushButton] = cast(
-            "QtWidgets.QPushButton", optional_run_simulation_runs_btn
-        )
-        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
-            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
-        )
-        save_simulation_runs_to_file_btn: Final[QtWidgets.QPushButton] = cast(
-            "QtWidgets.QPushButton", optional_save_simulation_runs_to_file_btn
-        )
+        run_simulation_runs_btn: Final[QtWidgets.QPushButton] = optional_run_simulation_runs_btn
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = optional_sim_run_exec_mode_dropdown
+        save_simulation_runs_to_file_btn: Final[QtWidgets.QPushButton] = optional_save_simulation_runs_to_file_btn
 
         curr_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = sim_run_exec_mode_dropdown.currentData()
         if curr_sim_run_exec_mode is None:
@@ -1187,15 +1182,18 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        add_sim_run_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_add_sim_run_btn)
-        edit_sim_run_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_edit_sim_run_btn)
-        delete_sim_run_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_delete_sim_run_btn)
+        assert optional_add_sim_run_btn is not None
+        add_sim_run_btn: Final[QtWidgets.QPushButton] = optional_add_sim_run_btn
+        assert optional_edit_sim_run_btn is not None
+        edit_sim_run_btn: Final[QtWidgets.QPushButton] = optional_edit_sim_run_btn
+        assert optional_delete_sim_run_btn is not None
+        delete_sim_run_btn: Final[QtWidgets.QPushButton] = optional_delete_sim_run_btn
 
         add_sim_run_btn.setEnabled(associated_tab_widget.objectName() != LOAD_SIM_RUNS_FROM_FILE_TAB_WIDGET_NAME)
         edit_sim_run_btn.setEnabled(False)
         delete_sim_run_btn.setEnabled(False)
 
-    @QtCore.pyqtSlot(int)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(int)
     def handle_simulation_run_execution_mode_selection_change(self, selected_sim_run_index: int) -> None:
         self._shared_selected_sim_run_execution_mode_dropdown_index = selected_sim_run_index
         optional_curr_active_tab_widget: QtWidgets.QWidget | None = self._simulation_runs_tab_widget.widget(
@@ -1215,10 +1213,10 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        curr_active_tab_widget: Final[QtWidgets.QWidget] = cast("QtWidgets.QWidget", optional_curr_active_tab_widget)
-        simulation_runs_list_view: Final[QtWidgets.QListView] = cast(
-            "QtWidgets.QListView", optional_simulation_runs_list_view
-        )
+        assert optional_curr_active_tab_widget is not None
+        curr_active_tab_widget: Final[QtWidgets.QWidget] = optional_curr_active_tab_widget
+        assert optional_simulation_runs_list_view is not None
+        simulation_runs_list_view: Final[QtWidgets.QListView] = optional_simulation_runs_list_view
         self.set_enabled_state_of_simulation_run_execution_controls_in_tab_widget_based_on_sim_run_selection_status(
             curr_active_tab_widget, is_simulation_run_selected=(len(simulation_runs_list_view.selectedIndexes()) == 1)
         )
@@ -1235,11 +1233,13 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        simulation_runs_list_view: Final[QtWidgets.QListView] = cast(
-            "QtWidgets.QListView", optional_simulation_runs_list_view
-        )
+        simulation_runs_list_view: Final[QtWidgets.QListView] = optional_simulation_runs_list_view
+
+        selection_model = simulation_runs_list_view.selectionModel()
+        assert selection_model is not None
+        simulation_runs_list_view_selection_model: Final[QtCore.QItemSelectionModel] = selection_model
         selection_prior_to_model_reset: Final[QtCore.QItemSelection] = (
-            simulation_runs_list_view.selectionModel().selection()
+            simulation_runs_list_view_selection_model.selection()
         )
 
         # During the model reset the beginModelReset emitted by the simulation runs model will disconnect the associated QListView from the selection model,
@@ -1250,7 +1250,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self._simulation_runs_model.delete_all_simulation_run_models()
 
         selection_after_model_reset: Final[QtCore.QItemSelection] = (
-            simulation_runs_list_view.selectionModel().selection()
+            simulation_runs_list_view_selection_model.selection()
         )
         # The tab changed signal is emitted after the tab already changed thus the QWidget.currentWidget() will return the already switched to tab widget while we want to reset the selection
         # in the switched from tab widget.
@@ -1285,10 +1285,8 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):  # type: ignore[misc]
         ):
             return
 
-        targeted_btn: Final[QtWidgets.QPushButton] = cast("QtWidgets.QPushButton", optional_targeted_btn)
-        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = cast(
-            "QtWidgets.QComboBox", optional_sim_run_exec_mode_dropdown
-        )
+        targeted_btn: Final[QtWidgets.QPushButton] = optional_targeted_btn
+        sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = optional_sim_run_exec_mode_dropdown
 
         curr_selected_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = (
             sim_run_exec_mode_dropdown.currentData()

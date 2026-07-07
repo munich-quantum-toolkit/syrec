@@ -123,20 +123,30 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         # At runtime Qt could decide at runtime whether a direct or queued connection is required based on the thread affinity between the connected signal and slot but
         # we try to mark this behaviour explicitly by defining the signal-slot connection as a queued connection.
         self._worker.batchCompleted.connect(
-            self._handle_imported_sim_run_batch, QtCore.Qt.ConnectionType.QueuedConnection
+            self._handle_imported_sim_run_batch,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
         )
         # The worker thread executing the long running worker operation will still continue running after the 'finished' signal of the worker was received thus
         # we need to manually handle the correct cancellation of the worker thread
-        self._worker.finished.connect(self._handle_import_completion, QtCore.Qt.ConnectionType.QueuedConnection)
+        self._worker.finished.connect(
+            self._handle_import_completion,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+        )
         # Assuming that we are correctly catching all errors of the long running worker operation in the function execution said operation (executed in the worker thread)
         # the worker will emit a signal containing the caught error with the worker thread still running thus again we need to manually handle its cancellation
-        self._worker.failed.connect(self._handle_importer_failure, QtCore.Qt.ConnectionType.QueuedConnection)
+        self._worker.failed.connect(
+            self._handle_importer_failure,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+        )
 
         # We initially tried to move the constructor parameters of the SimulationRunJsonImportWorker to the function executing the long running operation by using a lambda
         # that will trigger the latter but since python lambdas seemingly do not have thread affinity (https://stackoverflow.com/a/28626472) the lambda is executed in the main
         # thread and thus the long running operation would be executed in the main thread blocking the GUI and potentially causing thread starvation if generated batches need to
         # be acknowledged.
-        self._worker_thread.started.connect(self._worker.start_import, QtCore.Qt.ConnectionType.QueuedConnection)
+        self._worker_thread.started.connect(
+            self._worker.start_import,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+        )
         # Since we are manually triggering the worker thread shutdown, after the worker thread has finished the associated QThread should be deleted
         self._worker_thread.finished.connect(self._worker_thread.deleteLater)
         # Additionally we 'clean' up the worker and worker thread instances (by setting them to None) after the worker thread has finished
@@ -152,7 +162,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
             super().reject()
 
     @override
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, a0: QtGui.QCloseEvent | None) -> None:
         # Ask for confirmation before closing
         if self._handle_import_from_file_cancel_button_click():
             if not self._error_text_lbl.text():
@@ -160,14 +170,14 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
             else:
                 # Avoid requiring duplicate confirmation of close operation by calling reject() function of super class instead of overridden reject function.
                 super().reject()
-        else:
-            event.ignore()
+        elif a0 is not None:
+            a0.ignore()
 
-    @QtCore.pyqtSlot(Exception)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(Exception)
     def _handle_importer_failure(self, err: Exception) -> None:
         self._handle_non_recoverable_error(err)
 
-    @QtCore.pyqtSlot(float)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(float)
     def _handle_imported_sim_run_batch(self, batch_generation_duration_in_seconds: float) -> None:
         if self._stop_processing_recv_batches:
             return
@@ -195,7 +205,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
             self._progress_bar.setValue(self._num_imported_simulation_runs)
         QtCore.QTimer.singleShot(DEFAULT_WORKER_CONTINUE_DELAY_IN_MS, self._allow_worker_to_continue)
 
-    @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(bool)
     def _handle_import_completion(self, was_cancellation_requested: bool) -> None:
         self._progress_info_text_lbl.setText("Simulation run import finished!")
         log_info_to_console("Simulation run import finished!")
@@ -210,7 +220,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
         self._change_dialog_ok_button_enable_state(should_button_be_enabled=True)
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def _handle_import_from_file_cancel_button_click(self) -> bool:
         if self._worker is None:
             return True

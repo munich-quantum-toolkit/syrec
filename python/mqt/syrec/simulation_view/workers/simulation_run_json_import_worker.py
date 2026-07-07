@@ -58,7 +58,7 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
         self._expected_n_data_qubits: Final[int] = expected_n_data_qubits
         self._expected_max_n_qubits: Final[int] = expected_max_n_qubits
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def start_import(self) -> None:
         batch_start_timestamp: float = SimulationRunJsonImportWorker.get_timestamp()
         batch_timestamps: BatchTimestamps | None = None
@@ -73,7 +73,7 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
                 # to be a property of the top level element (i.e. the path to the 'simulationRuns' element is relative to the top level element).
                 # Additionally, with the postfix '.item', only the entries of a JSON array are processed. If the 'simulationRuns' entry value is no
                 # array then no objects will be parsed.
-                parser = ijson.items(file, prefix=f"{SIMULATION_RUNS_JSON_KEY}.item")
+                parser = ijson.items(file, prefix=f"{SIMULATION_RUNS_JSON_KEY}.item")  # ty: ignore[unresolved-attribute]
                 for arr_elem in parser:
                     # the ison.items(...) function converts JSON objects to python dictionaries (https://pypi.org/project/ijson/#options). However, we
                     # need to discard any other type of JSON elements (integers, strings, array, etc.) by checking whether we are actually processing a

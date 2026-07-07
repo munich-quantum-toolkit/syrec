@@ -42,13 +42,13 @@ MODEL_UPDATE_RUNTIME_FORMAT: Final[str] = (
 
 # Instead of iterating through all rows of a QAbstractItemView (in our case the QListView displaying all simulation run models) and setting them hidden, implement a proxy model for the
 # QAbstractItemView that does only display the simulation run model of interest.
-class SimulationRunFilterModel(QtCore.QSortFilterProxyModel):  # type: ignore[misc]
+class SimulationRunFilterModel(QtCore.QSortFilterProxyModel):
     def __init__(self, parent: QtCore.QObject, idx_of_sim_run_model_of_interest: QtCore.QModelIndex) -> None:
         super().__init__(parent)
         self._idx_of_sim_run_model_of_interest: QtCore.QModelIndex = idx_of_sim_run_model_of_interest
 
     @override
-    def filterAcceptsRow(self, source_row: int, _: QtCore.QModelIndex) -> bool:
+    def filterAcceptsRow(self, source_row: int, source_parent: QtCore.QModelIndex) -> bool:
         return (
             source_row == self._idx_of_sim_run_model_of_interest.row()
             if self._idx_of_sim_run_model_of_interest.isValid()
@@ -214,17 +214,26 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
 
         self._worker_thread = QtCore.QThread()
         self._worker.moveToThread(self._worker_thread)
-        self._worker_thread.started.connect(self._worker.start_simulations, QtCore.Qt.ConnectionType.QueuedConnection)
+        self._worker_thread.started.connect(
+            self._worker.start_simulations,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+        )
         self._worker.finished.connect(
-            self._handle_all_simulation_run_executions_done, QtCore.Qt.ConnectionType.QueuedConnection
+            self._handle_all_simulation_run_executions_done,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
         )
         self._worker.batchCompleted.connect(
-            self._handle_simulation_run_execution_batch_done, QtCore.Qt.ConnectionType.QueuedConnection
+            self._handle_simulation_run_execution_batch_done,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
         )
         self._worker.requestingData.connect(
-            self._enqueue_next_simulation_runs, QtCore.Qt.ConnectionType.QueuedConnection
+            self._enqueue_next_simulation_runs,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
         )
-        self._worker.failed.connect(self._handle_simulation_runs_failure, QtCore.Qt.ConnectionType.QueuedConnection)
+        self._worker.failed.connect(
+            self._handle_simulation_runs_failure,
+            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+        )
 
         self._worker_thread.finished.connect(self._worker_thread.deleteLater)
         self._worker_thread.finished.connect(self._reset_workers)
@@ -240,7 +249,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             super().reject()
 
     @override
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, a0: QtGui.QCloseEvent | None) -> None:
         # Ask for confirmation before closing
         if self._handle_simulation_runs_cancel_button_click():
             if not self._error_text_lbl.text():
@@ -248,10 +257,10 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             else:
                 # Avoid requiring duplicate confirmation of close operation by calling reject() function of super class instead of overridden reject function.
                 super().reject()
-        else:
-            event.ignore()
+        elif a0 is not None:
+            a0.ignore()
 
-    @QtCore.pyqtSlot(bool)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(bool)
     def _handle_all_simulation_run_executions_done(self, was_cancellation_requested: bool) -> None:
         self._progress_info_text_lbl.setText("Simulation run execution finished!")
         log_info_to_console("Simulation run execution finished!")
@@ -269,11 +278,11 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self._change_dialog_ok_button_enable_state(should_button_be_enabled=True)
         self._change_dialog_cancel_button_enable_state(should_button_be_enabled=False)
 
-    @QtCore.pyqtSlot(Exception)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(Exception)
     def _handle_simulation_runs_failure(self, err: Exception) -> None:
         self._handle_non_recoverable_error(err)
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def _handle_simulation_runs_cancel_button_click(self) -> bool:
         if self._worker is None:
             return True
@@ -291,7 +300,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
             return True
         return False
 
-    @QtCore.pyqtSlot(float)  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot(float)
     def _handle_simulation_run_execution_batch_done(self, batch_generation_duration_in_seconds: float) -> None:
         if self._stop_processing_recv_batches:
             return
@@ -335,7 +344,7 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         if self._progress_bar is not None:
             self._progress_bar.setValue(self._num_executed_simulation_runs)
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def _enqueue_next_simulation_runs(self) -> None:
         try:
             for i in range(

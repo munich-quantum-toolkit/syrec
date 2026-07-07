@@ -13,7 +13,7 @@ import sys
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final
 
 from mqt.core.ir.operations import OpType
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -82,8 +82,8 @@ def does_qubit_label_start_with_internal_qubit_label_prefix(qubit_label: str) ->
     return qubit_label.startswith("__q")
 
 
-class CircuitLineItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
-    def __init__(self, index: int, width: int, parent: QtWidgets.QWidget | None = None) -> None:
+class CircuitLineItem(QtWidgets.QGraphicsItemGroup):
+    def __init__(self, index: int, width: int, parent: QtWidgets.QGraphicsItem | None = None) -> None:
         QtWidgets.QGraphicsItemGroup.__init__(self, parent)
 
         # Tool Tip
@@ -97,12 +97,12 @@ class CircuitLineItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
             x += e_width
 
 
-class GateItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
+class GateItem(QtWidgets.QGraphicsItemGroup):
     def __init__(
         self,
         annotatable_quantum_computation: AnnotatableQuantumComputation,
         quantum_operation_index: int,
-        parent: QtWidgets.QWidget | None = None,
+        parent: QtWidgets.QGraphicsItem | None = None,
     ) -> None:
         QtWidgets.QGraphicsItemGroup.__init__(self, parent)
         self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
@@ -146,7 +146,7 @@ class GateItem(QtWidgets.QGraphicsItemGroup):  # type: ignore[misc]
             self.addToGroup(control)
 
 
-class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
+class CircuitView(QtWidgets.QGraphicsView):
     qubitLabelClicked = QtCore.pyqtSignal(str)  # noqa: N815
 
     def __init__(
@@ -157,8 +157,10 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
         QtWidgets.QGraphicsView.__init__(self, parent)
 
         # Scene
-        self.setScene(QtWidgets.QGraphicsScene(self))
-        self.scene().setBackgroundBrush(QtGui.QColorConstants.White)
+        graphics_scene = QtWidgets.QGraphicsScene(self)
+        self.setScene(graphics_scene)
+        graphics_scene.setBackgroundBrush(QtGui.QColorConstants.White)
+        self._graphics_scene: QtWidgets.QGraphicsScene = graphics_scene
 
         # Load circuit
         self.annotatable_quantum_computation: AnnotatableQuantumComputation | None = None
@@ -172,7 +174,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
             self.load(annotatable_quantum_computation)
 
     def clear(self) -> None:
-        self.scene().clear()
+        self._graphics_scene.clear()
 
         self.annotatable_quantum_computation = None
         self.non_ancillary_or_garbage_qubits_lookup.clear()
@@ -180,23 +182,24 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
         self.inputs = []
         self.outputs = []
 
-    def mousePressEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:  # noqa: N802
-        graphics_view_position_of_click: QtCore.QPoint = event.pos()
-        item: QtWidgets.QGraphicsTextItem | None = self.itemAt(graphics_view_position_of_click)
+    def mousePressEvent(self, event: QtGui.QMouseEvent | None) -> None:  # noqa: N802
+        if event is not None:
+            graphics_view_position_of_click: QtCore.QPoint = event.pos()
+            item: QtWidgets.QGraphicsItem | None = self.itemAt(graphics_view_position_of_click)
 
-        if item is not None and isinstance(item, QtWidgets.QGraphicsTextItem):
-            destringified_qubit_label: CircuitViewQubitLabel | None = CircuitViewQubitLabel.load_from_string(
-                item.toPlainText()
-            )
-            if destringified_qubit_label is None:
-                show_error_dialog(
-                    "Error handling click on circuit view qubit label",
-                    "Failed to convert the circuit view qubit label\n"
-                    + item.toPlainText()
-                    + "\nto internal DTO. This should not happen!",
+            if item is not None and isinstance(item, QtWidgets.QGraphicsTextItem):
+                destringified_qubit_label: CircuitViewQubitLabel | None = CircuitViewQubitLabel.load_from_string(
+                    item.toPlainText()
                 )
-            elif destringified_qubit_label.associated_qubit not in self.non_ancillary_or_garbage_qubits_lookup:
-                self.qubitLabelClicked.emit(str(destringified_qubit_label))
+                if destringified_qubit_label is None:
+                    show_error_dialog(
+                        "Error handling click on circuit view qubit label",
+                        "Failed to convert the circuit view qubit label\n"
+                        + item.toPlainText()
+                        + "\nto internal DTO. This should not happen!",
+                    )
+                elif destringified_qubit_label.associated_qubit not in self.non_ancillary_or_garbage_qubits_lookup:
+                    self.qubitLabelClicked.emit(str(destringified_qubit_label))
 
         super().mousePressEvent(event)
 
@@ -210,7 +213,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
         for i in range(self.annotatable_quantum_computation.num_qubits):
             line = CircuitLineItem(i, n_quantum_ops)
             self.lines.append(line)
-            self.scene().addItem(line)
+            self._graphics_scene.addItem(line)
 
             circuit_view_qubit_label = CircuitViewQubitLabel(i, "")
             internal_qubit_label: str | None = self.annotatable_quantum_computation.get_qubit_label(
@@ -255,7 +258,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
         for i in range(n_quantum_ops):
             gate = GateItem(self.annotatable_quantum_computation, i)
             gate.setPos(i * 30 + 15, 0)
-            self.scene().addItem(gate)
+            self._graphics_scene.addItem(gate)
 
     def add_line_label(
         self,
@@ -266,7 +269,9 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
         is_ancillary_or_garbage_qubit: bool,
         should_label_be_clickable: bool,
     ) -> QtWidgets.QGraphicsTextItem | None:
-        text_item = self.scene().addText(text)
+        text_item = self._graphics_scene.addText(text)
+        if text_item is None:
+            return None
         text_item.setPlainText(text)
 
         if is_ancillary_or_garbage_qubit:
@@ -275,7 +280,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
             text_item.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse)
 
         if align == QtCore.Qt.AlignmentFlag.AlignRight:
-            x -= text_item.boundingRect().width()
+            x = round(x - text_item.boundingRect().width())
 
         text_item.setPos(x, y - 12)
         return text_item
@@ -289,7 +294,7 @@ class CircuitView(QtWidgets.QGraphicsView):  # type: ignore[misc]
         return QtWidgets.QGraphicsView.wheelEvent(self, event)
 
 
-class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
+class SyReCEditor(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__()
 
@@ -305,7 +310,9 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
 
         self.code_editor_widget: CodeEditor = CodeEditor(parent)
         self.code_editor_widget.setFont(QtGui.QFont("Monospace", 10, QtGui.QFont.Weight.Normal))
-        self.code_editor_widget.highlighter = SyReCHighlighter(self.code_editor_widget.document())
+        code_editor_widget_document = self.code_editor_widget.document()
+        assert code_editor_widget_document is not None
+        self._syntax_highlighter = SyReCHighlighter(code_editor_widget_document)
         self.quantum_circuit_sim_runs_dialog: QuantumCircuitSimulationDialog | None = None
 
         self.setup_actions()
@@ -315,16 +322,16 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         self.title = "SyReC Simulation"
         self.left = 0
         self.top = 0
-        self.width = 600
-        self.height = 400
+        initial_width = 600
+        initial_height = 400
 
         self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, self.width, self.height)
-        self.layout = QtWidgets.QVBoxLayout()
+        self.setGeometry(self.left, self.top, initial_width, initial_height)
+        editor_layout = QtWidgets.QVBoxLayout()
 
         self.table = QtWidgets.QTableWidget()
-        self.layout.addWidget(self.table)
-        self.setLayout(self.layout)
+        editor_layout.addWidget(self.table)
+        self.setLayout(editor_layout)
 
     def setup_actions(self) -> None:
         self.open_action = QtGui.QAction(QtGui.QIcon.fromTheme("document-open"), "&Open...", self)
@@ -363,7 +370,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         self.code_editor_widget.setPlainText(text)
 
     def getText(self) -> str:  # noqa: N802
-        return self.code_editor_widget.toPlainText()  # type: ignore[no-any-return]
+        return self.code_editor_widget.toPlainText()
 
     def update_configurable_options(self) -> None:
         update_configurable_options_modal = ConfigurableOptionsUpdateDialog(
@@ -405,7 +412,7 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
 
     def open_file(self) -> None:
         selected_file_name, _ = QtWidgets.QFileDialog.getOpenFileName(
-            parent=self.parent,
+            parent=self,
             caption="Open Specification",
             filter="SyReC specification (*.src)",
             options=QtWidgets.QFileDialog.Option.ReadOnly,
@@ -534,11 +541,11 @@ class SyReCEditor(QtWidgets.QWidget):  # type: ignore[misc]
         self.quantum_circuit_sim_runs_dialog.show_optional_comments_in_syrec_program_not_supported_notification()
 
 
-class SyReCHighlighter(QtGui.QSyntaxHighlighter):  # type: ignore[misc]
+class SyReCHighlighter(QtGui.QSyntaxHighlighter):
     def __init__(self, parent: QtGui.QTextDocument) -> None:
         QtGui.QSyntaxHighlighter.__init__(self, parent)
 
-        self.highlightingRules = []
+        self.highlightingRules: list[tuple[QtCore.QRegularExpression, QtGui.QTextCharFormat]] = []
 
         keyword_format = QtGui.QTextCharFormat()
         keyword_format.setForeground(QtGui.QColorConstants.DarkBlue)
@@ -565,15 +572,15 @@ class SyReCHighlighter(QtGui.QSyntaxHighlighter):  # type: ignore[misc]
         ]
 
         for pattern in [f"\\b{keyword}\\b" for keyword in keywords]:
-            self.highlightingRules.append([QtCore.QRegularExpression(pattern), keyword_format])
+            self.highlightingRules.append((QtCore.QRegularExpression(pattern), keyword_format))
 
         number_format = QtGui.QTextCharFormat()
         number_format.setForeground(QtGui.QColorConstants.DarkCyan)
-        self.highlightingRules.append([QtCore.QRegularExpression("\\b[0-9]+\\b"), number_format])
+        self.highlightingRules.append((QtCore.QRegularExpression("\\b[0-9]+\\b"), number_format))
 
         loop_format = QtGui.QTextCharFormat()
         loop_format.setForeground(QtGui.QColorConstants.DarkRed)
-        self.highlightingRules.append([QtCore.QRegularExpression("\\$[A-Za-z_0-9]+"), loop_format])
+        self.highlightingRules.append((QtCore.QRegularExpression("\\$[A-Za-z_0-9]+"), loop_format))
 
     def highlightBlock(self, text):  # noqa: N802
         for rule in self.highlightingRules:
@@ -586,7 +593,7 @@ class SyReCHighlighter(QtGui.QSyntaxHighlighter):  # type: ignore[misc]
                 match = expression.match(text, offset=index + length)
 
 
-class LineNumberArea(QtWidgets.QWidget):  # type: ignore[misc]
+class LineNumberArea(QtWidgets.QWidget):
     def __init__(self, editor: CodeEditor) -> None:
         QtWidgets.QWidget.__init__(self, editor)
         self.codeEditor = editor
@@ -594,11 +601,12 @@ class LineNumberArea(QtWidgets.QWidget):  # type: ignore[misc]
     def sizeHint(self) -> QtCore.QSize:  # noqa: N802
         return QtCore.QSize(self.codeEditor.lineNumberAreaWidth(), 0)
 
-    def paintEvent(self, event: QtGui.QPaintEvent) -> None:  # noqa: N802
-        self.codeEditor.lineNumberAreaPaintEvent(event)
+    def paintEvent(self, a0: QtGui.QPaintEvent | None) -> None:  # noqa: N802
+        if a0 is not None:
+            self.codeEditor.lineNumberAreaPaintEvent(a0)
 
 
-class CodeEditor(QtWidgets.QPlainTextEdit):  # type: ignore[misc]
+class CodeEditor(QtWidgets.QPlainTextEdit):
     def __init__(self, parent: Any | None = None) -> None:
         QtWidgets.QPlainTextEdit.__init__(self, parent)
 
@@ -650,10 +658,10 @@ class CodeEditor(QtWidgets.QPlainTextEdit):  # type: ignore[misc]
             max_ /= 10
             digits += 1
 
-        return cast("int", 3 + self.fontMetrics().horizontalAdvance("9") * digits)
+        return 3 + self.fontMetrics().horizontalAdvance("9") * digits
 
-    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:  # noqa: N802
-        QtWidgets.QPlainTextEdit.resizeEvent(self, event)
+    def resizeEvent(self, e: QtGui.QResizeEvent | None) -> None:  # noqa: N802
+        QtWidgets.QPlainTextEdit.resizeEvent(self, e)
 
         cr = self.contentsRect()
         self.lineNumberArea.setGeometry(QtCore.QRect(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height()))
@@ -683,11 +691,13 @@ class CodeEditor(QtWidgets.QPlainTextEdit):  # type: ignore[misc]
         else:
             self.lineNumberArea.update(0, rect.y(), self.lineNumberArea.width(), rect.height())
 
-        if rect.contains(self.viewport().rect()):
+        viewport = self.viewport()
+        assert viewport is not None
+        if rect.contains(viewport.rect()):
             self.updateLineNumberAreaWidth()
 
 
-class LogWidget(QtWidgets.QTreeWidget):  # type: ignore[misc]
+class LogWidget(QtWidgets.QTreeWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         QtWidgets.QTreeWidget.__init__(self, parent)
 
@@ -699,10 +709,9 @@ class LogWidget(QtWidgets.QTreeWidget):  # type: ignore[misc]
         self.addTopLevelItem(item)
 
 
-class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
+class CircuitQubitInlineInformation(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent)
 
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -735,7 +744,9 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
         self.inline_stack_tree_view.setHeaderHidden(True)
 
         self.inline_stack_tree_model = QtGui.QStandardItemModel()
-        self.inline_stack_tree_model_root = self.inline_stack_tree_model.invisibleRootItem()
+        model_root_item = self.inline_stack_tree_model.invisibleRootItem()
+        assert model_root_item is not None
+        self.inline_stack_tree_model_root_item = model_root_item
 
         self.inline_stack_tree_view.setModel(self.inline_stack_tree_model)
         inline_stack_tree_layout.addWidget(self.inline_stack_tree_view_label)
@@ -752,8 +763,7 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
 
         self.toggle_all_inline_information_controls(False)
 
-        self.layout = layout
-        self.setLayout(self.layout)
+        self.setLayout(layout)
 
     def toggle_all_inline_information_controls(self, show_inline_information: bool) -> None:
         self.associated_module_signature_label.setVisible(show_inline_information)
@@ -799,23 +809,24 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
         if inline_stack_size == 0:
             return
 
-        # We know at this point that the inline stack is not empty and thus not None
+        assert inline_stack is not None
+        non_empty_inline_stack: Final[QubitInliningStack] = inline_stack
         self.associated_module_signature_value.setText(
-            inline_stack[inline_stack_size - 1].stringified_signature_of_called_module  # type: ignore[index]
+            non_empty_inline_stack[inline_stack_size - 1].stringified_signature_of_called_module
         )
 
         prev_tree_model_entry = None
         for i in reversed(range(inline_stack_size)):
             # We know at this point that the inline stack is not empty and thus not None
             parent_tree_model_entry = self.create_tree_view_entry_for_inline_stack_entry(
-                inline_stack[i],  # type: ignore[index]
+                non_empty_inline_stack[i],
                 only_print_signature=i == inline_stack_size - 1,
             )
 
             if prev_tree_model_entry is not None:
                 parent_tree_model_entry.appendRow(prev_tree_model_entry)
             prev_tree_model_entry = parent_tree_model_entry
-        self.inline_stack_tree_model_root.appendRow(prev_tree_model_entry)
+        self.inline_stack_tree_model_root_item.appendRow(prev_tree_model_entry)
 
     def clear_inline_data_controls(self) -> None:
         self.associated_module_signature_value.clear()
@@ -857,21 +868,20 @@ class CircuitQubitInlineInformation(QtWidgets.QWidget):  # type: ignore[misc]
         return tree_entry
 
 
-class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
+class CircuitQubitsInformationLookup(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent)
         self.annotatable_quantum_computation: AnnotatableQuantumComputation | None = None
         self.qubits_labels_of_local_variables_lookup: set[str] = set()
 
-        self.layout = QtWidgets.QVBoxLayout(self)
+        self.widget_layout = QtWidgets.QVBoxLayout(self)
 
         header_label_layout = QtWidgets.QHBoxLayout()
         header_label = QtWidgets.QLabel("Ancillary/local SyReC module variable qubit inline information")
         header_label_layout.addStretch()
         header_label_layout.addWidget(header_label)
         header_label_layout.addStretch()
-        self.layout.addLayout(header_label_layout)
+        self.widget_layout.addLayout(header_label_layout)
 
         search_controls_layout = QtWidgets.QHBoxLayout()
         qubit_label_combobox_label = QtWidgets.QLabel("Qubit label: ")
@@ -884,7 +894,7 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         search_controls_layout.addWidget(qubit_label_combobox_label)
         search_controls_layout.addWidget(self.selectable_qubit_labels_combobox)
         search_controls_layout.addStretch()
-        self.layout.addLayout(search_controls_layout)
+        self.widget_layout.addLayout(search_controls_layout)
 
         qubit_info_widget_layout = QtWidgets.QHBoxLayout()
         qubit_info_widget_layout.addStretch()
@@ -892,10 +902,10 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
         qubit_info_widget_layout.addWidget(self.qubit_info_widget)
         qubit_info_widget_layout.addStretch()
 
-        self.layout.addLayout(qubit_info_widget_layout)
-        self.layout.addStretch(1)
+        self.widget_layout.addLayout(qubit_info_widget_layout)
+        self.widget_layout.addStretch(1)
 
-        self.setLayout(self.layout)
+        self.setLayout(self.widget_layout)
 
     def reset_combobox(self) -> None:
         self.selectable_qubit_labels_combobox.clear()
@@ -1028,10 +1038,9 @@ class CircuitQubitsInformationLookup(QtWidgets.QWidget):  # type: ignore[misc]
             )
 
 
-class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):  # type: ignore[misc]
+class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):
     def __init__(self, parent: QtWidgets.QWidget, configurable_settings: ConfigurableOptions) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent)
         self.configurable_parser_and_synthesis_options = configurable_settings
 
         dialog_layout = QtWidgets.QVBoxLayout()
@@ -1142,7 +1151,7 @@ class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):  # type: ignore[misc]
         dialog_layout.addStretch()
         self.setLayout(dialog_layout)
 
-    def save_settings(self) -> QtWidgets.QDialog.DialogCode:
+    def save_settings(self) -> None:
         mapped_to_integer_constant_truncation_operation: IntegerConstantTruncationOperation | None = None
         try:
             mapped_to_integer_constant_truncation_operation = getattr(
@@ -1156,21 +1165,24 @@ class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):  # type: ignore[misc]
                 + self.integer_constant_truncation_operation_combobox.currentText()
                 + "' to matching enum value! This should not happen.",
             )
-            return self.reject()
+            self.reject()
+            return
 
         if not self.expected_main_module_identifier_textbox.hasAcceptableInput():
             show_error_dialog(
                 "Error updating expected main module identifier",
                 "Invalid main module identifier '" + self.expected_main_module_identifier_textbox.text() + "'",
             )
-            return self.reject()
+            self.reject()
+            return
 
         if not self.default_bitwidth_textbox.hasAcceptableInput():
             show_error_dialog(
                 "Error updating default bitwidth",
                 "Invalid default bitwidth '" + self.default_bitwidth_textbox.text() + "'",
             )
-            return self.reject()
+            self.reject()
+            return
 
         main_module_identifier = self.expected_main_module_identifier_textbox.text().strip()
         if main_module_identifier:
@@ -1186,10 +1198,10 @@ class ConfigurableOptionsUpdateDialog(QtWidgets.QDialog):  # type: ignore[misc]
         self.configurable_parser_and_synthesis_options.generate_quantum_operation_annotations = (
             self.generate_quantum_operation_annotations_option_checkbox.isChecked()
         )
-        return self.accept()
+        self.accept()
 
 
-class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
+class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         QtWidgets.QWidget.__init__(self, parent)
         self.setWindowTitle("SyReC Editor")
@@ -1274,8 +1286,8 @@ class MainWindow(QtWidgets.QMainWindow):  # type: ignore[misc]
 
     def setup_toolbar(self) -> None:
         toolbar = self.addToolBar("Main")
+        assert toolbar is not None
         toolbar.setIconSize(QtCore.QSize(32, 32))
-
         toolbar.addAction(self.editor.open_action)
         toolbar.addAction(self.editor.build_action)
         toolbar.addAction(self.editor.sim_action)
@@ -1292,7 +1304,7 @@ def main() -> int:
     w = MainWindow()
     w.show()
 
-    return cast("int", a.exec())
+    return a.exec()
 
 
 if __name__ == "__main__":

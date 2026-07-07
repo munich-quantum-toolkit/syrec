@@ -21,14 +21,14 @@ if TYPE_CHECKING:
 
 def assert_all_required_widgets_found_or_close_dialog(
     error_notification_parent_widget: QtWidgets.QWidget,
-    required_widgets: Iterable[QtWidgets.QWidget],
+    required_widgets: Iterable[QtWidgets.QWidget | None],
     error_dialog_content: str,
     num_additionally_skipped_stack_frames_starting_from_caller_function: int = 0,
 ) -> bool:
     # Iterables may be one-shot iterables which will be consumed by the all predicate which would prevent
     # the correct logging of the iterable if the predicate is not fulfilled since said iterable would already
     # be consumed at that point.
-    required_widgets_materialized: Final[list[QtWidgets.QWidget]] = list(required_widgets)
+    required_widgets_materialized: Final[list[QtWidgets.QWidget | None]] = list(required_widgets)
     if all(widget is not None for widget in required_widgets_materialized):
         return True
 
@@ -42,9 +42,7 @@ def assert_all_required_widgets_found_or_close_dialog(
     )
 
     stringified_found_widgets_object_names: Final[str] = "Object names of found widgets: " + (
-        ",".join([
-            widget.objectName() for widget in filter(lambda widget: widget is not None, required_widgets_materialized)
-        ])
+        ",".join([widget.objectName() for widget in required_widgets_materialized if widget is not None])
     )
     # We want to log the caller of this function as the origin of the error instead of this function itself.
     log_error_to_console(

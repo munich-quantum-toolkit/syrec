@@ -56,8 +56,8 @@ if TYPE_CHECKING:
 
 
 # Progress bar delegate C++ example: https://doc.qt.io/qt-6/qtnetwork-torrent-example.html
-class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegate, QtWidgets.QStyledItemDelegate):  # type: ignore[misc]
-    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
+class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegate, QtWidgets.QStyledItemDelegate):
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
 
     @staticmethod
@@ -181,8 +181,10 @@ class SimulationRunOverviewStyledItemDelegate(BaseSimulationRunStyledItemDelegat
         )
 
     @override
-    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
-        if not index.isValid() or option.rect.width() == 0:
+    def paint(
+        self, painter: QtGui.QPainter | None, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex
+    ) -> None:
+        if painter is None or not index.isValid() or option.rect.width() == 0:
             return
 
         associated_sim_run_model: SimulationRunModel = index.data(SIMULATION_RUN_IO_STATE_QT_ROLE)

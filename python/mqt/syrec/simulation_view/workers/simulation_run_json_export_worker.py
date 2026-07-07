@@ -48,7 +48,7 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
         self._associated_stringified_syrec_program: Final[str] = associated_stringified_syrec_program
         self._path_to_json_file: Final[Path] = path_to_json_file
 
-    @QtCore.pyqtSlot()  # type: ignore[untyped-decorator]
+    @QtCore.pyqtSlot()
     def start_export(self) -> None:
         request_more_queue_size_threshold: Final[int] = int(self._recv_queue_batch_size * 0.2)
 
