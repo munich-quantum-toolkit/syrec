@@ -1,9 +1,9 @@
 [build-system]
 requires = [
-    "nanobind~=2.12.0",
+    "nanobind~=2.13.0",
     "scikit-build-core~=0.12",
     "setuptools-scm>=9.2.2",
-    "mqt.core~=3.6.0",
+    "mqt.core~=3.7.0",
 ]
 build-backend = "scikit_build_core.build"
 
@@ -40,7 +40,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "mqt.core~=3.6.0",
+    "mqt.core~=3.7.0",
     "PyQt6>=6.8",
     "ijson>=3.4.0",
     "typing-extensions>=4.1.0; python_version < '3.11'"
@@ -280,9 +280,9 @@ test-skip = [
 environment = { DEPLOY="ON" }
 # The SOVERSION needs to be updated when the shared libraries are updated.
 repair-wheel-command = """auditwheel repair -w {dest_dir} {wheel} \
---exclude libmqt-core-ir.so.3.6 \
---exclude libmqt-core-qasm.so.3.6 \
---exclude libmqt-core-dd.so.3.6"""
+--exclude libmqt-core-ir.so.3.7 \
+--exclude libmqt-core-qasm.so.3.7 \
+--exclude libmqt-core-dd.so.3.7"""
 
 [tool.cibuildwheel.macos]
 environment = { MACOSX_DEPLOYMENT_TARGET = "13.3" }
@@ -315,10 +315,10 @@ mqt-syrec = { workspace = true }
 
 [dependency-groups]
 build = [
-    "nanobind~=2.12.0",
+    "nanobind~=2.13.0",
     "scikit-build-core~=0.12",
     "setuptools-scm>=9.2.2",
-    "mqt.core~=3.6.0",
+    "mqt.core~=3.7.0",
 ]
 docs = [
     "furo>=2025.9.25",
