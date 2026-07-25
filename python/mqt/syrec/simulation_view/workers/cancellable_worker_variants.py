@@ -62,7 +62,7 @@ class CancellableProducerWorker(QtCore.QObject, Generic[SendQueueElemType]):
 
     finished = QtCore.pyqtSignal(bool)
     failed = QtCore.pyqtSignal(Exception)
-    batchCompleted = QtCore.pyqtSignal(float)  # noqa: N815
+    batchCompleted = QtCore.pyqtSignal(float)  # ruff:ignore[mixed-case-variable-in-class-scope]
 
     def __init__(self, worker_send_queue_config: QueueConfig[SendQueueElemType]) -> None:
         super().__init__()
@@ -164,7 +164,7 @@ class CancellableProducerConsumerWorker(
         recv_queue: A thread-safe FIFO queue used by the worker to fetch new elements to consume from. The queue is expected to be unbounded.
     """
 
-    requestingData = QtCore.pyqtSignal()  # noqa: N815
+    requestingData = QtCore.pyqtSignal()  # ruff:ignore[mixed-case-variable-in-class-scope]
 
     def __init__(
         self,

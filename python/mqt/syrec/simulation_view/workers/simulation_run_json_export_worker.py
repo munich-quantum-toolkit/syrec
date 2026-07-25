@@ -148,7 +148,7 @@ class SimulationRunJsonExportWorker(CancellableProducerConsumerWorker[Simulation
                 # their closing symbol.
                 file.write("]}")
             self.finished.emit(self.is_cancellation_requested())
-        except Exception as error:  # noqa: BLE001
+        except Exception as error:  # ruff:ignore[blind-except]
             error_msg: Final[str] = (
                 f"Error in simulaton run export worker (exported .json file could be incomplete)! Reason: {type(error)=}, {error=}"
             )

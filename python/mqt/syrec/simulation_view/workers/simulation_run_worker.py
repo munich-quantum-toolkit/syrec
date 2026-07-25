@@ -155,7 +155,7 @@ class SimulationRunWorker(CancellableProducerConsumerWorker[SimulationRunModel, 
                 self.batchCompleted.emit(batch_timestamps.duration)
                 batch_start_timestamp = batch_timestamps.end
             self.finished.emit(self.is_cancellation_requested())
-        except Exception as error:  # noqa: BLE001
+        except Exception as error:  # ruff:ignore[blind-except]
             error_msg = f"Error in simulation run execution worker (curr. simulation run idx: {curr_sim_run_num}), reason: {type(error)=}, {error=}"
             log_error_to_console(error_msg)
             self.failed.emit(error)
