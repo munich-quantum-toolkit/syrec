@@ -117,7 +117,7 @@ class SimulationRunJsonImportWorker(CancellableProducerWorker[SimulationRunModel
                     )
                     self.batchCompleted.emit(batch_timestamps.duration)
                 self.finished.emit(self.is_cancellation_requested())
-        except Exception as error:  # noqa: BLE001
+        except Exception as error:  # ruff:ignore[blind-except]
             self_raised_error_msg = f"Error in simulaton run import worker! Reason: {type(error)=}, {error=}"
             log_error_to_console(self_raised_error_msg)
             self.failed.emit(error)

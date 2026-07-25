@@ -179,7 +179,7 @@ class BaseProgressDialog(QtWidgets.QDialog, Generic[WorkerType]):
 
         try:
             self._worker.notify_to_continue_processing()
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:  # ruff:ignore[blind-except]
             self._handle_non_recoverable_error(
                 f"Error while trying to notify simulation run execution worker about new batch data being available, reason: {BaseProgressDialog._stringify_error(err)}"
             )

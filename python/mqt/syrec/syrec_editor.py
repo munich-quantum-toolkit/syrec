@@ -147,7 +147,7 @@ class GateItem(QtWidgets.QGraphicsItemGroup):
 
 
 class CircuitView(QtWidgets.QGraphicsView):
-    qubitLabelClicked = QtCore.pyqtSignal(str)  # noqa: N815
+    qubitLabelClicked = QtCore.pyqtSignal(str)  # ruff:ignore[mixed-case-variable-in-class-scope]
 
     def __init__(
         self,
@@ -182,7 +182,7 @@ class CircuitView(QtWidgets.QGraphicsView):
         self.inputs = []
         self.outputs = []
 
-    def mousePressEvent(self, event: QtGui.QMouseEvent | None) -> None:  # noqa: N802
+    def mousePressEvent(self, event: QtGui.QMouseEvent | None) -> None:  # ruff:ignore[invalid-function-name]
         if event is not None:
             graphics_view_position_of_click: QtCore.QPoint = event.pos()
             item: QtWidgets.QGraphicsItem | None = self.itemAt(graphics_view_position_of_click)
@@ -285,7 +285,7 @@ class CircuitView(QtWidgets.QGraphicsView):
         text_item.setPos(x, y - 12)
         return text_item
 
-    def wheelEvent(self, event):  # noqa: N802
+    def wheelEvent(self, event):  # ruff:ignore[invalid-function-name]
         factor = 1.2
         if event.angleDelta().y() < 0 or event.angleDelta().x() < 0:
             factor = 1.0 / factor
@@ -366,10 +366,10 @@ class SyReCEditor(QtWidgets.QWidget):
         )
         self.configurable_parser_and_synthesis_options_update_button.clicked.connect(self.update_configurable_options)
 
-    def setText(self, text):  # noqa: N802
+    def setText(self, text):  # ruff:ignore[invalid-function-name]
         self.code_editor_widget.setPlainText(text)
 
-    def getText(self) -> str:  # noqa: N802
+    def getText(self) -> str:  # ruff:ignore[invalid-function-name]
         return self.code_editor_widget.toPlainText()
 
     def update_configurable_options(self) -> None:
@@ -582,7 +582,7 @@ class SyReCHighlighter(QtGui.QSyntaxHighlighter):
         loop_format.setForeground(QtGui.QColorConstants.DarkRed)
         self.highlightingRules.append((QtCore.QRegularExpression("\\$[A-Za-z_0-9]+"), loop_format))
 
-    def highlightBlock(self, text):  # noqa: N802
+    def highlightBlock(self, text):  # ruff:ignore[invalid-function-name]
         for rule in self.highlightingRules:
             expression = rule[0]
             match = expression.match(text)
@@ -598,10 +598,10 @@ class LineNumberArea(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, editor)
         self.codeEditor = editor
 
-    def sizeHint(self) -> QtCore.QSize:  # noqa: N802
+    def sizeHint(self) -> QtCore.QSize:  # ruff:ignore[invalid-function-name]
         return QtCore.QSize(self.codeEditor.lineNumberAreaWidth(), 0)
 
-    def paintEvent(self, a0: QtGui.QPaintEvent | None) -> None:  # noqa: N802
+    def paintEvent(self, a0: QtGui.QPaintEvent | None) -> None:  # ruff:ignore[invalid-function-name]
         if a0 is not None:
             self.codeEditor.lineNumberAreaPaintEvent(a0)
 
@@ -624,7 +624,7 @@ class CodeEditor(QtWidgets.QPlainTextEdit):
             text = Path(filename).read_text(encoding="utf-8")
             self.setPlainText(text)
 
-    def lineNumberAreaPaintEvent(self, event: QtGui.QPaintEvent) -> None:  # noqa: N802
+    def lineNumberAreaPaintEvent(self, event: QtGui.QPaintEvent) -> None:  # ruff:ignore[invalid-function-name]
         painter = QtGui.QPainter(self.lineNumberArea)
         painter.fillRect(event.rect(), QtGui.QColorConstants.LightGray)
 
@@ -651,7 +651,7 @@ class CodeEditor(QtWidgets.QPlainTextEdit):
             bottom = top + self.blockBoundingGeometry(block).height()
             block_number += 1
 
-    def lineNumberAreaWidth(self) -> int:  # noqa: N802
+    def lineNumberAreaWidth(self) -> int:  # ruff:ignore[invalid-function-name]
         digits = 1
         max_ = max(1, self.blockCount())
         while max_ >= 10:
@@ -660,16 +660,16 @@ class CodeEditor(QtWidgets.QPlainTextEdit):
 
         return 3 + self.fontMetrics().horizontalAdvance("9") * digits
 
-    def resizeEvent(self, e: QtGui.QResizeEvent | None) -> None:  # noqa: N802
+    def resizeEvent(self, e: QtGui.QResizeEvent | None) -> None:  # ruff:ignore[invalid-function-name]
         QtWidgets.QPlainTextEdit.resizeEvent(self, e)
 
         cr = self.contentsRect()
         self.lineNumberArea.setGeometry(QtCore.QRect(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height()))
 
-    def updateLineNumberAreaWidth(self) -> None:  # noqa: N802
+    def updateLineNumberAreaWidth(self) -> None:  # ruff:ignore[invalid-function-name]
         self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
 
-    def highlightCurrentLine(self) -> None:  # noqa: N802
+    def highlightCurrentLine(self) -> None:  # ruff:ignore[invalid-function-name]
         extra_selections = []
 
         if not self.isReadOnly():
@@ -685,7 +685,7 @@ class CodeEditor(QtWidgets.QPlainTextEdit):
 
         self.setExtraSelections(extra_selections)
 
-    def updateLineNumberArea(self, rect: QtCore.QRect, dy: int) -> None:  # noqa: N802
+    def updateLineNumberArea(self, rect: QtCore.QRect, dy: int) -> None:  # ruff:ignore[invalid-function-name]
         if dy != 0:
             self.lineNumberArea.scroll(0, dy)
         else:
@@ -704,7 +704,7 @@ class LogWidget(QtWidgets.QTreeWidget):
         self.setRootIsDecorated(False)
         self.setHeaderLabels(["Message"])
 
-    def addMessage(self, message: str) -> None:  # noqa: N802
+    def addMessage(self, message: str) -> None:  # ruff:ignore[invalid-function-name]
         item = QtWidgets.QTreeWidgetItem([message])
         self.addTopLevelItem(item)
 

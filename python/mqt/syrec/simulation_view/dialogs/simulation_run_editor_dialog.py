@@ -60,7 +60,7 @@ class QubitValueLabelAndCheckbox:
 
 
 class LineEditWithDynamicWidth(QtWidgets.QLineEdit):
-    focusOut = QtCore.pyqtSignal()  # noqa: N815
+    focusOut = QtCore.pyqtSignal()  # ruff:ignore[mixed-case-variable-in-class-scope]
 
     def __init__(self, expected_max_num_characters: int, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
@@ -70,7 +70,7 @@ class LineEditWithDynamicWidth(QtWidgets.QLineEdit):
 
     # Make the widget greedy: whenever the layout offers more
     # than the nominal width, grab it.
-    def sizeHint(self) -> QtCore.QSize:  # noqa: N802
+    def sizeHint(self) -> QtCore.QSize:  # ruff:ignore[invalid-function-name]
         sh = super().sizeHint()
         fm = QtGui.QFontMetrics(self.font())
         nominal = fm.boundingRect("W" * self._expected_max_num_characters).width()
@@ -78,7 +78,7 @@ class LineEditWithDynamicWidth(QtWidgets.QLineEdit):
         preferred = max(nominal, self.width())
         return QtCore.QSize(preferred, sh.height())
 
-    def focusOutEvent(self, a0: QtGui.QFocusEvent | None) -> None:  # noqa: N802
+    def focusOutEvent(self, a0: QtGui.QFocusEvent | None) -> None:  # ruff:ignore[invalid-function-name]
         super().focusOutEvent(a0)
         self.focusOut.emit()
 
@@ -1111,7 +1111,7 @@ class SimulationRunEditorDialog(QtWidgets.QDialog):
                 qubit_values_groupbox.setVisible(False)
                 qubit_values_toggle_button.setText(EDIT_OUTPUT_STATE_QUBIT_VALUES)
                 qreg_input_state_input_field.setEnabled(True)
-                qreg_expected_output_state_input_field.setEnabled(qreg_expected_output_state_input_field.text() != "")  # noqa: PLC1901
+                qreg_expected_output_state_input_field.setEnabled(qreg_expected_output_state_input_field.text() != "")  # ruff:ignore[compare-to-empty-string]
                 qubit_values_groupbox_qubit_search_field.setText("")
                 self._handle_qubit_search_trigger_button_click(associated_qreg_name)
 
