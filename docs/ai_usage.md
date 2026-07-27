@@ -98,11 +98,11 @@ third-party licenses or copyrights.
 
 ## Extractive Contributions
 
-Processing pull requests and comments for MQT SyReC Synthesizer requires significant
-maintainer time and energy. Sending unreviewed AI output to open-source projects
-shifts the burden of verifying correctness from the contributor to the
-maintainer. We classify such contributions as "extractive" because they consume
-more community resources than they provide in value.
+Processing pull requests and comments for MQT SyReC Synthesizer requires
+significant maintainer time and energy. Sending unreviewed AI output to
+open-source projects shifts the burden of verifying correctness from the
+contributor to the maintainer. We classify such contributions as "extractive"
+because they consume more community resources than they provide in value.
 
 Our **golden rule** is that a contribution should be valuable enough to justify
 the review effort. Nadia Eghbal captures this concept in her book
