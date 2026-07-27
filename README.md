@@ -6,8 +6,8 @@
 [![codecov](https://img.shields.io/codecov/c/github/munich-quantum-toolkit/syrec?style=flat-square&logo=codecov)](https://codecov.io/gh/munich-quantum-toolkit/syrec)
 
 > [!NOTE]
-> This project is currently in low maintenance mode.
-> We will still fix bugs and accept pull requests, but we will not actively develop new features.
+> This project is currently in low maintenance mode. We will still fix bugs and
+> accept pull requests, but we will not actively develop new features.
 
 <p align="center">
   <a href="https://mqt.readthedocs.io">
@@ -31,20 +31,44 @@ It is part of the [_Munich Quantum Toolkit (MQT)_](https://mqt.readthedocs.io).
 
 ## Key Features
 
-- **Automatic synthesis of reversible circuits from high-level HDL**: Accepts any HDL description following the [SyReC grammar and syntax](https://mqt.readthedocs.io/projects/syrec/en/latest/SyrecLanguageSemantics.html), enabling rapid prototyping and design of reversible logic.
-- **Two complementary synthesis schemes**: Choose between [cost-aware synthesis](https://mqt.readthedocs.io/projects/syrec/en/latest/DescriptionAndFeatures.html#cost-aware-synthesis) (minimizing gate cost) and [line-aware synthesis](https://mqt.readthedocs.io/projects/syrec/en/latest/DescriptionAndFeatures.html#line-aware-synthesis) (minimizing circuit lines), each with distinct trade-offs for resource optimization.
-- **Graphical User Interface (GUI)**: Intuitive GUI for specifying SyReC programs, visualizing circuits, and running synthesis, simulation, and cost analysis at the click of a button.
-- **Simulation and cost analysis**: Simulate synthesized circuits and determine gate costs directly within the tool.
-- **Comprehensive SyReC language support**: Implements the full SyReC language, including modules, parameterized bitwidths, multi-dimensional variables, and advanced assignment semantics ([language reference](https://mqt.readthedocs.io/projects/syrec/en/latest/SyrecLanguageSemantics.html)).
-- **Python API and C++ core**: High-performance C++ backend with Python bindings for integration into research and teaching workflows.
-- **Cross-platform and easy to install**: Prebuilt Python wheels for Linux, macOS, and Windows via [PyPI](https://pypi.org/project/mqt.syrec/).
+- **Automatic synthesis of reversible circuits from high-level HDL**: Accepts
+  any HDL description following the
+  [SyReC grammar and syntax](https://mqt.readthedocs.io/projects/syrec/en/latest/SyrecLanguageSemantics.html),
+  enabling rapid prototyping and design of reversible logic.
+- **Two complementary synthesis schemes**: Choose between
+  [cost-aware synthesis](https://mqt.readthedocs.io/projects/syrec/en/latest/DescriptionAndFeatures.html#cost-aware-synthesis)
+  (minimizing gate cost) and
+  [line-aware synthesis](https://mqt.readthedocs.io/projects/syrec/en/latest/DescriptionAndFeatures.html#line-aware-synthesis)
+  (minimizing circuit lines), each with distinct trade-offs for resource
+  optimization.
+- **Graphical User Interface (GUI)**: Intuitive GUI for specifying SyReC
+  programs, visualizing circuits, and running synthesis, simulation, and cost
+  analysis at the click of a button.
+- **Simulation and cost analysis**: Simulate synthesized circuits and determine
+  gate costs directly within the tool.
+- **Comprehensive SyReC language support**: Implements the full SyReC language,
+  including modules, parameterized bitwidths, multi-dimensional variables, and
+  advanced assignment semantics
+  ([language reference](https://mqt.readthedocs.io/projects/syrec/en/latest/SyrecLanguageSemantics.html)).
+- **Python API and C++ core**: High-performance C++ backend with Python bindings
+  for integration into research and teaching workflows.
+- **Cross-platform and easy to install**: Prebuilt Python wheels for Linux,
+  macOS, and Windows via [PyPI](https://pypi.org/project/mqt.syrec/).
 
-If you have any questions, feel free to create a [discussion](https://github.com/munich-quantum-toolkit/syrec/discussions) or an [issue](https://github.com/munich-quantum-toolkit/syrec/issues) on [GitHub](https://github.com/munich-quantum-toolkit/syrec).
+If you have any questions, feel free to create a
+[discussion](https://github.com/munich-quantum-toolkit/syrec/discussions) or an
+[issue](https://github.com/munich-quantum-toolkit/syrec/issues) on
+[GitHub](https://github.com/munich-quantum-toolkit/syrec).
 
 ## Contributors and Supporters
 
-The _[Munich Quantum Toolkit (MQT)](https://mqt.readthedocs.io)_ is developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/) and supported by [MQSC](https://mq.sc).
-Among others, it is part of the [Munich Quantum Software Stack (MQSS)](https://www.munich-quantum-valley.de/research/research-areas/mqss) ecosystem, which is being developed as part of the [Munich Quantum Valley (MQV)](https://www.munich-quantum-valley.de) initiative.
+The _[Munich Quantum Toolkit (MQT)](https://mqt.readthedocs.io)_ is developed by
+the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the
+[Technical University of Munich](https://www.tum.de/) and supported by
+[MQSC](https://mq.sc). Among others, it is part of the
+[Munich Quantum Software Stack (MQSS)](https://www.munich-quantum-valley.de/research/research-areas/mqss)
+ecosystem, which is being developed as part of the
+[Munich Quantum Valley (MQV)](https://www.munich-quantum-valley.de) initiative.
 
 <p align="center">
   <picture>
@@ -53,7 +77,8 @@ Among others, it is part of the [Munich Quantum Software Stack (MQSS)](https://w
   </picture>
 </p>
 
-Thank you to all the contributors who have helped make MQT SyReC Synthesizer a reality!
+Thank you to all the contributors who have helped make MQT SyReC Synthesizer a
+reality!
 
 <p align="center">
   <a href="https://github.com/munich-quantum-toolkit/syrec/graphs/contributors">
@@ -61,17 +86,21 @@ Thank you to all the contributors who have helped make MQT SyReC Synthesizer a r
   </a>
 </p>
 
-The MQT will remain free, open-source, and permissively licensed—now and in the future.
-We are firmly committed to keeping it open and actively maintained for the quantum computing community.
+The MQT will remain free, open-source, and permissively licensed—now and in the
+future. We are firmly committed to keeping it open and actively maintained for
+the quantum computing community.
 
 To support this endeavor, please consider:
 
-- Starring and sharing our repositories: https://github.com/munich-quantum-toolkit
-- Contributing code, documentation, tests, or examples via issues and pull requests
+- Starring and sharing our repositories:
+  <https://github.com/munich-quantum-toolkit>
+- Contributing code, documentation, tests, or examples via issues and pull
+  requests
 - Citing the MQT in your publications (see [Cite This](#cite-this))
-- Citing our research in your publications (see [References](https://mqt.readthedocs.io/projects/syrec/en/latest/references.html))
+- Citing our research in your publications (see
+  [References](https://mqt.readthedocs.io/projects/syrec/en/latest/references.html))
 - Using the MQT in research and teaching, and sharing feedback and use cases
-- Sponsoring us on GitHub: https://github.com/sponsors/munich-quantum-toolkit
+- Sponsoring us on GitHub: <https://github.com/sponsors/munich-quantum-toolkit>
 
 <p align="center">
   <a href="https://github.com/sponsors/munich-quantum-toolkit">
@@ -84,23 +113,27 @@ To support this endeavor, please consider:
 `mqt.syrec` is available via [PyPI](https://pypi.org/project/mqt.syrec/).
 
 ```console
-(.venv) $ pip install mqt.syrec
+uv pip install mqt.syrec
 ```
 
 Once installed, start the GUI by running:
 
 ```console
-(.venv) $ syrec-editor
+syrec-editor
 ```
 
-**Detailed documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/syrec).**
+**Detailed documentation and examples are available at
+[ReadTheDocs](https://mqt.readthedocs.io/projects/syrec).**
 
 ## System Requirements
 
-Building the project requires a C++ compiler with support for C++20 and CMake 3.24 or newer.
-For details on how to build the project, please refer to the [documentation](https://mqt.readthedocs.io/projects/syrec).
-Building (and running) is continuously tested under Linux, macOS, and Windows using the [latest available system versions for GitHub Actions](https://github.com/actions/runner-images).
-MQT SyReC Synthesizer is compatible with all [officially supported Python versions](https://devguide.python.org/versions/).
+Building the project requires a C++ compiler with support for C++20 and CMake
+3.24 or newer. For details on how to build the project, please refer to the
+[documentation](https://mqt.readthedocs.io/projects/syrec). Building (and
+running) is continuously tested under Linux, macOS, and Windows using the
+[latest available system versions for GitHub Actions](https://github.com/actions/runner-images).
+MQT SyReC Synthesizer is compatible with all
+[officially supported Python versions](https://devguide.python.org/versions/).
 
 ## Cite This
 
@@ -108,7 +141,8 @@ Please cite the work that best fits your use case.
 
 ### MQT SyReC Synthesizer (the tool)
 
-When citing the software itself or results produced with it, cite the MQT SyReC Synthesizer paper:
+When citing the software itself or results produced with it, cite the MQT SyReC
+Synthesizer paper:
 
 ```bibtex
 @article{adarsh2022syrecSynthesizer,
@@ -141,33 +175,38 @@ When discussing the overall MQT project or its ecosystem, cite the MQT Handbook:
 
 ### Peer-Reviewed Research
 
-When citing the underlying methods and research, please reference the most relevant peer-reviewed publications from the list below:
+When citing the underlying methods and research, please reference the most
+relevant peer-reviewed publications from the list below:
 
-[[1]](https://doi.org/10.1016/j.simpa.2022.100451)
-S. Adarsh, L. Burgholzer, T. Manjunath, and R. Wille.
-SyReC Synthesizer: An MQT tool for synthesis of reversible circuits.
-_Software Impacts_, 2022.
+[[1]](https://doi.org/10.1016/j.simpa.2022.100451) S. Adarsh, L. Burgholzer, T.
+Manjunath, and R. Wille. SyReC Synthesizer: An MQT tool for synthesis of
+reversible circuits. _Software Impacts_, 2022.
 
 [[2]](http://www.informatik.uni-bremen.de/agra/doc/konf/10_syrec_reversible_hardware_language.pdf)
-R. Wille, S. Offermann, and R. Drechsler.
-SyReC: A Programming Language for Synthesis of Reversible Circuits.
+R. Wille, S. Offermann, and R. Drechsler. SyReC: A Programming Language for
+Synthesis of Reversible Circuits.
 _Forum on Specification and Design Languages (FDL)_, 2010.
 
-[[3]](https://doi.org/10.1016/j.vlsi.2015.10.001)
-R. Wille, E. Schönborn, M. Soeken, and R. Drechsler.
-SyReC: A hardware description language for the specification and synthesis of reversible circuits.
+[[3]](https://doi.org/10.1016/j.vlsi.2015.10.001) R. Wille, E. Schönborn, M.
+Soeken, and R. Drechsler. SyReC: A hardware description language for the
+specification and synthesis of reversible circuits.
 _Integration (The VLSI Journal)_, 2016.
 
 [[4]](https://www.cda.cit.tum.de/files/eda/2019_iccad_hdl_based_reversible_circuit_synthesis_without_additional_lines.pdf)
-R. Wille, M. Haghparast, S. Adarsh, and T. Manjunath.
-Towards HDL-based Synthesis of Reversible Circuits with No Additional Lines.
+R. Wille, M. Haghparast, S. Adarsh, and T. Manjunath. Towards HDL-based
+Synthesis of Reversible Circuits with No Additional Lines.
 _International Conference on Computer Aided Design (ICCAD)_, 2019.
 
 ---
 
 ## Acknowledgements
 
-The Munich Quantum Toolkit has been supported by the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program (grant agreement No. 101001318), the Bavarian State Ministry for Science and Arts through the Distinguished Professorship Program, as well as the Munich Quantum Valley, which is supported by the Bavarian state government with funds from the Hightech Agenda Bayern Plus.
+The Munich Quantum Toolkit has been supported by the European Research Council
+(ERC) under the European Union's Horizon 2020 research and innovation program
+(grant agreement No. 101001318), the Bavarian State Ministry for Science and
+Arts through the Distinguished Professorship Program, as well as the Munich
+Quantum Valley, which is supported by the Bavarian state government with funds
+from the Hightech Agenda Bayern Plus.
 
 <p align="center">
   <picture>

@@ -3,10 +3,10 @@
 
 # Installation
 
-MQT SyReC Synthesizer is primarily developed as a C++20 library with Python bindings. The
-Python package is available on
-[PyPI](https://pypi.org/project/mqt.syrec/) and can be installed on all
-major operating systems with all
+MQT SyReC Synthesizer is primarily developed as a C++20 library with Python
+bindings. The Python package is available on
+[PyPI](https://pypi.org/project/mqt.syrec/) and can be installed on all major
+operating systems with all
 [officially supported Python versions](https://devguide.python.org/versions/).
 
 :::::{tip}
@@ -66,6 +66,7 @@ python -m pip install mqt.syrec
 :::
 
 ::::
+
 In most cases, no compilation is required; a platform-specific prebuilt wheel is
 downloaded and installed.
 
@@ -111,9 +112,9 @@ and [CMake](https://cmake.org/) 3.24 or newer.
 
 ## Integrating MQT SyReC Synthesizer into Your Project
 
-To use the MQT SyReC Synthesizer Python package in your project, add it as a dependency
-in your {code}`pyproject.toml` or {code}`setup.py`. This ensures the package is
-installed when your project is installed.
+To use the MQT SyReC Synthesizer Python package in your project, add it as a
+dependency in your {code}`pyproject.toml` or {code}`setup.py`. This ensures the
+package is installed when your project is installed.
 
 ::::{tab-set}
 
@@ -157,8 +158,8 @@ either
 
 - add it as a [{code}`git` submodule][git-submodule] and build it as part of
   your project, or
-- install MQT SyReC Synthesizer on your system and use CMake's {code}`find_package()`
-  command to locate it, or
+- install MQT SyReC Synthesizer on your system and use CMake's
+  {code}`find_package()` command to locate it, or
 - use CMake's [{code}`FetchContent`][FetchContent] module to combine both
   approaches.
 
@@ -167,8 +168,8 @@ either
 :::{tab-item} {code}`FetchContent`
 
 This is the recommended approach because it lets you detect installed versions
-of MQT SyReC Synthesizer and only downloads the library if it is not available on the
-system. Furthermore, CMake's [{code}`FetchContent`][FetchContent] module
+of MQT SyReC Synthesizer and only downloads the library if it is not available
+on the system. Furthermore, CMake's [{code}`FetchContent`][FetchContent] module
 provides flexibility in how the library is integrated into the project.
 
 ```cmake
@@ -220,7 +221,8 @@ add_subdirectory(external/mqt-syrec)
 
 :::{tab-item} {code}`find_package()`
 
-You can install MQT SyReC Synthesizer on your system after building it from source:
+You can install MQT SyReC Synthesizer on your system after building it from
+source:
 
 ```console
 git clone https://github.com/munich-quantum-toolkit/syrec.git mqt-syrec
@@ -245,8 +247,8 @@ find_package(mqt-syrec <version> REQUIRED)
 
 ## Development Setup
 
-Set up a reproducible development environment for MQT SyReC Synthesizer. This is the
-recommended starting point for both bug fixes and new features. For detailed
+Set up a reproducible development environment for MQT SyReC Synthesizer. This is
+the recommended starting point for both bug fixes and new features. For detailed
 guidelines and workflows, see {doc}`contributing`.
 
 1. Get the code: <!-- rumdl-disable-line MD013 -->
