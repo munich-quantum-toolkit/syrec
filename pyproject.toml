@@ -262,7 +262,7 @@ PC170 = "We do not use rST files anymore"
 [tool.cibuildwheel]
 build = "cp3*"
 manylinux-aarch64-image = "quay.io/pypa/manylinux_2_39_aarch64:latest"
-skip = ["*-musllinux_*", "cp313t-*"]
+skip = ["*-musllinux_*"]
 archs = "auto64"
 test-groups = ["test"]
 test-command = "pytest {project}/test/python"
@@ -293,12 +293,6 @@ repair-wheel-command = """delvewheel repair -w {dest_dir} {wheel} --namespace-pk
 --exclude mqt-core-ir.dll \
 --exclude mqt-core-qasm.dll \
 --exclude mqt-core-dd.dll"""
-
-[[tool.cibuildwheel.overrides]]
-select = "cp312-*"
-inherit.repair-wheel-command = "append"
-repair-wheel-command = "uvx abi3audit --strict --report {wheel}"
-
 
 [tool.uv]
 required-version = ">=0.5.20"
