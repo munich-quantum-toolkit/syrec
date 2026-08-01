@@ -404,13 +404,14 @@ The parser will not report an overlap in the assignment due to the index of the 
 
 ### IfStatement
 
-- The components of an IfStatement will be referred to as _if <GUARD_CONDITION>
-  then <TRUE_BRANCH> else <FALSE_BRANCH> fi <CLOSING_GUARD_CONDITION_. To be
-  able to identify the matching guard condition for a closing guard condition,
-  the expressions used to define both of these components must consist of the
-  same characters (with an expression evaluating to the same value while
-  consisting of different or additional characters not being considered equal).
-  An example of an IfStatement violating this rule is the following:
+- The components of an IfStatement will be referred to as
+  _if <GUARD_CONDITION> then <TRUE_BRANCH> else <FALSE_BRANCH> fi <CLOSING_GUARD_CONDITION_.
+  To be able to identify the matching guard condition for a closing guard
+  condition, the expressions used to define both of these components must
+  consist of the same characters (with an expression evaluating to the same
+  value while consisting of different or additional characters not being
+  considered equal). An example of an IfStatement violating this rule is the
+  following:
 
   ```text
   module main(inout a(4), in b(2))
