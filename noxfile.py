@@ -62,7 +62,7 @@ def _run_tests(
     session: nox.Session,
     *,
     install_args: Sequence[str] = (),
-    run_args: Sequence[str] = (),
+    pytest_run_args: Sequence[str] = (),
 ) -> None:
     env = {"UV_PROJECT_ENVIRONMENT": session.virtualenv.location}
     if shutil.which("cmake") is None and shutil.which("cmake3") is None:
@@ -84,13 +84,21 @@ def _run_tests(
     )
     session.run(
         "uv",
-        "run",
+        "sync",
+        "--inexact",
         "--no-dev",  # do not auto-install dev dependencies
         "--no-build-isolation-package",
         "mqt-syrec",  # build the project without isolation
         *install_args,
+        env=env,
+    )
+    session.run(
+        "uv",
+        "run",
+        "--no-sync",  # do not sync as everything is already installed
+        *install_args,
         "pytest",
-        *run_args,
+        *pytest_run_args,
         *session.posargs,
         "--cov-config=pyproject.toml",
         env=env,
@@ -110,7 +118,7 @@ def minimums(session: nox.Session) -> None:
         _run_tests(
             session,
             install_args=["--resolution=lowest-direct"],
-            run_args=["-Wdefault"],
+            pytest_run_args=["-Wdefault"],
         )
         env = {"UV_PROJECT_ENVIRONMENT": session.virtualenv.location}
         session.run("uv", "tree", "--frozen", env=env)
