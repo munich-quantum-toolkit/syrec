@@ -10,33 +10,18 @@
 
 from __future__ import annotations
 
-import warnings
 from importlib import metadata
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pybtex.plugin
 from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 from pybtex.style.template import field, href
 
-ROOT = Path(__file__).parent.parent.resolve()
-
-
 try:
-    from mqt.syrec import __version__ as version
+    version = metadata.version("mqt.syrec")
 except ModuleNotFoundError:
-    try:
-        version = metadata.version("mqt.syrec")
-    except ModuleNotFoundError:
-        msg = (
-            "Package should be installed to produce documentation! "
-            "Assuming a modern git archive was used for version discovery."
-        )
-        warnings.warn(msg, stacklevel=1)
-
-        from setuptools_scm import get_version
-
-        version = get_version(root=str(ROOT), fallback_root=ROOT)
+    msg = "mqt.syrec must be installed to build the documentation"
+    raise ModuleNotFoundError(msg) from None
 
 # Filter git details from version
 release = version.split("+")[0]
