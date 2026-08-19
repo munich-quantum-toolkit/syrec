@@ -1,6 +1,6 @@
 # Description and Features
 
-_MQT SyReC Synthesizer_ {cite:p}`adarsh2022syrecSynthesizer` allows users to
+MQT SyReC Synthesizer {cite:p}`adarsh2022syrecSynthesizer` allows users to
 automatically synthesize reversible circuits from a high-level HDL description.
 The proposed tool accepts any HDL description following the SyReC grammar and
 syntax as described in detail in {cite:p}`wille2016syrec` (example circuits are
