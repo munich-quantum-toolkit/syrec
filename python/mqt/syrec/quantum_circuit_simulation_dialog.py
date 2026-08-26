@@ -12,17 +12,12 @@ import re
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, assert_never
 
 if sys.version_info >= (3, 12):
     from typing import override
 else:
     from typing_extensions import override
-
-if sys.version_info >= (3, 11):
-    from typing import assert_never
-else:
-    from typing_extensions import assert_never
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 

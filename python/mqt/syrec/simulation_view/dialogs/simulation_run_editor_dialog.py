@@ -11,7 +11,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final, assert_never, cast
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
@@ -19,11 +19,6 @@ if sys.version_info >= (3, 12):
     from typing import override
 else:
     from typing_extensions import override
-
-if sys.version_info >= (3, 11):
-    from typing import assert_never
-else:
-    from typing_extensions import assert_never
 
 from mqt.syrec import QubitLabelType
 
