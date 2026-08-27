@@ -56,10 +56,6 @@ class CircuitViewQubitLabel:
     def __str__(self) -> str:
         return "Q: " + str(self.associated_qubit) + " | " + self.internal_qubit_label
 
-    # Return type annotation can be defined as Self in Python 3.11 (with 'from typing import Self')
-    # Starting with Python 3.14 the class name can be used but since also Python 3.10 is supported by this project
-    # we need to chose a variant that is compatible with Python >= 3.10 thus the class name needs to be defined and
-    # the import (from __future__ import annotations) needs to be used
     @classmethod
     def load_from_string(cls, input_string: str) -> CircuitViewQubitLabel | None:
         m = STRINGIFIED_CIRCUIT_VIEW_QUBIT_LABEL_COMPONENTS_EXTRACTOR_REGEX.match(input_string)
