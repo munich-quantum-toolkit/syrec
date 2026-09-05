@@ -187,7 +187,7 @@ class ConfigurableOptions:
         """
 
     @main_module_identifier.setter
-    def main_module_identifier(self, arg: str | None) -> None: ...
+    def main_module_identifier(self, arg: str | None, /) -> None: ...
     @property
     def generate_inlined_qubit_debug_information(self) -> bool:
         """

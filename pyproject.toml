@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "nanobind~=2.15.0",
+    "nanobind~=3.0.1",
     "scikit-build-core>=1.0.3",
     "vcs-versioning>=2.3.0",
     "mqt.core~=3.10.0",
@@ -43,6 +43,7 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
     "mqt.core~=3.10.0",
+    "nanobind-backend>=1.0",
     "PyQt6>=6.8",
     "ijson>=3.4.0",
     "typing-extensions>=4.1.0; python_version < '3.12'"
@@ -68,11 +69,14 @@ wheel.install-dir = "mqt/syrec"
 # Explicitly set the package directory
 wheel.packages = ["python/mqt"]
 
-# Enable Stable ABI builds for CPython 3.12+
-wheel.py-api = "cp312"
+# Build one split-mode Stable ABI wheel for GIL-enabled CPython 3.11+
+wheel.py-api = "cp311"
 
 # Set required Ninja version
 ninja.version = ">=1.10"
+
+# CMake 4.4 detects free-threaded Python and supplies Py_GIL_DISABLED on Windows
+cmake.version = ">=4.4.1"
 
 # Setuptools-style build caching in a local directory
 build-dir = "build/{wheel_tag}/{build_type}"
@@ -99,11 +103,9 @@ BUILD_MQT_SYREC_BINDINGS = "ON"
 ENABLE_IPO = "ON"
 
 [[tool.scikit-build.overrides]]
-if.python-version = ">=3.13"
+if.python-version = ">=3.15"
 if.abi-flags = "t"
-if.platform-system = "win32"
-inherit.cmake.define = "append"
-cmake.define.DISABLE_GIL = "1"
+wheel.py-api = "cp315t"
 
 
 [[tool.dynamic-metadata]]
@@ -269,16 +271,17 @@ PC170 = "We do not use rST files anymore"
 [tool.cibuildwheel]
 build = "cp3*"
 manylinux-aarch64-image = "quay.io/pypa/manylinux_2_39_aarch64:latest"
-skip = ["*-musllinux_*"]
+skip = ["*-musllinux_*", "cp314t-*"]
 archs = "auto64"
 test-groups = ["test"]
 test-command = "pytest {project}/test/python"
 build-frontend = "uv"
-test-skip = [
-  "cp3??t-*", # no freethreading qiskit wheels
-  "cp*-win_arm64", # no numpy, qiskit, ... wheels
-  "cp315*", # no 3.15 wheels yet
-]
+
+[[tool.cibuildwheel.overrides]]
+select = ["cp*-win_arm64", "cp315*"]
+before-test = ""
+test-groups = []
+test-command = "python -c \"import mqt.syrec\""
 
 # The mqt-core shared libraries are provided by the mqt-core Python package.
 # They should not be vendorized into the mqt-syrec wheel. This requires
@@ -301,6 +304,10 @@ repair-wheel-command = """delvewheel repair -w {dest_dir} {wheel} --namespace-pk
 --exclude mqt-core-ir.dll \
 --exclude mqt-core-qasm.dll \
 --exclude mqt-core-dd.dll"""
+# cibuildwheel 4.2 passes expanded dependency groups through cmd.exe, which interprets version
+# operators as redirections. Let uv resolve the group itself.
+test-groups = []
+before-test = "uv pip install --group test"
 
 [tool.uv]
 required-version = ">=0.5.20"
@@ -316,7 +323,8 @@ mqt-syrec = { workspace = true }
 
 [dependency-groups]
 build = [
-    "nanobind~=2.15.0",
+    "cmake>=4.4.1",
+    "nanobind~=3.0.1",
     "scikit-build-core>=1.0.3",
     "vcs-versioning>=2.3.0",
     "mqt.core~=3.10.0",
