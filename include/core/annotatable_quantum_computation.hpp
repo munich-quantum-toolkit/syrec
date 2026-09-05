@@ -350,8 +350,8 @@ namespace syrec {
 
         QuantumOperationAnnotationsLookup activateGlobalQuantumOperationAnnotations;
 
-        // We are assuming that no operations in the qc::QuantumComputation are removed (i.e. by applying qc::CircuitOptimizer) and will thus use the index of the quantum operation
-        // as the search key in the container storing the annotations per quantum operation.
+        // We assume that no operations are removed from the qc::QuantumComputation after annotation.
+        // The operation index therefore remains a stable search key.
         std::vector<QuantumOperationAnnotationsLookup> annotationsPerQuantumOperation;
 
         /**
