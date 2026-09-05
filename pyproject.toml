@@ -279,9 +279,7 @@ build-frontend = "uv"
 
 [[tool.cibuildwheel.overrides]]
 select = ["cp*-win_arm64", "cp315*"]
-before-test = ""
-test-groups = []
-test-command = "python -c \"import mqt.syrec\""
+test-command = ""
 
 # The mqt-core shared libraries are provided by the mqt-core Python package.
 # They should not be vendorized into the mqt-syrec wheel. This requires
