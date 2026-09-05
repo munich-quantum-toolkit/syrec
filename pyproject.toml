@@ -3,7 +3,7 @@ requires = [
     "nanobind~=2.15.0",
     "scikit-build-core>=1.0.3",
     "vcs-versioning>=2.3.0",
-    "mqt.core~=3.9.0",
+    "mqt.core~=3.10.0",
 ]
 build-backend = "scikit_build_core.build"
 
@@ -42,7 +42,7 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "mqt.core~=3.9.0",
+    "mqt.core~=3.10.0",
     "PyQt6>=6.8",
     "ijson>=3.4.0",
     "typing-extensions>=4.1.0; python_version < '3.12'"
@@ -281,16 +281,16 @@ test-skip = [
 ]
 
 # The mqt-core shared libraries are provided by the mqt-core Python package.
-# They should not be vendorized into the mqt-qcec wheel. This requires
+# They should not be vendorized into the mqt-syrec wheel. This requires
 # excluding the shared libraries from the repair process.
 
 [tool.cibuildwheel.linux]
 environment = { DEPLOY="ON" }
 # The SOVERSION needs to be updated when the shared libraries are updated.
 repair-wheel-command = """auditwheel repair -w {dest_dir} {wheel} \
---exclude libmqt-core-ir.so.3.9 \
---exclude libmqt-core-qasm.so.3.9 \
---exclude libmqt-core-dd.so.3.9"""
+--exclude libmqt-core-ir.so.3.10 \
+--exclude libmqt-core-qasm.so.3.10 \
+--exclude libmqt-core-dd.so.3.10"""
 
 [tool.cibuildwheel.macos]
 environment = { MACOSX_DEPLOYMENT_TARGET = "13.3" }
@@ -319,7 +319,7 @@ build = [
     "nanobind~=2.15.0",
     "scikit-build-core>=1.0.3",
     "vcs-versioning>=2.3.0",
-    "mqt.core~=3.9.0",
+    "mqt.core~=3.10.0",
 ]
 docs = [
     "furo>=2025.9.25",

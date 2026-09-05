@@ -33,7 +33,7 @@ if(BUILD_MQT_SYREC_BINDINGS)
 endif()
 
 # cmake-format: off
-set(MQT_CORE_MINIMUM_VERSION 3.9.0
+set(MQT_CORE_MINIMUM_VERSION 3.10.0
     CACHE STRING "MQT Core minimum version")
 set(MQT_CORE_VERSION 3.10.0
     CACHE STRING "MQT Core version")
@@ -50,6 +50,16 @@ FetchContent_Declare(
 list(APPEND FETCH_PACKAGES mqt-core)
 
 if(BUILD_MQT_SYREC_TESTS)
+  set(JSON_VERSION
+      3.12.0
+      CACHE STRING "nlohmann_json version")
+  set(JSON_URL https://github.com/nlohmann/json/releases/download/v${JSON_VERSION}/json.tar.xz)
+  set(JSON_SystemInclude
+      ON
+      CACHE INTERNAL "Treat the library headers like system headers")
+  FetchContent_Declare(nlohmann_json URL ${JSON_URL} FIND_PACKAGE_ARGS ${JSON_VERSION})
+  list(APPEND FETCH_PACKAGES nlohmann_json)
+
   set(gtest_force_shared_crt
       ON
       CACHE BOOL "" FORCE)
