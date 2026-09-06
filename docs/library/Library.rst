@@ -7,7 +7,7 @@ Library
     AnnotatableQuantumComputation
     ConfigurableOptions
     NBitValuesContainer
-    Parser
+    Program
     InlinedQubitInformation
     Simulation
     Statistics
