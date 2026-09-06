@@ -7,7 +7,7 @@
 # Licensed under the MIT License
 
 # set required cmake version
-cmake_minimum_required(VERSION 3.24...4.4)
+cmake_minimum_required(VERSION 3.28...4.4)
 
 project(
   mqt-syrec
@@ -15,6 +15,7 @@ project(
   DESCRIPTION "MQT SyReC Synthesizer: A Tool for HDL-based Synthesis of Reversible Circuits")
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET "13.3")
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 option(BUILD_MQT_SYREC_BINDINGS "Build the MQT SYREC Python bindings" OFF)
 if(BUILD_MQT_SYREC_BINDINGS)
