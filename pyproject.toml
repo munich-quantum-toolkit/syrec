@@ -325,7 +325,7 @@ build = [
     "nanobind~=3.0.1",
     "scikit-build-core>=1.0.3",
     "vcs-versioning>=2.3.0",
-    "mqt.core~=3.10.0",
+    "mqt.core~=4.0.0",
 ]
 docs = [
     "furo>=2025.9.25",
