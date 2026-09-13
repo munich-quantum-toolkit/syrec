@@ -445,7 +445,7 @@ namespace syrec {
 
                 // Map the user declared variable idents in the .variable entry to the
                 // ones declared in the .initial_layout as explained in
-                // https://mqt.readthedocs.io/projects/core/en/latest/mqt_core_ir.html#layout-information
+                // https://mqt.readthedocs.io/projects/core/en/v3.10.0/mqt_core_ir.html#layout-information
                 const auto& quantumRegisters = qc->getQuantumRegisters();
                 for (std::size_t i = 0; i < nclassics; ++i) {
                     const auto algorithmicQubit = static_cast<Qubit>(i);
@@ -600,7 +600,7 @@ namespace syrec {
                     //
                     // The outputPermutation map will use be structured as shown in the
                     // documentation
-                    // (https://mqt.readthedocs.io/projects/core/en/latest/mqt_core_ir.html#layout-information)
+                    // (https://mqt.readthedocs.io/projects/core/en/v3.10.0/mqt_core_ir.html#layout-information)
                     // with the output qubit being used as the key while the input qubit
                     // serves as the map entries value.
                     //
