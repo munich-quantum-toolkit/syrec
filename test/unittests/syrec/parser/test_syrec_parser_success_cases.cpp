@@ -35,7 +35,7 @@ namespace {
     constexpr auto PRODUCTION_NUMBER_FILE_NAME            = "test_production_number.json";
 
     class SyrecParserSuccessCasesTestFixture: public SyrecParserBaseTestsFixture {
-    public:
+    protected:
         void SetUp() override {
             SyrecParserBaseTestsFixture::SetUp();
         }

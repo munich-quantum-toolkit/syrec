@@ -30,11 +30,13 @@ namespace {
         using CallStmtVariant                                                 = std::variant<std::shared_ptr<syrec::CallStatement>, std::shared_ptr<syrec::UncallStatement>>;
         static constexpr std::string_view MODULE_CALL_STMT_PREFIX_PLACEHOLDER = "<CALL_STMT_PREFIX>";
 
+    protected:
         void SetUp() override {
             moduleCallStmtPrefix = GetParam();
             ASSERT_TRUE(moduleCallStmtPrefix == "call" || moduleCallStmtPrefix == "uncall") << "Module call prefix must be either defined as 'call' or 'uncall'";
         }
 
+    public:
         void performTestExecution(std::string&                    stringifiedSyrecProgram,
                                   const syrec::Module&            signatureOfModuleInWhichCallStatementShallBeInspected,
                                   const syrec::Module&            signatureOfModuleBeingTargetOfCall,

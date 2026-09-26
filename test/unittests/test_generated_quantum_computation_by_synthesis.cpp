@@ -42,10 +42,12 @@ namespace {
                 expectedQRegLabel(std::move(expectedQRegLabel)), expectedCoveredQubitRange(expectedCoveredQubitRange), expectedTypeOfQubitsStoredInQReg(expectedTypeOfQubitsStoredInQReg) {}
         };
 
+    protected:
         void SetUp() override {
             static_assert(std::is_same_v<T, CostAwareSynthesis> || std::is_same_v<T, LineAwareSynthesis>);
         }
 
+    public:
         AnnotatableQuantumComputation annotatableQuantumComputation;
 
         static void parseInputCircuitPerformSynthesisAndAssertSuccess(const std::string_view stringifiedSyrecProgram, AnnotatableQuantumComputation& annotatableQuantumComputation) {

@@ -55,11 +55,12 @@ using json = nlohmann::json; // NOLINT(misc-include-cleaner) Warning reported he
  */
 template<typename T>
 class BaseSimulationTestFixture: public ::testing::Test {
-public:
+protected:
     void SetUp() override {
         static_assert(std::is_same_v<T, syrec::CostAwareSynthesis> || std::is_same_v<T, syrec::LineAwareSynthesis>);
     }
 
+public:
     syrec::AnnotatableQuantumComputation annotatableQuantumComputation;
     syrec::Program                       syrecProgramInstance;
 

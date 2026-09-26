@@ -219,18 +219,21 @@ namespace {
     };
 
     class ExpectingOverlappingVariableAccessesTestFixture: public BaseOverlapInVariableAccessesTestFixture {
+    public:
         utils::VariableAccessOverlapCheckResult::OverlapState getExpectedVariableAccessOverlapCheckResult() override {
             return utils::VariableAccessOverlapCheckResult::OverlapState::Overlapping;
         }
     };
 
     class ExpectingPotentiallyOverlappingVariableAccessesTestFixture: public BaseOverlapInVariableAccessesTestFixture {
+    public:
         utils::VariableAccessOverlapCheckResult::OverlapState getExpectedVariableAccessOverlapCheckResult() override {
             return utils::VariableAccessOverlapCheckResult::OverlapState::MaybeOverlapping;
         }
     };
 
     class ExpectingNotOverlappingVariableAccessesTestFixture: public BaseOverlapInVariableAccessesTestFixture {
+    public:
         utils::VariableAccessOverlapCheckResult::OverlapState getExpectedVariableAccessOverlapCheckResult() override {
             return utils::VariableAccessOverlapCheckResult::OverlapState::NotOverlapping;
         }
