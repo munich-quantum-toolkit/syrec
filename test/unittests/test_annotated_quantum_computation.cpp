@@ -42,7 +42,7 @@ namespace {
 
     using namespace syrec;
 
-    const static std::string DEFAULT_QUANTUM_REGISTER_LABEL = "__defaultReg";
+    constexpr auto DEFAULT_QUANTUM_REGISTER_LABEL = "__defaultReg";
 
     class AnnotatableQuantumComputationTestsFixture: public testing::Test {
     protected:

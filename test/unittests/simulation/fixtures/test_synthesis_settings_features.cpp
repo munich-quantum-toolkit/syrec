@@ -19,11 +19,10 @@
 
 #include <gtest/gtest.h>
 #include <optional>
-#include <string>
 #include <string_view>
 
 namespace {
-    const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_synthesis_settings_features.json";
+    constexpr auto RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_synthesis_settings_features.json";
 
     TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
 

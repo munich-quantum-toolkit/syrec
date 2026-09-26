@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <initializer_list>
 #include <memory>
 #include <optional>
 #include <string>
@@ -27,8 +28,8 @@
 using namespace utils;
 
 namespace {
-    constexpr unsigned int          DEFAULT_BITWIDTH          = 16;
-    const std::vector<unsigned int> DEFAULT_SIGNAL_DIMENSIONS = {2, 3};
+    constexpr unsigned int                        DEFAULT_BITWIDTH          = 16;
+    constexpr std::initializer_list<unsigned int> DEFAULT_SIGNAL_DIMENSIONS = {2, 3};
 
     class VariableTypeAmbiguityDuringModuleInsertionTestFixture: public ::testing::TestWithParam<std::pair<syrec::Variable::Type, syrec::Variable::Type>> {
     protected:

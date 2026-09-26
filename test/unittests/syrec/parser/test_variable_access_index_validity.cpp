@@ -25,7 +25,7 @@
 using namespace utils;
 
 namespace {
-    const std::string      DEFAULT_VARIABLE_IDENTIFIER = "varIdent";
+    constexpr auto         DEFAULT_VARIABLE_IDENTIFIER = "varIdent";
     constexpr unsigned int DEFAULT_SIGNAL_BITWIDTH     = 16;
 
     syrec::Variable::ptr generateVariableInstance(const std::string& variableIdentifier, const std::vector<unsigned int>& variableDimensions, unsigned int variableBitwidth) {

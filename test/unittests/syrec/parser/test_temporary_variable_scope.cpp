@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <initializer_list>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -31,8 +32,8 @@ using namespace utils;
 namespace {
     using ExpectedSymbolTableEntry = TemporaryVariableScope::ScopeEntry::readOnlyPtr;
 
-    constexpr unsigned int          DEFAULT_BITWIDTH            = 16;
-    const std::vector<unsigned int> DEFAULT_VARIABLE_DIMENSIONS = {2, 1};
+    constexpr unsigned int                        DEFAULT_BITWIDTH            = 16;
+    constexpr std::initializer_list<unsigned int> DEFAULT_VARIABLE_DIMENSIONS = {2, 1};
 
     class SingleVariableTypeTestFixture: public testing::TestWithParam<std::pair<syrec::Variable::Type, syrec::Variable::Type>> {
     protected:

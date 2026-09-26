@@ -13,10 +13,9 @@
 #include "base_simulation_test_fixture.hpp"
 
 #include <gtest/gtest.h>
-#include <string>
 
 namespace {
-    const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_sim_production_variableExpression.json";
+    constexpr auto RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_sim_production_variableExpression.json";
 
     TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
 
