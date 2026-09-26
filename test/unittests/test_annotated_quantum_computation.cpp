@@ -52,7 +52,7 @@ namespace {
             QubitShouldBeDataQubit                  = 0,
             QubitShouldBeGarbage                    = 1,
             QubitShouldBeAncillary                  = 2,
-            InlineQubitInformationShouldBeFetchable = 4
+            InlineQubitInformationShouldBeFetchable = 4,
         };
 
         [[nodiscard]] constexpr friend bool operator&(const ExpectedQubitFlags aggregateQubitFlags, const ExpectedQubitFlags flagValueToExtract) noexcept {

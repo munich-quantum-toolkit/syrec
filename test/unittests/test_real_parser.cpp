@@ -175,7 +175,8 @@ namespace {
         static constexpr char COMMENT_LINE_PREFIX = '#';
 
         enum class GateType : std::uint8_t { Toffoli,
-                                             V };
+                                             V,
+        };
 
         QuantumComputation qc;
         std::stringstream  realFileContent;
@@ -625,8 +626,10 @@ TEST_F(RealParserTest, GateWithMoreLinesThanDeclared) {
     usingVersion(DEFAULT_REAL_VERSION)
             .usingNVariables(3)
             .usingVariables({"v1", "v2", "v3"})
-            .withGates({stringifyGate(GateType::Toffoli, std::optional(2),
-                                      {"v1", "v2"}, {"v3"}, std::nullopt)});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, std::optional(2),
+                                  {"v1", "v2"}, {"v3"}, std::nullopt),
+            });
 
     EXPECT_THROW(
             qc = syrec::RealParser::import(realFileContent),
@@ -637,8 +640,10 @@ TEST_F(RealParserTest, GateWithLessLinesThanDeclared) {
     usingVersion(DEFAULT_REAL_VERSION)
             .usingNVariables(3)
             .usingVariables({"v1", "v2", "v3"})
-            .withGates({stringifyGate(GateType::Toffoli, std::optional(3), {"v1"},
-                                      {"v3"}, std::nullopt)});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, std::optional(3), {"v1"},
+                                  {"v3"}, std::nullopt),
+            });
 
     EXPECT_THROW(
             qc = syrec::RealParser::import(realFileContent),
@@ -943,8 +948,10 @@ TEST_F(RealParserTest, ConstantValueZero) {
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
             .withConstants({constantValueZero, constantValueNone})
-            .withGates({stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
-                        stringifyGate(GateType::Toffoli, {"v2"}, {"v1"})});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
+                    stringifyGate(GateType::Toffoli, {"v2"}, {"v1"}),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -967,8 +974,10 @@ TEST_F(RealParserTest, ConstantValueOne) {
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
             .withConstants({constantValueNone, constantValueOne})
-            .withGates({stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
-                        stringifyGate(GateType::Toffoli, {"v2"}, {"v1"})});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
+                    stringifyGate(GateType::Toffoli, {"v2"}, {"v1"}),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -991,8 +1000,10 @@ TEST_F(RealParserTest, GarbageValues) {
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
             .withGarbageValues({isNotGarbageState, isGarbageState})
-            .withGates({stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
-                        stringifyGate(GateType::Toffoli, {"v2"}, {"v1"})});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
+                    stringifyGate(GateType::Toffoli, {"v2"}, {"v1"}),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -1019,8 +1030,10 @@ TEST_F(RealParserTest, InputIdentDefinitionInQuotes) {
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
             .usingInputs({"i1", "\"test_input_1\""})
-            .withGates({stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
-                        stringifyGate(GateType::Toffoli, {"v2"}, {"v1"})});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
+                    stringifyGate(GateType::Toffoli, {"v2"}, {"v1"}),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -1043,8 +1056,10 @@ TEST_F(RealParserTest, OutputIdentDefinitionInQuotes) {
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
             .usingOutputs({"\"other_output_2\"", "\"o2\""})
-            .withGates({stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
-                        stringifyGate(GateType::Toffoli, {"v2"}, {"v1"})});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
+                    stringifyGate(GateType::Toffoli, {"v2"}, {"v1"}),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -1068,8 +1083,12 @@ TEST_F(RealParserTest,
             .usingNVariables(4)
             .usingVariables({"v1", "v2", "v3", "v4"})
             .usingInputs({"i1", "\"o2\"", "i3", "\"o4\""})
-            .withGarbageValues({isNotGarbageState, isGarbageState, isNotGarbageState,
-                                isGarbageState})
+            .withGarbageValues({
+                    isNotGarbageState,
+                    isGarbageState,
+                    isNotGarbageState,
+                    isGarbageState,
+            })
             .usingOutputs({"i1", "o2", "i3", "o4"})
             .withGates({
                     stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
@@ -1104,8 +1123,12 @@ TEST_F(RealParserTest,
             .usingNVariables(4)
             .usingVariables({"v1", "v2", "v3", "v4"})
             .usingInputs({"i1", "i2", "i3", "i4"})
-            .withGarbageValues({isNotGarbageState, isGarbageState, isNotGarbageState,
-                                isGarbageState})
+            .withGarbageValues({
+                    isNotGarbageState,
+                    isGarbageState,
+                    isNotGarbageState,
+                    isGarbageState,
+            })
             .usingOutputs({"i1", "\"i1\"", "i2", "\"i4\""})
             .withGates({
                     stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
@@ -1140,10 +1163,18 @@ TEST_F(RealParserTest, MatchingInputAndOutputNotInQuotes) {
             .usingNVariables(4)
             .usingVariables({"v1", "v2", "v3", "v4"})
             .usingInputs({"i1", "i2", "i3", "i4"})
-            .withConstants({constantValueOne, constantValueNone, constantValueNone,
-                            constantValueZero})
-            .withGarbageValues({isGarbageState, isNotGarbageState, isNotGarbageState,
-                                isGarbageState})
+            .withConstants({
+                    constantValueOne,
+                    constantValueNone,
+                    constantValueNone,
+                    constantValueZero,
+            })
+            .withGarbageValues({
+                    isGarbageState,
+                    isNotGarbageState,
+                    isNotGarbageState,
+                    isGarbageState,
+            })
             .usingOutputs({"o1", "i1", "i4", "o2"})
             .withGates({
                     stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
@@ -1180,10 +1211,18 @@ TEST_F(RealParserTest, MatchingInputAndOutputInQuotes) {
             .usingNVariables(4)
             .usingVariables({"v1", "v2", "v3", "v4"})
             .usingInputs({"i1", "\"i2\"", "\"i3\"", "i4"})
-            .withConstants({constantValueNone, constantValueOne, constantValueZero,
-                            constantValueNone})
-            .withGarbageValues({isNotGarbageState, isNotGarbageState,
-                                isNotGarbageState, isGarbageState})
+            .withConstants({
+                    constantValueNone,
+                    constantValueOne,
+                    constantValueZero,
+                    constantValueNone,
+            })
+            .withGarbageValues({
+                    isNotGarbageState,
+                    isNotGarbageState,
+                    isNotGarbageState,
+                    isGarbageState,
+            })
             .usingOutputs({"i4", "\"i3\"", "\"i2\"", "o1"})
             .withGates({
                     stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
@@ -1266,8 +1305,12 @@ TEST_F(RealParserTest, OutputPermutationForGarbageQubitsNotCreated) {
             .usingNVariables(4)
             .usingVariables({"v1", "v2", "v3", "v4"})
             .usingInputs({"i1", "i2", "i3", "i4"})
-            .withGarbageValues({isNotGarbageState, isGarbageState, isGarbageState,
-                                isNotGarbageState})
+            .withGarbageValues({
+                    isNotGarbageState,
+                    isGarbageState,
+                    isGarbageState,
+                    isNotGarbageState,
+            })
             .usingOutputs({"i4", "o1", "o2", "i1"})
             .withGates({
                     stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
@@ -1525,9 +1568,11 @@ TEST_F(RealParserTest, GateDefinitionWithCommentLineAsPostfix) {
     usingVersion(DEFAULT_REAL_VERSION)
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
-            .withGates({stringifyGate(
-                    GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
-                    std::make_optional(createComment(" a test comment")))});
+            .withGates({
+                    stringifyGate(
+                            GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
+                            std::make_optional(createComment(" a test comment"))),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -1540,8 +1585,10 @@ TEST_F(RealParserTest, GateDefinitionWithWhitespaceAsPostfix) {
     usingVersion(DEFAULT_REAL_VERSION)
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
-            .withGates({stringifyGate(GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
-                                      std::make_optional(" \t\t \t"))});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
+                                  std::make_optional(" \t\t \t")),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -1556,9 +1603,11 @@ TEST_F(RealParserTest, CombinationOfCommentLineAndWhitespacePostfixAllowed) {
             .usingVariables(
                     {"v1", "v2"},
                     std::make_optional(" \t\t \t" + createComment(" a test comment")))
-            .withGates({stringifyGate(
-                    GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
-                    std::make_optional(" \t\t \t" + createComment(" a test comment")))});
+            .withGates({
+                    stringifyGate(
+                            GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
+                            std::make_optional(" \t\t \t" + createComment(" a test comment"))),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));

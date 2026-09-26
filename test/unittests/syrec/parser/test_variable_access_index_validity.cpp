@@ -213,7 +213,8 @@ TEST(VariableAccessIndexValidityTests, InvalidReferenceToVariableDoesNotCrashChe
     auto variableAccess    = syrec::VariableAccess();
     variableAccess.indexes = {
             createExprForAccessOnValueOfDimensionUsingConstantValue(0),
-            createExprForAccessOnValueOfDimensionUsingConstantValue(1)};
+            createExprForAccessOnValueOfDimensionUsingConstantValue(1),
+    };
     variableAccess.range = std::make_pair(createContainerForBitrangeAccessComponent(0), createContainerForBitrangeAccessComponent(2));
 
     std::optional<VariableAccessIndicesValidity> actualValidationResult;
@@ -256,7 +257,8 @@ TEST(VariableAccessIndexValidityTests, AccessedValueOfDimensionOutOfRangeIsNotVa
     const std::vector               outOfRangeValuePerDimension = {
             numberOfValuesPerDimension.at(0) + 1,
             numberOfValuesPerDimension.at(1) + 10,
-            numberOfValuesPerDimension.at(2) + 3};
+            numberOfValuesPerDimension.at(2) + 3,
+    };
     ASSERT_EQ(numberOfValuesPerDimension.size(), outOfRangeValuePerDimension.size());
 
     auto variableAccess    = syrec::VariableAccess();
@@ -300,9 +302,11 @@ TEST(VariableAccessIndexValidityTests, AccessedValueOfDimensionOutOfRangeWithVal
     variableAccess.indexes[1] = createExprForAccessOnValueOfDimensionUsingConstantValue(outOfRangeBit);
     variableAccess.indexes[2] = createExprForAccessOnValueOfDimensionUsingConstantValue(0);
 
-    VariableAccessIndicesValidity expectedValidationResult = buildExpectedResult({createUnknownIndexValidationResult(std::nullopt),
-                                                                                  createOutOfRangeIndexValidationResult(outOfRangeBit),
-                                                                                  createValidIndexValidationResult(0)},
+    VariableAccessIndicesValidity expectedValidationResult = buildExpectedResult({
+                                                                                         createUnknownIndexValidationResult(std::nullopt),
+                                                                                         createOutOfRangeIndexValidationResult(outOfRangeBit),
+                                                                                         createValidIndexValidationResult(0),
+                                                                                 },
                                                                                  std::nullopt);
 
     std::optional<VariableAccessIndicesValidity> actualValidationResult;
@@ -324,9 +328,11 @@ TEST(VariableAccessIndexValidityTests, AccessedValueForMultipleDimensionsOutOfRa
     variableAccess.indexes[1] = createExprForAccessOnValueOfDimensionUsingConstantValue(validIndexForIntermediateDimension);
     variableAccess.indexes[2] = createExprForAccessOnValueOfDimensionUsingConstantValue(outOfRangeValueForLastDimension);
 
-    VariableAccessIndicesValidity expectedValidationResult = buildExpectedResult({createOutOfRangeIndexValidationResult(outOfRangeValueForFirstDimension),
-                                                                                  createValidIndexValidationResult(validIndexForIntermediateDimension),
-                                                                                  createOutOfRangeIndexValidationResult(outOfRangeValueForLastDimension)},
+    VariableAccessIndicesValidity expectedValidationResult = buildExpectedResult({
+                                                                                         createOutOfRangeIndexValidationResult(outOfRangeValueForFirstDimension),
+                                                                                         createValidIndexValidationResult(validIndexForIntermediateDimension),
+                                                                                         createOutOfRangeIndexValidationResult(outOfRangeValueForLastDimension),
+                                                                                 },
                                                                                  std::nullopt);
 
     std::optional<VariableAccessIndicesValidity> actualValidationResult;
@@ -367,9 +373,11 @@ TEST(VariableAccessIndexValidityTests, InvalidValueForValueOfDimensionIsNotValid
     variableAccess.indexes[1] = nullptr;
     variableAccess.indexes[2] = createExprForAccessOnValueOfDimensionUsingConstantValue(numberOfValuesPerDimension.back() - 1);
 
-    VariableAccessIndicesValidity expectedValidationResult = buildExpectedResult({createValidIndexValidationResult(numberOfValuesPerDimension.front() - 1),
-                                                                                  createUnknownIndexValidationResult(std::nullopt),
-                                                                                  createValidIndexValidationResult(numberOfValuesPerDimension.back() - 1)},
+    VariableAccessIndicesValidity expectedValidationResult = buildExpectedResult({
+                                                                                         createValidIndexValidationResult(numberOfValuesPerDimension.front() - 1),
+                                                                                         createUnknownIndexValidationResult(std::nullopt),
+                                                                                         createValidIndexValidationResult(numberOfValuesPerDimension.back() - 1),
+                                                                                 },
                                                                                  std::nullopt);
 
     std::optional<VariableAccessIndicesValidity> actualValidationResult;

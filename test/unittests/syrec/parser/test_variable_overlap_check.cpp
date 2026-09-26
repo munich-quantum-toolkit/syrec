@@ -1717,7 +1717,11 @@ TEST(VariableAccessOverlapTests, MismatchInReferenceVariableDimensionsDetectedCo
     lhsVariableAccess.indexes = {createExpressionForConstantValue(0U), createExpressionForConstantValue(1U)};
 
     const std::vector<std::vector<unsigned int>> rOperandReferenceVariableValuesPerDimension = {
-            {1U, 2U, 3U}, {1U}, {2U, 1U}, {0U, 2U}};
+            {1U, 2U, 3U},
+            {1U},
+            {2U, 1U},
+            {0U, 2U},
+    };
 
     const auto rOperandReferenceVariable = createVariableInstance(DEFAULT_VARIABLE_IDENTIFIER, {}, DEFAULT_VARIABLE_BITWIDTH);
     ASSERT_THAT(rOperandReferenceVariable, testing::NotNull());

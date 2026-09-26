@@ -594,9 +594,11 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
     }
 
     const qc::Qubit relativeQubitIndexInQuantumRegister = qubit - firstQubitOfAccessedElement;
-    return QubitInVariableLayoutData({.accessedValuePerDimensionOfElementStoringQubit = *requiredValuePerDimensionToAccessElementStoringQubit,
-                                      .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
-                                      .inlinedQubitInformation                        = optionalSharedInlinedQubitInformation});
+    return QubitInVariableLayoutData({
+            .accessedValuePerDimensionOfElementStoringQubit = *requiredValuePerDimensionToAccessElementStoringQubit,
+            .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
+            .inlinedQubitInformation                        = optionalSharedInlinedQubitInformation,
+    });
 }
 
 [[nodiscard]] std::optional<std::vector<unsigned>> AnnotatableQuantumComputation::QuantumRegisterForVariableLayout::getRequiredValuesPerDimensionToAccessQubitOfVariable(const qc::Qubit qubit) const {
@@ -659,9 +661,11 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
         return std::nullopt;
     }
 
-    return QubitInVariableLayoutData({.accessedValuePerDimensionOfElementStoringQubit = std::vector({0U}),
-                                      .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
-                                      .inlinedQubitInformation                        = sharedQubitRangeInlineInformationLookup.at(*indexOfQubitRangeStoringQubit).inlinedQubitInformation});
+    return QubitInVariableLayoutData({
+            .accessedValuePerDimensionOfElementStoringQubit = std::vector({0U}),
+            .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
+            .inlinedQubitInformation                        = sharedQubitRangeInlineInformationLookup.at(*indexOfQubitRangeStoringQubit).inlinedQubitInformation,
+    });
 }
 
 bool AnnotatableQuantumComputation::AggregateAncillaryQubitsQuantumRegisterLayout::appendQubitRange(const QubitIndexRange qubitIndexRange, const InlinedQubitInformation& sharedInlinedQubitInformation) {

@@ -670,7 +670,32 @@ namespace syrec {
         std::string cmd;
 
         static const std::map<std::string, OpType> IDENTIFIER_MAP{
-                {"0", I}, {"id", I}, {"h", H}, {"n", X}, {"c", X}, {"x", X}, {"y", Y}, {"z", Z}, {"s", S}, {"si", Sdg}, {"sp", Sdg}, {"s+", Sdg}, {"v", V}, {"vi", Vdg}, {"vp", Vdg}, {"v+", Vdg}, {"rx", RX}, {"ry", RY}, {"rz", RZ}, {"f", SWAP}, {"if", SWAP}, {"p", Peres}, {"pi", Peresdg}, {"p+", Peresdg}, {"q", P}};
+                {"0", I},
+                {"id", I},
+                {"h", H},
+                {"n", X},
+                {"c", X},
+                {"x", X},
+                {"y", Y},
+                {"z", Z},
+                {"s", S},
+                {"si", Sdg},
+                {"sp", Sdg},
+                {"s+", Sdg},
+                {"v", V},
+                {"vi", Vdg},
+                {"vp", Vdg},
+                {"v+", Vdg},
+                {"rx", RX},
+                {"ry", RY},
+                {"rz", RZ},
+                {"f", SWAP},
+                {"if", SWAP},
+                {"p", Peres},
+                {"pi", Peresdg},
+                {"p+", Peresdg},
+                {"q", P},
+        };
 
         while (!is.eof()) {
             if (!static_cast<bool>(is >> cmd)) {
