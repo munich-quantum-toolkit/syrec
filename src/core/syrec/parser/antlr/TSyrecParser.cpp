@@ -2525,7 +2525,7 @@ TSyrecParser::NumberContext* TSyrecParser::number() {
                 setState(55);
                 antlrcpp::downCast<NumberFromExpressionContext*>(localCtx)->op = _input->LT(1);
                 const std::size_t lookahead                                    = _input->LA(1);
-                if (!(((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 2944ULL) != 0)) {
+                if ((lookahead & ~0x3fULL) != 0 || ((1ULL << lookahead) & 2944ULL) == 0) {
                     antlrcpp::downCast<NumberFromExpressionContext*>(localCtx)->op = _errHandler->recoverInline(this);
                 } else {
                     _errHandler->reportMatch(this);
@@ -2759,7 +2759,7 @@ TSyrecParser::ParameterContext* TSyrecParser::parameter() {
         enterOuterAlt(localCtx, 1);
         setState(91);
         const std::size_t lookahead = _input->LA(1);
-        if (!(((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 15032385536ULL) != 0)) {
+        if ((lookahead & ~0x3fULL) != 0 || ((1ULL << lookahead) & 15032385536ULL) == 0) {
             _errHandler->recoverInline(this);
         } else {
             _errHandler->reportMatch(this);
@@ -3375,7 +3375,7 @@ TSyrecParser::UnaryStatementContext* TSyrecParser::unaryStatement() {
         setState(183);
         antlrcpp::downCast<UnaryStatementContext*>(localCtx)->unaryOp = _input->LT(1);
         const std::size_t lookahead                                   = _input->LA(1);
-        if (!(((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 14ULL) != 0)) {
+        if ((lookahead & ~0x3fULL) != 0 || ((1ULL << lookahead) & 14ULL) == 0) {
             antlrcpp::downCast<UnaryStatementContext*>(localCtx)->unaryOp = _errHandler->recoverInline(this);
         } else {
             _errHandler->reportMatch(this);
@@ -3438,7 +3438,7 @@ TSyrecParser::AssignStatementContext* TSyrecParser::assignStatement() {
         setState(187);
         antlrcpp::downCast<AssignStatementContext*>(localCtx)->assignmentOp = _input->LT(1);
         const std::size_t lookahead                                         = _input->LA(1);
-        if (!(((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 112ULL) != 0)) {
+        if ((lookahead & ~0x3fULL) != 0 || ((1ULL << lookahead) & 112ULL) == 0) {
             antlrcpp::downCast<AssignStatementContext*>(localCtx)->assignmentOp = _errHandler->recoverInline(this);
         } else {
             _errHandler->reportMatch(this);
@@ -3815,7 +3815,7 @@ TSyrecParser::BinaryExpressionContext* TSyrecParser::binaryExpression() {
         setState(223);
         antlrcpp::downCast<BinaryExpressionContext*>(localCtx)->binaryOperation = _input->LT(1);
         const std::size_t lookahead                                             = _input->LA(1);
-        if (!(((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 452927360ULL) != 0)) {
+        if ((lookahead & ~0x3fULL) != 0 || ((1ULL << lookahead) & 452927360ULL) == 0) {
             antlrcpp::downCast<BinaryExpressionContext*>(localCtx)->binaryOperation = _errHandler->recoverInline(this);
         } else {
             _errHandler->reportMatch(this);

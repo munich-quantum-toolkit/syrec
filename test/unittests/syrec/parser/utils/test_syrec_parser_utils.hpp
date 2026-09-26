@@ -21,14 +21,11 @@
 #include <ios>
 #include <iterator>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
-
-// The .clang-tidy warning about the missing header file seems to be a false positive since the include of the required <nlohmann/json.hpp> is defined in this file.
-// Maybe this warning is reported because the nlohmann library is implicitly added by one of the external dependencies?
-using nlohmann::json; // NOLINT(misc-include-cleaner) Warning reported here seems to be a false positive since <nlohmann/json.hpp> is included
 
 namespace syrec_parser_test_utils {
     constexpr auto TEST_NAME_NOT_ALLOWED_CHARACTER       = '-';
@@ -108,7 +105,7 @@ namespace syrec_parser_test_utils {
             return {concatenateStrings(ERROR_REASON_FAILED_TO_LOAD_FROM_FILE, TEST_NAME_COMPONENT_DELIMITER_SYMBOL, {extractFilenameWithoutFileExtension(inputFileName)})};
         }
 
-        const auto parsedJson = json::parse(inputFileStream, nullptr, false);
+        const auto parsedJson = nlohmann::json::parse(inputFileStream, nullptr, false);
         if (parsedJson.is_discarded()) {
             return {concatenateStrings(ERROR_REASON_JSON_DATA_INVALID, TEST_NAME_COMPONENT_DELIMITER_SYMBOL, {extractFilenameWithoutFileExtension(inputFileName)})};
         }
