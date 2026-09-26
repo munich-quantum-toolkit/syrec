@@ -125,7 +125,7 @@ bool utils::TemporaryVariableScope::removeVariable(const std::string_view& signa
 }
 
 bool utils::TemporaryVariableScope::updateValueOfLoopVariable(const std::string_view& loopVariableIdentifier, const std::optional<unsigned int>& newValue) {
-    if (signalIdentifierLookup.count(loopVariableIdentifier) == 0) {
+    if (!signalIdentifierLookup.contains(loopVariableIdentifier)) {
         return false;
     }
 
@@ -141,7 +141,7 @@ bool utils::TemporaryVariableScope::updateValueOfLoopVariable(const std::string_
 }
 
 std::optional<unsigned> utils::TemporaryVariableScope::getValueOfLoopVariable(const std::string_view& loopVariableIdentifier) {
-    if (signalIdentifierLookup.count(loopVariableIdentifier) == 0 || knownLoopVariableValues.count(loopVariableIdentifier) == 0) {
+    if (!signalIdentifierLookup.contains(loopVariableIdentifier) || !knownLoopVariableValues.contains(loopVariableIdentifier)) {
         return std::nullopt;
     }
 

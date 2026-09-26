@@ -90,14 +90,12 @@ std::optional<utils::TemporaryVariableScope::ptr> utils::BaseSymbolTable::closeT
 
 // NON-PUBLIC FUNCTIONALITY
 utils::BaseSymbolTable::ModuleOverloadResolutionResult utils::BaseSymbolTable::getModulesMatchingSignature(const std::string_view& accessedModuleIdentifier, const syrec::Variable::vec& callerArguments, bool validateCallerArguments) const {
-    if (validateCallerArguments) {
-        if (std::ranges::any_of(
-                    callerArguments,
-                    [](const syrec::Variable::ptr& callerArgument) {
-                        return !callerArgument || callerArgument->name.empty();
-                    })) {
-            return ModuleOverloadResolutionResult(ModuleOverloadResolutionResult::Result::CallerArgumentsInvalid, std::nullopt);
-        }
+    if (validateCallerArguments && std::ranges::any_of(
+                                           callerArguments,
+                                           [](const syrec::Variable::ptr& callerArgument) {
+                                               return !callerArgument || callerArgument->name.empty();
+                                           })) {
+        return ModuleOverloadResolutionResult(ModuleOverloadResolutionResult::Result::CallerArgumentsInvalid, std::nullopt);
     }
 
     syrec::Module::vec modulesMatchingIdentifier = getModulesByName(accessedModuleIdentifier);

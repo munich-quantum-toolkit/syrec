@@ -536,7 +536,7 @@ namespace syrec {
                         {numVariablesHeaderComponentPrefix, variablesHeaderComponentPrefix},
                         definedHeaderComponents);
 
-                if (definedHeaderComponents.count(outputsHeaderComponentPrefix) > 0) {
+                if (definedHeaderComponents.contains(outputsHeaderComponentPrefix)) {
                     throw std::runtime_error(
                             "[real parser] l:" + std::to_string(line) +
                             " msg: .inputs entry must be declared prior to the .outputs entry");
@@ -633,7 +633,7 @@ namespace syrec {
                         // output (output 1) of the identity permutation must have another
                         // non-identity permutation defined or must be declared as a garbage
                         // output.
-                        if (qc->outputPermutation.count(matchingInputQubitForOutputLiteral) > 0 &&
+                        if (qc->outputPermutation.contains(matchingInputQubitForOutputLiteral) &&
                             qc->outputPermutation[matchingInputQubitForOutputLiteral] ==
                                     matchingInputQubitForOutputLiteral) {
                             qc->outputPermutation.erase(matchingInputQubitForOutputLiteral);

@@ -48,7 +48,7 @@ namespace {
     protected:
         std::unique_ptr<AnnotatableQuantumComputation> annotatedQuantumComputation;
 
-        enum ExpectedQubitFlags : std::uint8_t {
+        enum class ExpectedQubitFlags : std::uint8_t {
             QubitShouldBeDataQubit                  = 0,
             QubitShouldBeGarbage                    = 1,
             QubitShouldBeAncillary                  = 2,
@@ -70,22 +70,22 @@ namespace {
         [[nodiscard]] static constexpr ExpectedQubitFlags getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(const AnnotatableQuantumComputation::QubitType qubitType) {
             switch (qubitType) {
                 case AnnotatableQuantumComputation::QubitType::Data:
-                    return QubitShouldBeDataQubit;
+                    return ExpectedQubitFlags::QubitShouldBeDataQubit;
                 case AnnotatableQuantumComputation::QubitType::Ancillary:
                 case AnnotatableQuantumComputation::QubitType::Garbage:
-                    return QubitShouldBeGarbage;
+                    return ExpectedQubitFlags::QubitShouldBeGarbage;
                 default:
                     // This assert should help to catch unhandled qubit types (in debug builds) but will not be triggered in release builds.
                     assert(false && "Unhandled qubit type detected");
                     // We add a return value so that the compiler is happy.
-                    return QubitShouldBeDataQubit;
+                    return ExpectedQubitFlags::QubitShouldBeDataQubit;
             }
         }
 
         static void assertExpectedQubitFlagsMatchForQubitRange(const AnnotatableQuantumComputation& annotatedQuantumComputation, const AnnotatableQuantumComputation::QubitIndexRange qubitIndexRangeToCheck, const ExpectedQubitFlags expectedSharedQubitFlags) {
-            const bool shouldQubitBeGarbage               = expectedSharedQubitFlags & QubitShouldBeGarbage;
-            const bool shouldQubitBeAncillary             = expectedSharedQubitFlags & QubitShouldBeAncillary;
-            const bool shouldInlineInformationBeFetchable = expectedSharedQubitFlags & InlineQubitInformationShouldBeFetchable;
+            const bool shouldQubitBeGarbage               = expectedSharedQubitFlags & ExpectedQubitFlags::QubitShouldBeGarbage;
+            const bool shouldQubitBeAncillary             = expectedSharedQubitFlags & ExpectedQubitFlags::QubitShouldBeAncillary;
+            const bool shouldInlineInformationBeFetchable = expectedSharedQubitFlags & ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
 
             for (qc::Qubit qubit = qubitIndexRangeToCheck.firstQubitIndex; qubit <= qubitIndexRangeToCheck.lastQubitIndex; ++qubit) {
                 ASSERT_EQ(shouldQubitBeGarbage, annotatedQuantumComputation.logicalQubitIsGarbage(qubit)) << "Expected qubit " << std::to_string(qubit) << " to be marked as garbage qubit: " << shouldQubitBeGarbage;
@@ -381,13 +381,13 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    ExpectedQubitFlags expectedSharedQubitFlags = QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit;
     switch (GetParam()) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlags = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
@@ -431,13 +431,13 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInVariable);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    ExpectedQubitFlags expectedSharedQubitFlags = QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit;
     switch (GetParam()) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlags = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
@@ -531,19 +531,19 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInExistingQReg + expectedNumQubitsInToBeAddedQReg);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    ExpectedQubitFlags expectedSharedQubitFlagsOfExistingQReg = QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlagsOfExistingQReg = ExpectedQubitFlags::QubitShouldBeDataQubit;
     switch (qubitTypeOfExistingQReg) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlagsOfExistingQReg = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlagsOfExistingQReg = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
     }
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfExistingQReg, expectedSharedQubitFlagsOfExistingQReg));
-    if (expectedSharedQubitFlagsOfExistingQReg & InlineQubitInformationShouldBeFetchable) {
+    if (expectedSharedQubitFlagsOfExistingQReg & ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable) {
         ASSERT_TRUE(optionalinlineInformationOfExistingQReg.has_value());
         ASSERT_TRUE(optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel.has_value());
         ASSERT_TRUE(optionalinlineInformationOfExistingQReg->inlineStack.has_value());
@@ -554,19 +554,19 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
         ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 5U}), optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel, {0U, 2U}, *optionalinlineInformationOfExistingQReg->inlineStack));
     }
 
-    ExpectedQubitFlags expectedSharedQubitFlagsOfToBeAddedQReg = QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlagsOfToBeAddedQReg = ExpectedQubitFlags::QubitShouldBeDataQubit;
     switch (qubitTypeOfToBeAddedQReg) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlagsOfToBeAddedQReg = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlagsOfToBeAddedQReg = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
     }
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfToBeAddedQReg, expectedSharedQubitFlagsOfToBeAddedQReg));
-    if (expectedSharedQubitFlagsOfToBeAddedQReg & InlineQubitInformationShouldBeFetchable) {
+    if (expectedSharedQubitFlagsOfToBeAddedQReg & ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable) {
         ASSERT_TRUE(optionalInlineInformationOfToBeAddedQReg.has_value());
         ASSERT_TRUE(optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel.has_value());
         ASSERT_TRUE(optionalInlineInformationOfToBeAddedQReg->inlineStack.has_value());
@@ -609,13 +609,13 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAggregateAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
     ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 4U}), std::nullopt, {0U}, aggregatedAncillaryQubitsInlineStack));
 
-    ExpectedQubitFlags expectedSharedQubitFlags = QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit;
     switch (GetParam()) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlags = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
@@ -784,7 +784,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
-    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam()) | InlineQubitInformationShouldBeFetchable;
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam()) | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
@@ -1174,16 +1174,16 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddMixtureOfDifferentQuantumRe
     ASSERT_NO_FATAL_FAILURE(assertQuantumRegisterExists(*annotatedQuantumComputation, firstAggregateOfAncillaryQubitsQRegLabel, expectedQubitRangeOfAggregateOfAncillaryQubitsQRegAfterSecondMerge));
     ASSERT_NO_FATAL_FAILURE(assertQuantumRegisterExists(*annotatedQuantumComputation, thirdQRegOfVariableLabel, expectedQubitRangeOfThirdQRegOfVariable));
 
-    constexpr ExpectedQubitFlags expectedQubitFlagsOfFirstQRegForVariable = QubitShouldBeDataQubit;
+    constexpr ExpectedQubitFlags expectedQubitFlagsOfFirstQRegForVariable = ExpectedQubitFlags::QubitShouldBeDataQubit;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfFirstQRegOfVariable, expectedQubitFlagsOfFirstQRegForVariable));
 
-    constexpr ExpectedQubitFlags expectedQubitFlagsOfSecondQRegForVariable = QubitShouldBeGarbage | QubitShouldBeAncillary;
+    constexpr ExpectedQubitFlags expectedQubitFlagsOfSecondQRegForVariable = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfSecondQRegOfVariable, expectedQubitFlagsOfSecondQRegForVariable));
 
-    constexpr ExpectedQubitFlags expectedQubitFlagsOfMergeAggregateOfAncillaryQubitsQReg = QubitShouldBeGarbage | QubitShouldBeAncillary | InlineQubitInformationShouldBeFetchable;
+    constexpr ExpectedQubitFlags expectedQubitFlagsOfMergeAggregateOfAncillaryQubitsQReg = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAggregateOfAncillaryQubitsQRegAfterSecondMerge, expectedQubitFlagsOfMergeAggregateOfAncillaryQubitsQReg));
 
-    constexpr ExpectedQubitFlags expectedQubitFlagsOfThirdQRegForVariable = QubitShouldBeGarbage;
+    constexpr ExpectedQubitFlags expectedQubitFlagsOfThirdQRegForVariable = ExpectedQubitFlags::QubitShouldBeGarbage;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfThirdQRegOfVariable, expectedQubitFlagsOfThirdQRegForVariable));
 }
 // // END Add preliminary ancillary quantum register tests
@@ -1338,7 +1338,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddedAncillaryQRegForSyrecVari
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInExistingQReg + expectedNumQubitsInToBeAddedQReg);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    constexpr ExpectedQubitFlags sharedQubitFlagsOfPreliminaryAncillaryQRegs = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+    constexpr ExpectedQubitFlags sharedQubitFlagsOfPreliminaryAncillaryQRegs = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfExistingQReg, sharedQubitFlagsOfPreliminaryAncillaryQRegs));
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfToBeAddedQReg, sharedQubitFlagsOfPreliminaryAncillaryQRegs));
 }

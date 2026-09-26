@@ -13,11 +13,11 @@
 #include "base_simulation_test_fixture.hpp"
 
 #include <gtest/gtest.h>
-#include <string>
+#include <string_view>
 
 namespace {
     template<typename T>
-    [[nodiscard]] std::string getPathToTestCaseDataJsonFile() {
+    [[nodiscard]] std::string_view getPathToTestCaseDataJsonFile() {
         // The path to the config for the given synthesizer type is relative to the WORKING_DIRECTORY set in the CMake script that is used to generate the test executable.
         if constexpr (std::is_same_v<T, syrec::LineAwareSynthesis>) {
             return "./unittests/simulation/data/test_line_aware_synthesis_of_full_circuits.json";

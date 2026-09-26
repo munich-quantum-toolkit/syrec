@@ -22,7 +22,7 @@
 
 namespace {
     // .clang-tidy reports a false positive here since we are including the required nlohman json header file
-    using json = nlohmann::json; // NOLINT(misc-include-cleaner)
+    using nlohmann::json; // NOLINT(misc-include-cleaner)
 
     using namespace syrec;
 

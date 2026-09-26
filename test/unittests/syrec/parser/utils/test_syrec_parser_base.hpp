@@ -27,7 +27,7 @@
 
 // The .clang-tidy warning about the missing header file seems to be a false positive since the include of the required <nlohmann/json.hpp> is defined in this file.
 // Maybe this warning is reported because the nlohmann library is implicitly added by one of the external dependencies?
-using json = nlohmann::json; // NOLINT(misc-include-cleaner) Warning reported here seems to be a false positive since <nlohmann/json.hpp> is included
+using nlohmann::json; // NOLINT(misc-include-cleaner) Warning reported here seems to be a false positive since <nlohmann/json.hpp> is included
 
 struct TestFromJsonConfig {
     std::string nameOfJsonFile;

@@ -50,7 +50,7 @@ namespace {
 
     // Buffer that writes to Python instead of C++
     class pythonbuf: public std::streambuf {
-        using traits_type = std::streambuf::traits_type;
+        using std::streambuf::traits_type;
 
         size_t                  buf_size;
         std::unique_ptr<char[]> d_buffer;

@@ -26,6 +26,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace syrec {
@@ -286,7 +287,7 @@ namespace syrec {
         if (!opRhsLhsExpression(expression.lhs, lhs) || !opRhsLhsExpression(expression.rhs, rhs)) {
             return false;
         }
-        v = rhs;
+        v = std::move(rhs);
         opVec.push_back(expression.binaryOperation);
         return true;
     }

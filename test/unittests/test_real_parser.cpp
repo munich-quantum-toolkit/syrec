@@ -210,7 +210,7 @@ namespace {
             return identityPermutation;
         }
 
-        static std::string stringifyGateType(const GateType gateType) {
+        static std::string_view stringifyGateType(const GateType gateType) {
             if (gateType == GateType::Toffoli) {
                 return "t";
             }

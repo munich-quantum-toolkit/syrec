@@ -396,9 +396,9 @@ AnnotatableQuantumComputation::SynthesisCostMetricValue AnnotatableQuantumComput
                 break;
             default:
                 if (numEmptyLines >= c - 2U) {
-                    cost += 12ULL * c - 22ULL;
+                    cost += (12ULL * c) - 22ULL;
                 } else if (numEmptyLines >= 1U) {
-                    cost += 24ULL * c - 87ULL;
+                    cost += (24ULL * c) - 87ULL;
                 } else {
                     cost += (1ULL << (c + 1ULL)) - 3ULL;
                 }

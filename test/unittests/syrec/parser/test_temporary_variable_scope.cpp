@@ -23,6 +23,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -163,7 +164,7 @@ namespace {
         }
     }
 
-    void assertInsertionOfNVariableInstanceOfTypeIsSuccessful(TemporaryVariableScope& variableScope, syrec::Variable::Type variableType, const std::size_t numInstancesToCreate, const std::string& variableIdentifierPrefix, syrec::Variable::vec* containerForCreatedInstances) {
+    void assertInsertionOfNVariableInstanceOfTypeIsSuccessful(TemporaryVariableScope& variableScope, syrec::Variable::Type variableType, const std::size_t numInstancesToCreate, std::string_view variableIdentifierPrefix, syrec::Variable::vec* containerForCreatedInstances) {
         ASSERT_GT(numInstancesToCreate, 0);
 
         if (containerForCreatedInstances != nullptr && containerForCreatedInstances->empty()) {
@@ -171,7 +172,7 @@ namespace {
         }
 
         for (std::size_t i = 0; i < numInstancesToCreate; ++i) {
-            const auto variableInstance = std::make_shared<syrec::Variable>(variableType, variableIdentifierPrefix + "varIdent" + std::to_string(i), DEFAULT_VARIABLE_DIMENSIONS, DEFAULT_BITWIDTH);
+            const auto variableInstance = std::make_shared<syrec::Variable>(variableType, std::string(variableIdentifierPrefix) + "varIdent" + std::to_string(i), DEFAULT_VARIABLE_DIMENSIONS, DEFAULT_BITWIDTH);
             ASSERT_NO_FATAL_FAILURE(assertVariableInsertionResultIsSuccessful(variableScope, variableInstance));
             if (containerForCreatedInstances != nullptr) {
                 containerForCreatedInstances->emplace_back(variableInstance);
@@ -216,7 +217,7 @@ namespace {
         return resultContainer;
     }
 
-    [[nodiscard]] std::string stringifyVariableType(syrec::Variable::Type variableType) {
+    [[nodiscard]] std::string_view stringifyVariableType(syrec::Variable::Type variableType) {
         switch (variableType) {
             case syrec::Variable::Type::In:
                 return "in";
