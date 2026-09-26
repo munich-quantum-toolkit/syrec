@@ -633,10 +633,9 @@ namespace syrec {
                         // output (output 1) of the identity permutation must have another
                         // non-identity permutation defined or must be declared as a garbage
                         // output.
-                        if (qc->outputPermutation.contains(matchingInputQubitForOutputLiteral) &&
-                            qc->outputPermutation[matchingInputQubitForOutputLiteral] ==
-                                    matchingInputQubitForOutputLiteral) {
-                            qc->outputPermutation.erase(matchingInputQubitForOutputLiteral);
+                        if (const auto permutation = qc->outputPermutation.find(matchingInputQubitForOutputLiteral);
+                            permutation != qc->outputPermutation.end() && permutation->second == matchingInputQubitForOutputLiteral) {
+                            qc->outputPermutation.erase(permutation);
                         }
                     }
                 }
