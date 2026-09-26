@@ -258,8 +258,8 @@ namespace syrec {
                         currentUserDeclaredHeaderComponents) {
             for (const auto& requiredHeaderComponentPrefix:
                  requiredHeaderComponentPrefixes) {
-                if (currentUserDeclaredHeaderComponents.count(
-                            requiredHeaderComponentPrefix) == 0) {
+                if (!currentUserDeclaredHeaderComponents.contains(
+                            requiredHeaderComponentPrefix)) {
                     throw std::runtime_error(
                             "[real parser] l:" + std::to_string(processedLine) +
                             " msg: Expected " + std::string(requiredHeaderComponentPrefix) +
