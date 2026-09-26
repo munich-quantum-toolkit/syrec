@@ -98,7 +98,7 @@ bool utils::TemporaryVariableScope::recordVariable(const syrec::Variable::ptr& s
     if (signal == nullptr || signal->name.empty() || existsVariableForName(signal->name)) {
         return false;
     }
-    auto scopeEntryForSignal = std::make_shared<ScopeEntry>(signal);
+    const auto scopeEntryForSignal = std::make_shared<ScopeEntry>(signal);
     signalIdentifierLookup.insert({signal->name, scopeEntryForSignal});
     return true;
 }
@@ -107,7 +107,7 @@ bool utils::TemporaryVariableScope::recordLoopVariable(const syrec::Number::ptr&
     if (loopVariable == nullptr || !loopVariable->isLoopVariable() || loopVariable->variableName().empty() || loopVariable->variableName().front() != '$' || existsVariableForName(loopVariable->variableName())) {
         return false;
     }
-    auto scopeEntryForSignal = std::make_shared<ScopeEntry>(loopVariable);
+    const auto scopeEntryForSignal = std::make_shared<ScopeEntry>(loopVariable);
     signalIdentifierLookup.insert({loopVariable->variableName(), scopeEntryForSignal});
     return true;
 }

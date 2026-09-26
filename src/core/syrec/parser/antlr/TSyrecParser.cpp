@@ -356,7 +356,7 @@ TSyrecParser::NumberContext* TSyrecParser::number() {
     auto* localCtx = _tracker.createInstance<NumberContext>(_ctx, getState());
     enterRule(localCtx, 0, RuleNumber);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -461,7 +461,7 @@ TSyrecParser::ProgramContext* TSyrecParser::program() {
     auto* localCtx = _tracker.createInstance<ProgramContext>(_ctx, getState());
     enterRule(localCtx, 2, RuleProgram);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -520,7 +520,7 @@ TSyrecParser::ModuleContext* TSyrecParser::module() {
     auto* localCtx = _tracker.createInstance<ModuleContext>(_ctx, getState());
     enterRule(localCtx, 4, RuleModule);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -583,7 +583,7 @@ TSyrecParser::ParameterListContext* TSyrecParser::parameterList() {
     auto* localCtx = _tracker.createInstance<ParameterListContext>(_ctx, getState());
     enterRule(localCtx, 6, RuleParameterList);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -643,7 +643,7 @@ TSyrecParser::ParameterContext* TSyrecParser::parameter() {
     auto* localCtx = _tracker.createInstance<ParameterContext>(_ctx, getState());
     enterRule(localCtx, 8, RuleParameter);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -695,7 +695,7 @@ TSyrecParser::SignalListContext* TSyrecParser::signalList() {
     auto* localCtx = _tracker.createInstance<SignalListContext>(_ctx, getState());
     enterRule(localCtx, 10, RuleSignalList);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -751,7 +751,7 @@ TSyrecParser::SignalDeclarationContext* TSyrecParser::signalDeclaration() {
     auto* localCtx = _tracker.createInstance<SignalDeclarationContext>(_ctx, getState());
     enterRule(localCtx, 12, RuleSignalDeclaration);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -810,7 +810,7 @@ TSyrecParser::StatementListContext* TSyrecParser::statementList() {
     auto* localCtx = _tracker.createInstance<StatementListContext>(_ctx, getState());
     enterRule(localCtx, 14, RuleStatementList);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -884,7 +884,7 @@ TSyrecParser::StatementContext* TSyrecParser::statement() {
     auto* localCtx = _tracker.createInstance<StatementContext>(_ctx, getState());
     enterRule(localCtx, 16, RuleStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -969,7 +969,7 @@ TSyrecParser::CallStatementContext* TSyrecParser::callStatement() {
     auto* localCtx = _tracker.createInstance<CallStatementContext>(_ctx, getState());
     enterRule(localCtx, 18, RuleCallStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1033,7 +1033,7 @@ TSyrecParser::LoopVariableDefinitionContext* TSyrecParser::loopVariableDefinitio
     auto* localCtx = _tracker.createInstance<LoopVariableDefinitionContext>(_ctx, getState());
     enterRule(localCtx, 20, RuleLoopVariableDefinition);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1077,7 +1077,7 @@ TSyrecParser::LoopStepsizeDefinitionContext* TSyrecParser::loopStepsizeDefinitio
     auto* localCtx = _tracker.createInstance<LoopStepsizeDefinitionContext>(_ctx, getState());
     enterRule(localCtx, 22, RuleLoopStepsizeDefinition);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1133,7 +1133,7 @@ TSyrecParser::ForStatementContext* TSyrecParser::forStatement() {
     auto* localCtx = _tracker.createInstance<ForStatementContext>(_ctx, getState());
     enterRule(localCtx, 24, RuleForStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1196,7 +1196,7 @@ TSyrecParser::IfStatementContext* TSyrecParser::ifStatement() {
     auto* localCtx = _tracker.createInstance<IfStatementContext>(_ctx, getState());
     enterRule(localCtx, 26, RuleIfStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1258,7 +1258,7 @@ TSyrecParser::UnaryStatementContext* TSyrecParser::unaryStatement() {
     auto* localCtx = _tracker.createInstance<UnaryStatementContext>(_ctx, getState());
     enterRule(localCtx, 28, RuleUnaryStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1319,7 +1319,7 @@ TSyrecParser::AssignStatementContext* TSyrecParser::assignStatement() {
     auto* localCtx = _tracker.createInstance<AssignStatementContext>(_ctx, getState());
     enterRule(localCtx, 30, RuleAssignStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1362,7 +1362,7 @@ TSyrecParser::SwapStatementContext* TSyrecParser::swapStatement() {
     auto* localCtx = _tracker.createInstance<SwapStatementContext>(_ctx, getState());
     enterRule(localCtx, 32, RuleSwapStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1398,7 +1398,7 @@ TSyrecParser::SkipStatementContext* TSyrecParser::skipStatement() {
     auto* localCtx = _tracker.createInstance<SkipStatementContext>(_ctx, getState());
     enterRule(localCtx, 34, RuleSkipStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1434,7 +1434,7 @@ TSyrecParser::SignalContext* TSyrecParser::signal() {
     auto* localCtx = _tracker.createInstance<SignalContext>(_ctx, getState());
     enterRule(localCtx, 36, RuleSignal);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1551,7 +1551,7 @@ TSyrecParser::ExpressionContext* TSyrecParser::expression() {
     auto* localCtx = _tracker.createInstance<ExpressionContext>(_ctx, getState());
     enterRule(localCtx, 38, RuleExpression);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1694,7 +1694,7 @@ TSyrecParser::BinaryExpressionContext* TSyrecParser::binaryExpression() {
     auto* localCtx = _tracker.createInstance<BinaryExpressionContext>(_ctx, getState());
     enterRule(localCtx, 40, RuleBinaryExpression);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1753,7 +1753,7 @@ TSyrecParser::UnaryExpressionContext* TSyrecParser::unaryExpression() {
     auto* localCtx = _tracker.createInstance<UnaryExpressionContext>(_ctx, getState());
     enterRule(localCtx, 42, RuleUnaryExpression);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1810,7 +1810,7 @@ TSyrecParser::ShiftExpressionContext* TSyrecParser::shiftExpression() {
     auto* localCtx = _tracker.createInstance<ShiftExpressionContext>(_ctx, getState());
     enterRule(localCtx, 44, RuleShiftExpression);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 

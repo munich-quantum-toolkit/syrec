@@ -1701,8 +1701,8 @@ TEST(VariableAccessOverlapTests, MismatchInReferenceVariableBitwidthDetectedCorr
     rhsVariableAccess.indexes = lhsVariableAccess.indexes;
     ASSERT_NO_FATAL_FAILURE(assertSymmetricVariableAccessOverlapResultCannotBeDetermined(lhsVariableAccess, rhsVariableAccess));
 
-    auto rOperandReferenceVariableWithSmallerBitwidth = std::make_shared<syrec::Variable>(*rOperandReferenceVariable);
-    rOperandReferenceVariable->bitwidth               = lOperandReferenceVariable->bitwidth - 2U;
+    const auto rOperandReferenceVariableWithSmallerBitwidth = std::make_shared<syrec::Variable>(*rOperandReferenceVariable);
+    rOperandReferenceVariable->bitwidth                     = lOperandReferenceVariable->bitwidth - 2U;
     rhsVariableAccess.setVar(rOperandReferenceVariable);
     ASSERT_NO_FATAL_FAILURE(assertSymmetricVariableAccessOverlapResultCannotBeDetermined(lhsVariableAccess, rhsVariableAccess));
 }

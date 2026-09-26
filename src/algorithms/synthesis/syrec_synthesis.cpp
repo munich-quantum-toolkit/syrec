@@ -260,7 +260,7 @@ namespace syrec {
             auto mainModuleCallStackEntry         = QubitInliningStack::QubitInliningStackEntry();
             mainModuleCallStackEntry.targetModule = main;
 
-            auto mainModuleInlineStack = std::make_shared<QubitInliningStack>();
+            const auto mainModuleInlineStack = std::make_shared<QubitInliningStack>();
             mainModuleInlineStack->push(mainModuleCallStackEntry);
 
             synthesizer->moduleCallStackInstances = std::vector<QubitInliningStack::ptr>();

@@ -253,7 +253,7 @@ std::optional<syrec::Statement::ptr> CustomStatementVisitor::visitIfStatementTyp
     const auto& backupOfCurrentIfStatementExpressionComponentsComparer = expressionVisitorInstance->getIfStatementExpressionComponentsRecorder();
     expressionVisitorInstance->clearIfStatementExpressionComponentsRecorder();
 
-    auto ifStatementExpressionComponentsComparer = std::make_shared<utils::IfStatementExpressionComponentsRecorder>();
+    const auto ifStatementExpressionComponentsComparer = std::make_shared<utils::IfStatementExpressionComponentsRecorder>();
     expressionVisitorInstance->setIfStatementExpressionComponentsRecorder(ifStatementExpressionComponentsComparer);
 
     bool detectedSemanticErrorAfterOperandsOfGuardAndClosingGuardConditionWhereProcessed = false;

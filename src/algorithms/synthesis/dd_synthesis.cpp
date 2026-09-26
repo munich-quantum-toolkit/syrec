@@ -332,7 +332,7 @@ namespace syrec {
                 return src;
             }
 
-            auto       rootSigVec   = finalSrcPathSignature(src, current, p1SigVec, p2SigVec, false, dd);
+            const auto rootSigVec   = finalSrcPathSignature(src, current, p1SigVec, p2SigVec, false, dd);
             const auto rootSolution = minbool::minimizeBoolean(rootSigVec);
 
             for (auto const& rootVec: rootSolution) {

@@ -42,7 +42,7 @@ TEST_F(TruthTableExtend, Ident2Bit) {
 
     EXPECT_EQ(tt.size(), 4U);
 
-    auto search = tt.find(0b00U, 2U);
+    const auto search = tt.find(0b00U, 2U);
 
     EXPECT_TRUE(search != tt.end());
 
@@ -58,7 +58,7 @@ TEST_F(TruthTableExtend, X2Bit) {
 
     EXPECT_EQ(tt.size(), 4U);
 
-    auto search = tt.find(0b11U, 2U);
+    const auto search = tt.find(0b11U, 2U);
 
     EXPECT_TRUE(search != tt.end());
 
@@ -75,7 +75,7 @@ TEST_F(TruthTableExtend, EXTENDTT) {
     const std::vector<std::uint64_t> outAssigned1{0b011U, 0b111U};
 
     for (const auto& in1: outAssigned1) {
-        auto search = tt.find(in1, 3U);
+        const auto search = tt.find(in1, 3U);
 
         EXPECT_TRUE(search != tt.end());
 
@@ -85,7 +85,7 @@ TEST_F(TruthTableExtend, EXTENDTT) {
     const std::vector<std::uint64_t> outAssigned2{0b100U, 0b110U};
 
     for (const auto& in2: outAssigned2) {
-        auto search = tt.find(in2, 3U);
+        const auto search = tt.find(in2, 3U);
 
         EXPECT_TRUE(search != tt.end());
 
@@ -95,7 +95,7 @@ TEST_F(TruthTableExtend, EXTENDTT) {
     const std::vector<std::uint64_t> notAssigned{0b000U, 0b001U, 0b010U, 0b101U};
 
     for (const auto& in3: notAssigned) {
-        auto search = tt.find(in3, 3U);
+        const auto search = tt.find(in3, 3U);
 
         EXPECT_TRUE(search != tt.end());
 

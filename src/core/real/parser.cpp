@@ -702,7 +702,7 @@ namespace syrec {
             if (m.str(1) == "t") { // special treatment of t(offoli) for real format
                 gate = X;
             } else {
-                auto it = IDENTIFIER_MAP.find(m.str(1));
+                const auto it = IDENTIFIER_MAP.find(m.str(1));
                 if (it == IDENTIFIER_MAP.end()) {
                     throw std::runtime_error("[real parser] l:" + std::to_string(line) +
                                              " msg: Unknown gate identifier: " + m.str(1));

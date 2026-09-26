@@ -56,7 +56,7 @@ bool utils::BaseSymbolTable::insertModule(const syrec::Module::ptr& module) {
 }
 
 syrec::Module::vec utils::BaseSymbolTable::getModulesByName(const std::string_view& accessedModuleIdentifier) const {
-    auto modulesMatchingIdentifier = declaredModules.find(accessedModuleIdentifier);
+    const auto modulesMatchingIdentifier = declaredModules.find(accessedModuleIdentifier);
     if (modulesMatchingIdentifier == declaredModules.end()) {
         return {};
     }
