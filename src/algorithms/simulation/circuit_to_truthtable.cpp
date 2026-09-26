@@ -44,7 +44,7 @@ namespace syrec {
             bool       nextInput = false;
 
             for (auto i = 0U; i < nBits; i++) {
-                if (tt.isConstant(i) && (boolCube[i])) {
+                if (tt.isConstant(i) && boolCube[i]) {
                     nextInput = true;
                     break;
                 }

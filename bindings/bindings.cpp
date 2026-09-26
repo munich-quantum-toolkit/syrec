@@ -72,8 +72,8 @@ namespace {
         [[nodiscard]] size_t utf8_remainder() const {
             const auto rbase         = std::reverse_iterator(pbase());
             const auto rpptr         = std::reverse_iterator(pptr());
-            const auto is_ascii      = [](const char c) { return (static_cast<unsigned char>(c) & 0x80) == 0x00; };
-            const auto is_leading    = [](const char c) { return (static_cast<unsigned char>(c) & 0xC0) == 0xC0; };
+            const auto is_ascii      = [](const char c) { return (static_cast<unsigned char>(c) & 0x80U) == 0x00; };
+            const auto is_leading    = [](const char c) { return (static_cast<unsigned char>(c) & 0xC0U) == 0xC0; };
             const auto is_leading_2b = [](const char c) { return static_cast<unsigned char>(c) <= 0xDF; };
             const auto is_leading_3b = [](const char c) { return static_cast<unsigned char>(c) <= 0xEF; };
             // If the last character is ASCII, there are no incomplete code points

@@ -869,7 +869,7 @@ namespace syrec {
                 case P:
                     qc->emplace_back<StandardOperation>(
                             Controls{controls.cbegin(), controls.cend()},
-                            targetLineQubits.front(), gate, std::vector{PI / (lambda)});
+                            targetLineQubits.front(), gate, std::vector{PI / lambda});
                     break;
                 case SWAP:
                 case iSWAP:

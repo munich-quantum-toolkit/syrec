@@ -37,7 +37,7 @@ namespace syrec {
         while (in.good() && getline(in, line)) {
             trim(line);
             line = std::regex_replace(line, whitespace, " ");
-            if ((line.empty()) || (line.starts_with('#')) || (line.starts_with(".ilb")) || (line.starts_with(".ob")) || (line.starts_with(".p")) || (line.starts_with(".type "))) {
+            if (line.empty() || line.starts_with('#') || line.starts_with(".ilb") || line.starts_with(".ob") || line.starts_with(".p") || line.starts_with(".type ")) {
                 continue;
             }
 

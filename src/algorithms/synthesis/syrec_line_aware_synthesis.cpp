@@ -180,7 +180,7 @@ namespace syrec {
                 }
             }
             /// when only lhs exists o rhs exists
-            else if (((expLhsVector.at(i).empty()) && !(expRhsVector.at(i).empty())) || ((!expLhsVector.at(i).empty()) && (expRhsVector.at(i).empty()))) {
+            else if ((expLhsVector.at(i).empty() && !expRhsVector.at(i).empty()) || ((!expLhsVector.at(i).empty()) && expRhsVector.at(i).empty())) {
                 const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = tryMapAssignmentToBinaryOperation(statAssignOp.at(j));
                 synthesisOk                                                                    = mappedToBinaryOperation.has_value() && expEvaluate(lines, *mappedToBinaryOperation, expRhsVector.at(i), statLhs);
                 j                                                                              = j + 1;

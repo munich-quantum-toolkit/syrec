@@ -50,8 +50,8 @@ namespace syrec_parser_test_utils {
             // For now we use an often referred to implementation: https://stackoverflow.com/a/2595226 that is sufficient for our use case
             constexpr std::hash<std::string> hasher{};
             std::size_t                      seed = 0;
-            seed ^= hasher(entityToHash.relativePathToTestDataFolder) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-            seed ^= hasher(entityToHash.nameOfFileContainingTestData) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= hasher(entityToHash.relativePathToTestDataFolder) + 0x9e3779b9 + (seed << 6U) + (seed >> 2U);
+            seed ^= hasher(entityToHash.nameOfFileContainingTestData) + 0x9e3779b9 + (seed << 6U) + (seed >> 2U);
             return seed;
         }
 
