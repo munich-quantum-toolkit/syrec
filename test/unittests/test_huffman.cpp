@@ -17,14 +17,16 @@
 #include <string>
 #include <vector>
 
-using namespace qc::literals;
-using namespace syrec;
+namespace {
+    using namespace qc::literals;
+    using namespace syrec;
 
-class TestHuff: public testing::Test {
-protected:
-    TruthTable  tt{};
-    std::string testCircuitsDir = "./circuits/";
-};
+    class TestHuff: public testing::Test {
+    protected:
+        TruthTable  tt{};
+        std::string testCircuitsDir = "./circuits/";
+    };
+} // namespace
 
 TEST_F(TestHuff, Ident2Bit) {
     const std::string circIdent2Bit = testCircuitsDir + "ident2Bit.pla";

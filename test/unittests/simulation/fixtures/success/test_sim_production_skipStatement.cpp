@@ -15,41 +15,43 @@
 #include <gtest/gtest.h>
 #include <string>
 
-const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_sim_production_skipStatement.json";
+namespace {
+    const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_sim_production_skipStatement.json";
 
-TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
+    TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
 
-TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInTrueBranchOfIfStatement) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
+    TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInTrueBranchOfIfStatement) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
 
-TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInFalseBranchOfIfStatement) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
+    TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInFalseBranchOfIfStatement) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
 
-TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInLoopBodyOfForStatement) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
+    TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInLoopBodyOfForStatement) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
 
-TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInModuleBody) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
+    TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInModuleBody) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
 
-TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInModuleBodyOfCalledModule) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
+    TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInModuleBodyOfCalledModule) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
 
-TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInModuleBodyOfUncalledModule) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
+    TYPED_TEST_P(BaseSimulationTestFixture, SkipStatementInModuleBodyOfUncalledModule) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
 
-REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
-                            SkipStatementInTrueBranchOfIfStatement,
-                            SkipStatementInFalseBranchOfIfStatement,
-                            SkipStatementInLoopBodyOfForStatement,
-                            SkipStatementInModuleBody,
-                            SkipStatementInModuleBodyOfCalledModule,
-                            SkipStatementInModuleBodyOfUncalledModule);
+    REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
+                                SkipStatementInTrueBranchOfIfStatement,
+                                SkipStatementInFalseBranchOfIfStatement,
+                                SkipStatementInLoopBodyOfForStatement,
+                                SkipStatementInModuleBody,
+                                SkipStatementInModuleBodyOfCalledModule,
+                                SkipStatementInModuleBodyOfUncalledModule);
 
-using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
-INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
+    using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
+    INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
+} // namespace

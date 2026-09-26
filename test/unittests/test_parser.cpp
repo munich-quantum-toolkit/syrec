@@ -15,17 +15,19 @@
 #include <gtest/gtest.h>
 #include <string>
 
-using namespace syrec;
+namespace {
+    using namespace syrec;
 
-class SyrecParserTest: public testing::TestWithParam<std::string> {
-protected:
-    std::string testCircuitsDir = "./circuits/";
-    std::string fileName;
+    class SyrecParserTest: public testing::TestWithParam<std::string> {
+    protected:
+        std::string testCircuitsDir = "./circuits/";
+        std::string fileName;
 
-    void SetUp() override {
-        fileName = testCircuitsDir + GetParam() + ".src";
-    }
-};
+        void SetUp() override {
+            fileName = testCircuitsDir + GetParam() + ".src";
+        }
+    };
+} // namespace
 
 INSTANTIATE_TEST_SUITE_P(SyrecParserTest, SyrecParserTest,
                          testing::Values(

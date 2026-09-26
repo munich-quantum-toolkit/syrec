@@ -14,34 +14,36 @@
 #include <gtest/gtest.h>
 #include <string>
 
-using namespace syrec;
+namespace {
+    using namespace syrec;
 
-class PlaParserTest: public testing::Test {
-protected:
-    std::string testCircuitsDir = "./circuits/";
-    TruthTable  testPla;
+    class PlaParserTest: public testing::Test {
+    protected:
+        std::string testCircuitsDir = "./circuits/";
+        TruthTable  testPla;
 
-    TruthTable::Cube::Value emptyVal;
+        TruthTable::Cube::Value emptyVal;
 
-    TruthTable::Cube c11;
+        TruthTable::Cube c11;
 
-    TruthTable::Cube c1;
+        TruthTable::Cube c1;
 
-    TruthTable::Cube cOneDc;
-    TruthTable::Cube cDcOne;
+        TruthTable::Cube cOneDc;
+        TruthTable::Cube cDcOne;
 
-    void SetUp() override {
-        c11 = TruthTable::Cube::fromInteger(0b11U, 2U);
+        void SetUp() override {
+            c11 = TruthTable::Cube::fromInteger(0b11U, 2U);
 
-        c1 = TruthTable::Cube::fromInteger(0b1U, 1U);
+            c1 = TruthTable::Cube::fromInteger(0b1U, 1U);
 
-        cOneDc.emplace_back(true);
-        cOneDc.emplace_back(emptyVal);
+            cOneDc.emplace_back(true);
+            cOneDc.emplace_back(emptyVal);
 
-        cDcOne.emplace_back(emptyVal);
-        cDcOne.emplace_back(true);
-    }
-};
+            cDcOne.emplace_back(emptyVal);
+            cDcOne.emplace_back(true);
+        }
+    };
+} // namespace
 
 TEST_F(PlaParserTest, andTest) {
     const std::string circAnd = testCircuitsDir + "and.pla";

@@ -16,14 +16,16 @@
 #include <string>
 #include <vector>
 
-using namespace qc::literals;
-using namespace syrec;
+namespace {
+    using namespace qc::literals;
+    using namespace syrec;
 
-class TruthTableExtend: public testing::Test {
-protected:
-    TruthTable  tt{};
-    std::string testCircuitsDir = "./circuits/";
-};
+    class TruthTableExtend: public testing::Test {
+    protected:
+        TruthTable  tt{};
+        std::string testCircuitsDir = "./circuits/";
+    };
+} // namespace
 
 TEST_F(TruthTableExtend, Max) {
     const std::string circMax = testCircuitsDir + "max.pla";

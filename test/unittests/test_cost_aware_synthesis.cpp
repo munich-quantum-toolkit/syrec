@@ -20,32 +20,34 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-// .clang-tidy reports a false positive here since we are including the required nlohman json header file
-using json = nlohmann::json; // NOLINT(misc-include-cleaner)
+namespace {
+    // .clang-tidy reports a false positive here since we are including the required nlohman json header file
+    using json = nlohmann::json; // NOLINT(misc-include-cleaner)
 
-using namespace syrec;
+    using namespace syrec;
 
-class SyrecCostAwareSynthesisTest: public testing::TestWithParam<std::string> {
-protected:
-    std::string                                             testConfigsDir  = "./configs/";
-    std::string                                             testCircuitsDir = "./circuits/";
-    std::string                                             fileName;
-    std::size_t                                             expectedNumGates        = 0;
-    std::size_t                                             expectedNumLines        = 0;
-    AnnotatableQuantumComputation::SynthesisCostMetricValue expectedQuantumCosts    = 0;
-    AnnotatableQuantumComputation::SynthesisCostMetricValue expectedTransistorCosts = 0;
+    class SyrecCostAwareSynthesisTest: public testing::TestWithParam<std::string> {
+    protected:
+        std::string                                             testConfigsDir  = "./configs/";
+        std::string                                             testCircuitsDir = "./circuits/";
+        std::string                                             fileName;
+        std::size_t                                             expectedNumGates        = 0;
+        std::size_t                                             expectedNumLines        = 0;
+        AnnotatableQuantumComputation::SynthesisCostMetricValue expectedQuantumCosts    = 0;
+        AnnotatableQuantumComputation::SynthesisCostMetricValue expectedTransistorCosts = 0;
 
-    void SetUp() override {
-        const std::string& synthesisParam = GetParam();
-        fileName                          = testCircuitsDir + GetParam() + ".src";
-        std::ifstream i(testConfigsDir + "circuits_cost_aware_synthesis.json");
-        json          j         = json::parse(i);
-        expectedNumGates        = j[synthesisParam]["num_gates"];
-        expectedNumLines        = j[synthesisParam]["lines"];
-        expectedQuantumCosts    = j[synthesisParam]["quantum_costs"];
-        expectedTransistorCosts = j[synthesisParam]["transistor_costs"];
-    }
-};
+        void SetUp() override {
+            const std::string& synthesisParam = GetParam();
+            fileName                          = testCircuitsDir + GetParam() + ".src";
+            std::ifstream i(testConfigsDir + "circuits_cost_aware_synthesis.json");
+            json          j         = json::parse(i);
+            expectedNumGates        = j[synthesisParam]["num_gates"];
+            expectedNumLines        = j[synthesisParam]["lines"];
+            expectedQuantumCosts    = j[synthesisParam]["quantum_costs"];
+            expectedTransistorCosts = j[synthesisParam]["transistor_costs"];
+        }
+    };
+} // namespace
 
 INSTANTIATE_TEST_SUITE_P(SyrecSynthesisTest, SyrecCostAwareSynthesisTest,
                          testing::Values(

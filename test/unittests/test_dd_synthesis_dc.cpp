@@ -18,20 +18,22 @@
 #include <iostream>
 #include <string>
 
-using namespace qc::literals;
-using namespace syrec;
+namespace {
+    using namespace qc::literals;
+    using namespace syrec;
 
-class TestDDSynthDc: public testing::TestWithParam<std::string> {
-protected:
-    TruthTable  tt{};
-    TruthTable  ttqc{};
-    std::string testCircuitsDir = "./circuits/";
-    std::string fileName;
+    class TestDDSynthDc: public testing::TestWithParam<std::string> {
+    protected:
+        TruthTable  tt{};
+        TruthTable  ttqc{};
+        std::string testCircuitsDir = "./circuits/";
+        std::string fileName;
 
-    void SetUp() override {
-        fileName = testCircuitsDir + GetParam() + ".pla";
-    }
-};
+        void SetUp() override {
+            fileName = testCircuitsDir + GetParam() + ".pla";
+        }
+    };
+} // namespace
 
 INSTANTIATE_TEST_SUITE_P(TestDDSynth, TestDDSynthDc,
                          testing::Values(
