@@ -28,7 +28,7 @@
 // or bitrange component. Future tests should also test the correct behaviour using syrec::Expressions.
 
 namespace {
-    const std::string      DEFAULT_VARIABLE_IDENTIFIER = "varIdent";
+    constexpr auto         DEFAULT_VARIABLE_IDENTIFIER = "varIdent";
     constexpr unsigned int DEFAULT_VARIABLE_BITWIDTH   = 16;
 
     syrec::Number::ptr createNumberContainerForConstantValue(unsigned int value) {
@@ -219,18 +219,21 @@ namespace {
     };
 
     class ExpectingOverlappingVariableAccessesTestFixture: public BaseOverlapInVariableAccessesTestFixture {
+    public:
         utils::VariableAccessOverlapCheckResult::OverlapState getExpectedVariableAccessOverlapCheckResult() override {
             return utils::VariableAccessOverlapCheckResult::OverlapState::Overlapping;
         }
     };
 
     class ExpectingPotentiallyOverlappingVariableAccessesTestFixture: public BaseOverlapInVariableAccessesTestFixture {
+    public:
         utils::VariableAccessOverlapCheckResult::OverlapState getExpectedVariableAccessOverlapCheckResult() override {
             return utils::VariableAccessOverlapCheckResult::OverlapState::MaybeOverlapping;
         }
     };
 
     class ExpectingNotOverlappingVariableAccessesTestFixture: public BaseOverlapInVariableAccessesTestFixture {
+    public:
         utils::VariableAccessOverlapCheckResult::OverlapState getExpectedVariableAccessOverlapCheckResult() override {
             return utils::VariableAccessOverlapCheckResult::OverlapState::NotOverlapping;
         }
@@ -1650,7 +1653,7 @@ INSTANTIATE_TEST_SUITE_P(VariableAccessOverlapTests, ExpectingNotOverlappingVari
 
 TEST(VariableAccessOverlapTests, ReferenceVariableNotSetCorrectlyDetected) {
     const std::vector<unsigned int> variableDimensions        = {1U, 2U};
-    const auto                      rOperandReferenceVariable = createVariableInstance(DEFAULT_VARIABLE_IDENTIFIER + "otherIdent", variableDimensions, DEFAULT_VARIABLE_BITWIDTH);
+    const auto                      rOperandReferenceVariable = createVariableInstance(std::string(DEFAULT_VARIABLE_IDENTIFIER) + "otherIdent", variableDimensions, DEFAULT_VARIABLE_BITWIDTH);
     ASSERT_THAT(rOperandReferenceVariable, testing::NotNull());
 
     auto lhsVariableAccess = syrec::VariableAccess();
@@ -1668,7 +1671,7 @@ TEST(VariableAccessOverlapTests, MismatchInReferenceVariableIdentifierDetectedCo
     const auto                      lOperandReferenceVariable = createVariableInstance(DEFAULT_VARIABLE_IDENTIFIER, variableDimensions, DEFAULT_VARIABLE_BITWIDTH);
     ASSERT_THAT(lOperandReferenceVariable, testing::NotNull());
 
-    const auto rOperandReferenceVariable = createVariableInstance(DEFAULT_VARIABLE_IDENTIFIER + "otherIdent", variableDimensions, DEFAULT_VARIABLE_BITWIDTH);
+    const auto rOperandReferenceVariable = createVariableInstance(std::string(DEFAULT_VARIABLE_IDENTIFIER) + "otherIdent", variableDimensions, DEFAULT_VARIABLE_BITWIDTH);
     ASSERT_THAT(rOperandReferenceVariable, testing::NotNull());
 
     auto lhsVariableAccess = syrec::VariableAccess();
@@ -1698,8 +1701,8 @@ TEST(VariableAccessOverlapTests, MismatchInReferenceVariableBitwidthDetectedCorr
     rhsVariableAccess.indexes = lhsVariableAccess.indexes;
     ASSERT_NO_FATAL_FAILURE(assertSymmetricVariableAccessOverlapResultCannotBeDetermined(lhsVariableAccess, rhsVariableAccess));
 
-    auto rOperandReferenceVariableWithSmallerBitwidth = std::make_shared<syrec::Variable>(*rOperandReferenceVariable);
-    rOperandReferenceVariable->bitwidth               = lOperandReferenceVariable->bitwidth - 2U;
+    const auto rOperandReferenceVariableWithSmallerBitwidth = std::make_shared<syrec::Variable>(*rOperandReferenceVariable);
+    rOperandReferenceVariable->bitwidth                     = lOperandReferenceVariable->bitwidth - 2U;
     rhsVariableAccess.setVar(rOperandReferenceVariable);
     ASSERT_NO_FATAL_FAILURE(assertSymmetricVariableAccessOverlapResultCannotBeDetermined(lhsVariableAccess, rhsVariableAccess));
 }
@@ -1714,7 +1717,11 @@ TEST(VariableAccessOverlapTests, MismatchInReferenceVariableDimensionsDetectedCo
     lhsVariableAccess.indexes = {createExpressionForConstantValue(0U), createExpressionForConstantValue(1U)};
 
     const std::vector<std::vector<unsigned int>> rOperandReferenceVariableValuesPerDimension = {
-            {1U, 2U, 3U}, {1U}, {2U, 1U}, {0U, 2U}};
+            {1U, 2U, 3U},
+            {1U},
+            {2U, 1U},
+            {0U, 2U},
+    };
 
     const auto rOperandReferenceVariable = createVariableInstance(DEFAULT_VARIABLE_IDENTIFIER, {}, DEFAULT_VARIABLE_BITWIDTH);
     ASSERT_THAT(rOperandReferenceVariable, testing::NotNull());

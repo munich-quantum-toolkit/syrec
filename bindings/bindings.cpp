@@ -50,7 +50,7 @@ namespace {
 
     // Buffer that writes to Python instead of C++
     class pythonbuf: public std::streambuf {
-        using traits_type = std::streambuf::traits_type;
+        using std::streambuf::traits_type;
 
         size_t                  buf_size;
         std::unique_ptr<char[]> d_buffer;
@@ -72,10 +72,10 @@ namespace {
         [[nodiscard]] size_t utf8_remainder() const {
             const auto rbase         = std::reverse_iterator(pbase());
             const auto rpptr         = std::reverse_iterator(pptr());
-            auto       is_ascii      = [](const char c) { return (static_cast<unsigned char>(c) & 0x80) == 0x00; };
-            auto       is_leading    = [](const char c) { return (static_cast<unsigned char>(c) & 0xC0) == 0xC0; };
-            auto       is_leading_2b = [](const char c) { return static_cast<unsigned char>(c) <= 0xDF; };
-            auto       is_leading_3b = [](const char c) { return static_cast<unsigned char>(c) <= 0xEF; };
+            const auto is_ascii      = [](const char c) { return (static_cast<unsigned char>(c) & 0x80U) == 0x00; };
+            const auto is_leading    = [](const char c) { return (static_cast<unsigned char>(c) & 0xC0U) == 0xC0; };
+            const auto is_leading_2b = [](const char c) { return static_cast<unsigned char>(c) <= 0xDF; };
+            const auto is_leading_3b = [](const char c) { return static_cast<unsigned char>(c) <= 0xEF; };
             // If the last character is ASCII, there are no incomplete code points
             if (is_ascii(*rpptr)) {
                 return 0;
@@ -109,7 +109,7 @@ namespace {
             if (pbase() != pptr()) { // If buffer is not empty
                 const nb::gil_scoped_acquire tmp;
                 // This subtraction cannot be negative, so dropping the sign.
-                auto         size      = static_cast<size_t>(pptr() - pbase());
+                const auto   size      = static_cast<size_t>(pptr() - pbase());
                 const size_t remainder = utf8_remainder();
 
                 if (size > remainder) {

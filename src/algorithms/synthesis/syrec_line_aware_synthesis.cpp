@@ -26,6 +26,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace syrec {
@@ -179,7 +180,7 @@ namespace syrec {
                 }
             }
             /// when only lhs exists o rhs exists
-            else if (((expLhsVector.at(i).empty()) && !(expRhsVector.at(i).empty())) || ((!expLhsVector.at(i).empty()) && (expRhsVector.at(i).empty()))) {
+            else if ((expLhsVector.at(i).empty() && !expRhsVector.at(i).empty()) || ((!expLhsVector.at(i).empty()) && expRhsVector.at(i).empty())) {
                 const std::optional<BinaryExpression::BinaryOperation> mappedToBinaryOperation = tryMapAssignmentToBinaryOperation(statAssignOp.at(j));
                 synthesisOk                                                                    = mappedToBinaryOperation.has_value() && expEvaluate(lines, *mappedToBinaryOperation, expRhsVector.at(i), statLhs);
                 j                                                                              = j + 1;
@@ -286,7 +287,7 @@ namespace syrec {
         if (!opRhsLhsExpression(expression.lhs, lhs) || !opRhsLhsExpression(expression.rhs, rhs)) {
             return false;
         }
-        v = rhs;
+        v = std::move(rhs);
         opVec.push_back(expression.binaryOperation);
         return true;
     }

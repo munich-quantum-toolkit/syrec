@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <initializer_list>
 #include <memory>
 #include <optional>
 #include <string>
@@ -27,8 +28,8 @@
 using namespace utils;
 
 namespace {
-    constexpr unsigned int          DEFAULT_BITWIDTH          = 16;
-    const std::vector<unsigned int> DEFAULT_SIGNAL_DIMENSIONS = {2, 3};
+    constexpr unsigned int                        DEFAULT_BITWIDTH          = 16;
+    constexpr std::initializer_list<unsigned int> DEFAULT_SIGNAL_DIMENSIONS = {2, 3};
 
     class VariableTypeAmbiguityDuringModuleInsertionTestFixture: public ::testing::TestWithParam<std::pair<syrec::Variable::Type, syrec::Variable::Type>> {
     protected:
@@ -510,7 +511,7 @@ TEST_P(VariableTypeAssignabilityDuringOverloadResolution, VariableTypeAssignabil
         ASSERT_NO_FATAL_FAILURE(modulesMatchingSignature = symbolTable.getModulesMatchingSignature(moduleWithOneParameter->name, {moduleParameter}));
         ASSERT_NO_FATAL_FAILURE(assertModuleMatchingSignatureMatchesExpectedOne(createModuleOverloadResolutionResultForSingleMatch(moduleWithOneParameter), modulesMatchingSignature));
 
-        auto firstCallerArg = std::make_shared<syrec::Variable>(moduleParameter->type, "callerArg", moduleParameter->dimensions, moduleParameter->bitwidth);
+        const auto firstCallerArg = std::make_shared<syrec::Variable>(moduleParameter->type, "callerArg", moduleParameter->dimensions, moduleParameter->bitwidth);
         for (const syrec::Variable::Type assignableVariableTypeForModuleParameter: variableTypeAssignabilityLookup.assignableVariableTypes) {
             firstCallerArg->type = assignableVariableTypeForModuleParameter;
             ASSERT_NO_FATAL_FAILURE(modulesMatchingSignature = symbolTable.getModulesMatchingSignature(moduleWithOneParameter->name, {firstCallerArg}));
@@ -532,7 +533,7 @@ TEST_P(VariableTypeAssignabilityDuringOverloadResolution, VariableTypeAssignabil
         ASSERT_NO_FATAL_FAILURE(modulesMatchingSignature = symbolTable.getModulesMatchingSignature(moduleWithOneParameter->name, {moduleParameter}));
         ASSERT_NO_FATAL_FAILURE(assertModuleMatchingSignatureMatchesExpectedOne(createModuleOverloadResolutionResultForSingleMatch(moduleWithOneParameter), modulesMatchingSignature));
 
-        auto firstCallerArg = std::make_shared<syrec::Variable>(moduleParameter->type, "callerArg", moduleParameter->dimensions, moduleParameter->bitwidth);
+        const auto firstCallerArg = std::make_shared<syrec::Variable>(moduleParameter->type, "callerArg", moduleParameter->dimensions, moduleParameter->bitwidth);
         for (const syrec::Variable::Type assignableVariableTypeForModuleParameter: variableTypeAssignabilityLookup.assignableVariableTypes) {
             firstCallerArg->type = assignableVariableTypeForModuleParameter;
             ASSERT_NO_FATAL_FAILURE(modulesMatchingSignature = symbolTable.getModulesMatchingSignature(moduleWithOneParameter->name, {firstCallerArg}));
@@ -630,7 +631,7 @@ TEST(BaseSymbolTableTests, InsertOverloadedModuleHavingAdditionalParameterThanEx
 
     const std::string moduleIdentifier        = "moduleOne";
     const auto        firstModuleParameterOne = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "mOneParamOne", std::vector<unsigned>(1, 2), DEFAULT_BITWIDTH);
-    auto              firstModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
+    const auto        firstModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
     firstModuleToInsert->statements           = createStatementBodyContainingSingleSkipStmt();
     firstModuleToInsert->parameters.emplace_back(firstModuleParameterOne);
     ASSERT_NO_FATAL_FAILURE(assertModuleInsertionCompletesSuccessfully(symbolTable, firstModuleToInsert));
@@ -639,7 +640,7 @@ TEST(BaseSymbolTableTests, InsertOverloadedModuleHavingAdditionalParameterThanEx
     secondModuleParameterOne->name       = "mTwoParamOne";
 
     const auto secondModuleParameterTwo = std::make_shared<syrec::Variable>(syrec::Variable::Type::Inout, "mTwoParamTwo", std::vector<unsigned>(2, 2), DEFAULT_BITWIDTH);
-    auto       secondModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
+    const auto secondModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
     secondModuleToInsert->statements    = createStatementBodyContainingSingleSkipStmt();
     secondModuleToInsert->parameters    = {secondModuleParameterOne, secondModuleParameterTwo};
     ASSERT_NO_FATAL_FAILURE(assertModuleInsertionCompletesSuccessfully(symbolTable, secondModuleToInsert));
@@ -648,8 +649,8 @@ TEST(BaseSymbolTableTests, InsertOverloadedModuleHavingAdditionalParameterThanEx
     ASSERT_NO_FATAL_FAILURE(modulesMatchingName = symbolTable.getModulesByName(moduleIdentifier));
     ASSERT_NO_FATAL_FAILURE(assertModuleCollectionsMatch(modulesMatchingName, {firstModuleToInsert, secondModuleToInsert}));
 
-    auto firstCallerArgument  = std::make_shared<syrec::Variable>(syrec::Variable::Type::Wire, "callerArgOne", secondModuleParameterOne->dimensions, secondModuleParameterOne->bitwidth);
-    auto secondCallerArgument = std::make_shared<syrec::Variable>(syrec::Variable::Type::Wire, "callerArgTwo", secondModuleParameterTwo->dimensions, secondModuleParameterTwo->bitwidth);
+    const auto firstCallerArgument  = std::make_shared<syrec::Variable>(syrec::Variable::Type::Wire, "callerArgOne", secondModuleParameterOne->dimensions, secondModuleParameterOne->bitwidth);
+    const auto secondCallerArgument = std::make_shared<syrec::Variable>(syrec::Variable::Type::Wire, "callerArgTwo", secondModuleParameterTwo->dimensions, secondModuleParameterTwo->bitwidth);
 
     auto modulesMatchingSignature = BaseSymbolTable::ModuleOverloadResolutionResult(BaseSymbolTable::ModuleOverloadResolutionResult::NoMatchFound, std::nullopt);
     ASSERT_NO_FATAL_FAILURE(modulesMatchingSignature = symbolTable.getModulesMatchingSignature(moduleIdentifier, {secondCallerArgument}));
@@ -733,19 +734,19 @@ TEST(BaseSymbolTableTests, GetModulesByNameUsingIdentifierHavingNoMatchesWithMod
     const auto        defaultVariableDimensions = std::vector<unsigned>({2});
     const std::string firstModuleIdentifier     = "moduleOne";
     const auto        firstModuleParameterOne   = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "mOneParamOne", std::vector<unsigned>({2}), DEFAULT_BITWIDTH);
-    auto              firstModuleToInsert       = std::make_shared<syrec::Module>(firstModuleIdentifier);
+    const auto        firstModuleToInsert       = std::make_shared<syrec::Module>(firstModuleIdentifier);
     firstModuleToInsert->parameters.emplace_back(firstModuleParameterOne);
     firstModuleToInsert->statements = createStatementBodyContainingSingleSkipStmt();
     ASSERT_NO_FATAL_FAILURE(assertModuleInsertionCompletesSuccessfully(symbolTable, firstModuleToInsert));
 
     const std::string secondModuleIdentifier   = "moduleTwo";
     const auto        secondModuleParameterOne = std::make_shared<syrec::Variable>(syrec::Variable::Type::Inout, "mOneParamTwo", defaultVariableDimensions, DEFAULT_BITWIDTH);
-    auto              secondModuleToInsert     = std::make_shared<syrec::Module>(secondModuleIdentifier);
+    const auto        secondModuleToInsert     = std::make_shared<syrec::Module>(secondModuleIdentifier);
     secondModuleToInsert->parameters.emplace_back(secondModuleParameterOne);
     secondModuleToInsert->statements = createStatementBodyContainingSingleSkipStmt();
     ASSERT_NO_FATAL_FAILURE(assertModuleInsertionCompletesSuccessfully(symbolTable, secondModuleToInsert));
 
-    auto thirdModuleToInsert = std::make_shared<syrec::Module>(firstModuleIdentifier);
+    const auto thirdModuleToInsert = std::make_shared<syrec::Module>(firstModuleIdentifier);
     thirdModuleToInsert->parameters.emplace_back(firstModuleParameterOne);
     thirdModuleToInsert->parameters.emplace_back(secondModuleParameterOne);
     thirdModuleToInsert->statements = createStatementBodyContainingSingleSkipStmt();
@@ -769,13 +770,13 @@ TEST(BaseSymbolTableTests, GetModulesMatchingSignatureWithCallerArgumentBitwidth
 
     const std::string moduleIdentifier        = "moduleOne";
     const auto        firstModuleParameterOne = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "mOneParamOne", std::vector<unsigned>({2}), DEFAULT_BITWIDTH);
-    auto              firstModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
+    const auto        firstModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
     firstModuleToInsert->parameters.emplace_back(firstModuleParameterOne);
     firstModuleToInsert->statements = createStatementBodyContainingSingleSkipStmt();
     ASSERT_NO_FATAL_FAILURE(assertModuleInsertionCompletesSuccessfully(symbolTable, firstModuleToInsert));
 
     const auto secondModuleParameterTwo = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "mTwoParamOne", firstModuleParameterOne->dimensions, DEFAULT_BITWIDTH + 2);
-    auto       secondModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
+    const auto secondModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
     secondModuleToInsert->parameters.emplace_back(firstModuleParameterOne);
     secondModuleToInsert->parameters.emplace_back(secondModuleParameterTwo);
     secondModuleToInsert->statements = createStatementBodyContainingSingleSkipStmt();
@@ -815,13 +816,13 @@ TEST(BaseSymbolTableTests, GetModulesMatchingSignatureWithCallerArgumentNumberOf
 
     const std::string moduleIdentifier        = "moduleOne";
     const auto        firstModuleParameterOne = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "mOneParamOne", std::vector<unsigned>({2, 1}), DEFAULT_BITWIDTH);
-    auto              firstModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
+    const auto        firstModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
     firstModuleToInsert->parameters.emplace_back(firstModuleParameterOne);
     firstModuleToInsert->statements = createStatementBodyContainingSingleSkipStmt();
     ASSERT_NO_FATAL_FAILURE(assertModuleInsertionCompletesSuccessfully(symbolTable, firstModuleToInsert));
 
     const auto secondModuleParameterTwo = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "mTwoParamOne", std::vector<unsigned>({1, 2, 3}), DEFAULT_BITWIDTH);
-    auto       secondModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
+    const auto secondModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
     secondModuleToInsert->parameters.emplace_back(firstModuleParameterOne);
     secondModuleToInsert->parameters.emplace_back(secondModuleParameterTwo);
     secondModuleToInsert->statements = createStatementBodyContainingSingleSkipStmt();
@@ -861,7 +862,7 @@ TEST(BaseSymbolTableTests, GetModulesMatchingSignatureWithCallerArgumentNumberOf
 
     const std::string moduleIdentifier        = "moduleOne";
     const auto        firstModuleParameterOne = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "mOneParamOne", std::vector<unsigned>(1, 2), DEFAULT_BITWIDTH);
-    auto              firstModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
+    const auto        firstModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
     firstModuleToInsert->statements           = createStatementBodyContainingSingleSkipStmt();
     firstModuleToInsert->parameters.emplace_back(firstModuleParameterOne);
     ASSERT_NO_FATAL_FAILURE(assertModuleInsertionCompletesSuccessfully(symbolTable, firstModuleToInsert));
@@ -871,11 +872,11 @@ TEST(BaseSymbolTableTests, GetModulesMatchingSignatureWithCallerArgumentNumberOf
     const auto        callerArgumentWithNumberOfValuesOfDimensionSmallerThanModuleParameter = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, callerArgumentIdentifier, std::vector(1, firstModuleParameterOne->dimensions.front() - 1), DEFAULT_BITWIDTH);
 
     const auto callerArgumentWithNumberOfValuesOfDimensionLargerThanModuleParameter = std::make_shared<syrec::Variable>(syrec::Variable::Type::Inout, callerArgumentIdentifier, std::vector(1, firstModuleParameterOne->dimensions.front() + 1), DEFAULT_BITWIDTH);
-    auto       secondModuleParameterOne                                             = std::make_shared<syrec::Variable>(*firstModuleParameterOne);
+    const auto secondModuleParameterOne                                             = std::make_shared<syrec::Variable>(*firstModuleParameterOne);
     secondModuleParameterOne->name                                                  = "mTwoParamOne";
 
     const auto secondModuleParameterTwo = std::make_shared<syrec::Variable>(syrec::Variable::Type::Inout, "mTwoParamTwo", callerArgumentWithNumberOfValuesOfDimensionLargerThanModuleParameter->dimensions, DEFAULT_BITWIDTH);
-    auto       secondModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
+    const auto secondModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
     secondModuleToInsert->statements    = createStatementBodyContainingSingleSkipStmt();
     secondModuleToInsert->parameters    = {secondModuleParameterOne, secondModuleParameterTwo};
     ASSERT_NO_FATAL_FAILURE(assertModuleInsertionCompletesSuccessfully(symbolTable, secondModuleToInsert));
@@ -917,16 +918,16 @@ TEST(BaseSymbolTableTests, GetModulesMatchingSignatureWithNumberOfCallerArgument
 
     const std::string moduleIdentifier        = "moduleOne";
     const auto        firstModuleParameterOne = std::make_shared<syrec::Variable>(syrec::Variable::Type::In, "mOneParamOne", std::vector<unsigned>(1, 2), DEFAULT_BITWIDTH);
-    auto              firstModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
+    const auto        firstModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
     firstModuleToInsert->statements           = createStatementBodyContainingSingleSkipStmt();
     firstModuleToInsert->parameters.emplace_back(firstModuleParameterOne);
     ASSERT_NO_FATAL_FAILURE(assertModuleInsertionCompletesSuccessfully(symbolTable, firstModuleToInsert));
 
-    auto secondModuleParameterOne  = std::make_shared<syrec::Variable>(*firstModuleParameterOne);
-    secondModuleParameterOne->name = "mTwoParamOne";
+    const auto secondModuleParameterOne = std::make_shared<syrec::Variable>(*firstModuleParameterOne);
+    secondModuleParameterOne->name      = "mTwoParamOne";
 
     const auto secondModuleParameterTwo = std::make_shared<syrec::Variable>(syrec::Variable::Type::Inout, "mTwoParamTwo", std::vector<unsigned>(2, 2), DEFAULT_BITWIDTH);
-    auto       secondModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
+    const auto secondModuleToInsert     = std::make_shared<syrec::Module>(moduleIdentifier);
     secondModuleToInsert->statements    = createStatementBodyContainingSingleSkipStmt();
     secondModuleToInsert->parameters    = {secondModuleParameterOne, secondModuleParameterTwo};
     ASSERT_NO_FATAL_FAILURE(assertModuleInsertionCompletesSuccessfully(symbolTable, secondModuleToInsert));
@@ -935,9 +936,9 @@ TEST(BaseSymbolTableTests, GetModulesMatchingSignatureWithNumberOfCallerArgument
     ASSERT_NO_FATAL_FAILURE(modulesMatchingName = symbolTable.getModulesByName(moduleIdentifier));
     ASSERT_NO_FATAL_FAILURE(assertModuleCollectionsMatch(modulesMatchingName, {firstModuleToInsert, secondModuleToInsert}));
 
-    auto firstCallerArgument  = std::make_shared<syrec::Variable>(syrec::Variable::Type::Wire, "callerArgOne", secondModuleParameterOne->dimensions, secondModuleParameterOne->bitwidth);
-    auto secondCallerArgument = std::make_shared<syrec::Variable>(syrec::Variable::Type::Wire, "callerArgTwo", secondModuleParameterTwo->dimensions, secondModuleParameterTwo->bitwidth);
-    auto thirdCallerArgument  = std::make_shared<syrec::Variable>(syrec::Variable::Type::Wire, "callerArgThree", std::vector<unsigned>(1, 1), DEFAULT_BITWIDTH);
+    const auto firstCallerArgument  = std::make_shared<syrec::Variable>(syrec::Variable::Type::Wire, "callerArgOne", secondModuleParameterOne->dimensions, secondModuleParameterOne->bitwidth);
+    const auto secondCallerArgument = std::make_shared<syrec::Variable>(syrec::Variable::Type::Wire, "callerArgTwo", secondModuleParameterTwo->dimensions, secondModuleParameterTwo->bitwidth);
+    const auto thirdCallerArgument  = std::make_shared<syrec::Variable>(syrec::Variable::Type::Wire, "callerArgThree", std::vector<unsigned>(1, 1), DEFAULT_BITWIDTH);
 
     // Overload resolution for known module identifier and caller arguments not matching any module
     auto modulesMatchingSignature = BaseSymbolTable::ModuleOverloadResolutionResult(BaseSymbolTable::ModuleOverloadResolutionResult::NoMatchFound, std::nullopt);

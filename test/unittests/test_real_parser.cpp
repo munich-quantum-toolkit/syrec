@@ -27,240 +27,243 @@
 #include <string>
 #include <string_view>
 
-using namespace qc;
-class RealParserTest: public testing::Test {
-public:
-    RealParserTest& usingVersion(double versionNumber) {
-        realFileContent << realHeaderVersionCommandPrefix << " " << std::fixed
-                        << std::setprecision(1) << versionNumber << "\n";
-        return *this;
-    }
+namespace {
+    using namespace qc;
+    class RealParserTest: public testing::Test {
+    public:
+        RealParserTest& usingVersion(double versionNumber) {
+            realFileContent << realHeaderVersionCommandPrefix << " " << std::fixed
+                            << std::setprecision(1) << versionNumber << "\n";
+            return *this;
+        }
 
-    RealParserTest& usingNVariables(std::size_t numVariables) {
-        realFileContent << realHeaderNumVarsCommandPrefix << " "
-                        << std::to_string(numVariables) << "\n";
-        return *this;
-    }
+        RealParserTest& usingNVariables(std::size_t numVariables) {
+            realFileContent << realHeaderNumVarsCommandPrefix << " "
+                            << std::to_string(numVariables) << "\n";
+            return *this;
+        }
 
-    RealParserTest& usingVariables(
-            const std::initializer_list<std::string_view>& variableIdents) {
-        return usingVariables(variableIdents, std::nullopt);
-    }
+        RealParserTest& usingVariables(
+                const std::initializer_list<std::string_view>& variableIdents) {
+            return usingVariables(variableIdents, std::nullopt);
+        }
 
-    RealParserTest&
-    usingVariables(const std::initializer_list<std::string_view>& variableIdents,
-                   const std::optional<std::string>&              optionalPostfix) {
-        pipeStringifiedCollectionToStream(realFileContent,
-                                          realHeaderVariablesCommandPrefix,
-                                          variableIdents, " ", optionalPostfix);
-        return *this;
-    }
+        RealParserTest&
+        usingVariables(const std::initializer_list<std::string_view>& variableIdents,
+                       const std::optional<std::string>&              optionalPostfix) {
+            pipeStringifiedCollectionToStream(realFileContent,
+                                              realHeaderVariablesCommandPrefix,
+                                              variableIdents, " ", optionalPostfix);
+            return *this;
+        }
 
-    RealParserTest& usingInitialLayout(
-            const std::initializer_list<std::string_view>& variableIdents) {
-        return usingInitialLayout(variableIdents, std::nullopt);
-    }
+        RealParserTest& usingInitialLayout(
+                const std::initializer_list<std::string_view>& variableIdents) {
+            return usingInitialLayout(variableIdents, std::nullopt);
+        }
 
-    RealParserTest& usingInitialLayout(
-            const std::initializer_list<std::string_view>& variableIdents,
-            const std::optional<std::string>&              optionalPostfix) {
-        pipeStringifiedCollectionToStream(realFileContent,
-                                          realHeaderInitialLayoutCommandPrefix,
-                                          variableIdents, " ", optionalPostfix);
-        return *this;
-    }
-
-    RealParserTest&
-    usingInputs(const std::initializer_list<std::string_view>& inputIdents) {
-        return usingInputs(inputIdents, std::nullopt);
-    }
-
-    RealParserTest&
-    usingInputs(const std::initializer_list<std::string_view>& inputIdents,
+        RealParserTest& usingInitialLayout(
+                const std::initializer_list<std::string_view>& variableIdents,
                 const std::optional<std::string>&              optionalPostfix) {
-        pipeStringifiedCollectionToStream(realFileContent,
-                                          realHeaderInputCommandPrefix, inputIdents,
-                                          " ", optionalPostfix);
-        return *this;
-    }
-
-    RealParserTest&
-    usingOutputs(const std::initializer_list<std::string_view>& outputIdents) {
-        return usingOutputs(outputIdents, std::nullopt);
-    }
-
-    RealParserTest&
-    usingOutputs(const std::initializer_list<std::string_view>& outputIdents,
-                 const std::optional<std::string>&              optionalPostfix) {
-        pipeStringifiedCollectionToStream(realFileContent,
-                                          realHeaderOutputCommandPrefix,
-                                          outputIdents, " ", optionalPostfix);
-        return *this;
-    }
-
-    RealParserTest&
-    withConstants(const std::initializer_list<char>& constantValuePerVariable) {
-        return withConstants(constantValuePerVariable, std::nullopt);
-    }
-
-    RealParserTest&
-    withConstants(const std::initializer_list<char>& constantValuePerVariable,
-                  const std::optional<std::string>&  optionalPostfix) {
-        const std::string concatenatedConstantValues(constantValuePerVariable);
-        pipeStringifiedCollectionToStream(
-                realFileContent, realHeaderConstantsCommandPrefix + " ",
-                {concatenatedConstantValues}, "", optionalPostfix);
-        return *this;
-    }
-
-    RealParserTest& withGarbageValues(
-            const std::initializer_list<char>& isGarbageValuePerVariable) {
-        return withGarbageValues(isGarbageValuePerVariable, std::nullopt);
-    }
-
-    RealParserTest& withGarbageValues(
-            const std::initializer_list<char>& isGarbageValuePerVariable,
-            const std::optional<std::string>&  optionalPostfix) {
-        const std::string concatenatedIsGarbageValues(isGarbageValuePerVariable);
-        pipeStringifiedCollectionToStream(
-                realFileContent, realHeaderGarbageCommandPrefix + " ",
-                {concatenatedIsGarbageValues}, "", optionalPostfix);
-        return *this;
-    }
-
-    RealParserTest& withEmptyGateList() {
-        realFileContent << realHeaderGateListPrefix << "\n"
-                        << reakHeaderGateListPostfix;
-        return *this;
-    }
-
-    RealParserTest& withGates(
-            const std::initializer_list<std::string_view>& stringifiedGateList) {
-        if (stringifiedGateList.size() == 0) {
-            return withEmptyGateList();
+            pipeStringifiedCollectionToStream(realFileContent,
+                                              realHeaderInitialLayoutCommandPrefix,
+                                              variableIdents, " ", optionalPostfix);
+            return *this;
         }
 
-        realFileContent << realHeaderGateListPrefix;
-        for (const auto& stringifiedGate: stringifiedGateList) {
+        RealParserTest&
+        usingInputs(const std::initializer_list<std::string_view>& inputIdents) {
+            return usingInputs(inputIdents, std::nullopt);
+        }
+
+        RealParserTest&
+        usingInputs(const std::initializer_list<std::string_view>& inputIdents,
+                    const std::optional<std::string>&              optionalPostfix) {
+            pipeStringifiedCollectionToStream(realFileContent,
+                                              realHeaderInputCommandPrefix, inputIdents,
+                                              " ", optionalPostfix);
+            return *this;
+        }
+
+        RealParserTest&
+        usingOutputs(const std::initializer_list<std::string_view>& outputIdents) {
+            return usingOutputs(outputIdents, std::nullopt);
+        }
+
+        RealParserTest&
+        usingOutputs(const std::initializer_list<std::string_view>& outputIdents,
+                     const std::optional<std::string>&              optionalPostfix) {
+            pipeStringifiedCollectionToStream(realFileContent,
+                                              realHeaderOutputCommandPrefix,
+                                              outputIdents, " ", optionalPostfix);
+            return *this;
+        }
+
+        RealParserTest&
+        withConstants(const std::initializer_list<char>& constantValuePerVariable) {
+            return withConstants(constantValuePerVariable, std::nullopt);
+        }
+
+        RealParserTest&
+        withConstants(const std::initializer_list<char>& constantValuePerVariable,
+                      const std::optional<std::string>&  optionalPostfix) {
+            const std::string concatenatedConstantValues(constantValuePerVariable);
+            pipeStringifiedCollectionToStream(
+                    realFileContent, realHeaderConstantsCommandPrefix + " ",
+                    {concatenatedConstantValues}, "", optionalPostfix);
+            return *this;
+        }
+
+        RealParserTest& withGarbageValues(
+                const std::initializer_list<char>& isGarbageValuePerVariable) {
+            return withGarbageValues(isGarbageValuePerVariable, std::nullopt);
+        }
+
+        RealParserTest& withGarbageValues(
+                const std::initializer_list<char>& isGarbageValuePerVariable,
+                const std::optional<std::string>&  optionalPostfix) {
+            const std::string concatenatedIsGarbageValues(isGarbageValuePerVariable);
+            pipeStringifiedCollectionToStream(
+                    realFileContent, realHeaderGarbageCommandPrefix + " ",
+                    {concatenatedIsGarbageValues}, "", optionalPostfix);
+            return *this;
+        }
+
+        RealParserTest& withEmptyGateList() {
+            realFileContent << realHeaderGateListPrefix << "\n"
+                            << reakHeaderGateListPostfix;
+            return *this;
+        }
+
+        RealParserTest& withGates(
+                const std::initializer_list<std::string_view>& stringifiedGateList) {
+            if (stringifiedGateList.size() == 0) {
+                return withEmptyGateList();
+            }
+
+            realFileContent << realHeaderGateListPrefix;
+            for (const auto& stringifiedGate: stringifiedGateList) {
+                realFileContent << "\n"
+                                << stringifiedGate;
+            }
+
             realFileContent << "\n"
-                            << stringifiedGate;
+                            << reakHeaderGateListPostfix;
+            return *this;
         }
 
-        realFileContent << "\n"
-                        << reakHeaderGateListPostfix;
-        return *this;
-    }
+    protected:
+        const std::string realHeaderVersionCommandPrefix       = ".version";
+        const std::string realHeaderNumVarsCommandPrefix       = ".numvars";
+        const std::string realHeaderVariablesCommandPrefix     = ".variables";
+        const std::string realHeaderInitialLayoutCommandPrefix = ".initial_layout";
+        const std::string realHeaderInputCommandPrefix         = ".inputs";
+        const std::string realHeaderOutputCommandPrefix        = ".outputs";
+        const std::string realHeaderConstantsCommandPrefix     = ".constants";
+        const std::string realHeaderGarbageCommandPrefix       = ".garbage";
+        const std::string realHeaderGateListPrefix             = ".begin";
+        const std::string reakHeaderGateListPostfix            = ".end";
 
-protected:
-    const std::string realHeaderVersionCommandPrefix       = ".version";
-    const std::string realHeaderNumVarsCommandPrefix       = ".numvars";
-    const std::string realHeaderVariablesCommandPrefix     = ".variables";
-    const std::string realHeaderInitialLayoutCommandPrefix = ".initial_layout";
-    const std::string realHeaderInputCommandPrefix         = ".inputs";
-    const std::string realHeaderOutputCommandPrefix        = ".outputs";
-    const std::string realHeaderConstantsCommandPrefix     = ".constants";
-    const std::string realHeaderGarbageCommandPrefix       = ".garbage";
-    const std::string realHeaderGateListPrefix             = ".begin";
-    const std::string reakHeaderGateListPostfix            = ".end";
+        static constexpr double DEFAULT_REAL_VERSION = 2.0;
 
-    static constexpr double DEFAULT_REAL_VERSION = 2.0;
+        const char constantValueZero = '0';
+        const char constantValueOne  = '1';
+        const char constantValueNone = '-';
 
-    const char constantValueZero = '0';
-    const char constantValueOne  = '1';
-    const char constantValueNone = '-';
+        const char            isGarbageState      = '1';
+        const char            isNotGarbageState   = '-';
+        static constexpr char COMMENT_LINE_PREFIX = '#';
 
-    const char            isGarbageState      = '1';
-    const char            isNotGarbageState   = '-';
-    static constexpr char COMMENT_LINE_PREFIX = '#';
+        enum class GateType : std::uint8_t { Toffoli,
+                                             V,
+        };
 
-    enum class GateType : std::uint8_t { Toffoli,
-                                         V };
+        QuantumComputation qc;
+        std::stringstream  realFileContent;
 
-    QuantumComputation qc;
-    std::stringstream  realFileContent;
+        static void pipeStringifiedCollectionToStream(
+                std::stringstream& pipedToStream, std::string_view elementsPrefix,
+                const std::initializer_list<std::string_view>& elements,
+                std::string_view                               elementDelimiter,
+                const std::optional<std::string_view>&         optionalPostfix) {
+            pipedToStream << elementsPrefix;
+            for (const auto& element: elements) {
+                pipedToStream << elementDelimiter << element;
+            }
 
-    static void pipeStringifiedCollectionToStream(
-            std::stringstream& pipedToStream, std::string_view elementsPrefix,
-            const std::initializer_list<std::string_view>& elements,
-            std::string_view                               elementDelimiter,
-            const std::optional<std::string_view>&         optionalPostfix) {
-        pipedToStream << elementsPrefix;
-        for (const auto& element: elements) {
-            pipedToStream << elementDelimiter << element;
+            if (optionalPostfix.has_value()) {
+                pipedToStream << optionalPostfix.value();
+            }
+
+            pipedToStream << "\n";
         }
 
-        if (optionalPostfix.has_value()) {
-            pipedToStream << optionalPostfix.value();
+        static std::string createComment(std::string_view commentData) {
+            return std::string(1, COMMENT_LINE_PREFIX) + std::string(commentData);
         }
 
-        pipedToStream << "\n";
-    }
-
-    static std::string createComment(std::string_view commentData) {
-        return std::string(1, COMMENT_LINE_PREFIX) + std::string(commentData);
-    }
-
-    static Permutation getIdentityPermutation(std::size_t nQubits) {
-        auto identityPermutation = Permutation();
-        for (std::size_t i = 0; i < nQubits; ++i) {
-            const auto qubit = static_cast<Qubit>(i);
-            identityPermutation.insert({qubit, qubit});
-        }
-        return identityPermutation;
-    }
-
-    static std::string stringifyGateType(const GateType gateType) {
-        if (gateType == GateType::Toffoli) {
-            return "t";
-        }
-        if (gateType == GateType::V) {
-            return "v";
+        static Permutation getIdentityPermutation(std::size_t nQubits) {
+            auto identityPermutation = Permutation();
+            for (std::size_t i = 0; i < nQubits; ++i) {
+                const auto qubit = static_cast<Qubit>(i);
+                identityPermutation.insert({qubit, qubit});
+            }
+            return identityPermutation;
         }
 
-        throw std::invalid_argument("Failed to stringify gate type");
-    }
+        static std::string_view stringifyGateType(const GateType gateType) {
+            if (gateType == GateType::Toffoli) {
+                return "t";
+            }
+            if (gateType == GateType::V) {
+                return "v";
+            }
 
-    static std::string
-    stringifyGate(const GateType                                 gateType,
-                  const std::initializer_list<std::string_view>& controlLines,
-                  const std::initializer_list<std::string_view>& targetLines) {
-        return stringifyGate(gateType, std::nullopt, controlLines, targetLines,
-                             std::nullopt);
-    }
-
-    static std::string
-    stringifyGate(const GateType                                 gateType,
-                  const std::optional<std::size_t>&              optionalNumberOfGateLines,
-                  const std::initializer_list<std::string_view>& controlLines,
-                  const std::initializer_list<std::string_view>& targetLines,
-                  const std::optional<std::string_view>&         optionalPostfix) {
-        EXPECT_TRUE(targetLines.size() > static_cast<std::size_t>(0))
-                << "Gate must have at least one line defined";
-
-        std::stringstream stringifiedGateBuffer;
-        if (controlLines.size() == 0 && !optionalNumberOfGateLines.has_value()) {
-            stringifiedGateBuffer << stringifyGateType(gateType);
-        } else {
-            stringifiedGateBuffer
-                    << stringifyGateType(gateType)
-                    << std::to_string(optionalNumberOfGateLines.value_or(
-                               controlLines.size() + targetLines.size()));
-        }
-        for (const auto& controlLine: controlLines) {
-            stringifiedGateBuffer << " " << controlLine;
+            throw std::invalid_argument("Failed to stringify gate type");
         }
 
-        for (const auto& targetLine: targetLines) {
-            stringifiedGateBuffer << " " << targetLine;
+        static std::string
+        stringifyGate(const GateType                                 gateType,
+                      const std::initializer_list<std::string_view>& controlLines,
+                      const std::initializer_list<std::string_view>& targetLines) {
+            return stringifyGate(gateType, std::nullopt, controlLines, targetLines,
+                                 std::nullopt);
         }
 
-        if (optionalPostfix.has_value()) {
-            stringifiedGateBuffer << optionalPostfix.value();
-        }
+        static std::string
+        stringifyGate(const GateType                                 gateType,
+                      const std::optional<std::size_t>&              optionalNumberOfGateLines,
+                      const std::initializer_list<std::string_view>& controlLines,
+                      const std::initializer_list<std::string_view>& targetLines,
+                      const std::optional<std::string_view>&         optionalPostfix) {
+            EXPECT_TRUE(targetLines.size() > static_cast<std::size_t>(0))
+                    << "Gate must have at least one line defined";
 
-        return stringifiedGateBuffer.str();
-    }
-};
+            std::stringstream stringifiedGateBuffer;
+            if (controlLines.size() == 0 && !optionalNumberOfGateLines.has_value()) {
+                stringifiedGateBuffer << stringifyGateType(gateType);
+            } else {
+                stringifiedGateBuffer
+                        << stringifyGateType(gateType)
+                        << std::to_string(optionalNumberOfGateLines.value_or(
+                                   controlLines.size() + targetLines.size()));
+            }
+            for (const auto& controlLine: controlLines) {
+                stringifiedGateBuffer << " " << controlLine;
+            }
+
+            for (const auto& targetLine: targetLines) {
+                stringifiedGateBuffer << " " << targetLine;
+            }
+
+            if (optionalPostfix.has_value()) {
+                stringifiedGateBuffer << optionalPostfix.value();
+            }
+
+            return stringifiedGateBuffer.str();
+        }
+    };
+} // namespace
 
 // ERROR TESTS
 TEST_F(RealParserTest, MoreVariablesThanNumVariablesDeclared) {
@@ -623,8 +626,10 @@ TEST_F(RealParserTest, GateWithMoreLinesThanDeclared) {
     usingVersion(DEFAULT_REAL_VERSION)
             .usingNVariables(3)
             .usingVariables({"v1", "v2", "v3"})
-            .withGates({stringifyGate(GateType::Toffoli, std::optional(2),
-                                      {"v1", "v2"}, {"v3"}, std::nullopt)});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, std::optional(2),
+                                  {"v1", "v2"}, {"v3"}, std::nullopt),
+            });
 
     EXPECT_THROW(
             qc = syrec::RealParser::import(realFileContent),
@@ -635,8 +640,10 @@ TEST_F(RealParserTest, GateWithLessLinesThanDeclared) {
     usingVersion(DEFAULT_REAL_VERSION)
             .usingNVariables(3)
             .usingVariables({"v1", "v2", "v3"})
-            .withGates({stringifyGate(GateType::Toffoli, std::optional(3), {"v1"},
-                                      {"v3"}, std::nullopt)});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, std::optional(3), {"v1"},
+                                  {"v3"}, std::nullopt),
+            });
 
     EXPECT_THROW(
             qc = syrec::RealParser::import(realFileContent),
@@ -941,8 +948,10 @@ TEST_F(RealParserTest, ConstantValueZero) {
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
             .withConstants({constantValueZero, constantValueNone})
-            .withGates({stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
-                        stringifyGate(GateType::Toffoli, {"v2"}, {"v1"})});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
+                    stringifyGate(GateType::Toffoli, {"v2"}, {"v1"}),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -965,8 +974,10 @@ TEST_F(RealParserTest, ConstantValueOne) {
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
             .withConstants({constantValueNone, constantValueOne})
-            .withGates({stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
-                        stringifyGate(GateType::Toffoli, {"v2"}, {"v1"})});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
+                    stringifyGate(GateType::Toffoli, {"v2"}, {"v1"}),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -989,8 +1000,10 @@ TEST_F(RealParserTest, GarbageValues) {
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
             .withGarbageValues({isNotGarbageState, isGarbageState})
-            .withGates({stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
-                        stringifyGate(GateType::Toffoli, {"v2"}, {"v1"})});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
+                    stringifyGate(GateType::Toffoli, {"v2"}, {"v1"}),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -1017,8 +1030,10 @@ TEST_F(RealParserTest, InputIdentDefinitionInQuotes) {
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
             .usingInputs({"i1", "\"test_input_1\""})
-            .withGates({stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
-                        stringifyGate(GateType::Toffoli, {"v2"}, {"v1"})});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
+                    stringifyGate(GateType::Toffoli, {"v2"}, {"v1"}),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -1041,8 +1056,10 @@ TEST_F(RealParserTest, OutputIdentDefinitionInQuotes) {
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
             .usingOutputs({"\"other_output_2\"", "\"o2\""})
-            .withGates({stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
-                        stringifyGate(GateType::Toffoli, {"v2"}, {"v1"})});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
+                    stringifyGate(GateType::Toffoli, {"v2"}, {"v1"}),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -1066,8 +1083,12 @@ TEST_F(RealParserTest,
             .usingNVariables(4)
             .usingVariables({"v1", "v2", "v3", "v4"})
             .usingInputs({"i1", "\"o2\"", "i3", "\"o4\""})
-            .withGarbageValues({isNotGarbageState, isGarbageState, isNotGarbageState,
-                                isGarbageState})
+            .withGarbageValues({
+                    isNotGarbageState,
+                    isGarbageState,
+                    isNotGarbageState,
+                    isGarbageState,
+            })
             .usingOutputs({"i1", "o2", "i3", "o4"})
             .withGates({
                     stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
@@ -1102,8 +1123,12 @@ TEST_F(RealParserTest,
             .usingNVariables(4)
             .usingVariables({"v1", "v2", "v3", "v4"})
             .usingInputs({"i1", "i2", "i3", "i4"})
-            .withGarbageValues({isNotGarbageState, isGarbageState, isNotGarbageState,
-                                isGarbageState})
+            .withGarbageValues({
+                    isNotGarbageState,
+                    isGarbageState,
+                    isNotGarbageState,
+                    isGarbageState,
+            })
             .usingOutputs({"i1", "\"i1\"", "i2", "\"i4\""})
             .withGates({
                     stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
@@ -1138,10 +1163,18 @@ TEST_F(RealParserTest, MatchingInputAndOutputNotInQuotes) {
             .usingNVariables(4)
             .usingVariables({"v1", "v2", "v3", "v4"})
             .usingInputs({"i1", "i2", "i3", "i4"})
-            .withConstants({constantValueOne, constantValueNone, constantValueNone,
-                            constantValueZero})
-            .withGarbageValues({isGarbageState, isNotGarbageState, isNotGarbageState,
-                                isGarbageState})
+            .withConstants({
+                    constantValueOne,
+                    constantValueNone,
+                    constantValueNone,
+                    constantValueZero,
+            })
+            .withGarbageValues({
+                    isGarbageState,
+                    isNotGarbageState,
+                    isNotGarbageState,
+                    isGarbageState,
+            })
             .usingOutputs({"o1", "i1", "i4", "o2"})
             .withGates({
                     stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
@@ -1178,10 +1211,18 @@ TEST_F(RealParserTest, MatchingInputAndOutputInQuotes) {
             .usingNVariables(4)
             .usingVariables({"v1", "v2", "v3", "v4"})
             .usingInputs({"i1", "\"i2\"", "\"i3\"", "i4"})
-            .withConstants({constantValueNone, constantValueOne, constantValueZero,
-                            constantValueNone})
-            .withGarbageValues({isNotGarbageState, isNotGarbageState,
-                                isNotGarbageState, isGarbageState})
+            .withConstants({
+                    constantValueNone,
+                    constantValueOne,
+                    constantValueZero,
+                    constantValueNone,
+            })
+            .withGarbageValues({
+                    isNotGarbageState,
+                    isNotGarbageState,
+                    isNotGarbageState,
+                    isGarbageState,
+            })
             .usingOutputs({"i4", "\"i3\"", "\"i2\"", "o1"})
             .withGates({
                     stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
@@ -1264,8 +1305,12 @@ TEST_F(RealParserTest, OutputPermutationForGarbageQubitsNotCreated) {
             .usingNVariables(4)
             .usingVariables({"v1", "v2", "v3", "v4"})
             .usingInputs({"i1", "i2", "i3", "i4"})
-            .withGarbageValues({isNotGarbageState, isGarbageState, isGarbageState,
-                                isNotGarbageState})
+            .withGarbageValues({
+                    isNotGarbageState,
+                    isGarbageState,
+                    isGarbageState,
+                    isNotGarbageState,
+            })
             .usingOutputs({"i4", "o1", "o2", "i1"})
             .withGates({
                     stringifyGate(GateType::Toffoli, {"v1"}, {"v2"}),
@@ -1523,9 +1568,11 @@ TEST_F(RealParserTest, GateDefinitionWithCommentLineAsPostfix) {
     usingVersion(DEFAULT_REAL_VERSION)
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
-            .withGates({stringifyGate(
-                    GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
-                    std::make_optional(createComment(" a test comment")))});
+            .withGates({
+                    stringifyGate(
+                            GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
+                            std::make_optional(createComment(" a test comment"))),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -1538,8 +1585,10 @@ TEST_F(RealParserTest, GateDefinitionWithWhitespaceAsPostfix) {
     usingVersion(DEFAULT_REAL_VERSION)
             .usingNVariables(2)
             .usingVariables({"v1", "v2"})
-            .withGates({stringifyGate(GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
-                                      std::make_optional(" \t\t \t"))});
+            .withGates({
+                    stringifyGate(GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
+                                  std::make_optional(" \t\t \t")),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));
@@ -1554,9 +1603,11 @@ TEST_F(RealParserTest, CombinationOfCommentLineAndWhitespacePostfixAllowed) {
             .usingVariables(
                     {"v1", "v2"},
                     std::make_optional(" \t\t \t" + createComment(" a test comment")))
-            .withGates({stringifyGate(
-                    GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
-                    std::make_optional(" \t\t \t" + createComment(" a test comment")))});
+            .withGates({
+                    stringifyGate(
+                            GateType::Toffoli, std::nullopt, {"v1"}, {"v2"},
+                            std::make_optional(" \t\t \t" + createComment(" a test comment"))),
+            });
 
     EXPECT_NO_THROW(
             qc = syrec::RealParser::import(realFileContent));

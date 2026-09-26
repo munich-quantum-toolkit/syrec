@@ -258,8 +258,8 @@ namespace syrec {
                         currentUserDeclaredHeaderComponents) {
             for (const auto& requiredHeaderComponentPrefix:
                  requiredHeaderComponentPrefixes) {
-                if (currentUserDeclaredHeaderComponents.count(
-                            requiredHeaderComponentPrefix) == 0) {
+                if (!currentUserDeclaredHeaderComponents.contains(
+                            requiredHeaderComponentPrefix)) {
                     throw std::runtime_error(
                             "[real parser] l:" + std::to_string(processedLine) +
                             " msg: Expected " + std::string(requiredHeaderComponentPrefix) +
@@ -536,7 +536,7 @@ namespace syrec {
                         {numVariablesHeaderComponentPrefix, variablesHeaderComponentPrefix},
                         definedHeaderComponents);
 
-                if (definedHeaderComponents.count(outputsHeaderComponentPrefix) > 0) {
+                if (definedHeaderComponents.contains(outputsHeaderComponentPrefix)) {
                     throw std::runtime_error(
                             "[real parser] l:" + std::to_string(line) +
                             " msg: .inputs entry must be declared prior to the .outputs entry");
@@ -633,10 +633,9 @@ namespace syrec {
                         // output (output 1) of the identity permutation must have another
                         // non-identity permutation defined or must be declared as a garbage
                         // output.
-                        if (qc->outputPermutation.count(matchingInputQubitForOutputLiteral) > 0 &&
-                            qc->outputPermutation[matchingInputQubitForOutputLiteral] ==
-                                    matchingInputQubitForOutputLiteral) {
-                            qc->outputPermutation.erase(matchingInputQubitForOutputLiteral);
+                        if (const auto permutation = qc->outputPermutation.find(matchingInputQubitForOutputLiteral);
+                            permutation != qc->outputPermutation.end() && permutation->second == matchingInputQubitForOutputLiteral) {
+                            qc->outputPermutation.erase(permutation);
                         }
                     }
                 }
@@ -670,7 +669,32 @@ namespace syrec {
         std::string cmd;
 
         static const std::map<std::string, OpType> IDENTIFIER_MAP{
-                {"0", I}, {"id", I}, {"h", H}, {"n", X}, {"c", X}, {"x", X}, {"y", Y}, {"z", Z}, {"s", S}, {"si", Sdg}, {"sp", Sdg}, {"s+", Sdg}, {"v", V}, {"vi", Vdg}, {"vp", Vdg}, {"v+", Vdg}, {"rx", RX}, {"ry", RY}, {"rz", RZ}, {"f", SWAP}, {"if", SWAP}, {"p", Peres}, {"pi", Peresdg}, {"p+", Peresdg}, {"q", P}};
+                {"0", I},
+                {"id", I},
+                {"h", H},
+                {"n", X},
+                {"c", X},
+                {"x", X},
+                {"y", Y},
+                {"z", Z},
+                {"s", S},
+                {"si", Sdg},
+                {"sp", Sdg},
+                {"s+", Sdg},
+                {"v", V},
+                {"vi", Vdg},
+                {"vp", Vdg},
+                {"v+", Vdg},
+                {"rx", RX},
+                {"ry", RY},
+                {"rz", RZ},
+                {"f", SWAP},
+                {"if", SWAP},
+                {"p", Peres},
+                {"pi", Peresdg},
+                {"p+", Peresdg},
+                {"q", P},
+        };
 
         while (!is.eof()) {
             if (!static_cast<bool>(is >> cmd)) {
@@ -702,7 +726,7 @@ namespace syrec {
             if (m.str(1) == "t") { // special treatment of t(offoli) for real format
                 gate = X;
             } else {
-                auto it = IDENTIFIER_MAP.find(m.str(1));
+                const auto it = IDENTIFIER_MAP.find(m.str(1));
                 if (it == IDENTIFIER_MAP.end()) {
                     throw std::runtime_error("[real parser] l:" + std::to_string(line) +
                                              " msg: Unknown gate identifier: " + m.str(1));
@@ -844,7 +868,7 @@ namespace syrec {
                 case P:
                     qc->emplace_back<StandardOperation>(
                             Controls{controls.cbegin(), controls.cend()},
-                            targetLineQubits.front(), gate, std::vector{PI / (lambda)});
+                            targetLineQubits.front(), gate, std::vector{PI / lambda});
                     break;
                 case SWAP:
                 case iSWAP:

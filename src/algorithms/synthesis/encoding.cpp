@@ -27,7 +27,7 @@ namespace syrec {
     template<class T>
     auto computeOutputFreq(TruthTable const& tt, T& outputFreq) -> void {
         for (const auto& [input, output]: tt) {
-            auto it = outputFreq.find(output);
+            const auto it = outputFreq.find(output);
             if (it == outputFreq.end()) {
                 outputFreq.emplace(output, 1U);
             } else {
@@ -39,7 +39,7 @@ namespace syrec {
     template<class T>
     auto topNodeOfHuffmanTree(T const& outputFreq) -> std::shared_ptr<MinHeapNode> {
         // create a priority queue for building the Huffman tree
-        auto comp = [](const std::shared_ptr<MinHeapNode>& a, const std::shared_ptr<MinHeapNode>& b) {
+        const auto comp = [](const std::shared_ptr<MinHeapNode>& a, const std::shared_ptr<MinHeapNode>& b) {
             return *a > *b;
         };
 

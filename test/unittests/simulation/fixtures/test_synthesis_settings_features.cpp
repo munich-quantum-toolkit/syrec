@@ -19,283 +19,284 @@
 
 #include <gtest/gtest.h>
 #include <optional>
-#include <string>
 #include <string_view>
 
-const std::string RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_synthesis_settings_features.json";
+namespace {
+    constexpr auto RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE = "./unittests/simulation/data/test_synthesis_settings_features.json";
 
-TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
+    TYPED_TEST_SUITE_P(BaseSimulationTestFixture);
 
-// BEGIN of tests of synthesis settings features
-TYPED_TEST_P(BaseSimulationTestFixture, OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesModuleWithMainIdentiferAsMainModule) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMainExists) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMatchingMainExactlyExists) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMatchingMainInSameCasingExists) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsNotValidCausesError) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.optionalProgramEntryPointModuleIdentifier = "2_main";
-
-    constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module main(inout a(4)) ++= a";
-    this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsChoosesMatchingModuleInsteadOfModuleWithIdentifierMain) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.optionalProgramEntryPointModuleIdentifier = "incr";
-
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsNotMatchingAnyModuleAndModuleWithIdentifierMainExistingCausesError) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.optionalProgramEntryPointModuleIdentifier = "a";
-
-    constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module decr(inout a(4)) --= a module sub(inout a(4), inout b(4)) a -= b module main(inout a(4), inout b(4)) call decr(a); call sub(a, b)";
-    this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsNotMatchingAnyModuleAndModuleWithIdentifierMainNotExistingCausesError) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.optionalProgramEntryPointModuleIdentifier = "add";
-
-    constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module decr(inout a(4)) --= a module sub(inout a(4), inout b(4)) a -= b";
-    this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsBeingEmptyCausesError) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.optionalProgramEntryPointModuleIdentifier = "";
-
-    constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module main(inout a(4)) ++= a";
-    this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithNoFullMatchFoundCausesError) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.optionalProgramEntryPointModuleIdentifier = "add";
-
-    constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module add_4(inout a(4), inout b(4)) a += b module twoQubit_add_2(inout a(2), inout b(2)) a += b module twoQubit_add(inout a(2), inout b(2)) a += b";
-    this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithFullMatchFoundSelectsLatterAsModuleModule) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.optionalProgramEntryPointModuleIdentifier = "incr";
-
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsMatchingMultipleModulesCausesError) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.optionalProgramEntryPointModuleIdentifier = "incr";
-
-    constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module incr(inout a(1)) ++= a module incr(inout a(2)) ++= a.1 module incr(inout a(3)) ++= a.2";
-    this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedModuleIdentifierInSynthesisSettingsOnlyMatchingModulesWithSameIdentifierCharacterCasing) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.optionalProgramEntryPointModuleIdentifier = "INCR";
-
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingBitwiseAndIntegerTruncationOperation) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.integerConstantTruncationOperation = utils::IntegerConstantTruncationOperation::BitwiseAnd;
-
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingModuloIntegerTruncationOperation) {
-    syrec::ConfigurableOptions synthesisSettings;
-    synthesisSettings.integerConstantTruncationOperation = utils::IntegerConstantTruncationOperation::Modulo;
-
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBit) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitDefinedAsIntegerConstantExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithKnownBounds) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartLargerThanEndAndStartDefinedAsIntegerConstantExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartSmallerThanEndAndEndDefinedAsIntegerConstantExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInShiftExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInUnaryExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInLhsOperandOfBinaryExpression) {
-    if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
-        GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
-    } else {
+    // BEGIN of tests of synthesis settings features
+    TYPED_TEST_P(BaseSimulationTestFixture, OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesModuleWithMainIdentiferAsMainModule) {
         this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
     }
-}
 
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInRhsOperandOfBinaryExpression) {
-    if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
-        GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
-    } else {
+    TYPED_TEST_P(BaseSimulationTestFixture, OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMainExists) {
         this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
     }
-}
 
-TYPED_TEST_P(BaseSimulationTestFixture, LogicalOperandModifiesExpectedBitwidthForIntegerTruncationInNestedExpressionOfBinaryExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfCompileTimeConstantExpressionInNestedExpressionOfBinaryExpression) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInGuardConditionOfIfStatement) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInExpressionUsedInDimensionAccessOfVariableAccess) {
-    if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
-        GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
-    } else {
+    TYPED_TEST_P(BaseSimulationTestFixture, OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMatchingMainExactlyExists) {
         this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
     }
-}
 
-TYPED_TEST_P(BaseSimulationTestFixture, IntegerConstantTruncationOnlyPerformedAfterCompileTimeConstantExpressionWasEvaluatedNotDuringEvaluation) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, PartialSimplificationInNestedExpressionOfUnaryExpressionPerformedDueToIntegerConstantTruncation) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, PartialSimplificationInNestedExpressionOfBinaryExpressionPerformedDueToIntegerConstantTruncation) {
-    this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, PartialSimplificationInNestedExpressionOfShiftExpressionPerformedDueToIntegerConstantTruncation) {
-    if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
-        GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
-    } else {
+    TYPED_TEST_P(BaseSimulationTestFixture, OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMatchingMainInSameCasingExists) {
         this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
     }
-}
 
-TYPED_TEST_P(BaseSimulationTestFixture, SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsQubits) {
-    ASSERT_NO_FATAL_FAILURE(this->annotatableQuantumComputation.addAncillaryQubit(0U, std::nullopt));
-    ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
-    ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, this->annotatableQuantumComputation));
-}
+    TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsNotValidCausesError) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.optionalProgramEntryPointModuleIdentifier = "2_main";
 
-TYPED_TEST_P(BaseSimulationTestFixture, SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsOperations) {
-    constexpr qc::Qubit alreadyExistingQubit = 0U;
-    ASSERT_NO_FATAL_FAILURE(this->annotatableQuantumComputation.addAncillaryQubit(alreadyExistingQubit, std::nullopt));
-    ASSERT_TRUE(this->annotatableQuantumComputation.addOperationsImplementingNotGate(alreadyExistingQubit)) << "Failed to insert NOT operation into annotatable quantum computation";
-
-    ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
-    ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, this->annotatableQuantumComputation));
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfEmptySyrecProgramNotPossible) {
-    ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, this->annotatableQuantumComputation));
-}
-
-TYPED_TEST_P(BaseSimulationTestFixture, InvalidSynthesizerInstanceNotUsableToSynthesizeSyrecProgram) {
-    ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
-
-    if (this->isTestingLineAwareSynthesis()) {
-        syrec::LineAwareSynthesis* synthesizer = nullptr;
-        ASSERT_FALSE(syrec::SyrecSynthesis::synthesize(synthesizer, this->syrecProgramInstance));
-    } else {
-        syrec::CostAwareSynthesis* synthesizer = nullptr;
-        ASSERT_FALSE(syrec::SyrecSynthesis::synthesize(synthesizer, this->syrecProgramInstance));
+        constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module main(inout a(4)) ++= a";
+        this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
     }
-}
 
-TYPED_TEST_P(BaseSimulationTestFixture, MismatchBetweenQuantumOperationAnnotationsFeatureInAnnotatableQuantumComputationAndSynthesizerNotAllowed) {
-    ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
+    TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsChoosesMatchingModuleInsteadOfModuleWithIdentifierMain) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.optionalProgramEntryPointModuleIdentifier = "incr";
 
-    auto annotatableQuantumComputationWithQuantumOperationAnnotationFeatureDisabled                  = syrec::AnnotatableQuantumComputation(false);
-    auto synthesisOptionsWithQuantumOperationAnnotationFeatureEnabled                                = syrec::ConfigurableOptions();
-    synthesisOptionsWithQuantumOperationAnnotationFeatureEnabled.generateQuantumOperationAnnotations = true;
-    ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, annotatableQuantumComputationWithQuantumOperationAnnotationFeatureDisabled, synthesisOptionsWithQuantumOperationAnnotationFeatureEnabled));
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
+    }
 
-    auto annotatableQuantumComputationWithQuantumOperationAnnotationFeatureEnabled                    = syrec::AnnotatableQuantumComputation(true);
-    auto synthesisOptionsWithQuantumOperationAnnotationFeatureDisabled                                = syrec::ConfigurableOptions();
-    synthesisOptionsWithQuantumOperationAnnotationFeatureDisabled.generateQuantumOperationAnnotations = false;
-    ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, annotatableQuantumComputationWithQuantumOperationAnnotationFeatureEnabled, synthesisOptionsWithQuantumOperationAnnotationFeatureDisabled));
-}
+    TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsNotMatchingAnyModuleAndModuleWithIdentifierMainExistingCausesError) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.optionalProgramEntryPointModuleIdentifier = "a";
 
-REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
-                            OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesModuleWithMainIdentiferAsMainModule,
-                            OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMainExists,
-                            OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMatchingMainExactlyExists,
-                            OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMatchingMainInSameCasingExists,
-                            UserDefinedMainModuleIdentifierInSynthesisSettingsNotValidCausesError,
-                            UserDefinedMainModuleIdentifierInSynthesisSettingsChoosesMatchingModuleInsteadOfModuleWithIdentifierMain,
-                            UserDefinedMainModuleIdentifierInSynthesisSettingsNotMatchingAnyModuleAndModuleWithIdentifierMainExistingCausesError,
-                            UserDefinedMainModuleIdentifierInSynthesisSettingsNotMatchingAnyModuleAndModuleWithIdentifierMainNotExistingCausesError,
-                            UserDefinedMainModuleIdentifierInSynthesisSettingsBeingEmptyCausesError,
-                            UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithNoFullMatchFoundCausesError,
-                            UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithFullMatchFoundSelectsLatterAsModuleModule,
-                            UserDefinedMainModuleIdentifierInSynthesisSettingsMatchingMultipleModulesCausesError,
-                            UserDefinedModuleIdentifierInSynthesisSettingsOnlyMatchingModulesWithSameIdentifierCharacterCasing,
+        constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module decr(inout a(4)) --= a module sub(inout a(4), inout b(4)) a -= b module main(inout a(4), inout b(4)) call decr(a); call sub(a, b)";
+        this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
+    }
 
-                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingBitwiseAndIntegerTruncationOperation,
-                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingModuloIntegerTruncationOperation,
-                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBit,
-                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitDefinedAsIntegerConstantExpression,
-                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithKnownBounds,
-                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartLargerThanEndAndStartDefinedAsIntegerConstantExpression,
-                            TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartSmallerThanEndAndEndDefinedAsIntegerConstantExpression,
-                            TruncationOfIntegerConstantInShiftExpression,
-                            TruncationOfIntegerConstantInUnaryExpression,
-                            TruncationOfIntegerConstantInLhsOperandOfBinaryExpression,
-                            TruncationOfIntegerConstantInRhsOperandOfBinaryExpression,
-                            LogicalOperandModifiesExpectedBitwidthForIntegerTruncationInNestedExpressionOfBinaryExpression,
-                            TruncationOfCompileTimeConstantExpressionInNestedExpressionOfBinaryExpression,
-                            TruncationOfIntegerConstantInGuardConditionOfIfStatement,
-                            TruncationOfIntegerConstantInExpressionUsedInDimensionAccessOfVariableAccess,
-                            IntegerConstantTruncationOnlyPerformedAfterCompileTimeConstantExpressionWasEvaluatedNotDuringEvaluation,
+    TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsNotMatchingAnyModuleAndModuleWithIdentifierMainNotExistingCausesError) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.optionalProgramEntryPointModuleIdentifier = "add";
 
-                            PartialSimplificationInNestedExpressionOfUnaryExpressionPerformedDueToIntegerConstantTruncation,
-                            PartialSimplificationInNestedExpressionOfBinaryExpressionPerformedDueToIntegerConstantTruncation,
-                            PartialSimplificationInNestedExpressionOfShiftExpressionPerformedDueToIntegerConstantTruncation,
+        constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module decr(inout a(4)) --= a module sub(inout a(4), inout b(4)) a -= b";
+        this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
+    }
 
-                            SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsQubits,
-                            SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsOperations,
-                            SynthesisOfEmptySyrecProgramNotPossible,
-                            InvalidSynthesizerInstanceNotUsableToSynthesizeSyrecProgram,
-                            MismatchBetweenQuantumOperationAnnotationsFeatureInAnnotatableQuantumComputationAndSynthesizerNotAllowed);
+    TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsBeingEmptyCausesError) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.optionalProgramEntryPointModuleIdentifier = "";
 
-using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
-INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
+        constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module main(inout a(4)) ++= a";
+        this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithNoFullMatchFoundCausesError) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.optionalProgramEntryPointModuleIdentifier = "add";
+
+        constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module add_4(inout a(4), inout b(4)) a += b module twoQubit_add_2(inout a(2), inout b(2)) a += b module twoQubit_add(inout a(2), inout b(2)) a += b";
+        this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithFullMatchFoundSelectsLatterAsModuleModule) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.optionalProgramEntryPointModuleIdentifier = "incr";
+
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedMainModuleIdentifierInSynthesisSettingsMatchingMultipleModulesCausesError) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.optionalProgramEntryPointModuleIdentifier = "incr";
+
+        constexpr std::string_view stringifiedCircuitToParseAndSynthesis = "module incr(inout a(1)) ++= a module incr(inout a(2)) ++= a.1 module incr(inout a(3)) ++= a.2";
+        this->performTestExecutionExpectingSynthesisFailureForCircuitLoadedFromString(stringifiedCircuitToParseAndSynthesis, synthesisSettings);
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, UserDefinedModuleIdentifierInSynthesisSettingsOnlyMatchingModulesWithSameIdentifierCharacterCasing) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.optionalProgramEntryPointModuleIdentifier = "INCR";
+
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingBitwiseAndIntegerTruncationOperation) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.integerConstantTruncationOperation = utils::IntegerConstantTruncationOperation::BitwiseAnd;
+
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingModuloIntegerTruncationOperation) {
+        syrec::ConfigurableOptions synthesisSettings;
+        synthesisSettings.integerConstantTruncationOperation = utils::IntegerConstantTruncationOperation::Modulo;
+
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest(), synthesisSettings);
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBit) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitDefinedAsIntegerConstantExpression) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithKnownBounds) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartLargerThanEndAndStartDefinedAsIntegerConstantExpression) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartSmallerThanEndAndEndDefinedAsIntegerConstantExpression) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInShiftExpression) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInUnaryExpression) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInLhsOperandOfBinaryExpression) {
+        if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
+            GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
+        } else {
+            this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+        }
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInRhsOperandOfBinaryExpression) {
+        if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
+            GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
+        } else {
+            this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+        }
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, LogicalOperandModifiesExpectedBitwidthForIntegerTruncationInNestedExpressionOfBinaryExpression) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfCompileTimeConstantExpressionInNestedExpressionOfBinaryExpression) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInGuardConditionOfIfStatement) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, TruncationOfIntegerConstantInExpressionUsedInDimensionAccessOfVariableAccess) {
+        if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
+            GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
+        } else {
+            this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+        }
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, IntegerConstantTruncationOnlyPerformedAfterCompileTimeConstantExpressionWasEvaluatedNotDuringEvaluation) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, PartialSimplificationInNestedExpressionOfUnaryExpressionPerformedDueToIntegerConstantTruncation) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, PartialSimplificationInNestedExpressionOfBinaryExpressionPerformedDueToIntegerConstantTruncation) {
+        this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, PartialSimplificationInNestedExpressionOfShiftExpressionPerformedDueToIntegerConstantTruncation) {
+        if constexpr (BaseSimulationTestFixture<TypeParam>::isTestingLineAwareSynthesis()) {
+            GTEST_SKIP() << "Test disabled due to issue #280 (incorrect line aware synthesis of assignments) that needs to be resolved before statements with a variable access using a non-compile time constant expression as index can be synthesized";
+        } else {
+            this->performTestExecutionForCircuitLoadedFromJson(RELATIVE_PATH_TO_TEST_CASE_DATA_JSON_FILE, this->getNameOfCurrentlyExecutedTest());
+        }
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsQubits) {
+        ASSERT_NO_FATAL_FAILURE(this->annotatableQuantumComputation.addAncillaryQubit(0U, std::nullopt));
+        ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
+        ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, this->annotatableQuantumComputation));
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsOperations) {
+        constexpr qc::Qubit alreadyExistingQubit = 0U;
+        ASSERT_NO_FATAL_FAILURE(this->annotatableQuantumComputation.addAncillaryQubit(alreadyExistingQubit, std::nullopt));
+        ASSERT_TRUE(this->annotatableQuantumComputation.addOperationsImplementingNotGate(alreadyExistingQubit)) << "Failed to insert NOT operation into annotatable quantum computation";
+
+        ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
+        ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, this->annotatableQuantumComputation));
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, SynthesisOfEmptySyrecProgramNotPossible) {
+        ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, this->annotatableQuantumComputation));
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, InvalidSynthesizerInstanceNotUsableToSynthesizeSyrecProgram) {
+        ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
+
+        if (this->isTestingLineAwareSynthesis()) {
+            syrec::LineAwareSynthesis* synthesizer = nullptr;
+            ASSERT_FALSE(syrec::SyrecSynthesis::synthesize(synthesizer, this->syrecProgramInstance));
+        } else {
+            syrec::CostAwareSynthesis* synthesizer = nullptr;
+            ASSERT_FALSE(syrec::SyrecSynthesis::synthesize(synthesizer, this->syrecProgramInstance));
+        }
+    }
+
+    TYPED_TEST_P(BaseSimulationTestFixture, MismatchBetweenQuantumOperationAnnotationsFeatureInAnnotatableQuantumComputationAndSynthesizerNotAllowed) {
+        ASSERT_NO_FATAL_FAILURE(this->parseInputCircuitFromString("module main(inout a(4)) ++= a", this->syrecProgramInstance));
+
+        auto annotatableQuantumComputationWithQuantumOperationAnnotationFeatureDisabled                  = syrec::AnnotatableQuantumComputation(false);
+        auto synthesisOptionsWithQuantumOperationAnnotationFeatureEnabled                                = syrec::ConfigurableOptions();
+        synthesisOptionsWithQuantumOperationAnnotationFeatureEnabled.generateQuantumOperationAnnotations = true;
+        ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, annotatableQuantumComputationWithQuantumOperationAnnotationFeatureDisabled, synthesisOptionsWithQuantumOperationAnnotationFeatureEnabled));
+
+        auto annotatableQuantumComputationWithQuantumOperationAnnotationFeatureEnabled                    = syrec::AnnotatableQuantumComputation(true);
+        auto synthesisOptionsWithQuantumOperationAnnotationFeatureDisabled                                = syrec::ConfigurableOptions();
+        synthesisOptionsWithQuantumOperationAnnotationFeatureDisabled.generateQuantumOperationAnnotations = false;
+        ASSERT_FALSE(this->performProgramSynthesis(this->syrecProgramInstance, annotatableQuantumComputationWithQuantumOperationAnnotationFeatureEnabled, synthesisOptionsWithQuantumOperationAnnotationFeatureDisabled));
+    }
+
+    REGISTER_TYPED_TEST_SUITE_P(BaseSimulationTestFixture,
+                                OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesModuleWithMainIdentiferAsMainModule,
+                                OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMainExists,
+                                OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMatchingMainExactlyExists,
+                                OmittingUserDefinedMainModuleIdentifierInSynthesisSettingsChoosesLastDefinedModuleAsMainModuleIfNoModuleWithIdentifierMatchingMainInSameCasingExists,
+                                UserDefinedMainModuleIdentifierInSynthesisSettingsNotValidCausesError,
+                                UserDefinedMainModuleIdentifierInSynthesisSettingsChoosesMatchingModuleInsteadOfModuleWithIdentifierMain,
+                                UserDefinedMainModuleIdentifierInSynthesisSettingsNotMatchingAnyModuleAndModuleWithIdentifierMainExistingCausesError,
+                                UserDefinedMainModuleIdentifierInSynthesisSettingsNotMatchingAnyModuleAndModuleWithIdentifierMainNotExistingCausesError,
+                                UserDefinedMainModuleIdentifierInSynthesisSettingsBeingEmptyCausesError,
+                                UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithNoFullMatchFoundCausesError,
+                                UserDefinedMainModuleIdentifierInSynthesisSettingsOnlyPartiallyMatchingModuleWithFullMatchFoundSelectsLatterAsModuleModule,
+                                UserDefinedMainModuleIdentifierInSynthesisSettingsMatchingMultipleModulesCausesError,
+                                UserDefinedModuleIdentifierInSynthesisSettingsOnlyMatchingModulesWithSameIdentifierCharacterCasing,
+
+                                TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingBitwiseAndIntegerTruncationOperation,
+                                TruncationOfIntegerConstantOnRightHandSideOfAssignmentUsingModuloIntegerTruncationOperation,
+                                TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBit,
+                                TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitDefinedAsIntegerConstantExpression,
+                                TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithKnownBounds,
+                                TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartLargerThanEndAndStartDefinedAsIntegerConstantExpression,
+                                TruncationOfIntegerConstantOnRightHandSideOfAssignmentToBitrangeWithStartSmallerThanEndAndEndDefinedAsIntegerConstantExpression,
+                                TruncationOfIntegerConstantInShiftExpression,
+                                TruncationOfIntegerConstantInUnaryExpression,
+                                TruncationOfIntegerConstantInLhsOperandOfBinaryExpression,
+                                TruncationOfIntegerConstantInRhsOperandOfBinaryExpression,
+                                LogicalOperandModifiesExpectedBitwidthForIntegerTruncationInNestedExpressionOfBinaryExpression,
+                                TruncationOfCompileTimeConstantExpressionInNestedExpressionOfBinaryExpression,
+                                TruncationOfIntegerConstantInGuardConditionOfIfStatement,
+                                TruncationOfIntegerConstantInExpressionUsedInDimensionAccessOfVariableAccess,
+                                IntegerConstantTruncationOnlyPerformedAfterCompileTimeConstantExpressionWasEvaluatedNotDuringEvaluation,
+
+                                PartialSimplificationInNestedExpressionOfUnaryExpressionPerformedDueToIntegerConstantTruncation,
+                                PartialSimplificationInNestedExpressionOfBinaryExpressionPerformedDueToIntegerConstantTruncation,
+                                PartialSimplificationInNestedExpressionOfShiftExpressionPerformedDueToIntegerConstantTruncation,
+
+                                SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsQubits,
+                                SynthesisNotPossibleIfAnnotatableQuantumComputationAlreadyContainsOperations,
+                                SynthesisOfEmptySyrecProgramNotPossible,
+                                InvalidSynthesizerInstanceNotUsableToSynthesizeSyrecProgram,
+                                MismatchBetweenQuantumOperationAnnotationsFeatureInAnnotatableQuantumComputationAndSynthesizerNotAllowed);
+
+    using SynthesizerTypes = testing::Types<syrec::CostAwareSynthesis, syrec::LineAwareSynthesis>;
+    INSTANTIATE_TYPED_TEST_SUITE_P(SyrecSynthesisTest, BaseSimulationTestFixture, SynthesizerTypes, );
+} // namespace

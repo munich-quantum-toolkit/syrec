@@ -63,7 +63,7 @@ std::optional<std::string> QubitInliningStack::QubitInliningStackEntry::stringif
         stringifiedCalledModuleSignature += (i != 0 ? ", " : "");
         stringificationSuccessful = targetModule->parameters.at(i) != nullptr && stringifyModuleParameter(*targetModule->parameters.at(i), stringifiedCalledModuleSignature);
     }
-    stringifiedCalledModuleSignature += ")";
+    stringifiedCalledModuleSignature += ')';
 
     if (!stringificationSuccessful) {
         return std::nullopt;

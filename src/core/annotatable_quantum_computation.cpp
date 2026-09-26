@@ -396,9 +396,9 @@ AnnotatableQuantumComputation::SynthesisCostMetricValue AnnotatableQuantumComput
                 break;
             default:
                 if (numEmptyLines >= c - 2U) {
-                    cost += 12ULL * c - 22ULL;
+                    cost += (12ULL * c) - 22ULL;
                 } else if (numEmptyLines >= 1U) {
-                    cost += 24ULL * c - 87ULL;
+                    cost += (24ULL * c) - 87ULL;
                 } else {
                     cost += (1ULL << (c + 1ULL)) - 3ULL;
                 }
@@ -442,7 +442,7 @@ bool AnnotatableQuantumComputation::deregisterControlQubitFromPropagationInCurre
         return false;
     }
 
-    auto& localControlLineScope = controlQubitPropagationScopes.back();
+    const auto& localControlLineScope = controlQubitPropagationScopes.back();
     if (!localControlLineScope.contains(controlQubit)) {
         return false;
     }
@@ -476,7 +476,7 @@ bool AnnotatableQuantumComputation::setOrUpdateGlobalQuantumOperationAnnotation(
         return false;
     }
 
-    auto existingAnnotationForKey = activateGlobalQuantumOperationAnnotations.find(key);
+    const auto existingAnnotationForKey = activateGlobalQuantumOperationAnnotations.find(key);
     if (existingAnnotationForKey != activateGlobalQuantumOperationAnnotations.end()) {
         existingAnnotationForKey->second = value;
         return true;
@@ -494,7 +494,7 @@ bool AnnotatableQuantumComputation::removeGlobalQuantumOperationAnnotation(const
     // of std::string in a std::map<std::string, ...> without needing to cast the
     // std::string_view to std::string for the std::map<>::erase() operation
     // (see further: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p2077r3.html)
-    auto existingAnnotationForKey = activateGlobalQuantumOperationAnnotations.find(key);
+    const auto existingAnnotationForKey = activateGlobalQuantumOperationAnnotations.find(key);
     if (existingAnnotationForKey != activateGlobalQuantumOperationAnnotations.end()) {
         activateGlobalQuantumOperationAnnotations.erase(existingAnnotationForKey);
         return true;
@@ -508,7 +508,7 @@ bool AnnotatableQuantumComputation::setOrUpdateAnnotationOfQuantumOperation(std:
     }
 
     auto& annotationsForQuantumOperation = annotationsPerQuantumOperation[indexOfQuantumOperationInQuantumComputation];
-    if (auto matchingEntryForKey = annotationsForQuantumOperation.find(annotationKey); matchingEntryForKey != annotationsForQuantumOperation.end()) {
+    if (const auto matchingEntryForKey = annotationsForQuantumOperation.find(annotationKey); matchingEntryForKey != annotationsForQuantumOperation.end()) {
         matchingEntryForKey->second = annotationValue;
     } else {
         annotationsForQuantumOperation.emplace(std::string(annotationKey), annotationValue);
@@ -594,9 +594,11 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
     }
 
     const qc::Qubit relativeQubitIndexInQuantumRegister = qubit - firstQubitOfAccessedElement;
-    return QubitInVariableLayoutData({.accessedValuePerDimensionOfElementStoringQubit = *requiredValuePerDimensionToAccessElementStoringQubit,
-                                      .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
-                                      .inlinedQubitInformation                        = optionalSharedInlinedQubitInformation});
+    return QubitInVariableLayoutData({
+            .accessedValuePerDimensionOfElementStoringQubit = *requiredValuePerDimensionToAccessElementStoringQubit,
+            .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
+            .inlinedQubitInformation                        = optionalSharedInlinedQubitInformation,
+    });
 }
 
 [[nodiscard]] std::optional<std::vector<unsigned>> AnnotatableQuantumComputation::QuantumRegisterForVariableLayout::getRequiredValuesPerDimensionToAccessQubitOfVariable(const qc::Qubit qubit) const {
@@ -659,9 +661,11 @@ std::optional<AnnotatableQuantumComputation::BaseQuantumRegisterVariableLayout::
         return std::nullopt;
     }
 
-    return QubitInVariableLayoutData({.accessedValuePerDimensionOfElementStoringQubit = std::vector({0U}),
-                                      .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
-                                      .inlinedQubitInformation                        = sharedQubitRangeInlineInformationLookup.at(*indexOfQubitRangeStoringQubit).inlinedQubitInformation});
+    return QubitInVariableLayoutData({
+            .accessedValuePerDimensionOfElementStoringQubit = std::vector({0U}),
+            .relativeQubitIndexInElementStoringQubit        = relativeQubitIndexInQuantumRegister,
+            .inlinedQubitInformation                        = sharedQubitRangeInlineInformationLookup.at(*indexOfQubitRangeStoringQubit).inlinedQubitInformation,
+    });
 }
 
 bool AnnotatableQuantumComputation::AggregateAncillaryQubitsQuantumRegisterLayout::appendQubitRange(const QubitIndexRange qubitIndexRange, const InlinedQubitInformation& sharedInlinedQubitInformation) {

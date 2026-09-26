@@ -67,7 +67,7 @@ namespace {
         std::vector resultContainer(resultBitwidth, false);
         for (std::size_t i = 0; i < resultBitwidth; ++i) {
             resultContainer[i] = static_cast<bool>(integerToConvert % 2);
-            integerToConvert >>= 1;
+            integerToConvert >>= 1U;
         }
         return resultContainer;
     }
@@ -260,7 +260,7 @@ namespace syrec {
             auto mainModuleCallStackEntry         = QubitInliningStack::QubitInliningStackEntry();
             mainModuleCallStackEntry.targetModule = main;
 
-            auto mainModuleInlineStack = std::make_shared<QubitInliningStack>();
+            const auto mainModuleInlineStack = std::make_shared<QubitInliningStack>();
             mainModuleInlineStack->push(mainModuleCallStackEntry);
 
             synthesizer->moduleCallStackInstances = std::vector<QubitInliningStack::ptr>();
@@ -449,7 +449,7 @@ namespace syrec {
         const EvaluatedVariableAccess& dataOfEvaluatedLhsOperand = *evaluatedLhsOperand;
         const EvaluatedVariableAccess& dataOfEvaluatedRhsOperand = *evaluatedRhsOperand;
 
-        const std::size_t     aggregateOfWhetherOperandsContainedOnlyNumericExpressions                = static_cast<std::size_t>(dataOfEvaluatedLhsOperand.evaluatedDimensionAccess.containedOnlyNumericExpressions) + (static_cast<std::size_t>(dataOfEvaluatedRhsOperand.evaluatedDimensionAccess.containedOnlyNumericExpressions) << 2);
+        const std::size_t     aggregateOfWhetherOperandsContainedOnlyNumericExpressions                = static_cast<std::size_t>(dataOfEvaluatedLhsOperand.evaluatedDimensionAccess.containedOnlyNumericExpressions) + (static_cast<std::size_t>(dataOfEvaluatedRhsOperand.evaluatedDimensionAccess.containedOnlyNumericExpressions) << 2U);
         constexpr std::size_t onlyLhsOperandContainedCompileTimeConstantExpressionsInDimensionAccess   = 1U;
         constexpr std::size_t onlyRhsOperandContainedCompileTimeConstantExpressionsInDimensionAccess   = 4U;
         constexpr std::size_t noOperandContainedOnlyCompileTimeConstantExpressionsInDimensionAccess    = 0U;

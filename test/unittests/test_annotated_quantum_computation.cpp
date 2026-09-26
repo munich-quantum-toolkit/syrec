@@ -32,333 +32,335 @@
 #include <utility>
 #include <vector>
 
-// The current tests do not cover the following functionality:
-// * set- and get constant/garbage/input/output lines
-// * adding and getting lines of the circuit
-// * the stringification of the supported gate types
-// ** (Gate::toQasm() will generate outputs that are not supported by the QASM standard without extra definitions and only supported by MQT::Core)
-// * the stringification of the whole circuit to either a string or file
+namespace {
+    // The current tests do not cover the following functionality:
+    // * set- and get constant/garbage/input/output lines
+    // * adding and getting lines of the circuit
+    // * the stringification of the supported gate types
+    // ** (Gate::toQasm() will generate outputs that are not supported by the QASM standard without extra definitions and only supported by MQT::Core)
+    // * the stringification of the whole circuit to either a string or file
 
-using namespace syrec;
+    using namespace syrec;
 
-const static std::string DEFAULT_QUANTUM_REGISTER_LABEL = "__defaultReg";
+    constexpr auto DEFAULT_QUANTUM_REGISTER_LABEL = "__defaultReg";
 
-class AnnotatableQuantumComputationTestsFixture: public testing::Test {
-protected:
-    std::unique_ptr<AnnotatableQuantumComputation> annotatedQuantumComputation;
+    class AnnotatableQuantumComputationTestsFixture: public testing::Test {
+    protected:
+        std::unique_ptr<AnnotatableQuantumComputation> annotatedQuantumComputation;
 
-    enum ExpectedQubitFlags : std::uint8_t {
-        QubitShouldBeDataQubit                  = 0,
-        QubitShouldBeGarbage                    = 1,
-        QubitShouldBeAncillary                  = 2,
-        InlineQubitInformationShouldBeFetchable = 4
+        enum class ExpectedQubitFlags : std::uint8_t {
+            QubitShouldBeDataQubit                  = 0,
+            QubitShouldBeGarbage                    = 1,
+            QubitShouldBeAncillary                  = 2,
+            InlineQubitInformationShouldBeFetchable = 4,
+        };
+
+        [[nodiscard]] constexpr friend bool operator&(const ExpectedQubitFlags aggregateQubitFlags, const ExpectedQubitFlags flagValueToExtract) noexcept {
+            return (static_cast<std::uint8_t>(aggregateQubitFlags) & static_cast<std::uint8_t>(flagValueToExtract)) != 0;
+        }
+
+        [[nodiscard]] constexpr friend ExpectedQubitFlags operator|(const ExpectedQubitFlags aggregateQubitFlags, const ExpectedQubitFlags flagToAddToAggregateState) noexcept {
+            return static_cast<ExpectedQubitFlags>(static_cast<std::uint8_t>(aggregateQubitFlags) | static_cast<std::uint8_t>(flagToAddToAggregateState));
+        }
+
+        void SetUp() override {
+            annotatedQuantumComputation = std::make_unique<AnnotatableQuantumComputation>(true);
+        }
+
+        [[nodiscard]] static constexpr ExpectedQubitFlags getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(const AnnotatableQuantumComputation::QubitType qubitType) {
+            switch (qubitType) {
+                case AnnotatableQuantumComputation::QubitType::Data:
+                    return ExpectedQubitFlags::QubitShouldBeDataQubit;
+                case AnnotatableQuantumComputation::QubitType::Ancillary:
+                case AnnotatableQuantumComputation::QubitType::Garbage:
+                    return ExpectedQubitFlags::QubitShouldBeGarbage;
+                default:
+                    // This assert should help to catch unhandled qubit types (in debug builds) but will not be triggered in release builds.
+                    assert(false && "Unhandled qubit type detected");
+                    // We add a return value so that the compiler is happy.
+                    return ExpectedQubitFlags::QubitShouldBeDataQubit;
+            }
+        }
+
+        static void assertExpectedQubitFlagsMatchForQubitRange(const AnnotatableQuantumComputation& annotatedQuantumComputation, const AnnotatableQuantumComputation::QubitIndexRange qubitIndexRangeToCheck, const ExpectedQubitFlags expectedSharedQubitFlags) {
+            const bool shouldQubitBeGarbage               = expectedSharedQubitFlags & ExpectedQubitFlags::QubitShouldBeGarbage;
+            const bool shouldQubitBeAncillary             = expectedSharedQubitFlags & ExpectedQubitFlags::QubitShouldBeAncillary;
+            const bool shouldInlineInformationBeFetchable = expectedSharedQubitFlags & ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
+
+            for (qc::Qubit qubit = qubitIndexRangeToCheck.firstQubitIndex; qubit <= qubitIndexRangeToCheck.lastQubitIndex; ++qubit) {
+                ASSERT_EQ(shouldQubitBeGarbage, annotatedQuantumComputation.logicalQubitIsGarbage(qubit)) << "Expected qubit " << std::to_string(qubit) << " to be marked as garbage qubit: " << shouldQubitBeGarbage;
+                ASSERT_EQ(shouldQubitBeAncillary, annotatedQuantumComputation.logicalQubitIsAncillary(qubit)) << "Expected qubit " << std::to_string(qubit) << " to be marked as ancillary qubit: " << shouldQubitBeAncillary;
+                ASSERT_EQ(shouldInlineInformationBeFetchable, annotatedQuantumComputation.getInlinedQubitInformation(qubit).has_value()) << "Expected inline information of qubit " << std::to_string(qubit) << " to be fetchable: " << shouldInlineInformationBeFetchable;
+            }
+        }
+
+        static void assertThatOperationsOfQuantumComputationAreEqualToSequence(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::vector<std::unique_ptr<qc::Operation>>& expectedQuantumOperations) {
+            const std::size_t expectedNumOperations      = expectedQuantumOperations.size();
+            const std::size_t actualNumQuantumOperations = annotatedQuantumComputation.getNindividualOps();
+            ASSERT_EQ(expectedNumOperations, actualNumQuantumOperations) << "Expected that annotated quantum computation contains " << std::to_string(expectedNumOperations) << " quantum operations but actually contained " << std::to_string(actualNumQuantumOperations) << " quantum operations";
+
+            auto expectedQuantumOperationsIterator = expectedQuantumOperations.begin();
+            for (std::size_t i = 0; i < expectedNumOperations; ++i) {
+                auto const* actualQuantumOperation = annotatedQuantumComputation.getQuantumOperation(i);
+                ASSERT_THAT(actualQuantumOperation, testing::NotNull());
+                const auto& expectedQuantumOperation = *expectedQuantumOperationsIterator;
+                ASSERT_THAT(expectedQuantumOperation, testing::NotNull());
+                ASSERT_TRUE(expectedQuantumOperation->equals(*actualQuantumOperation));
+                ++expectedQuantumOperationsIterator; // NOLINT (cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            }
+        }
+
+        static void assertThatAnnotationsOfQuantumOperationAreEqualTo(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::size_t indexOfQuantumOperationInQuantumComputation, const AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup& expectedAnnotationsOfQuantumComputation) {
+            ASSERT_TRUE(indexOfQuantumOperationInQuantumComputation < annotatedQuantumComputation.getNindividualOps());
+            const auto& actualAnnotationsOfQuantumOperation = annotatedQuantumComputation.getAnnotationsOfQuantumOperation(indexOfQuantumOperationInQuantumComputation);
+            ASSERT_EQ(expectedAnnotationsOfQuantumComputation.size(), actualAnnotationsOfQuantumOperation.size()) << "Mismatch between the number of annotations of the quantum operation at index " << std::to_string(indexOfQuantumOperationInQuantumComputation) << " of the quantum computation";
+
+            for (const auto& [expectedAnnotationKey, expectedAnnotationValue]: expectedAnnotationsOfQuantumComputation) {
+                const auto& actualMatchingEntryForAnnotationKey = actualAnnotationsOfQuantumOperation.find(expectedAnnotationKey);
+                ASSERT_TRUE(actualMatchingEntryForAnnotationKey != actualAnnotationsOfQuantumOperation.cend()) << "Expected annotation with key '" << expectedAnnotationKey << "' was not found";
+
+                const auto& actualAnnotationValue = actualMatchingEntryForAnnotationKey->second;
+                ASSERT_EQ(expectedAnnotationValue, actualAnnotationValue) << "Value for annotation with key '" << expectedAnnotationKey << "' did not match, expected: " << expectedAnnotationValue << " but was actually " << actualAnnotationValue;
+            }
+        }
+
+        static void assertAdditionOfQuantumRegisterForSyrecVariableIsSuccessful(AnnotatableQuantumComputation& annotatableQuantumComputation, const AnnotatableQuantumComputation::QubitType typeOfQubitsToBeGeneratedForVariable, const std::string& expectedQuantumRegisterLabel, const AnnotatableQuantumComputation::QubitIndexRange expectedQubitRangeOfRegister, const AnnotatableQuantumComputation::AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& optionalSharedInlinedQubitInformation = std::nullopt, const bool forceRecordingOfQubitInlineInformation = false) {
+            ASSERT_NE(expectedQuantumRegisterLabel, DEFAULT_QUANTUM_REGISTER_LABEL) << "Please do not use the default quantum register label set in the annotatable quantum computation tests";
+
+            const auto numQubitsPriorToAdditionOfQuantumRegister       = annotatableQuantumComputation.getNqubits();
+            const auto numQubitsInFutureQuantumComputation             = (expectedQubitRangeOfRegister.lastQubitIndex - expectedQubitRangeOfRegister.firstQubitIndex) + 1U;
+            const auto expectedNumQubitsAfterAdditionOfQuantumRegister = numQubitsPriorToAdditionOfQuantumRegister + numQubitsInFutureQuantumComputation;
+
+            std::optional<qc::Qubit> actualFirstQubitOfQuantumRegister;
+            ASSERT_NO_FATAL_FAILURE(actualFirstQubitOfQuantumRegister = annotatableQuantumComputation.addQuantumRegisterForSyrecVariable(typeOfQubitsToBeGeneratedForVariable, expectedQuantumRegisterLabel, associatedVariableLayoutInformation, optionalSharedInlinedQubitInformation, forceRecordingOfQubitInlineInformation));
+            ASSERT_TRUE(actualFirstQubitOfQuantumRegister.has_value()) << "Failed to create quantum register " << expectedQuantumRegisterLabel << " for variable";
+            ASSERT_EQ(expectedQubitRangeOfRegister.firstQubitIndex, actualFirstQubitOfQuantumRegister.value()) << "Expected first qubit of quantum register " << expectedQuantumRegisterLabel << " should be equal to " << std::to_string(expectedQubitRangeOfRegister.firstQubitIndex) << " but was actually " << std::to_string(actualFirstQubitOfQuantumRegister.value());
+
+            ASSERT_NO_FATAL_FAILURE(assertQuantumRegisterExists(annotatableQuantumComputation, expectedQuantumRegisterLabel, expectedQubitRangeOfRegister));
+            ASSERT_EQ(annotatableQuantumComputation.getNqubits(), expectedNumQubitsAfterAdditionOfQuantumRegister) << "Total number of qubits in quantum computation after addition of quantum register did not match";
+        }
+
+        static void assertAdditionOfAggregateOfAncillaryQubitsQRegIsSuccessfulWithNewRegisterCreated(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::string& expectedQuantumRegisterLabel, const AnnotatableQuantumComputation::QubitIndexRange expectedQubitRangeOfRegister, const std::vector<bool>& expectedInitialValuesOfAncillaryQubits, const AnnotatableQuantumComputation::InlinedQubitInformation& sharedInlineQubitInformation) {
+            ASSERT_NE(expectedQuantumRegisterLabel, DEFAULT_QUANTUM_REGISTER_LABEL) << "Please do not use the default quantum register label set in the annotatable quantum computation tests";
+
+            const auto numQubitsPriorToAdditionOfQuantumRegister = annotatableQuantumComputation.getNqubits();
+            const auto numQubitsInToBeAddedQuantumRegister       = (expectedQubitRangeOfRegister.lastQubitIndex - expectedQubitRangeOfRegister.firstQubitIndex) + 1U;
+            ASSERT_EQ(numQubitsInToBeAddedQuantumRegister, expectedInitialValuesOfAncillaryQubits.size()) << "The number of initial states must match the number of qubits in the to be added ancillary quantum register";
+
+            const auto        expectedNumQubitsAfterAdditionOfQuantumRegister            = numQubitsPriorToAdditionOfQuantumRegister + numQubitsInToBeAddedQuantumRegister;
+            const std::size_t numQuantumOperationsPriorToAdditionOfQuantumRegister       = annotatableQuantumComputation.getNops();
+            const std::size_t numAncillaryQubitsToBeInitializedToOne                     = static_cast<std::size_t>(std::ranges::count(expectedInitialValuesOfAncillaryQubits, true));
+            const std::size_t expectedNumQuantumOperationsAfterAdditionOfQuantumRegister = annotatableQuantumComputation.getNops() + numAncillaryQubitsToBeInitializedToOne;
+
+            std::optional<qc::Qubit> actualFirstQubitOfQuantumRegister;
+            ASSERT_NO_FATAL_FAILURE(actualFirstQubitOfQuantumRegister = annotatableQuantumComputation.addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne(expectedQuantumRegisterLabel, expectedInitialValuesOfAncillaryQubits, sharedInlineQubitInformation));
+            ASSERT_TRUE(actualFirstQubitOfQuantumRegister.has_value()) << "Failed to create quantum register " << expectedQuantumRegisterLabel << " for variable";
+            ASSERT_EQ(expectedQubitRangeOfRegister.firstQubitIndex, actualFirstQubitOfQuantumRegister.value()) << "Expected first qubit of quantum register " << expectedQuantumRegisterLabel << " should be equal to " << std::to_string(expectedQubitRangeOfRegister.firstQubitIndex) << " but was actually " << std::to_string(actualFirstQubitOfQuantumRegister.value());
+
+            ASSERT_NO_FATAL_FAILURE(assertQuantumRegisterExists(annotatableQuantumComputation, expectedQuantumRegisterLabel, expectedQubitRangeOfRegister));
+            ASSERT_EQ(annotatableQuantumComputation.getNqubits(), expectedNumQubitsAfterAdditionOfQuantumRegister) << "Total number of qubits in quantum computation after addition of quantum register did not match";
+
+            ASSERT_EQ(annotatableQuantumComputation.getNops(), expectedNumQuantumOperationsAfterAdditionOfQuantumRegister) << "Expected number of quantum operations after appending ancillary qubits to ancillary quantum register did not match";
+            if (numAncillaryQubitsToBeInitializedToOne > 0) {
+                ASSERT_NO_FATAL_FAILURE(assertGatesForInitializationOfAncillaryQubitsSetToOneAddedToQuantumComputation(annotatableQuantumComputation, expectedQubitRangeOfRegister.firstQubitIndex, expectedInitialValuesOfAncillaryQubits, numQuantumOperationsPriorToAdditionOfQuantumRegister, numAncillaryQubitsToBeInitializedToOne));
+            }
+        }
+
+        static void assertAdditionOfAncillaryQantumRegisterIsSuccessfulByAppendingToAdjacentQuantumRegister(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::string& labelOfAppendedToQuantumRegister, const std::vector<bool>& expectedInitialValuesOfAncillaryQubits, const AnnotatableQuantumComputation::InlinedQubitInformation& sharedInlineQubitInformation, const qc::Qubit expectedFirstGeneratedAncillaryQubit, const AnnotatableQuantumComputation::QubitIndexRange expectedQubitRangeOfRegisterAfterQubitsWereAppended) {
+            const auto numQuantumRegistersPriorToAdditionOfRegister = annotatableQuantumComputation.getQuantumRegisters().size();
+
+            const qc::QuantumRegisterMap& quantumRegisterMap = annotatableQuantumComputation.getQuantumRegisters();
+            ASSERT_TRUE(quantumRegisterMap.contains(labelOfAppendedToQuantumRegister)) << "Quantum computation did not contain a quantum register with an identifier equal to " << labelOfAppendedToQuantumRegister;
+            const qc::QuantumRegister& actualQuantumRegister = quantumRegisterMap.at(labelOfAppendedToQuantumRegister);
+            ASSERT_EQ(actualQuantumRegister.getStartIndex(), expectedQubitRangeOfRegisterAfterQubitsWereAppended.firstQubitIndex) << "Expected first qubit of quantum register did not match its actual value";
+
+            const auto numQubitsPriorToAdditionOfQuantumRegister = annotatableQuantumComputation.getNqubits();
+            const auto numQubitsToBeAdded                        = (expectedQubitRangeOfRegisterAfterQubitsWereAppended.lastQubitIndex - expectedFirstGeneratedAncillaryQubit) + 1U;
+            ASSERT_EQ(numQubitsToBeAdded, expectedInitialValuesOfAncillaryQubits.size()) << "The number of initial states must match the number of qubits in the to be added ancillary quantum register";
+
+            const auto expectedNumQubitsAfterAdditionOfQuantumRegister = numQubitsPriorToAdditionOfQuantumRegister + numQubitsToBeAdded;
+
+            const std::size_t numQuantumOperationsPriorToAdditionOfQuantumRegister       = annotatableQuantumComputation.getNops();
+            const std::size_t numAncillaryQubitsToBeInitializedToOne                     = static_cast<std::size_t>(std::ranges::count(expectedInitialValuesOfAncillaryQubits, true));
+            const std::size_t expectedNumQuantumOperationsAfterAdditionOfQuantumRegister = annotatableQuantumComputation.getNops() + numAncillaryQubitsToBeInitializedToOne;
+
+            std::optional<qc::Qubit> actualFirstQubitOfQuantumRegister;
+            ASSERT_NO_FATAL_FAILURE(actualFirstQubitOfQuantumRegister = annotatableQuantumComputation.addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne(DEFAULT_QUANTUM_REGISTER_LABEL, expectedInitialValuesOfAncillaryQubits, sharedInlineQubitInformation));
+            ASSERT_TRUE(actualFirstQubitOfQuantumRegister.has_value()) << "Failed to append ancillary qubits to adjacent ancillary quantum register " << labelOfAppendedToQuantumRegister;
+            ASSERT_EQ(expectedFirstGeneratedAncillaryQubit, actualFirstQubitOfQuantumRegister.value()) << "Expected first ancillary qubit index should be equal to " << std::to_string(expectedQubitRangeOfRegisterAfterQubitsWereAppended.firstQubitIndex) << " but was actually " << std::to_string(actualFirstQubitOfQuantumRegister.value());
+
+            ASSERT_EQ(annotatableQuantumComputation.getQuantumRegisters().size(), numQuantumRegistersPriorToAdditionOfRegister) << "Expected ancillary qubits to be added to existing ancillary quantum register but new quantum register was created";
+            ASSERT_EQ(annotatableQuantumComputation.getNqubits(), expectedNumQubitsAfterAdditionOfQuantumRegister) << "Total number of qubits in quantum computation after addition of quantum register did not match";
+            ASSERT_NO_FATAL_FAILURE(assertQuantumRegisterExists(annotatableQuantumComputation, labelOfAppendedToQuantumRegister, expectedQubitRangeOfRegisterAfterQubitsWereAppended));
+
+            ASSERT_EQ(annotatableQuantumComputation.getNops(), expectedNumQuantumOperationsAfterAdditionOfQuantumRegister) << "Expected number of quantum operations after appending ancillary qubits to ancillary quantum register did not match";
+            if (numAncillaryQubitsToBeInitializedToOne > 0) {
+                ASSERT_NO_FATAL_FAILURE(assertGatesForInitializationOfAncillaryQubitsSetToOneAddedToQuantumComputation(annotatableQuantumComputation, expectedFirstGeneratedAncillaryQubit, expectedInitialValuesOfAncillaryQubits, numQuantumOperationsPriorToAdditionOfQuantumRegister, numAncillaryQubitsToBeInitializedToOne));
+            }
+        }
+
+        static void assertGatesForInitializationOfAncillaryQubitsSetToOneAddedToQuantumComputation(const AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit firstAncillaryQubit, const std::vector<bool>& ancillaryQubitsInitialValues, const std::size_t firstQuantumOperationToCheck, const std::size_t numQuantumOperationsToCheck) {
+            if (ancillaryQubitsInitialValues.empty()) {
+                return;
+            }
+
+            const qc::Qubit lastAncillaryQubitToCheck = firstAncillaryQubit + static_cast<qc::Qubit>(ancillaryQubitsInitialValues.size() - 1U);
+            ASSERT_LT(lastAncillaryQubitToCheck, annotatableQuantumComputation.getNqubits()) << "Tried to check correct initialization of qubit " << std::to_string(lastAncillaryQubitToCheck) << " while the quantum computation only had " << std::to_string(annotatableQuantumComputation.getNqubits()) << " qubits";
+            ASSERT_LT(firstQuantumOperationToCheck, annotatableQuantumComputation.getNops()) << "Index of first quantum operation to start search for initialization of ancillary qubit was larger than the number of operations in the quantum computation";
+
+            const std::size_t truncatedNumOperationsToCheck = std::min(numQuantumOperationsToCheck, annotatableQuantumComputation.getNops());
+            const std::size_t lastQuantumOperationToCheck   = firstQuantumOperationToCheck + truncatedNumOperationsToCheck;
+            for (qc::Qubit qubit = firstAncillaryQubit; qubit <= lastAncillaryQubitToCheck; ++qubit) {
+                if (!ancillaryQubitsInitialValues.at(qubit - firstAncillaryQubit)) {
+                    continue;
+                }
+
+                std::size_t numQuantumOperationsInitializingQubitToOne = 0;
+                for (std::size_t i = firstQuantumOperationToCheck; i <= lastQuantumOperationToCheck; ++i) {
+                    const qc::Operation* op = annotatableQuantumComputation.getQuantumOperation(i);
+                    numQuantumOperationsInitializingQubitToOne += static_cast<std::size_t>(op != nullptr && op->isSingleQubitGate() && op->getNtargets() == 1 && op->getTargets().at(0) == qubit);
+                }
+                ASSERT_EQ(numQuantumOperationsInitializingQubitToOne, 1) << "Expected exactly one quantum operation (X gate with no controls and one target qubit) with the qubit " << std::to_string(qubit) << " to exist in the quantum computation but actually " << std::to_string(numQuantumOperationsInitializingQubitToOne) << " such quantum operation were found!";
+            }
+        }
+
+        static void assertQuantumRegisterExists(const AnnotatableQuantumComputation& annotatableQuantumComputation, const std::string& expectedQuantumRegisterLabel, const AnnotatableQuantumComputation::QubitIndexRange& expectedQubitRangeOfQuantumRegister) {
+            const qc::QuantumRegisterMap& quantumRegisterMap = annotatableQuantumComputation.getQuantumRegisters();
+            ASSERT_TRUE(quantumRegisterMap.contains(expectedQuantumRegisterLabel)) << "Quantum computation did not contain a quantum register with an identifier equal to " << expectedQuantumRegisterLabel;
+
+            const qc::QuantumRegister& actualQuantumRegister = quantumRegisterMap.at(expectedQuantumRegisterLabel);
+            ASSERT_EQ(actualQuantumRegister.getStartIndex(), expectedQubitRangeOfQuantumRegister.firstQubitIndex) << "Expected first qubit of quantum register to be equal to " << std::to_string(expectedQubitRangeOfQuantumRegister.firstQubitIndex) << " but was actually " << std::to_string(actualQuantumRegister.getStartIndex());
+            ASSERT_EQ(actualQuantumRegister.getEndIndex(), expectedQubitRangeOfQuantumRegister.lastQubitIndex) << "Expected last qubit of quantum register to be equal to " << std::to_string(expectedQubitRangeOfQuantumRegister.lastQubitIndex) << " but was actually " << std::to_string(actualQuantumRegister.getEndIndex());
+        }
+
+        static void create1DQuantumRegisterContainingNQubits(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::size_t numQubitsToCreate) {
+            const auto expectedQubitRangeOfQuantumRegister         = AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = static_cast<qc::Qubit>(numQubitsToCreate) - 1U});
+            const auto variableLayoutAssociatedWithQuantumRegister = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = {1U}, .bitwidth = static_cast<unsigned>(numQubitsToCreate)});
+            ASSERT_NO_FATAL_FAILURE(assertAdditionOfQuantumRegisterForSyrecVariableIsSuccessful(annotatableQuantumComputation, AnnotatableQuantumComputation::QubitType::Data, "1dNQubitReg", expectedQubitRangeOfQuantumRegister, variableLayoutAssociatedWithQuantumRegister, std::nullopt));
+
+            ASSERT_EQ(annotatableQuantumComputation.getQuantumRegisters().size(), 1U);
+            ASSERT_EQ(annotatableQuantumComputation.getNqubits(), numQubitsToCreate);
+            ASSERT_EQ(annotatableQuantumComputation.getNops(), 0U);
+            for (qc::Qubit qubit = 0U; qubit < numQubitsToCreate; ++qubit) {
+                ASSERT_FALSE(annotatableQuantumComputation.logicalQubitIsGarbage(qubit));
+                ASSERT_FALSE(annotatableQuantumComputation.logicalQubitIsAncillary(qubit));
+                ASSERT_FALSE(annotatableQuantumComputation.getInlinedQubitInformation(qubit).has_value());
+            }
+        }
+
+        static void assertInlineStackEntriesMatch(const QubitInliningStack::QubitInliningStackEntry& expected, const QubitInliningStack::QubitInliningStackEntry& actual) {
+            if (expected.lineNumberOfCallOfTargetModule.has_value()) {
+                ASSERT_TRUE(actual.lineNumberOfCallOfTargetModule.has_value()) << "Expected source code line number of called target module to not have a value";
+                ASSERT_EQ(*expected.lineNumberOfCallOfTargetModule, *actual.lineNumberOfCallOfTargetModule) << "Source code line number of called target module mismatch";
+            } else {
+                ASSERT_FALSE(actual.lineNumberOfCallOfTargetModule.has_value()) << "Expected source code line number of called target module to not have a value";
+            }
+
+            if (expected.isTargetModuleAccessedViaCallStmt.has_value()) {
+                ASSERT_TRUE(expected.isTargetModuleAccessedViaCallStmt.has_value()) << "Expected call type of target module to be specified";
+                ASSERT_EQ(*expected.isTargetModuleAccessedViaCallStmt, actual.isTargetModuleAccessedViaCallStmt) << "Call type of target module mismatch";
+            } else {
+                ASSERT_FALSE(actual.isTargetModuleAccessedViaCallStmt.has_value()) << "Expected call type of target module not to be specified";
+            }
+
+            if (expected.targetModule != nullptr) {
+                ASSERT_THAT(actual.targetModule, testing::NotNull()) << "Expected target module to be set";
+                ASSERT_THAT(actual.targetModule, expected.targetModule) << "Target module reference mismatch";
+            } else {
+                ASSERT_THAT(actual.targetModule, testing::IsNull()) << "Expected target module to not be set";
+            }
+        }
+
+        static void assertQubitInlineStacksMatch(QubitInliningStack& expected, QubitInliningStack& actual) {
+            const std::size_t expectedInlineStackSize = expected.size();
+            const std::size_t actualInlineStackSize   = actual.size();
+            ASSERT_EQ(expectedInlineStackSize, actualInlineStackSize) << "Expected qubit inline stack had a size of " << std::to_string(expectedInlineStackSize) << " while the actual one had a size of " << std::to_string(actualInlineStackSize);
+
+            for (std::size_t i = 0; i < expectedInlineStackSize; ++i) {
+                const QubitInliningStack::QubitInliningStackEntry* expectedInlineStackEntry = expected.getStackEntryAt(i);
+                const QubitInliningStack::QubitInliningStackEntry* actualInlineStackEntry   = actual.getStackEntryAt(i);
+                ASSERT_THAT(expectedInlineStackEntry, testing::NotNull()) << "Failed to fetch inline stack entry at index " << std::to_string(i);
+                ASSERT_THAT(actualInlineStackEntry, testing::NotNull()) << "Failed to fetch inline stack entry at index " << std::to_string(i);
+                ASSERT_NO_FATAL_FAILURE(assertInlineStackEntriesMatch(*expectedInlineStackEntry, *actualInlineStackEntry));
+            }
+        }
+
+        static void assertQubitInlineInformationMatches(const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& expectedInlinedQubitInformation, const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& actualInlinedQubitInformation) {
+            if (!expectedInlinedQubitInformation.has_value()) {
+                ASSERT_FALSE(actualInlinedQubitInformation.has_value());
+            } else {
+                ASSERT_TRUE(actualInlinedQubitInformation.has_value());
+                if (expectedInlinedQubitInformation->userDeclaredQubitLabel.has_value()) {
+                    ASSERT_TRUE(actualInlinedQubitInformation->userDeclaredQubitLabel.has_value()) << "Expected that user declared qubit label to be set in qubit inline information";
+                    ASSERT_EQ(*expectedInlinedQubitInformation->userDeclaredQubitLabel, *actualInlinedQubitInformation->userDeclaredQubitLabel) << "User declared qubit label mismatch in qubit inline information";
+                } else {
+                    ASSERT_FALSE(actualInlinedQubitInformation->userDeclaredQubitLabel.has_value()) << "Expected that user declared qubit label is not set in qubit inline information";
+                }
+
+                if (expectedInlinedQubitInformation->inlineStack.has_value()) {
+                    ASSERT_TRUE(actualInlinedQubitInformation->inlineStack.has_value()) << "Expected inline stack to have a value";
+                    ASSERT_THAT(*expectedInlinedQubitInformation->inlineStack, testing::NotNull()) << "Expected inline stack cannot be null";
+                    ASSERT_THAT(*actualInlinedQubitInformation->inlineStack, testing::NotNull()) << "Actual inline stack cannot be null";
+                    ASSERT_NO_FATAL_FAILURE(assertQubitInlineStacksMatch(**expectedInlinedQubitInformation->inlineStack, **actualInlinedQubitInformation->inlineStack));
+                } else {
+                    ASSERT_FALSE(actualInlinedQubitInformation->inlineStack.has_value()) << "Expected inline stack to not be set";
+                }
+            }
+        }
+
+        [[nodiscard]] static std::string buildExpectedQubitLabel(const std::string& labelOfQuantumRegisterStoringQubit, const std::vector<unsigned>& accessedValuePerDimension, const unsigned bit) {
+            std::string generatedLabel = labelOfQuantumRegisterStoringQubit;
+            for (const auto accessedValueOfDimension: accessedValuePerDimension) {
+                generatedLabel += "[" + std::to_string(accessedValueOfDimension) + "]";
+            }
+            generatedLabel += "." + std::to_string(bit);
+            return generatedLabel;
+        }
+
+        static void assertExpectedAndActualQubitLabelMatch(const AnnotatableQuantumComputation& annotatableQuantumComputation, const AnnotatableQuantumComputation::QubitLabelType qubitLabelType, const qc::Qubit qubitToCheck, const std::string& expectedQubitIdentifier, const std::vector<unsigned>& expectedAccessedValuePerDimensionToAccessQubitToCheck, const unsigned expectedAccessedBitToAccessQubitToCheck) {
+            std::string                expectedQubitLabel;
+            std::optional<std::string> actualQubitLabel;
+
+            ASSERT_NO_FATAL_FAILURE(expectedQubitLabel = buildExpectedQubitLabel(expectedQubitIdentifier, expectedAccessedValuePerDimensionToAccessQubitToCheck, expectedAccessedBitToAccessQubitToCheck));
+            ASSERT_NO_FATAL_FAILURE(actualQubitLabel = annotatableQuantumComputation.getQubitLabel(qubitToCheck, qubitLabelType)) << "Failed to fetch qubit label of qubit " << std::to_string(qubitToCheck);
+            ASSERT_TRUE(actualQubitLabel.has_value()) << "Expected qubit label of qubit " << std::to_string(qubitToCheck) << " to have a value";
+            ASSERT_EQ(expectedQubitLabel, *actualQubitLabel) << "Mismatch between expected and actual qubit label of qubit " << std::to_string(qubitToCheck);
+        }
+
+        static void assertInlineQubitInformationMatchesExpectedOne(const AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit qubit, const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& expectedInlineQubitInformation) {
+            std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> actualInlineQubitInformation;
+            ASSERT_NO_FATAL_FAILURE(actualInlineQubitInformation = annotatableQuantumComputation.getInlinedQubitInformation(qubit)) << "Failed to fetch inline qubit information of qubit " << std::to_string(qubit);
+            ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(expectedInlineQubitInformation, actualInlineQubitInformation)) << "Inline qubit information mismatch for qubit " << std::to_string(qubit);
+        }
+
+        static void assertInlineQubitInformationMatchesExpectedOne(const AnnotatableQuantumComputation& annotatableQuantumComputation, const AnnotatableQuantumComputation::QubitIndexRange& qubitIndexRangeToCheck,
+                                                                   const std::optional<std::string>& optionalExpectedVariableIdentifierInBuildQubitLabel, const std::vector<unsigned>& accessedValuePerDimensionToAccessCheckedQubitIndexRange, const QubitInliningStack::ptr& expectedSharedQubitInlineStack) {
+            AnnotatableQuantumComputation::InlinedQubitInformation expectedInlineInformation({.userDeclaredQubitLabel = std::nullopt, .inlineStack = expectedSharedQubitInlineStack});
+            for (qc::Qubit qubit = qubitIndexRangeToCheck.firstQubitIndex; qubit <= qubitIndexRangeToCheck.lastQubitIndex; ++qubit) {
+                expectedInlineInformation.userDeclaredQubitLabel = optionalExpectedVariableIdentifierInBuildQubitLabel.has_value() ? std::make_optional(buildExpectedQubitLabel(*optionalExpectedVariableIdentifierInBuildQubitLabel, accessedValuePerDimensionToAccessCheckedQubitIndexRange, qubit - qubitIndexRangeToCheck.firstQubitIndex)) : std::nullopt;
+                ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(annotatableQuantumComputation, qubit, expectedInlineInformation));
+            }
+        }
     };
 
-    [[nodiscard]] constexpr friend bool operator&(const ExpectedQubitFlags aggregateQubitFlags, const ExpectedQubitFlags flagValueToExtract) noexcept {
-        return (static_cast<std::uint8_t>(aggregateQubitFlags) & static_cast<std::uint8_t>(flagValueToExtract)) != 0;
-    }
+    // BEGIN Add quantum register for SyReC variable tests
 
-    [[nodiscard]] constexpr friend ExpectedQubitFlags operator|(const ExpectedQubitFlags aggregateQubitFlags, const ExpectedQubitFlags flagToAddToAggregateState) noexcept {
-        return static_cast<ExpectedQubitFlags>(static_cast<std::uint8_t>(aggregateQubitFlags) | static_cast<std::uint8_t>(flagToAddToAggregateState));
-    }
-
-    void SetUp() override {
-        annotatedQuantumComputation = std::make_unique<AnnotatableQuantumComputation>(true);
-    }
-
-    [[nodiscard]] static constexpr ExpectedQubitFlags getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(const AnnotatableQuantumComputation::QubitType qubitType) {
-        switch (qubitType) {
-            case AnnotatableQuantumComputation::QubitType::Data:
-                return QubitShouldBeDataQubit;
-            case AnnotatableQuantumComputation::QubitType::Ancillary:
-            case AnnotatableQuantumComputation::QubitType::Garbage:
-                return QubitShouldBeGarbage;
-            default:
-                // This assert should help to catch unhandled qubit types (in debug builds) but will not be triggered in release builds.
-                assert(false && "Unhandled qubit type detected");
-                // We add a return value so that the compiler is happy.
-                return QubitShouldBeDataQubit;
-        }
-    }
-
-    static void assertExpectedQubitFlagsMatchForQubitRange(const AnnotatableQuantumComputation& annotatedQuantumComputation, const AnnotatableQuantumComputation::QubitIndexRange qubitIndexRangeToCheck, const ExpectedQubitFlags expectedSharedQubitFlags) {
-        const bool shouldQubitBeGarbage               = expectedSharedQubitFlags & QubitShouldBeGarbage;
-        const bool shouldQubitBeAncillary             = expectedSharedQubitFlags & QubitShouldBeAncillary;
-        const bool shouldInlineInformationBeFetchable = expectedSharedQubitFlags & InlineQubitInformationShouldBeFetchable;
-
-        for (qc::Qubit qubit = qubitIndexRangeToCheck.firstQubitIndex; qubit <= qubitIndexRangeToCheck.lastQubitIndex; ++qubit) {
-            ASSERT_EQ(shouldQubitBeGarbage, annotatedQuantumComputation.logicalQubitIsGarbage(qubit)) << "Expected qubit " << std::to_string(qubit) << " to be marked as garbage qubit: " << shouldQubitBeGarbage;
-            ASSERT_EQ(shouldQubitBeAncillary, annotatedQuantumComputation.logicalQubitIsAncillary(qubit)) << "Expected qubit " << std::to_string(qubit) << " to be marked as ancillary qubit: " << shouldQubitBeAncillary;
-            ASSERT_EQ(shouldInlineInformationBeFetchable, annotatedQuantumComputation.getInlinedQubitInformation(qubit).has_value()) << "Expected inline information of qubit " << std::to_string(qubit) << " to be fetchable: " << shouldInlineInformationBeFetchable;
-        }
-    }
-
-    static void assertThatOperationsOfQuantumComputationAreEqualToSequence(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::vector<std::unique_ptr<qc::Operation>>& expectedQuantumOperations) {
-        const std::size_t expectedNumOperations      = expectedQuantumOperations.size();
-        const std::size_t actualNumQuantumOperations = annotatedQuantumComputation.getNindividualOps();
-        ASSERT_EQ(expectedNumOperations, actualNumQuantumOperations) << "Expected that annotated quantum computation contains " << std::to_string(expectedNumOperations) << " quantum operations but actually contained " << std::to_string(actualNumQuantumOperations) << " quantum operations";
-
-        auto expectedQuantumOperationsIterator = expectedQuantumOperations.begin();
-        for (std::size_t i = 0; i < expectedNumOperations; ++i) {
-            auto const* actualQuantumOperation = annotatedQuantumComputation.getQuantumOperation(i);
-            ASSERT_THAT(actualQuantumOperation, testing::NotNull());
-            const auto& expectedQuantumOperation = *expectedQuantumOperationsIterator;
-            ASSERT_THAT(expectedQuantumOperation, testing::NotNull());
-            ASSERT_TRUE(expectedQuantumOperation->equals(*actualQuantumOperation));
-            ++expectedQuantumOperationsIterator; // NOLINT (cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        }
-    }
-
-    static void assertThatAnnotationsOfQuantumOperationAreEqualTo(const AnnotatableQuantumComputation& annotatedQuantumComputation, const std::size_t indexOfQuantumOperationInQuantumComputation, const AnnotatableQuantumComputation::QuantumOperationAnnotationsLookup& expectedAnnotationsOfQuantumComputation) {
-        ASSERT_TRUE(indexOfQuantumOperationInQuantumComputation < annotatedQuantumComputation.getNindividualOps());
-        const auto& actualAnnotationsOfQuantumOperation = annotatedQuantumComputation.getAnnotationsOfQuantumOperation(indexOfQuantumOperationInQuantumComputation);
-        ASSERT_EQ(expectedAnnotationsOfQuantumComputation.size(), actualAnnotationsOfQuantumOperation.size()) << "Mismatch between the number of annotations of the quantum operation at index " << std::to_string(indexOfQuantumOperationInQuantumComputation) << " of the quantum computation";
-
-        for (const auto& [expectedAnnotationKey, expectedAnnotationValue]: expectedAnnotationsOfQuantumComputation) {
-            const auto& actualMatchingEntryForAnnotationKey = actualAnnotationsOfQuantumOperation.find(expectedAnnotationKey);
-            ASSERT_TRUE(actualMatchingEntryForAnnotationKey != actualAnnotationsOfQuantumOperation.cend()) << "Expected annotation with key '" << expectedAnnotationKey << "' was not found";
-
-            const auto& actualAnnotationValue = actualMatchingEntryForAnnotationKey->second;
-            ASSERT_EQ(expectedAnnotationValue, actualAnnotationValue) << "Value for annotation with key '" << expectedAnnotationKey << "' did not match, expected: " << expectedAnnotationValue << " but was actually " << actualAnnotationValue;
-        }
-    }
-
-    static void assertAdditionOfQuantumRegisterForSyrecVariableIsSuccessful(AnnotatableQuantumComputation& annotatableQuantumComputation, const AnnotatableQuantumComputation::QubitType typeOfQubitsToBeGeneratedForVariable, const std::string& expectedQuantumRegisterLabel, const AnnotatableQuantumComputation::QubitIndexRange expectedQubitRangeOfRegister, const AnnotatableQuantumComputation::AssociatedVariableLayoutInformation& associatedVariableLayoutInformation, const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& optionalSharedInlinedQubitInformation = std::nullopt, const bool forceRecordingOfQubitInlineInformation = false) {
-        ASSERT_NE(expectedQuantumRegisterLabel, DEFAULT_QUANTUM_REGISTER_LABEL) << "Please do not use the default quantum register label set in the annotatable quantum computation tests";
-
-        const auto numQubitsPriorToAdditionOfQuantumRegister       = annotatableQuantumComputation.getNqubits();
-        const auto numQubitsInFutureQuantumComputation             = (expectedQubitRangeOfRegister.lastQubitIndex - expectedQubitRangeOfRegister.firstQubitIndex) + 1U;
-        const auto expectedNumQubitsAfterAdditionOfQuantumRegister = numQubitsPriorToAdditionOfQuantumRegister + numQubitsInFutureQuantumComputation;
-
-        std::optional<qc::Qubit> actualFirstQubitOfQuantumRegister;
-        ASSERT_NO_FATAL_FAILURE(actualFirstQubitOfQuantumRegister = annotatableQuantumComputation.addQuantumRegisterForSyrecVariable(typeOfQubitsToBeGeneratedForVariable, expectedQuantumRegisterLabel, associatedVariableLayoutInformation, optionalSharedInlinedQubitInformation, forceRecordingOfQubitInlineInformation));
-        ASSERT_TRUE(actualFirstQubitOfQuantumRegister.has_value()) << "Failed to create quantum register " << expectedQuantumRegisterLabel << " for variable";
-        ASSERT_EQ(expectedQubitRangeOfRegister.firstQubitIndex, actualFirstQubitOfQuantumRegister.value()) << "Expected first qubit of quantum register " << expectedQuantumRegisterLabel << " should be equal to " << std::to_string(expectedQubitRangeOfRegister.firstQubitIndex) << " but was actually " << std::to_string(actualFirstQubitOfQuantumRegister.value());
-
-        ASSERT_NO_FATAL_FAILURE(assertQuantumRegisterExists(annotatableQuantumComputation, expectedQuantumRegisterLabel, expectedQubitRangeOfRegister));
-        ASSERT_EQ(annotatableQuantumComputation.getNqubits(), expectedNumQubitsAfterAdditionOfQuantumRegister) << "Total number of qubits in quantum computation after addition of quantum register did not match";
-    }
-
-    static void assertAdditionOfAggregateOfAncillaryQubitsQRegIsSuccessfulWithNewRegisterCreated(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::string& expectedQuantumRegisterLabel, const AnnotatableQuantumComputation::QubitIndexRange expectedQubitRangeOfRegister, const std::vector<bool>& expectedInitialValuesOfAncillaryQubits, const AnnotatableQuantumComputation::InlinedQubitInformation& sharedInlineQubitInformation) {
-        ASSERT_NE(expectedQuantumRegisterLabel, DEFAULT_QUANTUM_REGISTER_LABEL) << "Please do not use the default quantum register label set in the annotatable quantum computation tests";
-
-        const auto numQubitsPriorToAdditionOfQuantumRegister = annotatableQuantumComputation.getNqubits();
-        const auto numQubitsInToBeAddedQuantumRegister       = (expectedQubitRangeOfRegister.lastQubitIndex - expectedQubitRangeOfRegister.firstQubitIndex) + 1U;
-        ASSERT_EQ(numQubitsInToBeAddedQuantumRegister, expectedInitialValuesOfAncillaryQubits.size()) << "The number of initial states must match the number of qubits in the to be added ancillary quantum register";
-
-        const auto        expectedNumQubitsAfterAdditionOfQuantumRegister            = numQubitsPriorToAdditionOfQuantumRegister + numQubitsInToBeAddedQuantumRegister;
-        const std::size_t numQuantumOperationsPriorToAdditionOfQuantumRegister       = annotatableQuantumComputation.getNops();
-        const std::size_t numAncillaryQubitsToBeInitializedToOne                     = static_cast<std::size_t>(std::ranges::count(expectedInitialValuesOfAncillaryQubits, true));
-        const std::size_t expectedNumQuantumOperationsAfterAdditionOfQuantumRegister = annotatableQuantumComputation.getNops() + numAncillaryQubitsToBeInitializedToOne;
-
-        std::optional<qc::Qubit> actualFirstQubitOfQuantumRegister;
-        ASSERT_NO_FATAL_FAILURE(actualFirstQubitOfQuantumRegister = annotatableQuantumComputation.addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne(expectedQuantumRegisterLabel, expectedInitialValuesOfAncillaryQubits, sharedInlineQubitInformation));
-        ASSERT_TRUE(actualFirstQubitOfQuantumRegister.has_value()) << "Failed to create quantum register " << expectedQuantumRegisterLabel << " for variable";
-        ASSERT_EQ(expectedQubitRangeOfRegister.firstQubitIndex, actualFirstQubitOfQuantumRegister.value()) << "Expected first qubit of quantum register " << expectedQuantumRegisterLabel << " should be equal to " << std::to_string(expectedQubitRangeOfRegister.firstQubitIndex) << " but was actually " << std::to_string(actualFirstQubitOfQuantumRegister.value());
-
-        ASSERT_NO_FATAL_FAILURE(assertQuantumRegisterExists(annotatableQuantumComputation, expectedQuantumRegisterLabel, expectedQubitRangeOfRegister));
-        ASSERT_EQ(annotatableQuantumComputation.getNqubits(), expectedNumQubitsAfterAdditionOfQuantumRegister) << "Total number of qubits in quantum computation after addition of quantum register did not match";
-
-        ASSERT_EQ(annotatableQuantumComputation.getNops(), expectedNumQuantumOperationsAfterAdditionOfQuantumRegister) << "Expected number of quantum operations after appending ancillary qubits to ancillary quantum register did not match";
-        if (numAncillaryQubitsToBeInitializedToOne > 0) {
-            ASSERT_NO_FATAL_FAILURE(assertGatesForInitializationOfAncillaryQubitsSetToOneAddedToQuantumComputation(annotatableQuantumComputation, expectedQubitRangeOfRegister.firstQubitIndex, expectedInitialValuesOfAncillaryQubits, numQuantumOperationsPriorToAdditionOfQuantumRegister, numAncillaryQubitsToBeInitializedToOne));
-        }
-    }
-
-    static void assertAdditionOfAncillaryQantumRegisterIsSuccessfulByAppendingToAdjacentQuantumRegister(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::string& labelOfAppendedToQuantumRegister, const std::vector<bool>& expectedInitialValuesOfAncillaryQubits, const AnnotatableQuantumComputation::InlinedQubitInformation& sharedInlineQubitInformation, const qc::Qubit expectedFirstGeneratedAncillaryQubit, const AnnotatableQuantumComputation::QubitIndexRange expectedQubitRangeOfRegisterAfterQubitsWereAppended) {
-        const auto numQuantumRegistersPriorToAdditionOfRegister = annotatableQuantumComputation.getQuantumRegisters().size();
-
-        const qc::QuantumRegisterMap& quantumRegisterMap = annotatableQuantumComputation.getQuantumRegisters();
-        ASSERT_TRUE(quantumRegisterMap.contains(labelOfAppendedToQuantumRegister)) << "Quantum computation did not contain a quantum register with an identifier equal to " << labelOfAppendedToQuantumRegister;
-        const qc::QuantumRegister& actualQuantumRegister = quantumRegisterMap.at(labelOfAppendedToQuantumRegister);
-        ASSERT_EQ(actualQuantumRegister.getStartIndex(), expectedQubitRangeOfRegisterAfterQubitsWereAppended.firstQubitIndex) << "Expected first qubit of quantum register did not match its actual value";
-
-        const auto numQubitsPriorToAdditionOfQuantumRegister = annotatableQuantumComputation.getNqubits();
-        const auto numQubitsToBeAdded                        = (expectedQubitRangeOfRegisterAfterQubitsWereAppended.lastQubitIndex - expectedFirstGeneratedAncillaryQubit) + 1U;
-        ASSERT_EQ(numQubitsToBeAdded, expectedInitialValuesOfAncillaryQubits.size()) << "The number of initial states must match the number of qubits in the to be added ancillary quantum register";
-
-        const auto expectedNumQubitsAfterAdditionOfQuantumRegister = numQubitsPriorToAdditionOfQuantumRegister + numQubitsToBeAdded;
-
-        const std::size_t numQuantumOperationsPriorToAdditionOfQuantumRegister       = annotatableQuantumComputation.getNops();
-        const std::size_t numAncillaryQubitsToBeInitializedToOne                     = static_cast<std::size_t>(std::ranges::count(expectedInitialValuesOfAncillaryQubits, true));
-        const std::size_t expectedNumQuantumOperationsAfterAdditionOfQuantumRegister = annotatableQuantumComputation.getNops() + numAncillaryQubitsToBeInitializedToOne;
-
-        std::optional<qc::Qubit> actualFirstQubitOfQuantumRegister;
-        ASSERT_NO_FATAL_FAILURE(actualFirstQubitOfQuantumRegister = annotatableQuantumComputation.addPreliminaryAncillaryRegisterAggregatingIntermediateResultsOrAppendToAdjacentOne(DEFAULT_QUANTUM_REGISTER_LABEL, expectedInitialValuesOfAncillaryQubits, sharedInlineQubitInformation));
-        ASSERT_TRUE(actualFirstQubitOfQuantumRegister.has_value()) << "Failed to append ancillary qubits to adjacent ancillary quantum register " << labelOfAppendedToQuantumRegister;
-        ASSERT_EQ(expectedFirstGeneratedAncillaryQubit, actualFirstQubitOfQuantumRegister.value()) << "Expected first ancillary qubit index should be equal to " << std::to_string(expectedQubitRangeOfRegisterAfterQubitsWereAppended.firstQubitIndex) << " but was actually " << std::to_string(actualFirstQubitOfQuantumRegister.value());
-
-        ASSERT_EQ(annotatableQuantumComputation.getQuantumRegisters().size(), numQuantumRegistersPriorToAdditionOfRegister) << "Expected ancillary qubits to be added to existing ancillary quantum register but new quantum register was created";
-        ASSERT_EQ(annotatableQuantumComputation.getNqubits(), expectedNumQubitsAfterAdditionOfQuantumRegister) << "Total number of qubits in quantum computation after addition of quantum register did not match";
-        ASSERT_NO_FATAL_FAILURE(assertQuantumRegisterExists(annotatableQuantumComputation, labelOfAppendedToQuantumRegister, expectedQubitRangeOfRegisterAfterQubitsWereAppended));
-
-        ASSERT_EQ(annotatableQuantumComputation.getNops(), expectedNumQuantumOperationsAfterAdditionOfQuantumRegister) << "Expected number of quantum operations after appending ancillary qubits to ancillary quantum register did not match";
-        if (numAncillaryQubitsToBeInitializedToOne > 0) {
-            ASSERT_NO_FATAL_FAILURE(assertGatesForInitializationOfAncillaryQubitsSetToOneAddedToQuantumComputation(annotatableQuantumComputation, expectedFirstGeneratedAncillaryQubit, expectedInitialValuesOfAncillaryQubits, numQuantumOperationsPriorToAdditionOfQuantumRegister, numAncillaryQubitsToBeInitializedToOne));
-        }
-    }
-
-    static void assertGatesForInitializationOfAncillaryQubitsSetToOneAddedToQuantumComputation(const AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit firstAncillaryQubit, const std::vector<bool>& ancillaryQubitsInitialValues, const std::size_t firstQuantumOperationToCheck, const std::size_t numQuantumOperationsToCheck) {
-        if (ancillaryQubitsInitialValues.empty()) {
-            return;
-        }
-
-        const qc::Qubit lastAncillaryQubitToCheck = firstAncillaryQubit + static_cast<qc::Qubit>(ancillaryQubitsInitialValues.size() - 1U);
-        ASSERT_LT(lastAncillaryQubitToCheck, annotatableQuantumComputation.getNqubits()) << "Tried to check correct initialization of qubit " << std::to_string(lastAncillaryQubitToCheck) << " while the quantum computation only had " << std::to_string(annotatableQuantumComputation.getNqubits()) << " qubits";
-        ASSERT_LT(firstQuantumOperationToCheck, annotatableQuantumComputation.getNops()) << "Index of first quantum operation to start search for initialization of ancillary qubit was larger than the number of operations in the quantum computation";
-
-        const std::size_t truncatedNumOperationsToCheck = std::min(numQuantumOperationsToCheck, annotatableQuantumComputation.getNops());
-        const std::size_t lastQuantumOperationToCheck   = firstQuantumOperationToCheck + truncatedNumOperationsToCheck;
-        for (qc::Qubit qubit = firstAncillaryQubit; qubit <= lastAncillaryQubitToCheck; ++qubit) {
-            if (!ancillaryQubitsInitialValues.at(qubit - firstAncillaryQubit)) {
-                continue;
-            }
-
-            std::size_t numQuantumOperationsInitializingQubitToOne = 0;
-            for (std::size_t i = firstQuantumOperationToCheck; i <= lastQuantumOperationToCheck; ++i) {
-                const qc::Operation* op = annotatableQuantumComputation.getQuantumOperation(i);
-                numQuantumOperationsInitializingQubitToOne += static_cast<std::size_t>(op != nullptr && op->isSingleQubitGate() && op->getNtargets() == 1 && op->getTargets().at(0) == qubit);
-            }
-            ASSERT_EQ(numQuantumOperationsInitializingQubitToOne, 1) << "Expected exactly one quantum operation (X gate with no controls and one target qubit) with the qubit " << std::to_string(qubit) << " to exist in the quantum computation but actually " << std::to_string(numQuantumOperationsInitializingQubitToOne) << " such quantum operation were found!";
-        }
-    }
-
-    static void assertQuantumRegisterExists(const AnnotatableQuantumComputation& annotatableQuantumComputation, const std::string& expectedQuantumRegisterLabel, const AnnotatableQuantumComputation::QubitIndexRange& expectedQubitRangeOfQuantumRegister) {
-        const qc::QuantumRegisterMap& quantumRegisterMap = annotatableQuantumComputation.getQuantumRegisters();
-        ASSERT_TRUE(quantumRegisterMap.contains(expectedQuantumRegisterLabel)) << "Quantum computation did not contain a quantum register with an identifier equal to " << expectedQuantumRegisterLabel;
-
-        const qc::QuantumRegister& actualQuantumRegister = quantumRegisterMap.at(expectedQuantumRegisterLabel);
-        ASSERT_EQ(actualQuantumRegister.getStartIndex(), expectedQubitRangeOfQuantumRegister.firstQubitIndex) << "Expected first qubit of quantum register to be equal to " << std::to_string(expectedQubitRangeOfQuantumRegister.firstQubitIndex) << " but was actually " << std::to_string(actualQuantumRegister.getStartIndex());
-        ASSERT_EQ(actualQuantumRegister.getEndIndex(), expectedQubitRangeOfQuantumRegister.lastQubitIndex) << "Expected last qubit of quantum register to be equal to " << std::to_string(expectedQubitRangeOfQuantumRegister.lastQubitIndex) << " but was actually " << std::to_string(actualQuantumRegister.getEndIndex());
-    }
-
-    static void create1DQuantumRegisterContainingNQubits(AnnotatableQuantumComputation& annotatableQuantumComputation, const std::size_t numQubitsToCreate) {
-        const auto expectedQubitRangeOfQuantumRegister         = AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = static_cast<qc::Qubit>(numQubitsToCreate) - 1U});
-        const auto variableLayoutAssociatedWithQuantumRegister = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = {1U}, .bitwidth = static_cast<unsigned>(numQubitsToCreate)});
-        ASSERT_NO_FATAL_FAILURE(assertAdditionOfQuantumRegisterForSyrecVariableIsSuccessful(annotatableQuantumComputation, AnnotatableQuantumComputation::QubitType::Data, "1dNQubitReg", expectedQubitRangeOfQuantumRegister, variableLayoutAssociatedWithQuantumRegister, std::nullopt));
-
-        ASSERT_EQ(annotatableQuantumComputation.getQuantumRegisters().size(), 1U);
-        ASSERT_EQ(annotatableQuantumComputation.getNqubits(), numQubitsToCreate);
-        ASSERT_EQ(annotatableQuantumComputation.getNops(), 0U);
-        for (qc::Qubit qubit = 0U; qubit < numQubitsToCreate; ++qubit) {
-            ASSERT_FALSE(annotatableQuantumComputation.logicalQubitIsGarbage(qubit));
-            ASSERT_FALSE(annotatableQuantumComputation.logicalQubitIsAncillary(qubit));
-            ASSERT_FALSE(annotatableQuantumComputation.getInlinedQubitInformation(qubit).has_value());
-        }
-    }
-
-    static void assertInlineStackEntriesMatch(const QubitInliningStack::QubitInliningStackEntry& expected, const QubitInliningStack::QubitInliningStackEntry& actual) {
-        if (expected.lineNumberOfCallOfTargetModule.has_value()) {
-            ASSERT_TRUE(actual.lineNumberOfCallOfTargetModule.has_value()) << "Expected source code line number of called target module to not have a value";
-            ASSERT_EQ(*expected.lineNumberOfCallOfTargetModule, *actual.lineNumberOfCallOfTargetModule) << "Source code line number of called target module mismatch";
-        } else {
-            ASSERT_FALSE(actual.lineNumberOfCallOfTargetModule.has_value()) << "Expected source code line number of called target module to not have a value";
-        }
-
-        if (expected.isTargetModuleAccessedViaCallStmt.has_value()) {
-            ASSERT_TRUE(expected.isTargetModuleAccessedViaCallStmt.has_value()) << "Expected call type of target module to be specified";
-            ASSERT_EQ(*expected.isTargetModuleAccessedViaCallStmt, actual.isTargetModuleAccessedViaCallStmt) << "Call type of target module mismatch";
-        } else {
-            ASSERT_FALSE(actual.isTargetModuleAccessedViaCallStmt.has_value()) << "Expected call type of target module not to be specified";
-        }
-
-        if (expected.targetModule != nullptr) {
-            ASSERT_THAT(actual.targetModule, testing::NotNull()) << "Expected target module to be set";
-            ASSERT_THAT(actual.targetModule, expected.targetModule) << "Target module reference mismatch";
-        } else {
-            ASSERT_THAT(actual.targetModule, testing::IsNull()) << "Expected target module to not be set";
-        }
-    }
-
-    static void assertQubitInlineStacksMatch(QubitInliningStack& expected, QubitInliningStack& actual) {
-        const std::size_t expectedInlineStackSize = expected.size();
-        const std::size_t actualInlineStackSize   = actual.size();
-        ASSERT_EQ(expectedInlineStackSize, actualInlineStackSize) << "Expected qubit inline stack had a size of " << std::to_string(expectedInlineStackSize) << " while the actual one had a size of " << std::to_string(actualInlineStackSize);
-
-        for (std::size_t i = 0; i < expectedInlineStackSize; ++i) {
-            const QubitInliningStack::QubitInliningStackEntry* expectedInlineStackEntry = expected.getStackEntryAt(i);
-            const QubitInliningStack::QubitInliningStackEntry* actualInlineStackEntry   = actual.getStackEntryAt(i);
-            ASSERT_THAT(expectedInlineStackEntry, testing::NotNull()) << "Failed to fetch inline stack entry at index " << std::to_string(i);
-            ASSERT_THAT(actualInlineStackEntry, testing::NotNull()) << "Failed to fetch inline stack entry at index " << std::to_string(i);
-            ASSERT_NO_FATAL_FAILURE(assertInlineStackEntriesMatch(*expectedInlineStackEntry, *actualInlineStackEntry));
-        }
-    }
-
-    static void assertQubitInlineInformationMatches(const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& expectedInlinedQubitInformation, const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& actualInlinedQubitInformation) {
-        if (!expectedInlinedQubitInformation.has_value()) {
-            ASSERT_FALSE(actualInlinedQubitInformation.has_value());
-        } else {
-            ASSERT_TRUE(actualInlinedQubitInformation.has_value());
-            if (expectedInlinedQubitInformation->userDeclaredQubitLabel.has_value()) {
-                ASSERT_TRUE(actualInlinedQubitInformation->userDeclaredQubitLabel.has_value()) << "Expected that user declared qubit label to be set in qubit inline information";
-                ASSERT_EQ(*expectedInlinedQubitInformation->userDeclaredQubitLabel, *actualInlinedQubitInformation->userDeclaredQubitLabel) << "User declared qubit label mismatch in qubit inline information";
-            } else {
-                ASSERT_FALSE(actualInlinedQubitInformation->userDeclaredQubitLabel.has_value()) << "Expected that user declared qubit label is not set in qubit inline information";
-            }
-
-            if (expectedInlinedQubitInformation->inlineStack.has_value()) {
-                ASSERT_TRUE(actualInlinedQubitInformation->inlineStack.has_value()) << "Expected inline stack to have a value";
-                ASSERT_THAT(*expectedInlinedQubitInformation->inlineStack, testing::NotNull()) << "Expected inline stack cannot be null";
-                ASSERT_THAT(*actualInlinedQubitInformation->inlineStack, testing::NotNull()) << "Actual inline stack cannot be null";
-                ASSERT_NO_FATAL_FAILURE(assertQubitInlineStacksMatch(**expectedInlinedQubitInformation->inlineStack, **actualInlinedQubitInformation->inlineStack));
-            } else {
-                ASSERT_FALSE(actualInlinedQubitInformation->inlineStack.has_value()) << "Expected inline stack to not be set";
+    class SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture: public AnnotatableQuantumComputationTestsFixture, public testing::WithParamInterface<AnnotatableQuantumComputation::QubitType> {
+    public:
+        [[nodiscard]] static AnnotatableQuantumComputation::QubitType getOtherQubitType(const AnnotatableQuantumComputation::QubitType qubitTypeForWhichDifferentOneShouldBeFound) noexcept {
+            switch (qubitTypeForWhichDifferentOneShouldBeFound) {
+                case AnnotatableQuantumComputation::QubitType::Data:
+                    return AnnotatableQuantumComputation::QubitType::Garbage;
+                case AnnotatableQuantumComputation::QubitType::Garbage:
+                    return AnnotatableQuantumComputation::QubitType::Data;
+                case AnnotatableQuantumComputation::QubitType::Ancillary:
+                    return AnnotatableQuantumComputation::QubitType::Garbage;
+                default:
+                    return AnnotatableQuantumComputation::QubitType::Data;
             }
         }
-    }
-
-    [[nodiscard]] static std::string buildExpectedQubitLabel(const std::string& labelOfQuantumRegisterStoringQubit, const std::vector<unsigned>& accessedValuePerDimension, const unsigned bit) {
-        std::string generatedLabel = labelOfQuantumRegisterStoringQubit;
-        for (const auto accessedValueOfDimension: accessedValuePerDimension) {
-            generatedLabel += "[" + std::to_string(accessedValueOfDimension) + "]";
-        }
-        generatedLabel += "." + std::to_string(bit);
-        return generatedLabel;
-    }
-
-    static void assertExpectedAndActualQubitLabelMatch(const AnnotatableQuantumComputation& annotatableQuantumComputation, const AnnotatableQuantumComputation::QubitLabelType qubitLabelType, const qc::Qubit qubitToCheck, const std::string& expectedQubitIdentifier, const std::vector<unsigned>& expectedAccessedValuePerDimensionToAccessQubitToCheck, const unsigned expectedAccessedBitToAccessQubitToCheck) {
-        std::string                expectedQubitLabel;
-        std::optional<std::string> actualQubitLabel;
-
-        ASSERT_NO_FATAL_FAILURE(expectedQubitLabel = buildExpectedQubitLabel(expectedQubitIdentifier, expectedAccessedValuePerDimensionToAccessQubitToCheck, expectedAccessedBitToAccessQubitToCheck));
-        ASSERT_NO_FATAL_FAILURE(actualQubitLabel = annotatableQuantumComputation.getQubitLabel(qubitToCheck, qubitLabelType)) << "Failed to fetch qubit label of qubit " << std::to_string(qubitToCheck);
-        ASSERT_TRUE(actualQubitLabel.has_value()) << "Expected qubit label of qubit " << std::to_string(qubitToCheck) << " to have a value";
-        ASSERT_EQ(expectedQubitLabel, *actualQubitLabel) << "Mismatch between expected and actual qubit label of qubit " << std::to_string(qubitToCheck);
-    }
-
-    static void assertInlineQubitInformationMatchesExpectedOne(const AnnotatableQuantumComputation& annotatableQuantumComputation, const qc::Qubit qubit, const std::optional<AnnotatableQuantumComputation::InlinedQubitInformation>& expectedInlineQubitInformation) {
-        std::optional<AnnotatableQuantumComputation::InlinedQubitInformation> actualInlineQubitInformation;
-        ASSERT_NO_FATAL_FAILURE(actualInlineQubitInformation = annotatableQuantumComputation.getInlinedQubitInformation(qubit)) << "Failed to fetch inline qubit information of qubit " << std::to_string(qubit);
-        ASSERT_NO_FATAL_FAILURE(assertQubitInlineInformationMatches(expectedInlineQubitInformation, actualInlineQubitInformation)) << "Inline qubit information mismatch for qubit " << std::to_string(qubit);
-    }
-
-    static void assertInlineQubitInformationMatchesExpectedOne(const AnnotatableQuantumComputation& annotatableQuantumComputation, const AnnotatableQuantumComputation::QubitIndexRange& qubitIndexRangeToCheck,
-                                                               const std::optional<std::string>& optionalExpectedVariableIdentifierInBuildQubitLabel, const std::vector<unsigned>& accessedValuePerDimensionToAccessCheckedQubitIndexRange, const QubitInliningStack::ptr& expectedSharedQubitInlineStack) {
-        AnnotatableQuantumComputation::InlinedQubitInformation expectedInlineInformation({.userDeclaredQubitLabel = std::nullopt, .inlineStack = expectedSharedQubitInlineStack});
-        for (qc::Qubit qubit = qubitIndexRangeToCheck.firstQubitIndex; qubit <= qubitIndexRangeToCheck.lastQubitIndex; ++qubit) {
-            expectedInlineInformation.userDeclaredQubitLabel = optionalExpectedVariableIdentifierInBuildQubitLabel.has_value() ? std::make_optional(buildExpectedQubitLabel(*optionalExpectedVariableIdentifierInBuildQubitLabel, accessedValuePerDimensionToAccessCheckedQubitIndexRange, qubit - qubitIndexRangeToCheck.firstQubitIndex)) : std::nullopt;
-            ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(annotatableQuantumComputation, qubit, expectedInlineInformation));
-        }
-    }
-};
-
-// BEGIN Add quantum register for SyReC variable tests
-
-class SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture: public AnnotatableQuantumComputationTestsFixture, public testing::WithParamInterface<AnnotatableQuantumComputation::QubitType> {
-public:
-    [[nodiscard]] static AnnotatableQuantumComputation::QubitType getOtherQubitType(const AnnotatableQuantumComputation::QubitType qubitTypeForWhichDifferentOneShouldBeFound) noexcept {
-        switch (qubitTypeForWhichDifferentOneShouldBeFound) {
-            case AnnotatableQuantumComputation::QubitType::Data:
-                return AnnotatableQuantumComputation::QubitType::Garbage;
-            case AnnotatableQuantumComputation::QubitType::Garbage:
-                return AnnotatableQuantumComputation::QubitType::Data;
-            case AnnotatableQuantumComputation::QubitType::Ancillary:
-                return AnnotatableQuantumComputation::QubitType::Garbage;
-            default:
-                return AnnotatableQuantumComputation::QubitType::Data;
-        }
-    }
-};
+    };
+} // namespace
 
 TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQregFor1DSyrecVariable) {
     const auto associatedVariableLayoutOfQuantumRegister = AnnotatableQuantumComputation::AssociatedVariableLayoutInformation({.numValuesPerDimension = {3U}, .bitwidth = 4U});
@@ -379,13 +381,13 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    ExpectedQubitFlags expectedSharedQubitFlags = QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit;
     switch (GetParam()) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlags = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
@@ -429,13 +431,13 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInVariable);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    ExpectedQubitFlags expectedSharedQubitFlags = QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit;
     switch (GetParam()) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlags = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
@@ -529,19 +531,19 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInExistingQReg + expectedNumQubitsInToBeAddedQReg);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    ExpectedQubitFlags expectedSharedQubitFlagsOfExistingQReg = QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlagsOfExistingQReg = ExpectedQubitFlags::QubitShouldBeDataQubit;
     switch (qubitTypeOfExistingQReg) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlagsOfExistingQReg = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlagsOfExistingQReg = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
     }
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfExistingQReg, expectedSharedQubitFlagsOfExistingQReg));
-    if (expectedSharedQubitFlagsOfExistingQReg & InlineQubitInformationShouldBeFetchable) {
+    if (expectedSharedQubitFlagsOfExistingQReg & ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable) {
         ASSERT_TRUE(optionalinlineInformationOfExistingQReg.has_value());
         ASSERT_TRUE(optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel.has_value());
         ASSERT_TRUE(optionalinlineInformationOfExistingQReg->inlineStack.has_value());
@@ -552,19 +554,19 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
         ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 4U, .lastQubitIndex = 5U}), optionalinlineInformationOfExistingQReg->userDeclaredQubitLabel, {0U, 2U}, *optionalinlineInformationOfExistingQReg->inlineStack));
     }
 
-    ExpectedQubitFlags expectedSharedQubitFlagsOfToBeAddedQReg = QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlagsOfToBeAddedQReg = ExpectedQubitFlags::QubitShouldBeDataQubit;
     switch (qubitTypeOfToBeAddedQReg) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlagsOfToBeAddedQReg = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlagsOfToBeAddedQReg = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
     }
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfToBeAddedQReg, expectedSharedQubitFlagsOfToBeAddedQReg));
-    if (expectedSharedQubitFlagsOfToBeAddedQReg & InlineQubitInformationShouldBeFetchable) {
+    if (expectedSharedQubitFlagsOfToBeAddedQReg & ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable) {
         ASSERT_TRUE(optionalInlineInformationOfToBeAddedQReg.has_value());
         ASSERT_TRUE(optionalInlineInformationOfToBeAddedQReg->userDeclaredQubitLabel.has_value());
         ASSERT_TRUE(optionalInlineInformationOfToBeAddedQReg->inlineStack.has_value());
@@ -607,13 +609,13 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAggregateAncillaryQubitsQReg, ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable));
     ASSERT_NO_FATAL_FAILURE(assertInlineQubitInformationMatchesExpectedOne(*annotatedQuantumComputation, AnnotatableQuantumComputation::QubitIndexRange({.firstQubitIndex = 0U, .lastQubitIndex = 4U}), std::nullopt, {0U}, aggregatedAncillaryQubitsInlineStack));
 
-    ExpectedQubitFlags expectedSharedQubitFlags = QubitShouldBeDataQubit;
+    ExpectedQubitFlags expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeDataQubit;
     switch (GetParam()) {
         case AnnotatableQuantumComputation::QubitType::Data:
             break;
         case AnnotatableQuantumComputation::QubitType::Garbage:
         case AnnotatableQuantumComputation::QubitType::Ancillary:
-            expectedSharedQubitFlags = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+            expectedSharedQubitFlags = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
             break;
         default:
             FAIL();
@@ -782,7 +784,7 @@ TEST_P(SingleQregForSyrecVariableAnnotatableQuantumComputationTestsFixture, AddQ
     ASSERT_EQ(annotatedQuantumComputation->getQuantumRegisters().size(), 1U);
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), 12U);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
-    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam()) | InlineQubitInformationShouldBeFetchable;
+    const ExpectedQubitFlags expectedSharedQubitFlags = getExpectedQubitFlagsForQubitTypePriorToAncillaryQubitPromotion(GetParam()) | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQuantumRegisterQubitRange, expectedSharedQubitFlags));
 }
 
@@ -1172,16 +1174,16 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddMixtureOfDifferentQuantumRe
     ASSERT_NO_FATAL_FAILURE(assertQuantumRegisterExists(*annotatedQuantumComputation, firstAggregateOfAncillaryQubitsQRegLabel, expectedQubitRangeOfAggregateOfAncillaryQubitsQRegAfterSecondMerge));
     ASSERT_NO_FATAL_FAILURE(assertQuantumRegisterExists(*annotatedQuantumComputation, thirdQRegOfVariableLabel, expectedQubitRangeOfThirdQRegOfVariable));
 
-    constexpr ExpectedQubitFlags expectedQubitFlagsOfFirstQRegForVariable = QubitShouldBeDataQubit;
+    constexpr ExpectedQubitFlags expectedQubitFlagsOfFirstQRegForVariable = ExpectedQubitFlags::QubitShouldBeDataQubit;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfFirstQRegOfVariable, expectedQubitFlagsOfFirstQRegForVariable));
 
-    constexpr ExpectedQubitFlags expectedQubitFlagsOfSecondQRegForVariable = QubitShouldBeGarbage | QubitShouldBeAncillary;
+    constexpr ExpectedQubitFlags expectedQubitFlagsOfSecondQRegForVariable = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfSecondQRegOfVariable, expectedQubitFlagsOfSecondQRegForVariable));
 
-    constexpr ExpectedQubitFlags expectedQubitFlagsOfMergeAggregateOfAncillaryQubitsQReg = QubitShouldBeGarbage | QubitShouldBeAncillary | InlineQubitInformationShouldBeFetchable;
+    constexpr ExpectedQubitFlags expectedQubitFlagsOfMergeAggregateOfAncillaryQubitsQReg = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::QubitShouldBeAncillary | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfAggregateOfAncillaryQubitsQRegAfterSecondMerge, expectedQubitFlagsOfMergeAggregateOfAncillaryQubitsQReg));
 
-    constexpr ExpectedQubitFlags expectedQubitFlagsOfThirdQRegForVariable = QubitShouldBeGarbage;
+    constexpr ExpectedQubitFlags expectedQubitFlagsOfThirdQRegForVariable = ExpectedQubitFlags::QubitShouldBeGarbage;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfThirdQRegOfVariable, expectedQubitFlagsOfThirdQRegForVariable));
 }
 // // END Add preliminary ancillary quantum register tests
@@ -1336,7 +1338,7 @@ TEST_F(AnnotatableQuantumComputationTestsFixture, AddedAncillaryQRegForSyrecVari
     ASSERT_EQ(annotatedQuantumComputation->getNqubits(), expectedNumQubitsInExistingQReg + expectedNumQubitsInToBeAddedQReg);
     ASSERT_EQ(annotatedQuantumComputation->getNops(), 0U);
 
-    constexpr ExpectedQubitFlags sharedQubitFlagsOfPreliminaryAncillaryQRegs = QubitShouldBeGarbage | InlineQubitInformationShouldBeFetchable;
+    constexpr ExpectedQubitFlags sharedQubitFlagsOfPreliminaryAncillaryQRegs = ExpectedQubitFlags::QubitShouldBeGarbage | ExpectedQubitFlags::InlineQubitInformationShouldBeFetchable;
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfExistingQReg, sharedQubitFlagsOfPreliminaryAncillaryQRegs));
     ASSERT_NO_FATAL_FAILURE(assertExpectedQubitFlagsMatchForQubitRange(*annotatedQuantumComputation, expectedQubitRangeOfToBeAddedQReg, sharedQubitFlagsOfPreliminaryAncillaryQRegs));
 }

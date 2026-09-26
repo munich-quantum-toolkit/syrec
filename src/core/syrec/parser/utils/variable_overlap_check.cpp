@@ -63,8 +63,12 @@ std::string VariableAccessOverlapCheckResult::stringifyOverlappingIndicesInforma
     const syrec::Variable& lVar = *lVarPtr;
     const syrec::Variable& rVar = *rVarPtr;
 
-    const std::size_t         numDimensionsToCheck = std::min({lVar.dimensions.size(), lVariableAccess.indexes.size(),
-                                                               rVar.dimensions.size(), rVariableAccess.indexes.size()});
+    const std::size_t         numDimensionsToCheck = std::min({
+            lVar.dimensions.size(),
+            lVariableAccess.indexes.size(),
+            rVar.dimensions.size(),
+            rVariableAccess.indexes.size(),
+    });
     std::vector<unsigned int> constantIndicesOfAccessedValuesPerDimension;
     if (numDimensionsToCheck == 0) {
         const auto& exprDefiningAccessedValueOfDimensionInLVar = !lVariableAccess.indexes.empty() ? lVariableAccess.indexes.front() : nullptr;

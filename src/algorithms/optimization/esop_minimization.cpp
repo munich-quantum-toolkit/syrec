@@ -190,7 +190,7 @@ namespace minbool {
         for (const auto& term: solution) {
             bool prod = true;
             for (std::size_t i = 0U; i < n; ++i) {
-                bool const bit = ((v >> i) & 1) != 0;
+                bool const bit = ((v >> i) & 1U) != 0;
                 if (term[i] == MinTerm::Value{true}) {
                     prod = prod && bit;
                 } else if (term[i] == MinTerm::Value{false}) {
@@ -211,7 +211,7 @@ namespace minbool {
                 return false;
             }
         }
-        for (std::uint64_t i = (1 << n) - 1; i > 0U; --i) {
+        for (std::uint64_t i = (std::uint64_t{1} << n) - 1; i > 0U; --i) {
             if (!onValues.contains(i) && evalBoolean(solution, i, n)) {
                 return false;
             }
