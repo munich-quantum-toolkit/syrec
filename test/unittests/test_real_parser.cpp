@@ -236,7 +236,7 @@ namespace {
                       const std::initializer_list<std::string_view>& controlLines,
                       const std::initializer_list<std::string_view>& targetLines,
                       const std::optional<std::string_view>&         optionalPostfix) {
-            EXPECT_TRUE(targetLines.size() > static_cast<std::size_t>(0))
+            EXPECT_TRUE(targetLines.size() > 0U)
                     << "Gate must have at least one line defined";
 
             std::stringstream stringifiedGateBuffer;

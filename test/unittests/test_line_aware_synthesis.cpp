@@ -18,11 +18,11 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 
 namespace {
-    // .clang-tidy reports a false positive here since we are including the required nlohman json header file
-    using nlohmann::json; // NOLINT(misc-include-cleaner)
+    using nlohmann::json;
 
     using namespace syrec;
 

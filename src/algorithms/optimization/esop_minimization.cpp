@@ -211,7 +211,7 @@ namespace minbool {
                 return false;
             }
         }
-        for (std::uint64_t i = (std::uint64_t{1} << n) - 1; i > 0U; --i) {
+        for (std::uint64_t i = (1ULL << n) - 1; i > 0U; --i) {
             if (!onValues.contains(i) && evalBoolean(solution, i, n)) {
                 return false;
             }
