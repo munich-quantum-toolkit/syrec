@@ -98,7 +98,7 @@ bool utils::TemporaryVariableScope::recordVariable(const syrec::Variable::ptr& s
     if (signal == nullptr || signal->name.empty() || existsVariableForName(signal->name)) {
         return false;
     }
-    auto scopeEntryForSignal = std::make_shared<ScopeEntry>(signal);
+    const auto scopeEntryForSignal = std::make_shared<ScopeEntry>(signal);
     signalIdentifierLookup.insert({signal->name, scopeEntryForSignal});
     return true;
 }
@@ -107,7 +107,7 @@ bool utils::TemporaryVariableScope::recordLoopVariable(const syrec::Number::ptr&
     if (loopVariable == nullptr || !loopVariable->isLoopVariable() || loopVariable->variableName().empty() || loopVariable->variableName().front() != '$' || existsVariableForName(loopVariable->variableName())) {
         return false;
     }
-    auto scopeEntryForSignal = std::make_shared<ScopeEntry>(loopVariable);
+    const auto scopeEntryForSignal = std::make_shared<ScopeEntry>(loopVariable);
     signalIdentifierLookup.insert({loopVariable->variableName(), scopeEntryForSignal});
     return true;
 }
@@ -125,7 +125,7 @@ bool utils::TemporaryVariableScope::removeVariable(const std::string_view& signa
 }
 
 bool utils::TemporaryVariableScope::updateValueOfLoopVariable(const std::string_view& loopVariableIdentifier, const std::optional<unsigned int>& newValue) {
-    if (signalIdentifierLookup.count(loopVariableIdentifier) == 0) {
+    if (!signalIdentifierLookup.contains(loopVariableIdentifier)) {
         return false;
     }
 
@@ -141,7 +141,7 @@ bool utils::TemporaryVariableScope::updateValueOfLoopVariable(const std::string_
 }
 
 std::optional<unsigned> utils::TemporaryVariableScope::getValueOfLoopVariable(const std::string_view& loopVariableIdentifier) {
-    if (signalIdentifierLookup.count(loopVariableIdentifier) == 0 || knownLoopVariableValues.count(loopVariableIdentifier) == 0) {
+    if (!signalIdentifierLookup.contains(loopVariableIdentifier) || !knownLoopVariableValues.contains(loopVariableIdentifier)) {
         return std::nullopt;
     }
 

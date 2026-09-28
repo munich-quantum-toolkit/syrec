@@ -19,15 +19,12 @@
 #include <gtest/gtest.h>
 #include <ios>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <utility>
-
-// The .clang-tidy warning about the missing header file seems to be a false positive since the include of the required <nlohmann/json.hpp> is defined in this file.
-// Maybe this warning is reported because the nlohmann library is implicitly added by one of the external dependencies?
-using json = nlohmann::json; // NOLINT(misc-include-cleaner) Warning reported here seems to be a false positive since <nlohmann/json.hpp> is included
 
 struct TestFromJsonConfig {
     std::string nameOfJsonFile;
@@ -63,10 +60,10 @@ protected:
         std::ifstream             inputFileStream(testParameterData.nameOfJsonFile, std::ios_base::in);
         ASSERT_TRUE(inputFileStream.good()) << "Input file @" << testParameterData.nameOfJsonFile << " is not in a usable state (e.g. does not exist)";
 
-        const json parsedJsonDataOfFile = json::parse(inputFileStream);
+        const nlohmann::json parsedJsonDataOfFile = nlohmann::json::parse(inputFileStream);
         ASSERT_TRUE(parsedJsonDataOfFile.contains(testCaseJsonKeyInFile)) << "No matching entry with key '" << testCaseJsonKeyInFile << "' was found in the JSON test case data";
 
-        const json& testCaseDataJson = parsedJsonDataOfFile[testCaseJsonKeyInFile];
+        const nlohmann::json& testCaseDataJson = parsedJsonDataOfFile[testCaseJsonKeyInFile];
         ASSERT_TRUE(testCaseDataJson.is_object()) << "Test case data with key '" << testCaseJsonKeyInFile << "' must be defined as a JSON object";
         ASSERT_TRUE(testCaseDataJson.contains(jsonKeyInTestCaseDataForCircuit)) << "Test case data did not contain expected key '" << jsonKeyInTestCaseDataForCircuit << "' for circuit to process";
         ASSERT_TRUE(testCaseDataJson.at(jsonKeyInTestCaseDataForCircuit).is_string()) << "Circuit to process must be defined as a string";
@@ -84,7 +81,7 @@ protected:
         }
     }
 
-    static void assertKeyInJsonObjectExists(const json& jsonObject, const std::string& key) {
+    static void assertKeyInJsonObjectExists(const nlohmann::json& jsonObject, const std::string& key) {
         ASSERT_TRUE(jsonObject.is_object());
         ASSERT_TRUE(jsonObject.contains(key)) << "Required key '" << key << "' was not found in the JSON object";
     }
@@ -100,7 +97,7 @@ protected:
         ASSERT_TRUE(wasStringificationSuccessful) << "Failed to stringify SyReC program";
     }
 
-    void loadUserDefinedParserConfigurationFromJson(const json& jsonObject) {
+    void loadUserDefinedParserConfigurationFromJson(const nlohmann::json& jsonObject) {
         userDefinedParserConfiguration = syrec::ConfigurableOptions();
         ASSERT_TRUE(jsonObject.is_object()) << "User defined parser configuration needs to be defined as a json object";
         if (jsonObject.contains(jsonKeyInTestCaseDataForDefaultSignalBitwidthInParserConfig)) {

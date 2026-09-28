@@ -20,19 +20,21 @@
 #include <memory>
 #include <string>
 
-using namespace syrec;
+namespace {
+    using namespace syrec;
 
-class TestDDSynth: public testing::TestWithParam<std::string> {
-protected:
-    TruthTable                   tt{};
-    std::string                  testCircuitsDir = "./circuits/";
-    std::unique_ptr<dd::Package> dd              = std::make_unique<dd::Package>(15U);
-    std::string                  fileName;
+    class TestDDSynth: public testing::TestWithParam<std::string> {
+    protected:
+        TruthTable                   tt{};
+        std::string                  testCircuitsDir = "./circuits/";
+        std::unique_ptr<dd::Package> dd              = std::make_unique<dd::Package>(15U);
+        std::string                  fileName;
 
-    void SetUp() override {
-        fileName = testCircuitsDir + GetParam() + ".pla";
-    }
-};
+        void SetUp() override {
+            fileName = testCircuitsDir + GetParam() + ".pla";
+        }
+    };
+} // namespace
 
 INSTANTIATE_TEST_SUITE_P(TestDDSynth, TestDDSynth,
                          testing::Values(

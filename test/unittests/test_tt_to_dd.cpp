@@ -21,15 +21,17 @@
 #include <memory>
 #include <string>
 
-using namespace qc::literals;
-using namespace syrec;
+namespace {
+    using namespace qc::literals;
+    using namespace syrec;
 
-class TruthTableDD: public testing::Test {
-protected:
-    std::string                  testCircuitsDir = "./circuits/";
-    TruthTable                   tt{};
-    std::unique_ptr<dd::Package> dd = std::make_unique<dd::Package>(3U);
-};
+    class TruthTableDD: public testing::Test {
+    protected:
+        std::string                  testCircuitsDir = "./circuits/";
+        TruthTable                   tt{};
+        std::unique_ptr<dd::Package> dd = std::make_unique<dd::Package>(3U);
+    };
+} // namespace
 
 TEST_F(TruthTableDD, Ident2Bit) {
     const std::string circIdent2Bit = testCircuitsDir + "ident2Bit.pla";

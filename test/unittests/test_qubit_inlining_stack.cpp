@@ -75,7 +75,7 @@ TEST(QubitInliningStackTests, PopFromEmptyStack) {
 TEST(QubitInliningStackTests, PopFromNonEmptyStack) {
     auto inlineStack = QubitInliningStack();
 
-    auto targetModule = std::make_shared<Module>("targetModule");
+    const auto targetModule = std::make_shared<Module>("targetModule");
 
     auto firstInlineStackEntry                              = QubitInliningStack::QubitInliningStackEntry();
     firstInlineStackEntry.lineNumberOfCallOfTargetModule    = 1;
@@ -96,8 +96,8 @@ TEST(QubitInliningStackTests, PopFromNonEmptyStack) {
 TEST(QubitInliningStackTests, PushToEmptyStack) {
     auto inlineStack = QubitInliningStack();
 
-    auto targetModule                               = std::make_shared<Module>("targetModule");
-    auto pushedStackEntry                           = QubitInliningStack::QubitInliningStackEntry();
+    const auto targetModule                         = std::make_shared<Module>("targetModule");
+    auto       pushedStackEntry                     = QubitInliningStack::QubitInliningStackEntry();
     pushedStackEntry.targetModule                   = targetModule;
     pushedStackEntry.lineNumberOfCallOfTargetModule = 1;
     ASSERT_TRUE(inlineStack.push(pushedStackEntry));
@@ -109,8 +109,8 @@ TEST(QubitInliningStackTests, PushToEmptyStack) {
 TEST(QubitInliningStackTests, PushEntryWithInvalidTargetModuleNotPossible) {
     auto inlineStack = QubitInliningStack();
 
-    auto targetModule                              = std::make_shared<Module>("targetModule");
-    auto validStackEntry                           = QubitInliningStack::QubitInliningStackEntry();
+    const auto targetModule                        = std::make_shared<Module>("targetModule");
+    auto       validStackEntry                     = QubitInliningStack::QubitInliningStackEntry();
     validStackEntry.targetModule                   = targetModule;
     validStackEntry.lineNumberOfCallOfTargetModule = 1;
     ASSERT_TRUE(inlineStack.push(validStackEntry));
@@ -127,8 +127,8 @@ TEST(QubitInliningStackTests, PushEntryWithInvalidTargetModuleNotPossible) {
 TEST(QubitInliningStackTests, PushEntryWithEmptyCallTypeIdentifierPossible) {
     auto inlineStack = QubitInliningStack();
 
-    auto targetModule                                                   = std::make_shared<Module>("targetModule");
-    auto firstFullyDefinedInlineStackEntry                              = QubitInliningStack::QubitInliningStackEntry();
+    const auto targetModule                                             = std::make_shared<Module>("targetModule");
+    auto       firstFullyDefinedInlineStackEntry                        = QubitInliningStack::QubitInliningStackEntry();
     firstFullyDefinedInlineStackEntry.targetModule                      = targetModule;
     firstFullyDefinedInlineStackEntry.isTargetModuleAccessedViaCallStmt = true;
     firstFullyDefinedInlineStackEntry.lineNumberOfCallOfTargetModule    = 1;
@@ -155,8 +155,8 @@ TEST(QubitInliningStackTests, PushEntryWithEmptyCallTypeIdentifierPossible) {
 TEST(QubitInliningStackTests, PushEntryWithEmptyTargetModuleSourceCodeLineNumberPossible) {
     auto inlineStack = QubitInliningStack();
 
-    auto targetModule                                                   = std::make_shared<Module>("targetModule");
-    auto firstFullyDefinedInlineStackEntry                              = QubitInliningStack::QubitInliningStackEntry();
+    const auto targetModule                                             = std::make_shared<Module>("targetModule");
+    auto       firstFullyDefinedInlineStackEntry                        = QubitInliningStack::QubitInliningStackEntry();
     firstFullyDefinedInlineStackEntry.targetModule                      = targetModule;
     firstFullyDefinedInlineStackEntry.isTargetModuleAccessedViaCallStmt = true;
     firstFullyDefinedInlineStackEntry.lineNumberOfCallOfTargetModule    = 1;
@@ -185,8 +185,8 @@ TEST(QubitInliningStackTests, PushToNonEmptyStack) {
 
     std::vector<QubitInliningStack::QubitInliningStackEntry> expectedInlineStackEntries;
 
-    auto targetModule                                                   = std::make_shared<Module>("targetModule");
-    auto firstFullyDefinedInlineStackEntry                              = QubitInliningStack::QubitInliningStackEntry();
+    const auto targetModule                                             = std::make_shared<Module>("targetModule");
+    auto       firstFullyDefinedInlineStackEntry                        = QubitInliningStack::QubitInliningStackEntry();
     firstFullyDefinedInlineStackEntry.targetModule                      = targetModule;
     firstFullyDefinedInlineStackEntry.isTargetModuleAccessedViaCallStmt = true;
     firstFullyDefinedInlineStackEntry.lineNumberOfCallOfTargetModule    = 1;
@@ -210,8 +210,8 @@ TEST(QubitInliningStackTests, PushAndPopOperationSequence) {
 
     std::vector<QubitInliningStack::QubitInliningStackEntry> expectedInlineStackEntries;
 
-    auto targetModule                                                   = std::make_shared<Module>("targetModule");
-    auto firstFullyDefinedInlineStackEntry                              = QubitInliningStack::QubitInliningStackEntry();
+    const auto targetModule                                             = std::make_shared<Module>("targetModule");
+    auto       firstFullyDefinedInlineStackEntry                        = QubitInliningStack::QubitInliningStackEntry();
     firstFullyDefinedInlineStackEntry.targetModule                      = targetModule;
     firstFullyDefinedInlineStackEntry.isTargetModuleAccessedViaCallStmt = true;
     firstFullyDefinedInlineStackEntry.lineNumberOfCallOfTargetModule    = 1;
@@ -410,8 +410,8 @@ TEST(QubitInliningStackTests, StringificationModuleSignatureWithEmptyTargetModul
 
 TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithInvalidParameterNotPossible) {
     const auto targetModule               = std::make_shared<Module>("main");
-    auto       validParameterDefinition   = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
-    auto       invalidParameterDefinition = nullptr;
+    const auto validParameterDefinition   = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
+    const auto invalidParameterDefinition = nullptr;
     targetModule->addParameter(validParameterDefinition);
     targetModule->addParameter(invalidParameterDefinition);
 
@@ -422,7 +422,7 @@ TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithInvalidParamet
 
 TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfNonParameterTypeNotPossible) {
     const auto targetModuleWithParameterOfTypeWire = std::make_shared<Module>("param_type_wire_module");
-    auto       wireTypeParameter                   = std::make_shared<Variable>(Variable::Type::Wire, "a", std::vector({1U}), 4U);
+    const auto wireTypeParameter                   = std::make_shared<Variable>(Variable::Type::Wire, "a", std::vector({1U}), 4U);
     targetModuleWithParameterOfTypeWire->addParameter(wireTypeParameter);
 
     auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
@@ -430,7 +430,7 @@ TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfNon
     ASSERT_FALSE(stackEntry.stringifySignatureOfCalledModule().has_value());
 
     const auto targetModuleWithParameterOfTypeState = std::make_shared<Module>("param_type_state_module");
-    auto       stateTypeParameter                   = std::make_shared<Variable>(Variable::Type::State, "a", std::vector({1U}), 4U);
+    const auto stateTypeParameter                   = std::make_shared<Variable>(Variable::Type::State, "a", std::vector({1U}), 4U);
     targetModuleWithParameterOfTypeState->addParameter(stateTypeParameter);
 
     stackEntry.targetModule = targetModuleWithParameterOfTypeState;
@@ -439,8 +439,8 @@ TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfNon
 
 TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithEmptyParameterIdentifierNotPossible) {
     const auto targetModule               = std::make_shared<Module>("main");
-    auto       validParameterDefinition   = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
-    auto       invalidParameterDefinition = std::make_shared<Variable>(Variable::Type::Inout, "", std::vector({2U}), 4U);
+    const auto validParameterDefinition   = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
+    const auto invalidParameterDefinition = std::make_shared<Variable>(Variable::Type::Inout, "", std::vector({2U}), 4U);
     targetModule->addParameter(validParameterDefinition);
     targetModule->addParameter(invalidParameterDefinition);
 
@@ -451,8 +451,8 @@ TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithEmptyParameter
 
 TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterWithEmptyDimensionDeclarationNotPossible) {
     const auto targetModule               = std::make_shared<Module>("main");
-    auto       validParameterDefinition   = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
-    auto       invalidParameterDefinition = std::make_shared<Variable>(Variable::Type::Inout, "b", std::vector<unsigned int>(), 4U);
+    const auto validParameterDefinition   = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
+    const auto invalidParameterDefinition = std::make_shared<Variable>(Variable::Type::Inout, "b", std::vector<unsigned int>(), 4U);
     targetModule->addParameter(validParameterDefinition);
     targetModule->addParameter(invalidParameterDefinition);
 
@@ -471,7 +471,7 @@ TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithNoParameters) 
 
 TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfTypeIn) {
     const auto targetModule      = std::make_shared<Module>("main");
-    auto       parameterOfTypeIn = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
+    const auto parameterOfTypeIn = std::make_shared<Variable>(Variable::Type::In, "a", std::vector({1U}), 4U);
     targetModule->addParameter(parameterOfTypeIn);
 
     auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
@@ -482,7 +482,7 @@ TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfTyp
 
 TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfTypeOut) {
     const auto targetModule       = std::make_shared<Module>("main");
-    auto       parameterOfTypeOut = std::make_shared<Variable>(Variable::Type::Out, "a", std::vector({1U}), 4U);
+    const auto parameterOfTypeOut = std::make_shared<Variable>(Variable::Type::Out, "a", std::vector({1U}), 4U);
     targetModule->addParameter(parameterOfTypeOut);
 
     auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
@@ -493,7 +493,7 @@ TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfTyp
 
 TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfTypeInout) {
     const auto targetModule         = std::make_shared<Module>("main");
-    auto       parameterOfTypeInout = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({1U}), 4U);
+    const auto parameterOfTypeInout = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({1U}), 4U);
     targetModule->addParameter(parameterOfTypeInout);
 
     auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
@@ -504,7 +504,7 @@ TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithParameterOfTyp
 
 TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithNDimensionalParameter) {
     const auto targetModule         = std::make_shared<Module>("main");
-    auto       parameterOfTypeInout = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({2U, 3U, 1U}), 4U);
+    const auto parameterOfTypeInout = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({2U, 3U, 1U}), 4U);
     targetModule->addParameter(parameterOfTypeInout);
 
     auto stackEntry         = QubitInliningStack::QubitInliningStackEntry();
@@ -515,9 +515,9 @@ TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithNDimensionalPa
 
 TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithMultipleParameters) {
     const auto targetModule            = std::make_shared<Module>("main");
-    auto       parameterOfTypeInout    = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({2U, 1U}), 2U);
-    auto       firstParameterOfTypeIn  = std::make_shared<Variable>(Variable::Type::In, "b", std::vector({3U}), 3U);
-    auto       secondParameterOfTypeIn = std::make_shared<Variable>(Variable::Type::In, "c", std::vector({1U}), 4U);
+    const auto parameterOfTypeInout    = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({2U, 1U}), 2U);
+    const auto firstParameterOfTypeIn  = std::make_shared<Variable>(Variable::Type::In, "b", std::vector({3U}), 3U);
+    const auto secondParameterOfTypeIn = std::make_shared<Variable>(Variable::Type::In, "c", std::vector({1U}), 4U);
     targetModule->addParameter(parameterOfTypeInout);
     targetModule->addParameter(firstParameterOfTypeIn);
     targetModule->addParameter(secondParameterOfTypeIn);
@@ -530,19 +530,19 @@ TEST(QubitInliningStackTests, StringificationOfModuleSignatureWithMultipleParame
 
 TEST(QubitInliningStackTests, StringificationOfModuleSignatureDoesNotStringifiyStatementsOfModuleBody) {
     const auto targetModule        = std::make_shared<Module>("main");
-    auto       assignableParameter = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({2U}), 3U);
-    auto       readonlyParameter   = std::make_shared<Variable>(Variable::Type::In, "b", std::vector({1U}), 3U);
+    const auto assignableParameter = std::make_shared<Variable>(Variable::Type::Inout, "a", std::vector({2U}), 3U);
+    const auto readonlyParameter   = std::make_shared<Variable>(Variable::Type::In, "b", std::vector({1U}), 3U);
     targetModule->addParameter(assignableParameter);
     targetModule->addParameter(readonlyParameter);
 
     const auto exprDefiningAccessedValueOfDimension = std::make_shared<NumericExpression>(std::make_shared<Number>(0U), 1U);
 
-    auto assignmentLhsOperand = std::make_shared<VariableAccess>();
-    assignmentLhsOperand->var = assignableParameter;
+    const auto assignmentLhsOperand = std::make_shared<VariableAccess>();
+    assignmentLhsOperand->var       = assignableParameter;
     assignmentLhsOperand->indexes.emplace_back(exprDefiningAccessedValueOfDimension);
 
-    auto assignmentRhsOperand = std::make_shared<VariableAccess>();
-    assignmentRhsOperand->var = readonlyParameter;
+    const auto assignmentRhsOperand = std::make_shared<VariableAccess>();
+    assignmentRhsOperand->var       = readonlyParameter;
     assignmentRhsOperand->indexes.emplace_back(exprDefiningAccessedValueOfDimension);
 
     const auto assignmentRhsExpr   = std::make_shared<VariableExpression>(assignmentRhsOperand);

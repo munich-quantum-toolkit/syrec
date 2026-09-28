@@ -37,7 +37,7 @@ namespace syrec {
         while (in.good() && getline(in, line)) {
             trim(line);
             line = std::regex_replace(line, whitespace, " ");
-            if ((line.empty()) || (line.starts_with('#')) || (line.starts_with(".ilb")) || (line.starts_with(".ob")) || (line.starts_with(".p")) || (line.starts_with(".type "))) {
+            if (line.empty() || line.starts_with('#') || line.starts_with(".ilb") || line.starts_with(".ob") || line.starts_with(".p") || line.starts_with(".type ")) {
                 continue;
             }
 
@@ -83,14 +83,14 @@ namespace syrec {
                 TruthTable::Cube cubeIn;
                 cubeIn.reserve(nInputs);
 
-                for (auto s: inputOutputMapping[0]) {
+                for (const auto s: inputOutputMapping[0]) {
                     cubeIn.emplace_back(TruthTable::Cube::getValue(s));
                 }
 
                 TruthTable::Cube cubeOut;
                 cubeOut.reserve(nOutputs);
 
-                for (auto s: inputOutputMapping[1]) {
+                for (const auto s: inputOutputMapping[1]) {
                     cubeOut.emplace_back(TruthTable::Cube::getValue(s));
                 }
 
@@ -109,7 +109,7 @@ namespace syrec {
 
         for (auto const& [input, output]: tt) {
             // compute the complete cubes for the input
-            auto completeInputs = input.completeCubes();
+            const auto completeInputs = input.completeCubes();
             // move all the complete cubes to the new cube map
             for (auto const& completeInput: completeInputs) {
                 const auto inputIt = newTT.find(input);

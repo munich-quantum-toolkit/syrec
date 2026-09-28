@@ -96,37 +96,157 @@ namespace {
         // errors in a user provided .syrec file using the generated syntax error messages of the lexer/parser.
         auto staticData = std::make_unique<TSyrecParserStaticData>(
                 std::vector<std::string>{
-                        "number", "program", "module", "parameterList", "parameter", "signalList",
-                        "signalDeclaration", "statementList", "statement", "callStatement",
-                        "loopVariableDefinition", "loopStepsizeDefinition", "forStatement",
-                        "ifStatement", "unaryStatement", "assignStatement", "swapStatement",
-                        "skipStatement", "signal", "expression", "binaryExpression", "unaryExpression",
-                        "shiftExpression"},
+                        "number",
+                        "program",
+                        "module",
+                        "parameterList",
+                        "parameter",
+                        "signalList",
+                        "signalDeclaration",
+                        "statementList",
+                        "statement",
+                        "callStatement",
+                        "loopVariableDefinition",
+                        "loopStepsizeDefinition",
+                        "forStatement",
+                        "ifStatement",
+                        "unaryStatement",
+                        "assignStatement",
+                        "swapStatement",
+                        "skipStatement",
+                        "signal",
+                        "expression",
+                        "binaryExpression",
+                        "unaryExpression",
+                        "shiftExpression",
+                },
                 std::vector<std::string>{
-                        "", "'++='", "'--='", "'~='", "'+='", "'-='", "'^='", "'+'", "'-'",
-                        "'*'", "'*>'", "'/'", "'%'", "'<<'", "'>>'", "'<=>'", "'>='", "'<='",
-                        "'>'", "'<'", "'='", "'!='", "'&&'", "'||'", "'!'", "'&'", "'~'",
-                        "'|'", "'^'", "'call'", "'uncall'", "'in'", "'out'", "'inout'", "'wire'",
-                        "'state'", "'$'", "'#'", "';'", "','", "'('", "')'", "'['", "']'",
-                        "'module'", "'for'", "'do'", "'to'", "'step'", "'rof'", "'if'", "'then'",
-                        "'else'", "'fi'", "'skip'", "'.'", "':'"},
+                        "",
+                        "'++='",
+                        "'--='",
+                        "'~='",
+                        "'+='",
+                        "'-='",
+                        "'^='",
+                        "'+'",
+                        "'-'",
+                        "'*'",
+                        "'*>'",
+                        "'/'",
+                        "'%'",
+                        "'<<'",
+                        "'>>'",
+                        "'<=>'",
+                        "'>='",
+                        "'<='",
+                        "'>'",
+                        "'<'",
+                        "'='",
+                        "'!='",
+                        "'&&'",
+                        "'||'",
+                        "'!'",
+                        "'&'",
+                        "'~'",
+                        "'|'",
+                        "'^'",
+                        "'call'",
+                        "'uncall'",
+                        "'in'",
+                        "'out'",
+                        "'inout'",
+                        "'wire'",
+                        "'state'",
+                        "'$'",
+                        "'#'",
+                        "';'",
+                        "','",
+                        "'('",
+                        "')'",
+                        "'['",
+                        "']'",
+                        "'module'",
+                        "'for'",
+                        "'do'",
+                        "'to'",
+                        "'step'",
+                        "'rof'",
+                        "'if'",
+                        "'then'",
+                        "'else'",
+                        "'fi'",
+                        "'skip'",
+                        "'.'",
+                        "':'",
+                },
                 std::vector<std::string>{
-                        "", "OP_INCREMENT_ASSIGN", "OP_DECREMENT_ASSIGN", "OP_INVERT_ASSIGN",
-                        "OP_ADD_ASSIGN", "OP_SUB_ASSIGN", "OP_XOR_ASSIGN", "OP_PLUS", "OP_MINUS",
-                        "OP_MULTIPLY", "OP_UPPER_BIT_MULTIPLY", "OP_DIVISION", "OP_MODULO",
-                        "OP_LEFT_SHIFT", "OP_RIGHT_SHIFT", "OP_SWAP", "OP_GREATER_OR_EQUAL",
-                        "OP_LESS_OR_EQUAL", "OP_GREATER_THAN", "OP_LESS_THAN", "OP_EQUAL",
-                        "OP_NOT_EQUAL", "OP_LOGICAL_AND", "OP_LOGICAL_OR", "OP_LOGICAL_NEGATION",
-                        "OP_BITWISE_AND", "OP_BITWISE_NEGATION", "OP_BITWISE_OR", "OP_BITWISE_XOR",
-                        "OP_CALL", "OP_UNCALL", "VAR_TYPE_IN", "VAR_TYPE_OUT", "VAR_TYPE_INOUT",
-                        "VAR_TYPE_WIRE", "VAR_TYPE_STATE", "LOOP_VARIABLE_PREFIX", "SIGNAL_WIDTH_PREFIX",
-                        "STATEMENT_DELIMITER", "PARAMETER_DELIMITER", "OPEN_RBRACKET", "CLOSE_RBRACKET",
-                        "OPEN_SBRACKET", "CLOSE_SBRACKET", "KEYWORD_MODULE", "KEYWORD_FOR",
-                        "KEYWORD_DO", "KEYWORD_TO", "KEYWORD_STEP", "KEYWORD_ROF", "KEYWORD_IF",
-                        "KEYWORD_THEN", "KEYWORD_ELSE", "KEYWORD_FI", "KEYWORD_SKIP", "BITRANGE_START_PREFIX",
-                        "BITRANGE_END_PREFIX", "SKIPABLEWHITSPACES", "LINE_COMMENT", "MULTI_LINE_COMMENT",
-                        "IDENT", "HEX_LITERAL", "BINARY_LITERAL", "INT"});
+                        "",
+                        "OP_INCREMENT_ASSIGN",
+                        "OP_DECREMENT_ASSIGN",
+                        "OP_INVERT_ASSIGN",
+                        "OP_ADD_ASSIGN",
+                        "OP_SUB_ASSIGN",
+                        "OP_XOR_ASSIGN",
+                        "OP_PLUS",
+                        "OP_MINUS",
+                        "OP_MULTIPLY",
+                        "OP_UPPER_BIT_MULTIPLY",
+                        "OP_DIVISION",
+                        "OP_MODULO",
+                        "OP_LEFT_SHIFT",
+                        "OP_RIGHT_SHIFT",
+                        "OP_SWAP",
+                        "OP_GREATER_OR_EQUAL",
+                        "OP_LESS_OR_EQUAL",
+                        "OP_GREATER_THAN",
+                        "OP_LESS_THAN",
+                        "OP_EQUAL",
+                        "OP_NOT_EQUAL",
+                        "OP_LOGICAL_AND",
+                        "OP_LOGICAL_OR",
+                        "OP_LOGICAL_NEGATION",
+                        "OP_BITWISE_AND",
+                        "OP_BITWISE_NEGATION",
+                        "OP_BITWISE_OR",
+                        "OP_BITWISE_XOR",
+                        "OP_CALL",
+                        "OP_UNCALL",
+                        "VAR_TYPE_IN",
+                        "VAR_TYPE_OUT",
+                        "VAR_TYPE_INOUT",
+                        "VAR_TYPE_WIRE",
+                        "VAR_TYPE_STATE",
+                        "LOOP_VARIABLE_PREFIX",
+                        "SIGNAL_WIDTH_PREFIX",
+                        "STATEMENT_DELIMITER",
+                        "PARAMETER_DELIMITER",
+                        "OPEN_RBRACKET",
+                        "CLOSE_RBRACKET",
+                        "OPEN_SBRACKET",
+                        "CLOSE_SBRACKET",
+                        "KEYWORD_MODULE",
+                        "KEYWORD_FOR",
+                        "KEYWORD_DO",
+                        "KEYWORD_TO",
+                        "KEYWORD_STEP",
+                        "KEYWORD_ROF",
+                        "KEYWORD_IF",
+                        "KEYWORD_THEN",
+                        "KEYWORD_ELSE",
+                        "KEYWORD_FI",
+                        "KEYWORD_SKIP",
+                        "BITRANGE_START_PREFIX",
+                        "BITRANGE_END_PREFIX",
+                        "SKIPABLEWHITSPACES",
+                        "LINE_COMMENT",
+                        "MULTI_LINE_COMMENT",
+                        "IDENT",
+                        "HEX_LITERAL",
+                        "BINARY_LITERAL",
+                        "INT",
+                });
         // Auto-generated constants that should not be changed except for when changes in the TSyrecParser.g4 file were made
+        // clang-format off
         static std::array<int32_t, 2064> serializedATNSegment = {
                 4, 1, 63, 237, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 4, 2, 5, 7, 5, 2, 6, 7, 6, 2,
                 7, 7, 7, 2, 8, 7, 8, 2, 9, 7, 9, 2, 10, 7, 10, 2, 11, 7, 11, 2, 12, 7, 12, 2, 13, 7, 13, 2, 14, 7,
@@ -203,7 +323,9 @@ namespace {
                 3, 38, 19, 0, 225, 226, 5, 41, 0, 0, 226, 41, 1, 0, 0, 0, 227, 228, 7, 7, 0, 0, 228, 229, 3, 38,
                 19, 0, 229, 43, 1, 0, 0, 0, 230, 231, 5, 40, 0, 0, 231, 232, 3, 38, 19, 0, 232, 233, 7, 8, 0,
                 0, 233, 234, 3, 0, 0, 0, 234, 235, 5, 41, 0, 0, 235, 45, 1, 0, 0, 0, 19, 59, 64, 72, 78, 88, 100,
-                109, 115, 122, 132, 142, 153, 159, 164, 168, 203, 210, 212, 219};
+                109, 115, 122, 132, 142, 153, 159, 164, 168, 203, 210, 212, 219,
+        };
+        // clang-format on
         staticData->serializedATN = atn::SerializedATNView(serializedATNSegment.data(), serializedATNSegment.size());
 
         const atn::ATNDeserializer deserializer;
@@ -356,7 +478,7 @@ TSyrecParser::NumberContext* TSyrecParser::number() {
     auto* localCtx = _tracker.createInstance<NumberContext>(_ctx, getState());
     enterRule(localCtx, 0, RuleNumber);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -417,7 +539,7 @@ TSyrecParser::NumberContext* TSyrecParser::number() {
                 setState(55);
                 antlrcpp::downCast<NumberFromExpressionContext*>(localCtx)->op = _input->LT(1);
                 const std::size_t lookahead                                    = _input->LA(1);
-                if (!((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 2944) != 0))) {
+                if ((lookahead & ~0x3fULL) != 0 || ((1ULL << lookahead) & 2944ULL) == 0) {
                     antlrcpp::downCast<NumberFromExpressionContext*>(localCtx)->op = _errHandler->recoverInline(this);
                 } else {
                     _errHandler->reportMatch(this);
@@ -461,7 +583,7 @@ TSyrecParser::ProgramContext* TSyrecParser::program() {
     auto* localCtx = _tracker.createInstance<ProgramContext>(_ctx, getState());
     enterRule(localCtx, 2, RuleProgram);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -520,7 +642,7 @@ TSyrecParser::ModuleContext* TSyrecParser::module() {
     auto* localCtx = _tracker.createInstance<ModuleContext>(_ctx, getState());
     enterRule(localCtx, 4, RuleModule);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -537,7 +659,7 @@ TSyrecParser::ModuleContext* TSyrecParser::module() {
         _errHandler->sync(this);
 
         lookahead = _input->LA(1);
-        if ((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 15032385536) != 0)) {
+        if ((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 15032385536ULL) != 0)) {
             setState(71);
             parameterList();
         }
@@ -583,7 +705,7 @@ TSyrecParser::ParameterListContext* TSyrecParser::parameterList() {
     auto* localCtx = _tracker.createInstance<ParameterListContext>(_ctx, getState());
     enterRule(localCtx, 6, RuleParameterList);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -643,7 +765,7 @@ TSyrecParser::ParameterContext* TSyrecParser::parameter() {
     auto* localCtx = _tracker.createInstance<ParameterContext>(_ctx, getState());
     enterRule(localCtx, 8, RuleParameter);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -651,7 +773,7 @@ TSyrecParser::ParameterContext* TSyrecParser::parameter() {
         enterOuterAlt(localCtx, 1);
         setState(91);
         const std::size_t lookahead = _input->LA(1);
-        if (!((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 15032385536) != 0))) {
+        if ((lookahead & ~0x3fULL) != 0 || ((1ULL << lookahead) & 15032385536ULL) == 0) {
             _errHandler->recoverInline(this);
         } else {
             _errHandler->reportMatch(this);
@@ -695,7 +817,7 @@ TSyrecParser::SignalListContext* TSyrecParser::signalList() {
     auto* localCtx = _tracker.createInstance<SignalListContext>(_ctx, getState());
     enterRule(localCtx, 10, RuleSignalList);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -751,7 +873,7 @@ TSyrecParser::SignalDeclarationContext* TSyrecParser::signalDeclaration() {
     auto* localCtx = _tracker.createInstance<SignalDeclarationContext>(_ctx, getState());
     enterRule(localCtx, 12, RuleSignalDeclaration);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -810,7 +932,7 @@ TSyrecParser::StatementListContext* TSyrecParser::statementList() {
     auto* localCtx = _tracker.createInstance<StatementListContext>(_ctx, getState());
     enterRule(localCtx, 14, RuleStatementList);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -884,7 +1006,7 @@ TSyrecParser::StatementContext* TSyrecParser::statement() {
     auto* localCtx = _tracker.createInstance<StatementContext>(_ctx, getState());
     enterRule(localCtx, 16, RuleStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -969,7 +1091,7 @@ TSyrecParser::CallStatementContext* TSyrecParser::callStatement() {
     auto* localCtx = _tracker.createInstance<CallStatementContext>(_ctx, getState());
     enterRule(localCtx, 18, RuleCallStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1033,7 +1155,7 @@ TSyrecParser::LoopVariableDefinitionContext* TSyrecParser::loopVariableDefinitio
     auto* localCtx = _tracker.createInstance<LoopVariableDefinitionContext>(_ctx, getState());
     enterRule(localCtx, 20, RuleLoopVariableDefinition);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1077,7 +1199,7 @@ TSyrecParser::LoopStepsizeDefinitionContext* TSyrecParser::loopStepsizeDefinitio
     auto* localCtx = _tracker.createInstance<LoopStepsizeDefinitionContext>(_ctx, getState());
     enterRule(localCtx, 22, RuleLoopStepsizeDefinition);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1133,7 +1255,7 @@ TSyrecParser::ForStatementContext* TSyrecParser::forStatement() {
     auto* localCtx = _tracker.createInstance<ForStatementContext>(_ctx, getState());
     enterRule(localCtx, 24, RuleForStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1196,7 +1318,7 @@ TSyrecParser::IfStatementContext* TSyrecParser::ifStatement() {
     auto* localCtx = _tracker.createInstance<IfStatementContext>(_ctx, getState());
     enterRule(localCtx, 26, RuleIfStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1258,7 +1380,7 @@ TSyrecParser::UnaryStatementContext* TSyrecParser::unaryStatement() {
     auto* localCtx = _tracker.createInstance<UnaryStatementContext>(_ctx, getState());
     enterRule(localCtx, 28, RuleUnaryStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1267,7 +1389,7 @@ TSyrecParser::UnaryStatementContext* TSyrecParser::unaryStatement() {
         setState(183);
         antlrcpp::downCast<UnaryStatementContext*>(localCtx)->unaryOp = _input->LT(1);
         const std::size_t lookahead                                   = _input->LA(1);
-        if (!((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 14) != 0))) {
+        if ((lookahead & ~0x3fULL) != 0 || ((1ULL << lookahead) & 14ULL) == 0) {
             antlrcpp::downCast<UnaryStatementContext*>(localCtx)->unaryOp = _errHandler->recoverInline(this);
         } else {
             _errHandler->reportMatch(this);
@@ -1319,7 +1441,7 @@ TSyrecParser::AssignStatementContext* TSyrecParser::assignStatement() {
     auto* localCtx = _tracker.createInstance<AssignStatementContext>(_ctx, getState());
     enterRule(localCtx, 30, RuleAssignStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1330,7 +1452,7 @@ TSyrecParser::AssignStatementContext* TSyrecParser::assignStatement() {
         setState(187);
         antlrcpp::downCast<AssignStatementContext*>(localCtx)->assignmentOp = _input->LT(1);
         const std::size_t lookahead                                         = _input->LA(1);
-        if (!((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 112) != 0))) {
+        if ((lookahead & ~0x3fULL) != 0 || ((1ULL << lookahead) & 112ULL) == 0) {
             antlrcpp::downCast<AssignStatementContext*>(localCtx)->assignmentOp = _errHandler->recoverInline(this);
         } else {
             _errHandler->reportMatch(this);
@@ -1362,7 +1484,7 @@ TSyrecParser::SwapStatementContext* TSyrecParser::swapStatement() {
     auto* localCtx = _tracker.createInstance<SwapStatementContext>(_ctx, getState());
     enterRule(localCtx, 32, RuleSwapStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1398,7 +1520,7 @@ TSyrecParser::SkipStatementContext* TSyrecParser::skipStatement() {
     auto* localCtx = _tracker.createInstance<SkipStatementContext>(_ctx, getState());
     enterRule(localCtx, 34, RuleSkipStatement);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1434,7 +1556,7 @@ TSyrecParser::SignalContext* TSyrecParser::signal() {
     auto* localCtx = _tracker.createInstance<SignalContext>(_ctx, getState());
     enterRule(localCtx, 36, RuleSignal);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1551,7 +1673,7 @@ TSyrecParser::ExpressionContext* TSyrecParser::expression() {
     auto* localCtx = _tracker.createInstance<ExpressionContext>(_ctx, getState());
     enterRule(localCtx, 38, RuleExpression);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1694,7 +1816,7 @@ TSyrecParser::BinaryExpressionContext* TSyrecParser::binaryExpression() {
     auto* localCtx = _tracker.createInstance<BinaryExpressionContext>(_ctx, getState());
     enterRule(localCtx, 40, RuleBinaryExpression);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1707,7 +1829,7 @@ TSyrecParser::BinaryExpressionContext* TSyrecParser::binaryExpression() {
         setState(223);
         antlrcpp::downCast<BinaryExpressionContext*>(localCtx)->binaryOperation = _input->LT(1);
         const std::size_t lookahead                                             = _input->LA(1);
-        if (!((((lookahead & ~0x3fULL) == 0) && ((1ULL << lookahead) & 452927360) != 0))) {
+        if ((lookahead & ~0x3fULL) != 0 || ((1ULL << lookahead) & 452927360ULL) == 0) {
             antlrcpp::downCast<BinaryExpressionContext*>(localCtx)->binaryOperation = _errHandler->recoverInline(this);
         } else {
             _errHandler->reportMatch(this);
@@ -1753,7 +1875,7 @@ TSyrecParser::UnaryExpressionContext* TSyrecParser::unaryExpression() {
     auto* localCtx = _tracker.createInstance<UnaryExpressionContext>(_ctx, getState());
     enterRule(localCtx, 42, RuleUnaryExpression);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 
@@ -1810,7 +1932,7 @@ TSyrecParser::ShiftExpressionContext* TSyrecParser::shiftExpression() {
     auto* localCtx = _tracker.createInstance<ShiftExpressionContext>(_ctx, getState());
     enterRule(localCtx, 44, RuleShiftExpression);
 
-    auto onExit = finally([&] {
+    const auto onExit = finally([&] {
         exitRule();
     });
 

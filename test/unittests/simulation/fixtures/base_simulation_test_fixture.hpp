@@ -26,16 +26,13 @@
 #include <gtest/gtest.h>
 #include <ios>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <ranges>
 #include <set>
 #include <sstream>
 #include <string>
 #include <string_view>
-
-// The .clang-tidy warning about the missing header file seems to be a false positive since the include of the required <nlohmann/json.hpp> is defined in this file.
-// Maybe this warning is reported because the nlohmann library is implicitly added by one of the external dependencies?
-using json = nlohmann::json; // NOLINT(misc-include-cleaner) Warning reported here seems to be a false positive since <nlohmann/json.hpp> is included
 
 /**
  * A templated test fixture usable to validate the correct synthesis of an input circuit using a set of simulation runs.
@@ -55,11 +52,12 @@ using json = nlohmann::json; // NOLINT(misc-include-cleaner) Warning reported he
  */
 template<typename T>
 class BaseSimulationTestFixture: public ::testing::Test {
-public:
+protected:
     void SetUp() override {
         static_assert(std::is_same_v<T, syrec::CostAwareSynthesis> || std::is_same_v<T, syrec::LineAwareSynthesis>);
     }
 
+public:
     syrec::AnnotatableQuantumComputation annotatableQuantumComputation;
     syrec::Program                       syrecProgramInstance;
 
@@ -72,8 +70,8 @@ public:
         ASSERT_FALSE(performProgramSynthesis(syrecProgramInstance, annotatableQuantumComputation, optionalSynthesisSettings)) << "Expected synthesis of input circuit to fail";
     }
 
-    void performTestExecutionForCircuitLoadedFromJson(const std::string& pathToTestCaseDataJsonFile, const std::string& testcaseJsonKey, const std::optional<syrec::ConfigurableOptions>& optionalSynthesisSettings = std::nullopt, syrec::Statistics* optionalRecordedStatistics = nullptr) {
-        json jsonDataOfTestCase;
+    void performTestExecutionForCircuitLoadedFromJson(std::string_view pathToTestCaseDataJsonFile, const std::string& testcaseJsonKey, const std::optional<syrec::ConfigurableOptions>& optionalSynthesisSettings = std::nullopt, syrec::Statistics* optionalRecordedStatistics = nullptr) {
+        nlohmann::json jsonDataOfTestCase;
         ASSERT_NO_FATAL_FAILURE(loadAndParseTestCaseDataFromJson(pathToTestCaseDataJsonFile, testcaseJsonKey, jsonDataOfTestCase));
         ASSERT_NO_FATAL_FAILURE(validateJsonStructure(jsonDataOfTestCase));
 
@@ -91,7 +89,7 @@ public:
         // Furthermore, we could skip checking the value of the garbage qubits but we also want to test whether their values remains unchanged during synthesis, assuming that ancillary qubits [generated for intermediate results or variables of type 'wire'] were already filtered,
         // due to them being associated with SyReC variables of type 'in' which are considered as read-only).
         const std::set<qc::Qubit> nonAncillaryQubitsLookup = generateNonAncillaryQubitsLookup(annotatableQuantumComputation);
-        const json&               jsonDataOfSimulationRuns = jsonDataOfTestCase[jsonKeyForSimulationRuns];
+        const nlohmann::json&     jsonDataOfSimulationRuns = jsonDataOfTestCase[jsonKeyForSimulationRuns];
         for (const auto& jsonDataOfSimulationRun: jsonDataOfSimulationRuns) {
             const std::size_t numQubitsToCheck = jsonDataOfSimulationRun[jsonKeyForStringifiedBinaryInputState].template get<std::string>().size();
             ASSERT_LE(numQubitsToCheck, annotatableQuantumComputation.getNqubits()) << "Expected state values cannot contain more qubits than the quantum computation itself";
@@ -125,12 +123,12 @@ public:
     }
 
 protected:
-    static void loadAndParseTestCaseDataFromJson(const std::string& pathToTestCaseDataJsonFile, const std::string& testcaseJsonKey, json& containerForJsonDataOfTestCase) {
-        std::ifstream inputFileStream(pathToTestCaseDataJsonFile, std::ifstream::in | std::ifstream::binary);
+    static void loadAndParseTestCaseDataFromJson(std::string_view pathToTestCaseDataJsonFile, const std::string& testcaseJsonKey, nlohmann::json& containerForJsonDataOfTestCase) {
+        std::ifstream inputFileStream(std::string(pathToTestCaseDataJsonFile), std::ifstream::in | std::ifstream::binary);
         ASSERT_TRUE(inputFileStream.good()) << "Input file @" << pathToTestCaseDataJsonFile << " is not in a usable state (e.g. does not exist)";
 
         try {
-            const json parsedJsonDataOfFile = json::parse(inputFileStream);
+            const nlohmann::json parsedJsonDataOfFile = nlohmann::json::parse(inputFileStream);
             ASSERT_TRUE(parsedJsonDataOfFile.contains(testcaseJsonKey)) << "Matching entry for test case was not found in json loaded from " << pathToTestCaseDataJsonFile << " when using '" << testcaseJsonKey << "' as key";
             containerForJsonDataOfTestCase = parsedJsonDataOfFile[testcaseJsonKey];
         } catch (const std::exception& ex) {
@@ -138,7 +136,7 @@ protected:
         }
     }
 
-    void validateJsonStructure(const json& jsonToValidate) const {
+    void validateJsonStructure(const nlohmann::json& jsonToValidate) const {
         ASSERT_TRUE(jsonToValidate.is_structured()) << "Expected test case data to be a JSON object";
 
         ASSERT_TRUE(jsonToValidate.contains(jsonKeyForInputCircuit)) << "Entry for input circuit using key '" << jsonKeyForInputCircuit << "' was not found in the json";
@@ -147,7 +145,7 @@ protected:
         ASSERT_TRUE(jsonToValidate.contains(jsonKeyForSimulationRuns)) << "Entry for data of simulation runs using key '" << jsonKeyForSimulationRuns << "' was not found in the json";
         ASSERT_TRUE(jsonToValidate[jsonKeyForSimulationRuns].is_array()) << "Data for simulation runs must be defined as an array in the json";
 
-        const json& jsonDataForSimulationRuns = jsonToValidate[jsonKeyForSimulationRuns];
+        const nlohmann::json& jsonDataForSimulationRuns = jsonToValidate[jsonKeyForSimulationRuns];
         for (const auto& jsonDataOfSimulationRun: jsonDataForSimulationRuns) {
             ASSERT_TRUE(jsonDataOfSimulationRun.is_structured()) << "Data per simulation run must be defined as an object in the json";
 

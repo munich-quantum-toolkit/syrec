@@ -332,7 +332,7 @@ namespace syrec {
                 return src;
             }
 
-            auto       rootSigVec   = finalSrcPathSignature(src, current, p1SigVec, p2SigVec, false, dd);
+            const auto rootSigVec   = finalSrcPathSignature(src, current, p1SigVec, p2SigVec, false, dd);
             const auto rootSolution = minbool::minimizeBoolean(rootSigVec);
 
             for (auto const& rootVec: rootSolution) {
@@ -454,7 +454,7 @@ namespace syrec {
             ctrlFinal.insert(ctrlNonRoot.begin(), ctrlNonRoot.end());
 
             for (std::size_t i = 0; i < targetSize; ++i) {
-                if (targetVec[i].has_value() && *(targetVec[i])) {
+                if (targetVec[i].has_value() && *targetVec[i]) {
                     applyOperation(static_cast<qc::Qubit>(current.p->v - (i + 1U)), src, ctrlFinal, dd);
                 }
             }
@@ -527,7 +527,7 @@ namespace syrec {
                 const auto targetSize = targetCube.size();
 
                 for (std::size_t i = 0U; i < targetSize; ++i) {
-                    if (targetCube[i].has_value() && *(targetCube[i])) {
+                    if (targetCube[i].has_value() && *targetCube[i]) {
                         const auto targetBit = static_cast<qc::Qubit>((totalNoBits - 1U) - i);
                         qc->mcx(ctrl, targetBit);
                         ++numGates;
