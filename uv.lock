@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -1148,11 +1148,9 @@ build = [
 ]
 dev = [
     { name = "cmake" },
-    { name = "ijson" },
     { name = "mqt-core" },
     { name = "nanobind" },
     { name = "nox" },
-    { name = "pyqt6" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-sugar" },
@@ -1176,8 +1174,6 @@ docs = [
     { name = "sphinxext-opengraph" },
 ]
 test = [
-    { name = "ijson" },
-    { name = "pyqt6" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-sugar" },
@@ -1198,21 +1194,19 @@ build = [
     { name = "cmake", specifier = ">=4.4.1" },
     { name = "mqt-core", specifier = "~=3.11.0" },
     { name = "nanobind", specifier = "~=3.1.0" },
-    { name = "scikit-build-core", specifier = ">=1.0.3" },
+    { name = "scikit-build-core", specifier = ">=1.1" },
     { name = "vcs-versioning", specifier = ">=2.3" },
 ]
 dev = [
     { name = "cmake", specifier = ">=4.4.1" },
-    { name = "ijson", specifier = ">=3.4" },
     { name = "mqt-core", specifier = "~=3.11.0" },
     { name = "nanobind", specifier = "~=3.1.0" },
     { name = "nox", specifier = ">=2025.11.12" },
-    { name = "pyqt6", specifier = ">=6.8" },
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-cov", specifier = ">=7.1" },
     { name = "pytest-sugar", specifier = ">=1.1.1" },
     { name = "pytest-xdist", specifier = ">=3.8" },
-    { name = "scikit-build-core", specifier = ">=1.0.3" },
+    { name = "scikit-build-core", specifier = ">=1.1" },
     { name = "vcs-versioning", specifier = ">=2.3" },
 ]
 docs = [
@@ -1229,8 +1223,6 @@ docs = [
     { name = "sphinxext-opengraph", specifier = ">=0.13" },
 ]
 test = [
-    { name = "ijson", specifier = ">=3.4" },
-    { name = "pyqt6", specifier = ">=6.8" },
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-cov", specifier = ">=7.1" },
     { name = "pytest-sugar", specifier = ">=1.1.1" },
