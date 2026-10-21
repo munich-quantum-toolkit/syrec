@@ -159,7 +159,7 @@ wheel.py-api = "cp315t"
 
 
 [tool.uv]
-required-version = ">=0.5.20"
+required-version = ">=0.13.4"
 cache-keys = [
   { file = "pyproject.toml" },
   { git = { commit = true, tags = true } },
@@ -175,9 +175,12 @@ build = "cp3*"
 skip = [ "*-musllinux_*", "cp314t-*" ]
 archs = "auto64"
 build-frontend = "uv"
+
+# Keep the glibc targets while using the patched uv trust store (2026.10.21-1).
+manylinux-x86_64-image = "quay.io/pypa/manylinux_2_28_x86_64@sha256:b74a5b6f1705ecff17be8bd792589bef9b3b039766d12205720ecd2a9e919192"
 test-command = "pytest {project}/test/python"
 test-groups = [ "test" ]
-manylinux-aarch64-image = "quay.io/pypa/manylinux_2_39_aarch64:latest"
+manylinux-aarch64-image = "quay.io/pypa/manylinux_2_39_aarch64@sha256:ee9eb4135907dba7443a6cd724f0797f144ab1a56c377689f512edcedecdbd5e"
 
 # The mqt-core shared libraries are provided by the mqt-core Python package.
 # They should not be vendorized into the mqt-syrec wheel. This requires
