@@ -382,8 +382,11 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):
         ):
             return
 
+        assert optional_add_simulation_run_btn is not None
         add_simulation_run_btn: Final[QtWidgets.QWidget] = optional_add_simulation_run_btn
+        assert optional_edit_simulation_run_btn is not None
         edit_simulation_run_btn: Final[QtWidgets.QWidget] = optional_edit_simulation_run_btn
+        assert optional_delete_simulation_run_btn is not None
         delete_simulation_run_btn: Final[QtWidgets.QWidget] = optional_delete_simulation_run_btn
 
         add_simulation_run_btn.setEnabled(not is_list_item_selected)
@@ -439,6 +442,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):
         ):
             return
 
+        assert optional_simulation_runs_list_view is not None
         simulation_runs_list_view: Final[QtWidgets.QListView] = optional_simulation_runs_list_view
         simulation_runs_list_view.scrollToBottom()
 
@@ -1045,6 +1049,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):
         ):
             return
 
+        assert optional_add_sim_run_btn is not None
         add_sim_run_btn: Final[QtWidgets.QPushButton] = optional_add_sim_run_btn
         add_sim_run_btn.setEnabled(result == QtWidgets.QDialog.DialogCode.Accepted)
 
@@ -1073,8 +1078,11 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):
         ):
             return
 
+        assert optional_run_simulation_runs_btn is not None
         run_simulation_runs_btn: Final[QtWidgets.QPushButton] = optional_run_simulation_runs_btn
+        assert optional_sim_run_exec_mode_dropdown is not None
         sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = optional_sim_run_exec_mode_dropdown
+        assert optional_save_simulation_runs_to_file_btn is not None
         save_simulation_runs_to_file_btn: Final[QtWidgets.QPushButton] = optional_save_simulation_runs_to_file_btn
 
         run_simulation_runs_btn.setEnabled(should_controls_be_enabled)
@@ -1108,8 +1116,11 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):
         ):
             return
 
+        assert optional_run_simulation_runs_btn is not None
         run_simulation_runs_btn: Final[QtWidgets.QPushButton] = optional_run_simulation_runs_btn
+        assert optional_sim_run_exec_mode_dropdown is not None
         sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = optional_sim_run_exec_mode_dropdown
+        assert optional_save_simulation_runs_to_file_btn is not None
         save_simulation_runs_to_file_btn: Final[QtWidgets.QPushButton] = optional_save_simulation_runs_to_file_btn
 
         curr_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = sim_run_exec_mode_dropdown.currentData()
@@ -1228,6 +1239,7 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):
         ):
             return
 
+        assert optional_simulation_runs_list_view is not None
         simulation_runs_list_view: Final[QtWidgets.QListView] = optional_simulation_runs_list_view
 
         selection_model = simulation_runs_list_view.selectionModel()
@@ -1280,7 +1292,9 @@ class QuantumCircuitSimulationDialog(QtWidgets.QDialog):
         ):
             return
 
+        assert optional_targeted_btn is not None
         targeted_btn: Final[QtWidgets.QPushButton] = optional_targeted_btn
+        assert optional_sim_run_exec_mode_dropdown is not None
         sim_run_exec_mode_dropdown: Final[QtWidgets.QComboBox] = optional_sim_run_exec_mode_dropdown
 
         curr_selected_sim_run_exec_mode: Final[SimulationRunExecutionMode | None] = (

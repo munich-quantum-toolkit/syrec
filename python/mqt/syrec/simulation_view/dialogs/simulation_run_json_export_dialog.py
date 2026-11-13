@@ -129,24 +129,24 @@ class SimulationRunJsonExportDialog(BaseProgressDialog[SimulationRunJsonExportWo
         self._worker.moveToThread(self._worker_thread)
         self._worker.batchCompleted.connect(
             self._handle_batch_exported,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker.requestingData.connect(
             self._enqueue_next_simulation_runs_to_export,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker.finished.connect(
             self._handle_export_completion,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker.failed.connect(
             self._handle_export_failure,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
 
         self._worker_thread.started.connect(
             self._worker.start_export,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker_thread.finished.connect(self._worker_thread.deleteLater)
         self._worker_thread.finished.connect(self._reset_workers)

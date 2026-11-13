@@ -216,23 +216,23 @@ class SimulationRunDialog(BaseProgressDialog[SimulationRunWorker]):
         self._worker.moveToThread(self._worker_thread)
         self._worker_thread.started.connect(
             self._worker.start_simulations,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker.finished.connect(
             self._handle_all_simulation_run_executions_done,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker.batchCompleted.connect(
             self._handle_simulation_run_execution_batch_done,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker.requestingData.connect(
             self._enqueue_next_simulation_runs,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker.failed.connect(
             self._handle_simulation_runs_failure,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
 
         self._worker_thread.finished.connect(self._worker_thread.deleteLater)
