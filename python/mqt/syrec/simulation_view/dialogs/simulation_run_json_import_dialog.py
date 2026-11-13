@@ -124,19 +124,19 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         # we try to mark this behaviour explicitly by defining the signal-slot connection as a queued connection.
         self._worker.batchCompleted.connect(
             self._handle_imported_sim_run_batch,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         # The worker thread executing the long running worker operation will still continue running after the 'finished' signal of the worker was received thus
         # we need to manually handle the correct cancellation of the worker thread
         self._worker.finished.connect(
             self._handle_import_completion,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         # Assuming that we are correctly catching all errors of the long running worker operation in the function execution said operation (executed in the worker thread)
         # the worker will emit a signal containing the caught error with the worker thread still running thus again we need to manually handle its cancellation
         self._worker.failed.connect(
             self._handle_importer_failure,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
 
         # We initially tried to move the constructor parameters of the SimulationRunJsonImportWorker to the function executing the long running operation by using a lambda
@@ -145,7 +145,7 @@ class SimulationRunJsonImportDialog(BaseProgressDialog[SimulationRunJsonImportWo
         # be acknowledged.
         self._worker_thread.started.connect(
             self._worker.start_import,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         # Since we are manually triggering the worker thread shutdown, after the worker thread has finished the associated QThread should be deleted
         self._worker_thread.finished.connect(self._worker_thread.deleteLater)

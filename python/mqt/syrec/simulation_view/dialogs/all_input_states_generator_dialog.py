@@ -102,20 +102,20 @@ class AllInputStatesGeneratorDialog(BaseProgressDialog[AllInputStatesGeneratorWo
         self._worker.moveToThread(self._worker_thread)
         self._worker.batchCompleted.connect(
             self._handle_generated_input_state_batch,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker.finished.connect(
             self._handle_input_state_generator_finished,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker.failed.connect(
             self._handle_input_state_generator_failure,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
 
         self._worker_thread.started.connect(
             self._worker.start_generation,
-            QtCore.Qt.ConnectionType.QueuedConnection,  # ty: ignore[too-many-positional-arguments]
+            QtCore.Qt.ConnectionType.QueuedConnection,
         )
         self._worker_thread.finished.connect(self._worker_thread.deleteLater)
         self._worker_thread.finished.connect(self._reset_workers)
