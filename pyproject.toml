@@ -15,7 +15,7 @@ readme = "README.md"
 keywords = [ "design-automation", "MQT", "reversible-computing", "synthesis" ]
 license = "MIT"
 license-files = [ "LICENSE" ]
-requires-python = ">=3.11"
+requires-python = ">=3.11.5"
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Information Technology",
