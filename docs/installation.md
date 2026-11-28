@@ -44,28 +44,48 @@ See the [uv documentation][uv] for more information.
 
 :::::
 
-::::{tab-set}
+::::::{tab-set}
 :sync-group: installer
 
-:::{tab-item} {code}`uv` _(recommended)_
+:::::{tab-item} {code}`uv` _(recommended)_
 :sync: uv
 
+::::{tab-set}
+
+:::{tab-item} Linux and macOS
+
 ```console
+uv venv
+source .venv/bin/activate
 uv pip install mqt.syrec
 ```
 
 :::
 
-:::{tab-item} {code}`pip`
+:::{tab-item} Windows (PowerShell)
+
+```console
+uv venv
+.\.venv\Scripts\Activate.ps1
+uv pip install mqt.syrec
+```
+
+:::
+
+::::
+
+:::::
+
+:::::{tab-item} {code}`pip`
 :sync: pip
 
 ```console
 python -m pip install mqt.syrec
 ```
 
-:::
+:::::
 
-::::
+::::::
 
 In most cases, no compilation is required; a platform-specific prebuilt wheel is
 downloaded and installed.
@@ -276,7 +296,7 @@ guidelines and workflows, see {doc}`contributing`.
    repository, clone the repository locally.
 
    ```console
-   git clone git@github.com/munich-quantum-toolkit/syrec.git mqt-syrec
+   git clone git@github.com:munich-quantum-toolkit/syrec.git mqt-syrec
    ```
 
    :::
@@ -345,7 +365,7 @@ guidelines and workflows, see {doc}`contributing`.
    running:
 
    ```console
-   nox -s lint
+   uvx nox -s lint
    ```
 
    They can also be run automatically on every commit via [{code}`prek`][prek]
@@ -386,9 +406,9 @@ guidelines and workflows, see {doc}`contributing`.
    ```
 
 <!-- Links -->
-[FetchContent]: https://cmake.org/cmake/help/latest/module/FetchContent.html
-[git-submodule]: https://git-scm.com/docs/git-submodule
-[nox]: https://nox.thea.codes/en/stable/
-[prek]: https://prek.j178.dev
-[uv]: https://docs.astral.sh/uv/
-[ruff]: https://docs.astral.sh/ruff/
+[FetchContent]: <https://cmake.org/cmake/help/latest/module/FetchContent.html>
+[git-submodule]: <https://git-scm.com/docs/git-submodule>
+[nox]: <https://nox.thea.codes/en/stable/>
+[prek]: <https://prek.j178.dev>
+[uv]: <https://docs.astral.sh/uv/>
+[ruff]: <https://docs.astral.sh/ruff/>
