@@ -34,6 +34,7 @@ performed on Windows with other operating systems only requiring minor changes):
 
 1. Download the [ANTLR java binary](https://www.antlr.org/download.html) and
    copy it to a location of your choice.
+
 2. Assuming that the _antlr.jar_ is located in the same folder as the _.g4_
    grammar files and that the Java binary is available in the command line,
    execute the following command:
@@ -46,6 +47,7 @@ performed on Windows with other operating systems only requiring minor changes):
    _<OUTPUT_DIRECTORY_FOR_GEN_FILES>_ directory only the _TSyrecLexer.h_,
    _TSyrecLexer.cpp_, _TSyrecParser.h_, _TSyrecParser.cpp_ are relevant for the
    C++ library.
+
 3. Copy the relevant files generated in the previous step to the corresponding
    folders in the project:
 
