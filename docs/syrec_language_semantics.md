@@ -30,6 +30,7 @@ of the language:
   configured, only one module matching said identifier is allowed in the SyReC
   program (the same restriction applies if no such entry was configured and a
   module with identifier 'main' was defined).
+
 - Omitting the specification of the dimensionality of any variable (i.e., the
   number of dimensions and the number of values per dimension) will cause the
   variable to be considered as a 1D variable storing a single value; The
@@ -47,14 +48,19 @@ of the language:
 
 - The value of every variable with bitwidth {math}`b` is assumed to be an
   unsigned integer and thus must be in the range {math}`[0, 2^{b} - 1]`.
+
 - The maximum supported bitwidth of any variable is equal to 32.
+
 - If the bitwidth of a variable is not declared then it is assumed to be equal
   to a {doc}`configurable default value <library/ConfigurableOptions>`.
+
 - The parameter and variable identifiers must be unique in a SyReC module.
+
 - If the synthesized version of a SyReC program should be compatible with the
   OpenQASM 2.0 standard, variable identifiers must start with one of the
   following characters: {code}`[a-zA-Z]`
   {cite:p}`cross2017openquantumassemblylanguage`.
+
 - The identifier of the module and any of its parameters and local variables
   cannot start with the prefix {code}`__q` that is reserved for internal use.
   - Module overloading (i.e., the definition of a module sharing its identifier
@@ -102,16 +108,22 @@ of the language:
           - The bitwidth of the parameters match
 
     The signature of a module is expected to be unique in a SyReC program.
+
 - The maximum number of values storable in a dimension is equal to
   {math}`2^{32}`.
+
 - A variable can have at most {math}`2^{32}` dimensions.
+
 - The total number of elements storable in a variable is equal to
   {math}`2^{32}`, with 'an element' referring to _n_ consecutive qubits of the
   variable with _n_ being equal to the declared bitwidth of the variable (e.g. a
   variable declared as {math}`in \ a[2][3][4](6)` contains 24 6-qubit sized
   elements).
+
 - The bitwidth of a variable must be larger than zero.
+
 - The number of values for any dimension of a variable must be larger than zero.
+
 - Variables of type 'state' require special handling and are treated as
   read-only in a SyReC program with the initial state being set during
   synthesis. Both of the available SyReC specifications, namely the original
@@ -141,6 +153,7 @@ of the language:
   ```
 
   - The identifier of the accessed variables match
+
   - Assuming that {math}`l_{varA}` defines the indices
     {math}`l_{dimIdxs} = \{l_1, l_2, \dots, l_n\}` in its dimension access while
     {math}`r_{varA}` accesses the indices
@@ -148,6 +161,7 @@ of the language:
     {math}`i`-th dimension is detected iff:
     - Both {math}`l_i` and {math}`r_i` evaluate to a constant at compile time
       and {math}`l_i = r_i`
+
     - An overlap was detected for all indices {math}`j` at positions
       {math}`0 < j < i` in the sequence of indices of the dimension accesses
 
@@ -163,8 +177,10 @@ of the language:
     following conditions:
     - All indices in both bitranges evaluate to constants and an overlap between
       the two ranges is detected.
+
     - A bit of each _VariableAccess_ evaluates to a constant and their values
       match.
+
     - A bit of one _VariableAccess_ evaluates to a constant while both indices
       of the accessed bit range of the other _VariableAccess_ evaluate to
       constants athen n overlap is reported if the bit range with known bounds
@@ -229,11 +245,13 @@ The parser will not report an overlap in the assignment due to the index of the 
 - The current implementation does not require that the module referenced by a
   _Call/UncallStatement_ must be defined at a position prior to the currently
   processed _Call/UncallStatement_ in the SyReC program.
+
 - A _CallStatement_ will execute the referenced module starting from the first
   statement up to and including the last statement defined in its module body
   while an _UncallStatement_ will perform an execution in the reverse direction
   with both semantics being inherited from the predecessor language of SyReC
   (see Janus {cite:p}`yokoyama2007janus`).
+
 - Recursive module calls are allowed but it is the responsibility of the
   developer of the SyReC program to prevent an infinite recursion. However,
   calls to the implicitly or explicitly defined main module of the SyReC program
@@ -306,6 +324,7 @@ The parser will not report an overlap in the assignment due to the index of the 
   keyword _do_ prior to the body of a ForStatement, the examples shown in said
   documents all use this keyword and thus, we assume that this is a typo in the
   grammar and the _do_ keyword is required.
+
 - The initial value of a loop variable can be used in the initialization of the
   iteration ranges 'end' and 'stepsize' value as shown in the following example:
 
@@ -345,7 +364,9 @@ The parser will not report an overlap in the assignment due to the index of the 
 - Due to the requirement that the number of iterations performed by a
   ForStatement is known at compile time, assignments to loop variables are
   forbidden.
+
 - If the step size of a ForStatement is not defined, it is assumed to equal 1.
+
 - If the user does not specify a loop variable definition or start-end-value
   iteration range pair but only a single _Number_ component then it is assumed
   that this _Number_ defines the end value of the iteration range while the
@@ -373,9 +394,11 @@ The parser will not report an overlap in the assignment due to the index of the 
   [chapter 7.8 of document N4659](https://open-std.org/JTC1/SC22/WG21/docs/standards)).
   The same conversion is applied to all negative values determined at compile
   time.
+
 - Semantic/Syntax errors in the statements of the body of a loop performing no
   iterations are reported due to the parser not implementing the dead code
   elimination technique.
+
 - The iteration range of SyReC loops can be determined as shown in the following
   example:
 
@@ -430,22 +453,27 @@ The parser will not report an overlap in the assignment due to the index of the 
 - Semantic/Syntax errors in any simplified expression of either the guard or
   closing guard conditions are reported even if the violating expression can be
   omitted due to a simplification.
+
 - Semantic/Syntax errors in the not executed branch of an IfStatement are
   reported due to the parser not implementing the dead code elimination
   optimization technique.
+
 - The bitlength of the expression defined in the guard as well as closing guard
   condition must evaluate to 1.
 
 ### SwapStatement
 
 - Both operands of the swap operation must have the same bitwidth.
+
 - Whether the access on the assigned to variable parts in the dimension access
   of any _VariableAccess_ on the opposite side of the SwapStatement is allowed
   depends on the value of the corresponding flag in the parser configuration
   (see {doc}`flag <library/ConfigurableOptions>`).
+
 - Assignments to the same variable parts between the two sides of the
   SwapStatement are not allowed and a semantic error is reported if the parser
   can detect such an overlap.
+
 - Since the indices of the accessed dimension of a variable can be defined as a
   non-compile time constant expression and due to the inability to evaluate said
   expressions one is able to define a SwapStatement that operates on the same
@@ -464,23 +492,28 @@ The parser will not report an overlap in the assignment due to the index of the 
 
 - All indices defined in the dimension or bit/bitrange access of a variable
   access are zero-based.
+
 - The dimension access can be omitted for variables with a single dimension
   containing only a single value (i.e., _module main(inout a(4)) ++= a_).
+
 - It is the responsibility of the user to guarantee that the value of an
   expression not evaluable at compile time that is used to define the accessed
   index of a dimension in the dimension access component of the variable access
   to be within the valid value range for the accessed dimension. Otherwise,
   undefined or implementation specific behaviour can occur during synthesis.
+
 - If a non-compile time constant expression is used to define the accessed value
   of a dimension then the bitwidth of the expression cannot be larger than the
   number of bits required store the index to the last element in the unrolled
   variable, e.g. the variable {math}`in \ a[2][3](2)` contains 6 elements with 3
   bits being required to store the largest index (5) required to address any
   element in _a_.
+
 - If the value of an index in either the dimension or bit/bitrange access
   evaluates to a constant at compile time, a validation of whether it is within
   the defined bounds of the accessed variable is performed and an error reported
   in case of an out-of-range value.
+
 - Each expression defining the accessed value of the dimension will use an
   expected operand bitwidth for its operands that is only valid until the
   expression was processed. Any already existing expected operand bitwidth from
@@ -500,6 +533,7 @@ The parser will not report an overlap in the assignment due to the index of the 
   bitwidth of the operands in the expression of the first dimension of the
   _VariableAccess_ on _c_ has a value of 1, while for the second dimension it is
   equal to 4.
+
 - The SyReC parser does not require that the start index of a bit range access
   be larger or equal to the end index and thus supports the following index
   combinations:
@@ -525,12 +559,15 @@ The parser will not report an overlap in the assignment due to the index of the 
 ## Expressions
 
 - Expressions with constant operands are evaluated at compile time.
+
 - All SyReC operations except the upper-bit multiplication (`\*>`) and logical
   negation (`!`) operation are evaluated according to the value semantics of the
   corresponding C++ operation using unsigned integer operands.
+
 - The logical negation of an integer constant {math}`C` at compile time is
   calculated by first converting {math}`C` to a boolean using the predicate
   {math}`p(C) = C > 0` and then negating the result of {math}`p(C)`.
+
 - Arithmetic and logical simplifications are applied at compile time by default
   (i.e., will result in a simplification of the expression ({math}`(a + b) * 0`
   to {math}`0`). However, semantic/syntax errors in the operands of even the
@@ -711,8 +748,10 @@ The parser will not report an overlap in the assignment due to the index of the 
   operand bitwidth {math}`b`:
   - Bitwise AND: {math}`2^{b} - 1`
   - Modulo: {math}`2^{b} - 1`
+
 - Expressions with constant integer operands are evaluated using the C++
   semantics for unsigned integers.
+
 - Operands of an expression using the relational (`<`, `>`, `<=`, `>=`, `=`,
   `!=`), logical (`||`, `&&`) or the unary operation (`!`) must to have a
   bitwidth equal to 1.
